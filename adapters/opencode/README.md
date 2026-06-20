@@ -1,31 +1,31 @@
 # review-pro — opencode adapter
 
-Installs the review-pro core (skills + subagents) into opencode.
+Installs the review-pro core (skills + subagents) into opencode via the `review-pro-stack` CLI.
 
 ## Install (one-time)
 
 ```bash
-bash adapters/opencode/install.sh
-# or, to target a custom opencode home:
-OPENCODE_HOME=/path/to/.config/opencode bash adapters/opencode/install.sh
+npx review-pro-stack init                 # installs core + interactive stack selection
+npx review-pro-stack init --no-stacks     # core only
 ```
 
-What it does:
-- Copies each `core/skills/<name>/` to `$OC_HOME/skills/<name>/` (opencode loads `SKILL.md` from there).
-- Copies each `core/agents/*.md` to `$OC_HOME/agents/`.
+For local development (no published package yet):
+```bash
+cd cli && npm install && npm run build
+node dist/cli.js init
+```
 
-opencode skill loading from `$OC_HOME/skills/` is confirmed. Agent/subagent loading paths can vary by opencode version — after install, verify your agents appear; if your opencode expects agents elsewhere, copy `core/agents/*.md` there and adjust the script.
+`init` copies each `core/skills/<name>/` to `$OC_HOME/skills/<name>/` and each `core/agents/*.md` to `$OC_HOME/agents/` (`$OPENCODE_HOME` or `~/.config/opencode`). It is cross-platform (Node, no bash) and replaces the old `install.sh`.
+
+> opencode skill loading from `$OC_HOME/skills/` is confirmed. Agent/subagent loading paths can vary by opencode version — after `init`, restart opencode and verify your agents appear.
 
 ## Install stacks (per repo)
 
-Stack packs live in the **reviewed repo**, not the plugin. Install them with the community CLI (separate package), or copy manually:
-
 ```bash
-# manual (until the CLI ships):
-mkdir -p .review-pro && cp -R /path/to/review-pro/stacks/node .review-pro/node
+npx review-pro-stack             # interactive
+npx review-pro-stack add node    # non-interactive
 ```
-
-See `stacks/README.md`.
+Stacks land in the reviewed repo's `.review-pro/`. See `stacks/README.md`.
 
 ## Running a review (one command — no scripts required)
 

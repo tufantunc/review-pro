@@ -67,5 +67,37 @@ for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
 done
 shopt -u nullglob
 
+MANIFEST="$ROOT/manifest.json"
+AGENTS_DIR="$ROOT/core/agents"
+
+if [[ ! -f "$MANIFEST" ]]; then
+  add_error "manifest.json: not found"
+else
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -c "import json; json.load(open('$MANIFEST'))" 2>/dev/null || add_error "manifest.json: invalid JSON"
+    declared_skills="$(python3 -c "import json;d=json.load(open('$MANIFEST'));print('\n'.join(s['name'] for s in d.get('skills',[])))" 2>/dev/null)"
+    # orphan skills: on disk but not declared
+    shopt -s nullglob
+    for d in "$SKILLS_DIR"/*/; do
+      n="$(basename "$d")"
+      if ! printf '%s\n' "$declared_skills" | grep -qxF "$n"; then
+        add_error "orphan skill '$n' (directory exists but not in manifest)"
+      fi
+    done
+    shopt -u nullglob
+    # agents reference existing skills
+    for a in "$AGENTS_DIR"/*.md; do
+      [[ -f "$a" ]] || continue
+      ls_skill="$(fm_get "$a" "loads_skill")"
+      [[ -n "$ls_skill" ]] || add_error "$(basename "$a"): missing frontmatter key 'loads_skill'"
+      if [[ -n "$ls_skill" ]] && [[ ! -f "$SKILLS_DIR/$ls_skill/SKILL.md" ]]; then
+        add_error "$(basename "$a"): references missing skill '$ls_skill'"
+      fi
+    done
+  else
+    echo "WARN: python3 not found; skipping manifest/reference checks" >&2
+  fi
+fi
+
 [[ "$errors" -eq 0 ]] && { echo "OK: all artifacts valid"; exit 0; }
 exit 1

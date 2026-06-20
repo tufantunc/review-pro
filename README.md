@@ -12,8 +12,8 @@ Tiered AI code-review: **triage → relevant specialist reviewers → synthesis*
 triage (Stage 1) -> fan-out (Stage 2, parallel specialists) -> synthesis (Stage 3)
 ```
 
-- **Triage** classifies the diff, picks relevant reviewers, detects active stacks, scopes context, emits a dispatch plan.
-- **Fan-out** runs only the selected specialists in parallel; each loads an effective rubric = core skill + active stack packs.
+- **Triage** classifies the diff, picks relevant reviewers, scopes context, emits a dispatch plan.
+- **Fan-out** runs only the selected specialists in parallel; each applies its core rubric plus any stack signals from the repo's `.review-pro/`.
 - **Synthesis** dedups, weights, resolves conflicts by domain ownership, calibrates severity, emits one verdict.
 
 See `docs/superpowers/specs/2026-06-20-review-pro-design.md` for the full design.
@@ -22,24 +22,30 @@ See `docs/superpowers/specs/2026-06-20-review-pro-design.md` for the full design
 
 Complete: foundation + validation harness + shared docs + **all 12 specialist reviewers** + `review-pro` one-command orchestrator + `triage` & `synthesize` skills + subagents + the **opencode** adapter + **stack packs** (`typescript-react`, `node`).
 
-Roadmap (post-MVP): Cursor & Claude Code adapters, SARIF / PR-comment output, pre-commit mode, more stack packs (python, go, rust), and a self-contained installed-plugin layout.
+Roadmap (post-MVP): `npx review-pro-stack` community CLI (separate repo) for per-repo stack install across any language/framework (.NET, Flutter, Go, Rust…), Cursor & Claude Code adapters, SARIF / PR-comment output, pre-commit mode.
 
-## Install (opencode)
+## Install (opencode, one-time)
 
 ```bash
 bash adapters/opencode/install.sh
 ```
-The shim copies `core/skills/**` and `core/agents/**` into `$OC_HOME/` for opencode discovery. Stack packs and the `review.sh` / `compose-rubric.sh` helpers live in the plugin repo and are used from there (the directory layout must stay intact for cross-references and composition). See `adapters/opencode/README.md`.
+Copies `core/skills/**` and `core/agents/**` into `$OC_HOME/` for opencode discovery. Stack packs are **not** part of the plugin — they live per repo (see below).
 
-## Run a review (one command)
+## Install stacks (per repo)
 
-In opencode, open the repo you want to review (on the feature branch) and ask the session to review it, or invoke the **`review-pro`** skill:
+Stack packs add language/framework-specific signals. Install them into the reviewed repo's `.review-pro/`:
 
 ```bash
-export REVIEW_PRO_ROOT=~/Desktop/Projects/Personal/review-pro   # so the agent finds scripts/ + stacks/
+# via the community CLI (separate package, when shipped):
+npx review-pro-stack
+# or manually for now:
+mkdir -p .review-pro && cp -R ~/path/to/review-pro/stacks/node .review-pro/node
 ```
+See `stacks/README.md`.
 
-The orchestrator runs: prep → triage → fan-out (composed stack-aware rubrics per reviewer) → synthesis → verdict.
+## Run a review (one command — no scripts required)
+
+In opencode, open the repo you want to review (on the feature branch) and ask the session to review it, or invoke the **`review-pro`** skill. The agent runs the whole pipeline with its own tools — `git diff`, reads changed files, Globs `.review-pro/` for active stacks, dispatches reviewers (passing stack signals), and synthesizes the verdict. No env vars, no user-run scripts.
 
 ## Configure (optional, per repo)
 

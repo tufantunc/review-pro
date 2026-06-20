@@ -20,15 +20,15 @@ See `docs/superpowers/specs/2026-06-20-review-pro-design.md` for the full design
 
 ## Status (v0.1 — MVP)
 
-Complete: foundation + validation harness + shared docs + **all 12 specialist reviewers** + `review-pro` one-command orchestrator + `triage` & `synthesize` skills + subagents + the **opencode** adapter + **stack packs** (`typescript-react`, `node`) + the **`review-pro-stack` CLI** (`npx review-pro-stack`).
+Complete: foundation + validation harness + shared docs + **all 12 specialist reviewers** + `review-pro` one-command orchestrator + `triage` & `synthesize` skills + subagents + the **opencode** adapter + **stack packs** (`typescript-react`, `node`) + the **`review-pro` CLI** (`npx review-pro`).
 
 Roadmap (post-MVP): Cursor & Claude Code adapters / `init` targets, remote stack registry, `--json` output, pre-commit mode, more stack packs.
 
 ## Install (opencode, one-time)
 
 ```bash
-npx review-pro-stack init          # installs core + interactive stack selection
-npx review-pro-stack add node      # or add a stack non-interactively
+npx review-pro init          # installs core + interactive stack selection
+npx review-pro add node      # or add a stack non-interactively
 ```
 Restart opencode, then in any repo open a branch and invoke the **`review-pro`** skill (or ask the session to review it). The agent does everything else natively.
 

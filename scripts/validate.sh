@@ -99,5 +99,32 @@ else
   fi
 fi
 
+# Stack pack integrity: each pack manifest is valid JSON; every listed reviewer
+# has a core skill and a matching pack file.
+STACKS_DIR="$ROOT/stacks"
+if [[ -d "$STACKS_DIR" ]] && command -v python3 >/dev/null 2>&1; then
+  shopt -s nullglob
+  for pm in "$STACKS_DIR"/*/manifest.json; do
+    pack_dir="$(dirname "$pm")"
+    pack_name="$(basename "$pack_dir")"
+    python3 -c "import json; json.load(open('$pm'))" 2>/dev/null || add_error "stacks/$pack_name/manifest.json: invalid JSON"
+    if ! python3 -c "import json,sys; d=json.load(open(sys.argv[1])); assert isinstance(d.get('reviewers'), list)" "$pm" 2>/dev/null; then
+      add_error "stacks/$pack_name/manifest.json: missing 'reviewers' list"
+      continue
+    fi
+    reviewers="$(python3 -c "import json;d=json.load(open('$pm'));print('\n'.join(d.get('reviewers',[])))" 2>/dev/null)"
+    while IFS= read -r r; do
+      [[ -n "$r" ]] || continue
+      if [[ ! -d "$SKILLS_DIR/$r" ]]; then
+        add_error "stacks/$pack_name: lists reviewer '$r' which has no core skill"
+      fi
+      if [[ ! -f "$pack_dir/$r.md" ]]; then
+        add_error "stacks/$pack_name: manifest lists '$r' but $r.md is missing"
+      fi
+    done <<< "$reviewers"
+  done
+  shopt -u nullglob
+fi
+
 [[ "$errors" -eq 0 ]] && { echo "OK: all artifacts valid"; exit 0; }
 exit 1

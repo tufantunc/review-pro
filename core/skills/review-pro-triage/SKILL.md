@@ -46,3 +46,11 @@ dispatch:
 
 ## Output discipline
 Return ONLY the dispatch plan and a one-line summary. Do not review the code. Do not invent reviewers outside the roster in `manifest.json`. If `enabled_reviewers` is set, intersect your dispatch with it.
+
+## Effective rubric composition (for Stage 2)
+For each dispatched reviewer, the orchestrator composes its effective rubric from the core skill plus the active stack packs:
+```
+effective_rubric(<reviewer>) = core/skills/<reviewer>/SKILL.md + Σ stacks/<active_stack>/<reviewer>.md
+```
+Use `scripts/compose-rubric.sh <reviewer> <stack...>` to render it (e.g. `compose-rubric.sh security typescript-react`). Pass the rendered rubric to the reviewer subagent as its `### Rubric` section. Reviewers with no pack file for an active stack simply run on their core rubric.
+

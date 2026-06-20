@@ -1,0 +1,5 @@
+{
+  "name": "typescript-react",
+  "description": "React + TypeScript signals for review-pro reviewers",
+  "reviewers": ["security", "correctness", "craft", "frontend", "a11y", "performance", "api-contract", "tests"]
+}

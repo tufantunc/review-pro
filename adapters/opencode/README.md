@@ -18,8 +18,12 @@ OPENCODE_HOME=/path/to/.config/opencode bash adapters/opencode/install.sh
 opencode skill loading from `$OC_HOME/skills/` is confirmed. Agent/subagent loading paths can vary by opencode version — after install, verify your agents appear (e.g., list available agents in your opencode session). If your opencode expects agents elsewhere, copy `core/agents/*.md` to that location and adjust this script.
 
 ## Running a review
-1. In your repo, run the **triage** skill on the current branch's diff.
-2. From triage's dispatch plan, invoke the listed reviewer subagents in parallel, passing each its scoped context and its effective rubric (core skill + active stack packs).
+1. In your repo, run the **triage** skill on the current branch's diff. It detects active stacks (e.g. `typescript-react`, `node`) and emits a dispatch plan.
+2. For each dispatched reviewer, compose its **effective rubric** from the core skill + active stack packs, then run the reviewer subagent in parallel with its scoped context:
+   ```bash
+   scripts/compose-rubric.sh security typescript-react   # core security + ts-react pack
+   ```
+   Pass the rendered rubric to the subagent as its `### Rubric` section, plus the scoped context from the dispatch plan.
 3. Pass all reviewer outputs to the **synthesize** subagent for the final verdict + report.
 
-> Stack packs (Phase 3) are layered onto reviewer rubrics at dispatch time. Until then, reviewers run on their core rubric only.
+> Stack packs live under `stacks/`. A pack only contributes for reviewers where it has a file; reviewers without a pack file run on their core rubric alone. See `stacks/README.md`.

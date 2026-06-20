@@ -18,18 +18,18 @@ triage (Stage 1) -> fan-out (Stage 2, parallel specialists) -> synthesis (Stage 
 
 See `docs/superpowers/specs/2026-06-20-review-pro-design.md` for the full design.
 
-## Status (v0.1)
+## Status (v0.1 — MVP)
 
-Working slice: foundation + validation harness + shared docs + `security` & `craft` reviewers + `triage` & `synthesize` orchestrators + subagents + the **opencode** adapter.
+Complete: foundation + validation harness + shared docs + **all 12 specialist reviewers** + `triage` & `synthesize` orchestrators + subagents + the **opencode** adapter + **stack packs** (`typescript-react`, `node`).
 
-Roadmap: 10 more reviewers (Phase 2), stack packs `typescript-react` & `node` (Phase 3), Cursor & Claude Code adapters, SARIF / PR-comment output, pre-commit mode.
+Roadmap (post-MVP): Cursor & Claude Code adapters, SARIF / PR-comment output, pre-commit mode, more stack packs (python, go, rust), and a self-contained installed-plugin layout.
 
 ## Install (opencode)
 
 ```bash
 bash adapters/opencode/install.sh
 ```
-See `adapters/opencode/README.md` for details and agent-loading notes.
+The shim copies `core/skills/**` and `core/agents/**` into `$OC_HOME/` for opencode discovery. Stack packs and the `compose-rubric.sh` helper live in the plugin repo and are used from there (the directory layout must stay intact for cross-references and composition). See `adapters/opencode/README.md`.
 
 ## Configure (optional, per repo)
 

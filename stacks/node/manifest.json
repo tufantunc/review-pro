@@ -1,0 +1,5 @@
+{
+  "name": "node",
+  "description": "Node.js server signals for review-pro reviewers",
+  "reviewers": ["security", "correctness", "backend", "db", "api-contract", "performance", "tests"]
+}

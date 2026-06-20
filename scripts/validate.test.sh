@@ -126,6 +126,35 @@ out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "orphan skill 'orphan'"; then ok "orphan skill detected"; else bad "orphan skill not detected"; fi
 rm -rf "$T"
 
+# Case F: stack pack lists a reviewer file that's missing -> fail
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/stacks/mystack"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+cat > "$T/manifest.json" <<'EOF'
+{ "skills": [{"name":"security","role":"reviewer"}], "agents": [] }
+EOF
+cat > "$T/stacks/mystack/manifest.json" <<'EOF'
+{ "name": "mystack", "reviewers": ["security"] }
+EOF
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "manifest lists 'security' but security.md is missing"; then ok "missing pack file detected"; else bad "missing pack file not detected"; fi
+rm -rf "$T"
+
+# Case G: stack pack lists a reviewer with no core skill -> fail
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/stacks/mystack"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+cat > "$T/manifest.json" <<'EOF'
+{ "skills": [{"name":"security","role":"reviewer"}], "agents": [] }
+EOF
+cat > "$T/stacks/mystack/manifest.json" <<'EOF'
+{ "name": "mystack", "reviewers": ["ghost"] }
+EOF
+printf '# ghost\n' > "$T/stacks/mystack/ghost.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "lists reviewer 'ghost' which has no core skill"; then ok "pack referencing ghost reviewer detected"; else bad "pack referencing ghost reviewer not detected"; fi
+rm -rf "$T"
+
 echo "---"
 echo "pass=$pass fail=$fail"
 [[ "$fail" -eq 0 ]]

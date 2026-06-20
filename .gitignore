@@ -1,0 +1,4 @@
+# opencode install targets (never commit local config copies)
+.opencode-copy/
+.tmp/
+*.log

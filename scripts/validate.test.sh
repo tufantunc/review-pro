@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# Tests for scripts/validate.sh. Run: bash scripts/validate.test.sh
+set -uo pipefail
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VALIDATE="$HERE/validate.sh"
+pass=0; fail=0
+ok(){ echo "ok - $1"; pass=$((pass+1)); }
+bad(){ echo "not ok - $1"; fail=$((fail+1)); }
+
+write_good_reviewer(){ cat > "$1" <<'EOF'
+---
+name: security
+description: "security reviewer"
+---
+# Security Reviewer
+## Role & mandate
+r
+## Scope
+s
+## What this reviewer flags
+f
+## Evidence & severity
+e
+## No unresearched findings
+n
+## Approval bar
+a
+## Output schema
+o
+## Cross-reviewer handoff
+c
+## Tone
+t
+EOF
+}
+
+write_orchestrator(){ cat > "$1" <<'EOF'
+---
+name: review-pro-triage
+description: "triage"
+---
+# Triage
+EOF
+}
+
+# Case A: clean tree -> exit 0
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md"
+if bash "$VALIDATE" "$T" >/dev/null 2>&1; then ok "clean tree passes"; else bad "clean tree should pass"; fi
+rm -rf "$T"
+
+# Case B: reviewer missing a required section -> fail, mentions section
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+grep -v '^## Tone$' "$T/core/skills/security/SKILL.md" > "$T/core/skills/security/SKILL.md.tmp"
+mv "$T/core/skills/security/SKILL.md.tmp" "$T/core/skills/security/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "missing section '## Tone'"; then ok "missing section detected"; else bad "missing section not detected"; fi
+rm -rf "$T"
+
+# Case C: skill missing frontmatter name -> fail
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security"
+cat > "$T/core/skills/security/SKILL.md" <<'EOF'
+---
+description: "no name"
+---
+# x
+## Role & mandate
+r
+## Scope
+s
+## What this reviewer flags
+f
+## Evidence & severity
+e
+## No unresearched findings
+n
+## Approval bar
+a
+## Output schema
+o
+## Cross-reviewer handoff
+c
+## Tone
+t
+EOF
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "missing frontmatter key 'name'"; then ok "missing name detected"; else bad "missing name not detected"; fi
+rm -rf "$T"
+
+echo "---"
+echo "pass=$pass fail=$fail"
+[[ "$fail" -eq 0 ]]

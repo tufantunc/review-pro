@@ -155,6 +155,36 @@ out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "lists reviewer 'ghost' which has no core skill"; then ok "pack referencing ghost reviewer detected"; else bad "pack referencing ghost reviewer not detected"; fi
 rm -rf "$T"
 
+# Case H: SKILL.md outside core/skills -> fail
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/cli/docs"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+cat > "$T/manifest.json" <<'EOF'
+{ "skills": [{"name":"security","role":"reviewer"}], "agents": [] }
+EOF
+printf '# stray\n' > "$T/cli/docs/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "SKILL.md outside core/skills"; then ok "stray SKILL.md detected"; else bad "stray SKILL.md not detected"; fi
+rm -rf "$T"
+
+# Case I: agent frontmatter (loads_skill:) outside core/agents -> fail
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/stacks/s"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+cat > "$T/manifest.json" <<'EOF'
+{ "skills": [{"name":"security","role":"reviewer"}], "agents": [] }
+EOF
+cat > "$T/stacks/s/foo.md" <<'EOF'
+---
+name: stray-agent
+loads_skill: security
+---
+# x
+EOF
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "agent frontmatter outside core/agents"; then ok "stray agent frontmatter detected"; else bad "stray agent frontmatter not detected"; fi
+rm -rf "$T"
+
 echo "---"
 echo "pass=$pass fail=$fail"
 [[ "$fail" -eq 0 ]]

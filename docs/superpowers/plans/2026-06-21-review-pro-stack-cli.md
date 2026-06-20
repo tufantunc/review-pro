@@ -346,13 +346,17 @@ describe("catalog", () => {
     expect(resolveReviewers(tmp).sort()).toEqual(["craft", "security"]);
   });
 
-  it("resolves reviewers from manifest.json fallback", () => {
-    fs.writeFileSync(path.join(tmp, "manifest.json"),
+  it("resolves reviewers from manifest.json fallback (dev: manifest in catalog parent)", () => {
+    const devRoot = fs.mkdtempSync(path.join(os.tmpdir(), "rp-dev-"));
+    const stacksDir = path.join(devRoot, "stacks");
+    fs.mkdirSync(stacksDir);
+    fs.writeFileSync(path.join(devRoot, "manifest.json"),
       JSON.stringify({ skills: [
         { name: "security", role: "reviewer" },
         { name: "review-pro-triage", role: "orchestrator" },
       ] }));
-    expect(resolveReviewers(tmp).sort()).toEqual(["security"]);
+    expect(resolveReviewers(stacksDir).sort()).toEqual(["security"]);
+    fs.rmSync(devRoot, { recursive: true, force: true });
   });
 });
 ```

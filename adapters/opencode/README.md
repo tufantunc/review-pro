@@ -17,13 +17,14 @@ OPENCODE_HOME=/path/to/.config/opencode bash adapters/opencode/install.sh
 ## Confirming agent loading
 opencode skill loading from `$OC_HOME/skills/` is confirmed. Agent/subagent loading paths can vary by opencode version — after install, verify your agents appear (e.g., list available agents in your opencode session). If your opencode expects agents elsewhere, copy `core/agents/*.md` to that location and adjust this script.
 
-## Running a review
-1. In your repo, run the **triage** skill on the current branch's diff. It detects active stacks (e.g. `typescript-react`, `node`) and emits a dispatch plan.
-2. For each dispatched reviewer, compose its **effective rubric** from the core skill + active stack packs, then run the reviewer subagent in parallel with its scoped context:
-   ```bash
-   scripts/compose-rubric.sh security typescript-react   # core security + ts-react pack
-   ```
-   Pass the rendered rubric to the subagent as its `### Rubric` section, plus the scoped context from the dispatch plan.
-3. Pass all reviewer outputs to the **synthesize** subagent for the final verdict + report.
+## Running a review (one command)
+In opencode, open the repo you want to review (on the feature branch), then just ask the session to review it — e.g. *"review-pro ile bu branch'i incele"* or invoke the **`review-pro`** skill. The main agent runs the whole pipeline:
 
-> Stack packs live under `stacks/`. A pack only contributes for reviewers where it has a file; reviewers without a pack file run on their core rubric alone. See `stacks/README.md`.
+1. **Prep** — `scripts/review.sh prep` (from the repo under review) prints `REVIEW_PRO_ROOT`, base, active stacks, changed files + contents.
+2. **Triage** (inline) — dispatch plan: which reviewers + scoped context.
+3. **Fan-out** — for each reviewer, `scripts/compose-rubric.sh <reviewer> <stacks>` renders the effective rubric (core + stack packs), then the `<reviewer>-reviewer` subagent runs with that rubric + scoped context.
+4. **Synthesize** (inline) — one verdict + report.
+
+> The orchestrator needs `REVIEW_PRO_ROOT` (the dir with `scripts/` + `stacks/`). It's auto-printed by `review.sh prep`; you can also `export REVIEW_PRO_ROOT=~/Desktop/Projects/Personal/review-pro` so the agent always knows it.
+
+> Stack packs live under `stacks/` and are composed at runtime — they are NOT copied by install. See `stacks/README.md`.

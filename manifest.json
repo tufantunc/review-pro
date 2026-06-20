@@ -4,6 +4,7 @@
   "description": "Tiered AI code-review: triage -> relevant specialist reviewers -> synthesis. Cross-platform agnostic core + adapters.",
   "license": "MIT",
   "skills": [
+    { "name": "review-pro", "role": "orchestrator" },
     { "name": "review-pro-triage", "role": "orchestrator" },
     { "name": "review-pro-synthesize", "role": "orchestrator" },
     { "name": "security", "role": "reviewer" },

@@ -20,7 +20,7 @@ See `docs/superpowers/specs/2026-06-20-review-pro-design.md` for the full design
 
 ## Status (v0.1 — MVP)
 
-Complete: foundation + validation harness + shared docs + **all 12 specialist reviewers** + `triage` & `synthesize` orchestrators + subagents + the **opencode** adapter + **stack packs** (`typescript-react`, `node`).
+Complete: foundation + validation harness + shared docs + **all 12 specialist reviewers** + `review-pro` one-command orchestrator + `triage` & `synthesize` skills + subagents + the **opencode** adapter + **stack packs** (`typescript-react`, `node`).
 
 Roadmap (post-MVP): Cursor & Claude Code adapters, SARIF / PR-comment output, pre-commit mode, more stack packs (python, go, rust), and a self-contained installed-plugin layout.
 
@@ -29,7 +29,17 @@ Roadmap (post-MVP): Cursor & Claude Code adapters, SARIF / PR-comment output, pr
 ```bash
 bash adapters/opencode/install.sh
 ```
-The shim copies `core/skills/**` and `core/agents/**` into `$OC_HOME/` for opencode discovery. Stack packs and the `compose-rubric.sh` helper live in the plugin repo and are used from there (the directory layout must stay intact for cross-references and composition). See `adapters/opencode/README.md`.
+The shim copies `core/skills/**` and `core/agents/**` into `$OC_HOME/` for opencode discovery. Stack packs and the `review.sh` / `compose-rubric.sh` helpers live in the plugin repo and are used from there (the directory layout must stay intact for cross-references and composition). See `adapters/opencode/README.md`.
+
+## Run a review (one command)
+
+In opencode, open the repo you want to review (on the feature branch) and ask the session to review it, or invoke the **`review-pro`** skill:
+
+```bash
+export REVIEW_PRO_ROOT=~/Desktop/Projects/Personal/review-pro   # so the agent finds scripts/ + stacks/
+```
+
+The orchestrator runs: prep → triage → fan-out (composed stack-aware rubrics per reviewer) → synthesis → verdict.
 
 ## Configure (optional, per repo)
 

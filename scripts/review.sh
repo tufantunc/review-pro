@@ -16,12 +16,6 @@ TARGET="$(pwd)"
 cmd="${1:-prep}"; shift || true
 
 detect_base(){
-  local cfg="$TARGET/review-pro.config"
-  if [[ -f "$cfg" ]]; then
-    local b
-    b="$(grep -E '^[[:space:]]*base:' "$cfg" 2>/dev/null | head -1 | sed -E 's/.*base:[[:space:]]*//; s/#.*//; s/[[:space:]]*$//')"
-    [[ -n "$b" ]] && { echo "$b"; return; }
-  fi
   if git -C "$TARGET" rev-parse --verify main >/dev/null 2>&1; then echo main
   elif git -C "$TARGET" rev-parse --verify master >/dev/null 2>&1; then echo master
   else echo HEAD; fi

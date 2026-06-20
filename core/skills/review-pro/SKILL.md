@@ -11,12 +11,12 @@ You are the **orchestrator**. Run the entire pipeline on the current branch in O
 ## Procedure
 
 ### 1. Prep (native — you do this, not the user)
-- **Base branch:** read `review-pro.config.scope.base` if present, else `main` (fall back to `master` if `main` doesn't exist).
-- **Changed files:** run `git diff --name-only <base>...HEAD` in your shell. Read each changed file's full contents with Read.
+- **Base branch:** `main`, falling back to `master` if `main` doesn't exist.
+- **Changed files:** run `git diff --name-only <base>...HEAD` in your shell. Read each changed file's full contents with Read. (git already excludes gitignored/generated paths from the diff.)
 - **Installed stacks:** `Glob .review-pro/*/manifest.json`. Each match is a stack the user installed (via `npx review-pro-stack`). These are the repo's **active stacks**. If `.review-pro/` is absent or empty, reviewers run on their core rubric only.
 
 ### 2. Triage (you, inline)
-Follow the `review-pro-triage` skill. Classify the changed files, detect concern relevance, and produce a **dispatch plan**: which reviewers to run + each one's scoped context (per `core/shared/context-policy.md`). Be conservative — when in doubt, dispatch. Intersect with `review-pro.config.enabled_reviewers` if present.
+Follow the `review-pro-triage` skill. Classify the changed files, detect concern relevance, and produce a **dispatch plan**: which reviewers to run + each one's scoped context (per `core/shared/context-policy.md`). Be conservative — when in doubt, dispatch.
 
 ### 3. Fan-out — reviewers (subagents, parallel)
 For each reviewer in the dispatch plan:

@@ -9,12 +9,11 @@ version: 0.1.0
 You are the orchestrator's first stage. You do NOT review code yourself. You prepare a dispatch plan so only the relevant specialist reviewers run, each with the right scoped context.
 
 ## Inputs
-- The diff: `git diff <base>...HEAD` (default base `main`, overridable via `review-pro.config.scope.base`).
+- The diff: `git diff <base>...HEAD` (base = `main`, falling back to `master`).
 - The changed-file list: `git diff --name-only <base>...HEAD`.
-- `review-pro.config` (optional): `enabled_reviewers`, `scope.ignore`, `stack_packs`.
 
 ## Steps
-1. **Gather** the diff and changed-file list (run git). Read full contents of changed files (respect `scope.ignore`).
+1. **Gather** the diff and changed-file list (run git). Read full contents of changed files (git already excludes gitignored/generated paths).
 2. **Classify each changed file** into buckets: `backend | frontend | test | db-migration | config-infra | docs | build-deps`.
 3. **Detect active stacks**: `Glob .review-pro/*/manifest.json` — each match is a stack the user installed (via `npx review-pro-stack`). These are the repo's `active_stacks`. (No auto-detection from `package.json` — stacks are explicitly installed per repo.) If `.review-pro/` is absent/empty, `active_stacks: []` and reviewers run core-only.
 4. **Decide which reviewers to dispatch** using the signal map below. Be conservative: when relevance is uncertain, dispatch. Skipping a real issue is worse than paying for one extra subagent.
@@ -45,7 +44,7 @@ dispatch:
 ```
 
 ## Output discipline
-Return ONLY the dispatch plan and a one-line summary. Do not review the code. Do not invent reviewers outside the roster in `manifest.json`. If `enabled_reviewers` is set, intersect your dispatch with it.
+Return ONLY the dispatch plan and a one-line summary. Do not review the code. Do not invent reviewers outside the roster in `manifest.json`.
 
 ## Stack signals (for Stage 2)
 For each dispatched reviewer and each active stack, the orchestrator (see the `review-pro` skill) Reads `.review-pro/<stack>/<reviewer>.md` if it exists, and passes the concatenated pack files to the reviewer subagent as its `### Stack signals` section. The subagent auto-loads its own core skill, so it gets core + stack signals. A reviewer with no pack file for any active stack simply runs core-only.

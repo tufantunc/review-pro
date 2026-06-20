@@ -47,10 +47,6 @@ See `stacks/README.md`.
 
 In opencode, open the repo you want to review (on the feature branch) and ask the session to review it, or invoke the **`review-pro`** skill. The agent runs the whole pipeline with its own tools — `git diff`, reads changed files, Globs `.review-pro/` for active stacks, dispatches reviewers (passing stack signals), and synthesizes the verdict. No env vars, no user-run scripts.
 
-## Configure (optional, per repo)
-
-Copy `review-pro.config.example` to `review-pro.config` and edit (enabled reviewers, severity gate, thresholds, base branch, ignore globs, stack packs).
-
 ## Validate
 
 ```bash

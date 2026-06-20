@@ -1,0 +1,17 @@
+# review-pro.config — copy to your repo and edit. All keys are optional.
+enabled_reviewers: [security, correctness, craft, ai-antipatterns, dry, performance,
+                    backend, frontend, a11y, db, api-contract, tests]   # default: all
+severity_gate: low         # nitpick | low | medium | high (minimum severity to report)
+thresholds:
+  max_file_lines: 1000     # craft reviewer 1k-line rule
+  max_function_lines: 150
+  max_cyclomatic: 15
+scope:
+  base: main               # diff base branch
+  ignore: [dist/**, vendor/**, "*.generated.*"]
+stack_packs: []            # override/extend detected stacks, e.g. [typescript-react, node]
+output:
+  format: markdown         # markdown | json | sarif (post-MVP)
+  target: terminal         # terminal | pr-comments (post-MVP) | sarif-file (post-MVP)
+triggers:
+  mode: full-pr            # full-pr | pre-commit (post-MVP)

@@ -1,0 +1,18 @@
+{
+  "name": "review-pro",
+  "version": "0.1.0",
+  "description": "Tiered AI code-review: triage -> relevant specialist reviewers -> synthesis. Cross-platform agnostic core + adapters.",
+  "license": "MIT",
+  "skills": [
+    { "name": "review-pro-triage", "role": "orchestrator" },
+    { "name": "review-pro-synthesize", "role": "orchestrator" },
+    { "name": "security", "role": "reviewer" },
+    { "name": "craft", "role": "reviewer" }
+  ],
+  "agents": [
+    { "name": "review-pro-triage-subagent", "loads_skill": "review-pro-triage" },
+    { "name": "review-pro-synthesize-subagent", "loads_skill": "review-pro-synthesize" },
+    { "name": "security-reviewer", "loads_skill": "security" },
+    { "name": "craft-reviewer", "loads_skill": "craft" }
+  ]
+}

@@ -7,12 +7,32 @@
     { "name": "review-pro-triage", "role": "orchestrator" },
     { "name": "review-pro-synthesize", "role": "orchestrator" },
     { "name": "security", "role": "reviewer" },
-    { "name": "craft", "role": "reviewer" }
+    { "name": "correctness", "role": "reviewer" },
+    { "name": "craft", "role": "reviewer" },
+    { "name": "ai-antipatterns", "role": "reviewer" },
+    { "name": "dry", "role": "reviewer" },
+    { "name": "performance", "role": "reviewer" },
+    { "name": "backend", "role": "reviewer" },
+    { "name": "frontend", "role": "reviewer" },
+    { "name": "a11y", "role": "reviewer" },
+    { "name": "db", "role": "reviewer" },
+    { "name": "api-contract", "role": "reviewer" },
+    { "name": "tests", "role": "reviewer" }
   ],
   "agents": [
     { "name": "review-pro-triage-subagent", "loads_skill": "review-pro-triage" },
     { "name": "review-pro-synthesize-subagent", "loads_skill": "review-pro-synthesize" },
     { "name": "security-reviewer", "loads_skill": "security" },
-    { "name": "craft-reviewer", "loads_skill": "craft" }
+    { "name": "correctness-reviewer", "loads_skill": "correctness" },
+    { "name": "craft-reviewer", "loads_skill": "craft" },
+    { "name": "ai-antipatterns-reviewer", "loads_skill": "ai-antipatterns" },
+    { "name": "dry-reviewer", "loads_skill": "dry" },
+    { "name": "performance-reviewer", "loads_skill": "performance" },
+    { "name": "backend-reviewer", "loads_skill": "backend" },
+    { "name": "frontend-reviewer", "loads_skill": "frontend" },
+    { "name": "a11y-reviewer", "loads_skill": "a11y" },
+    { "name": "db-reviewer", "loads_skill": "db" },
+    { "name": "api-contract-reviewer", "loads_skill": "api-contract" },
+    { "name": "tests-reviewer", "loads_skill": "tests" }
   ]
 }

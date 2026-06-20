@@ -6,7 +6,7 @@ import { info, fail } from "../lib/log.js";
 
 export async function runInteractive(opts: { where?: string }): Promise<void> {
   if (!process.stdin.isTTY) {
-    fail("interactive mode needs a TTY. Use `review-pro-stack add <stack>` in CI.");
+    fail("interactive mode needs a TTY. Use `review-pro add <stack>` in CI.");
     process.exit(2);
   }
   const repoRoot = path.resolve(opts.where || process.cwd());

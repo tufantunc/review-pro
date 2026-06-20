@@ -1,10 +1,10 @@
-# review-pro-stack CLI Implementation Plan
+# review-pro CLI Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship the `review-pro-stack` CLI (7 commands, opencode `init`, `doctor`) as a self-contained npm package from `cli/`, plus two guardrail rules in the validator.
+**Goal:** Ship the `review-pro` CLI (7 commands, opencode `init`, `doctor`) as a self-contained npm package from `cli/`, plus two guardrail rules in the validator.
 
-**Architecture:** Single repo, `cli/` subdirectory → npm package `review-pro-stack`. TypeScript + `@inquirer/prompts` + `commander` + `tsup` + `vitest`. Build bundles `dist` + `catalog` (from `stacks/`) + `plugin` (from `core/`) + generated `reviewers.json`. Version lives inside each stack's `manifest.json`. `init` is Node-native and replaces `adapters/opencode/install.sh`.
+**Architecture:** Single repo, `cli/` subdirectory → npm package `review-pro`. TypeScript + `@inquirer/prompts` + `commander` + `tsup` + `vitest`. Build bundles `dist` + `catalog` (from `stacks/`) + `plugin` (from `core/`) + generated `reviewers.json`. Version lives inside each stack's `manifest.json`. `init` is Node-native and replaces `adapters/opencode/install.sh`.
 
 **Tech Stack:** Node ≥18, TypeScript, ESM, `commander`, `@inquirer/prompts`, `tsup`, `vitest`.
 
@@ -130,12 +130,12 @@ git commit -m "test: guardrail — SKILL.md and agent frontmatter location rules
 
 ```json
 {
-  "name": "review-pro-stack",
+  "name": "review-pro",
   "version": "0.1.0",
   "description": "Installer CLI for review-pro: install core plugin + stack packs (.review-pro/).",
   "license": "MIT",
   "type": "module",
-  "bin": { "review-pro-stack": "dist/cli.js" },
+  "bin": { "review-pro": "dist/cli.js" },
   "files": ["dist", "catalog", "plugin"],
   "engines": { "node": ">=18" },
   "scripts": {
@@ -217,7 +217,7 @@ Expected: `node_modules/` created, no errors.
 
 ```bash
 git add cli/package.json cli/tsconfig.json cli/tsup.config.ts cli/.gitignore
-git commit -m "feat(cli): scaffold review-pro-stack package"
+git commit -m "feat(cli): scaffold review-pro package"
 ```
 (Do NOT commit `node_modules/` — it's gitignored.)
 
@@ -949,7 +949,7 @@ import { info, fail } from "../lib/log.js";
 
 export async function runInteractive(opts: { where?: string }): Promise<void> {
   if (!process.stdin.isTTY) {
-    fail("interactive mode needs a TTY. Use `review-pro-stack add <stack>` in CI.");
+    fail("interactive mode needs a TTY. Use `review-pro add <stack>` in CI.");
     process.exit(2);
   }
   const repoRoot = path.resolve(opts.where || process.cwd());
@@ -996,7 +996,7 @@ import { doctor } from "./commands/doctor.js";
 const program = new Command();
 
 program
-  .name("review-pro-stack")
+  .name("review-pro")
   .description("Install review-pro core plugin + stack packs (.review-pro/).")
   .option("--where <path>", "target repo path (default: cwd)")
   .action(async (opts) => { await runInteractive(opts); });
@@ -1133,7 +1133,7 @@ git rm adapters/opencode/install.sh
 ```markdown
 ## Install (one-time)
 ```bash
-npx review-pro-stack init
+npx review-pro init
 # or local dev:
 cd cli && npm install && npm run build && node dist/cli.js init
 ```
@@ -1145,8 +1145,8 @@ cd cli && npm install && npm run build && node dist/cli.js init
 ```markdown
 ## Install (opencode, one-time)
 ```bash
-npx review-pro-stack init          # installs core + lets you pick stacks
-npx review-pro-stack add node      # or add a stack non-interactively
+npx review-pro init          # installs core + lets you pick stacks
+npx review-pro add node      # or add a stack non-interactively
 ```
 Restart opencode, then in any repo open a branch and invoke the **`review-pro`** skill (or ask the session to review it). The agent does everything else natively.
 ```
@@ -1181,7 +1181,7 @@ git commit -m "feat(cli): remove install.sh, init replaces it; update docs"
 
 ## Task 13: Plan self-review (executing engineer)
 
-Confirm against `docs/superpowers/specs/2026-06-21-review-pro-stack-cli-design.md`:
+Confirm against `docs/superpowers/specs/2026-06-21-review-pro-cli-design.md`:
 - §4 version model → `manifest.json:version`, no lockfile. ✔ (Tasks 3, 11)
 - §5 commands → all 7 implemented. ✔ (Tasks 8, 9, 10)
 - §6 build → dist + catalog + plugin + reviewers.json. ✔ (Task 11)

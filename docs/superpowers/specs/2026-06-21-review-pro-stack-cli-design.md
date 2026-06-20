@@ -1,4 +1,4 @@
-# review-pro-stack CLI — Design Spec
+# review-pro CLI — Design Spec
 
 **Date:** 2026-06-21
 **Status:** Approved (brainstormed)
@@ -8,17 +8,17 @@
 
 ## 1. Purpose
 
-`review-pro-stack` is the one-command installer for the review-pro ecosystem. It replaces all user-run shell scripts (`install.sh`, `compose-rubric.sh` — the latter already removed). It:
+`review-pro` is the one-command installer for the review-pro ecosystem. It replaces all user-run shell scripts (`install.sh`, `compose-rubric.sh` — the latter already removed). It:
 
 - Installs the **core plugin** (skills + agents) into opencode (`init`).
 - Installs/removes/updates **stack packs** into a repo's `.review-pro/` (`add`/`remove`/`update`/interactive).
 - Validates installed packs (`doctor`).
 
-It ships as a **single npm package** (`review-pro-stack`) whose source lives in this repo under `cli/`. The plugin loaders are unaffected: only `core/skills/*/SKILL.md` and `core/agents/*.md` are ever loaded as plugin content.
+It ships as a **single npm package** (`review-pro`) whose source lives in this repo under `cli/`. The plugin loaders are unaffected: only `core/skills/*/SKILL.md` and `core/agents/*.md` are ever loaded as plugin content.
 
 ## 2. Decisions locked (from brainstorming)
 
-- **Same repo**, `cli/` subdirectory, npm package name `review-pro-stack`.
+- **Same repo**, `cli/` subdirectory, npm package name `review-pro`.
 - **Full command set** for v1: interactive default + `list` + `add` + `remove` + `update` + `init` + `doctor`.
 - **`init` is Node-native and cross-platform** (no bash) — targets opencode for v1; replaces `adapters/opencode/install.sh`.
 - **Version lives inside each stack**, not in a central lockfile: `"version"` in `stacks/<pack>/manifest.json`, copied verbatim into `.review-pro/<stack>/manifest.json`. Keeps the CLI optional (manual `cp` carries the version too).
@@ -32,7 +32,7 @@ review-pro/
   core/{skills,agents,shared}/      # plugin — unchanged
   stacks/<pack>/manifest.json       # catalog — now carries "version"
   adapters/opencode/install.sh      # REMOVED (init replaces it)
-  cli/                              # NEW — npm package "review-pro-stack"
+  cli/                              # NEW — npm package "review-pro"
     package.json                    # name, bin, files, scripts, deps
     tsconfig.json
     tsup.config.ts
@@ -81,7 +81,7 @@ Source packs gain the same field: `stacks/<pack>/manifest.json` → `{ "name", "
 
 All commands operate on **cwd** by default; `--where <path>` (global option) overrides the target repo path. `init` additionally targets the opencode home (`$OPENCODE_HOME` or `~/.config/opencode`), overridable via `--opencode-home <path>`.
 
-### `review-pro-stack` (no args, TTY)
+### `review-pro` (no args, TTY)
 Interactive multi-select of catalog stacks not yet installed → writes selected into `.review-pro/`. In non-TTY: prints help and exits non-zero (use `add` in CI).
 
 ### `list`
@@ -121,17 +121,17 @@ Also reports stacks present in `.review-pro/` but no longer in the catalog (orph
 `cli/package.json`:
 ```json
 {
-  "name": "review-pro-stack",
+  "name": "review-pro",
   "version": "0.1.0",
   "type": "module",
-  "bin": { "review-pro-stack": "dist/cli.js" },
+  "bin": { "review-pro": "dist/cli.js" },
   "files": ["dist", "catalog", "plugin"],
   "engines": { "node": ">=18" },
   "scripts": { "build": "tsup", "test": "vitest run", "prepublishOnly": "npm run build && npm test" }
 }
 ```
 
-`npm publish` from `cli/` ships only `dist` + `catalog` + `plugin` (slim, no source TS). `npx review-pro-stack` fetches this package.
+`npm publish` from `cli/` ships only `dist` + `catalog` + `plugin` (slim, no source TS). `npx review-pro` fetches this package.
 
 ## 7. Guardrail (validator, TDD)
 

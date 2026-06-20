@@ -1,10 +1,10 @@
 {
-  "name": "review-pro-stack",
+  "name": "review-pro",
   "version": "0.1.0",
   "description": "Installer CLI for review-pro: install core plugin + stack packs (.review-pro/).",
   "license": "MIT",
   "type": "module",
-  "bin": { "review-pro-stack": "dist/cli.js" },
+  "bin": { "review-pro": "dist/cli.js" },
   "files": ["dist", "catalog", "plugin"],
   "engines": { "node": ">=18" },
   "scripts": {

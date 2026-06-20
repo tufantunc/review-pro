@@ -10,7 +10,7 @@ import { doctor } from "./commands/doctor.js";
 const program = new Command();
 
 program
-  .name("review-pro-stack")
+  .name("review-pro")
   .description("Install review-pro core plugin + stack packs (.review-pro/).")
   .option("--where <path>", "target repo path (default: cwd)")
   .action(async (opts) => { await runInteractive(opts); });

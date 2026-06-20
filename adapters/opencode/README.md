@@ -1,12 +1,12 @@
 # review-pro — opencode adapter
 
-Installs the review-pro core (skills + subagents) into opencode via the `review-pro-stack` CLI.
+Installs the review-pro core (skills + subagents) into opencode via the `review-pro` CLI.
 
 ## Install (one-time)
 
 ```bash
-npx review-pro-stack init                 # installs core + interactive stack selection
-npx review-pro-stack init --no-stacks     # core only
+npx review-pro init                 # installs core + interactive stack selection
+npx review-pro init --no-stacks     # core only
 ```
 
 For local development (no published package yet):
@@ -22,8 +22,8 @@ node dist/cli.js init
 ## Install stacks (per repo)
 
 ```bash
-npx review-pro-stack             # interactive
-npx review-pro-stack add node    # non-interactive
+npx review-pro             # interactive
+npx review-pro add node    # non-interactive
 ```
 Stacks land in the reviewed repo's `.review-pro/`. See `stacks/README.md`.
 

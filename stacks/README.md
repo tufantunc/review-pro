@@ -30,8 +30,8 @@ At review time the orchestrator (`review-pro` skill) does everything natively wi
 The intended path is a separate community CLI (separate repo/package):
 
 ```bash
-npx review-pro-stack            # interactive: select stacks for this repo
-npx review-pro-stack add node   # non-interactive
+npx review-pro            # interactive: select stacks for this repo
+npx review-pro add node   # non-interactive
 ```
 
 It writes the selected packs into `.review-pro/`. It supports arbitrary languages/frameworks — not only Node (`.NET`, Flutter, Go, Rust, …). That CLI lives in its own repo; this core repo only defines the `.review-pro/` convention the agent reads.

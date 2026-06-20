@@ -9,7 +9,9 @@
     { "name": "security", "role": "reviewer" },
     { "name": "correctness", "role": "reviewer" },
     { "name": "craft", "role": "reviewer" },
-    { "name": "ai-antipatterns", "role": "reviewer" }
+    { "name": "ai-antipatterns", "role": "reviewer" },
+    { "name": "dry", "role": "reviewer" },
+    { "name": "performance", "role": "reviewer" }
   ],
   "agents": [
     { "name": "review-pro-triage-subagent", "loads_skill": "review-pro-triage" },
@@ -17,6 +19,8 @@
     { "name": "security-reviewer", "loads_skill": "security" },
     { "name": "correctness-reviewer", "loads_skill": "correctness" },
     { "name": "craft-reviewer", "loads_skill": "craft" },
-    { "name": "ai-antipatterns-reviewer", "loads_skill": "ai-antipatterns" }
+    { "name": "ai-antipatterns-reviewer", "loads_skill": "ai-antipatterns" },
+    { "name": "dry-reviewer", "loads_skill": "dry" },
+    { "name": "performance-reviewer", "loads_skill": "performance" }
   ]
 }

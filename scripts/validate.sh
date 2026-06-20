@@ -112,6 +112,8 @@ if [[ -d "$STACKS_DIR" ]] && command -v python3 >/dev/null 2>&1; then
       add_error "stacks/$pack_name/manifest.json: missing 'reviewers' list"
       continue
     fi
+    python3 -c "import json,sys; d=json.load(open(sys.argv[1])); assert isinstance(d.get('version'), str) and d['version']" "$pm" 2>/dev/null \
+      || add_error "stacks/$pack_name/manifest.json: missing 'version'"
     reviewers="$(python3 -c "import json;d=json.load(open('$pm'));print('\n'.join(d.get('reviewers',[])))" 2>/dev/null)"
     while IFS= read -r r; do
       [[ -n "$r" ]] || continue

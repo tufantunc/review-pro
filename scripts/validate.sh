@@ -6,7 +6,7 @@ set -uo pipefail
 if [[ $# -ge 1 ]]; then ROOT="$1"; else ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; fi
 SKILLS_DIR="$ROOT/core/skills"
 
-ORCHESTRATORS=("review-pro-triage" "review-pro-synthesize")
+ORCHESTRATORS=("review-pro" "review-pro-triage" "review-pro-synthesize")
 REQ_FM=("name" "description")
 REQ_SECTIONS=(
   "## Role & mandate"

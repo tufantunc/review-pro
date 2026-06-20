@@ -1,0 +1,25 @@
+{
+  "name": "review-pro-stack",
+  "version": "0.1.0",
+  "description": "Installer CLI for review-pro: install core plugin + stack packs (.review-pro/).",
+  "license": "MIT",
+  "type": "module",
+  "bin": { "review-pro-stack": "dist/cli.js" },
+  "files": ["dist", "catalog", "plugin"],
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build": "tsup && node build-assets.mjs",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^7.0.0",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

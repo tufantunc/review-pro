@@ -1,27 +1,52 @@
 # Stack packs
 
-A stack pack **supplements** a core reviewer rubric with language/framework-specific signals, remedies, severity notes, and examples. The core rubric defines the *lens*; the pack makes it concrete for a stack.
+Stack packs add **language/framework-specific signals** to a reviewer's core rubric (e.g. the security reviewer learns that `dangerouslySetInnerHTML` = XSS for React).
 
-## Composition (runtime)
+## How stacks work (per-repo, agent-native)
 
-A reviewer's **effective rubric** is composed by the orchestrator at dispatch time:
+Stacks are installed **per repo** into `.review-pro/` — NOT bundled with the core plugin and NOT requiring any scripts at review time.
 
 ```
-effective_rubric(<reviewer>) = core/skills/<reviewer>/SKILL.md
-                             + Σ stacks/<active_stack>/<reviewer>.md
+<your-repo>/.review-pro/
+  typescript-react/
+    manifest.json     { "name": "typescript-react", "reviewers": [...] }
+    security.md
+    correctness.md
+    ...
+  node/
+    manifest.json
+    ...
 ```
 
-Use `scripts/compose-rubric.sh` to render the effective rubric for a reviewer and a set of active stacks:
+At review time the orchestrator (`review-pro` skill) does everything natively with its own tools:
+1. `Glob .review-pro/*/manifest.json` → the repo's **active stacks**.
+2. For each dispatched reviewer, `Read .review-pro/<stack>/<reviewer>.md` (if present) → the reviewer's **stack signals**.
+3. Passes those as a `### Stack signals` section to the reviewer subagent, which auto-loads its core skill and applies the stack signals on top.
+
+**No shell scripts, no env vars, no plugin-path resolution at review time.** If `.review-pro/` is empty, reviewers run core-only.
+
+## Installing stacks
+
+The intended path is a separate community CLI (separate repo/package):
 
 ```bash
-scripts/compose-rubric.sh security typescript-react   # core security + ts-react security pack
+npx review-pro-stack            # interactive: select stacks for this repo
+npx review-pro-stack add node   # non-interactive
 ```
 
-Active stacks are determined per repo by triage (detected from manifests, merged with `review-pro.config.stack_packs`). A pack only contributes for reviewers where it has a file; reviewers without a pack file run on their core rubric alone.
+It writes the selected packs into `.review-pro/`. It supports arbitrary languages/frameworks — not only Node (`.NET`, Flutter, Go, Rust, …). That CLI lives in its own repo; this core repo only defines the `.review-pro/` convention the agent reads.
 
-## File format
+> Until the CLI ships, copy the packs you need manually: `cp -R stacks/<pack> <your-repo>/.review-pro/<pack>`.
 
-Each pack file is plain markdown:
+## This repo's `stacks/` directory
+
+`stacks/` here is the **canonical catalog / source of packs** plus working samples:
+- `stacks/typescript-react/` — React + TypeScript
+- `stacks/node/` — Node.js server
+
+These double as the reference packs the (future) installer sources from, and as samples for contributors writing new packs. Commit new packs here; they flow out to repos via the installer.
+
+## Pack file format
 
 ```markdown
 # Stack pack: <stack> — <reviewer>
@@ -35,24 +60,6 @@ extends: core/skills/<reviewer>/SKILL.md
 
 ## Stack-specific severity guidance
 - how this stack adjusts severity
-
-## Example
-...
 ```
 
-## Per-stack manifest
-
-Each pack directory has a `manifest.json` listing the reviewers it supplements (the validator checks every listed file exists and targets a real reviewer):
-
-```json
-{
-  "name": "typescript-react",
-  "description": "React + TypeScript signals for review-pro reviewers",
-  "reviewers": ["security", "correctness", "craft", "frontend", "a11y", "performance", "api-contract", "tests"]
-}
-```
-
-## Packs shipped (v0.1)
-
-- `typescript-react` — React + TypeScript
-- `node` — Node.js server
+Each pack dir has a `manifest.json` listing the reviewers it supplements. A pack only needs files for reviewers where it adds value (e.g. a `go` pack has no `frontend.md`).

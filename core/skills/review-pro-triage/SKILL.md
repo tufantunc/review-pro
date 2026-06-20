@@ -16,7 +16,7 @@ You are the orchestrator's first stage. You do NOT review code yourself. You pre
 ## Steps
 1. **Gather** the diff and changed-file list (run git). Read full contents of changed files (respect `scope.ignore`).
 2. **Classify each changed file** into buckets: `backend | frontend | test | db-migration | config-infra | docs | build-deps`.
-3. **Detect active stacks** (once): parse manifests (`package.json`, `go.mod`, `Cargo.toml`, `requirements.txt`/`pyproject.toml`, `Gemfile`, `pom.xml`). Merge with `review-pro.config.stack_packs`. Emit `active_stacks`.
+3. **Detect active stacks**: `Glob .review-pro/*/manifest.json` — each match is a stack the user installed (via `npx review-pro-stack`). These are the repo's `active_stacks`. (No auto-detection from `package.json` — stacks are explicitly installed per repo.) If `.review-pro/` is absent/empty, `active_stacks: []` and reviewers run core-only.
 4. **Decide which reviewers to dispatch** using the signal map below. Be conservative: when relevance is uncertain, dispatch. Skipping a real issue is worse than paying for one extra subagent.
 5. **Scope context per dispatched reviewer** per `core/shared/context-policy.md`: every reviewer gets diff + changed files; add the reviewer-specific scoped extras.
 6. **Emit the dispatch plan** (YAML below) and hand off to Stage 2 (fan-out). Do not run the reviewers inline unless the platform adapter requires it.
@@ -47,10 +47,6 @@ dispatch:
 ## Output discipline
 Return ONLY the dispatch plan and a one-line summary. Do not review the code. Do not invent reviewers outside the roster in `manifest.json`. If `enabled_reviewers` is set, intersect your dispatch with it.
 
-## Effective rubric composition (for Stage 2)
-For each dispatched reviewer, the orchestrator composes its effective rubric from the core skill plus the active stack packs:
-```
-effective_rubric(<reviewer>) = core/skills/<reviewer>/SKILL.md + Σ stacks/<active_stack>/<reviewer>.md
-```
-Use `scripts/compose-rubric.sh <reviewer> <stack...>` to render it (e.g. `compose-rubric.sh security typescript-react`). Pass the rendered rubric to the reviewer subagent as its `### Rubric` section. Reviewers with no pack file for an active stack simply run on their core rubric.
+## Stack signals (for Stage 2)
+For each dispatched reviewer and each active stack, the orchestrator (see the `review-pro` skill) Reads `.review-pro/<stack>/<reviewer>.md` if it exists, and passes the concatenated pack files to the reviewer subagent as its `### Stack signals` section. The subagent auto-loads its own core skill, so it gets core + stack signals. A reviewer with no pack file for any active stack simply runs core-only.
 

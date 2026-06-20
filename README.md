@@ -20,32 +20,19 @@ See `docs/superpowers/specs/2026-06-20-review-pro-design.md` for the full design
 
 ## Status (v0.1 — MVP)
 
-Complete: foundation + validation harness + shared docs + **all 12 specialist reviewers** + `review-pro` one-command orchestrator + `triage` & `synthesize` skills + subagents + the **opencode** adapter + **stack packs** (`typescript-react`, `node`).
+Complete: foundation + validation harness + shared docs + **all 12 specialist reviewers** + `review-pro` one-command orchestrator + `triage` & `synthesize` skills + subagents + the **opencode** adapter + **stack packs** (`typescript-react`, `node`) + the **`review-pro-stack` CLI** (`npx review-pro-stack`).
 
-Roadmap (post-MVP): `npx review-pro-stack` community CLI (separate repo) for per-repo stack install across any language/framework (.NET, Flutter, Go, Rust…), Cursor & Claude Code adapters, SARIF / PR-comment output, pre-commit mode.
+Roadmap (post-MVP): Cursor & Claude Code adapters / `init` targets, remote stack registry, `--json` output, pre-commit mode, more stack packs.
 
 ## Install (opencode, one-time)
 
 ```bash
-bash adapters/opencode/install.sh
+npx review-pro-stack init          # installs core + interactive stack selection
+npx review-pro-stack add node      # or add a stack non-interactively
 ```
-Copies `core/skills/**` and `core/agents/**` into `$OC_HOME/` for opencode discovery. Stack packs are **not** part of the plugin — they live per repo (see below).
+Restart opencode, then in any repo open a branch and invoke the **`review-pro`** skill (or ask the session to review it). The agent does everything else natively.
 
-## Install stacks (per repo)
-
-Stack packs add language/framework-specific signals. Install them into the reviewed repo's `.review-pro/`:
-
-```bash
-# via the community CLI (separate package, when shipped):
-npx review-pro-stack
-# or manually for now:
-mkdir -p .review-pro && cp -R ~/path/to/review-pro/stacks/node .review-pro/node
-```
-See `stacks/README.md`.
-
-## Run a review (one command — no scripts required)
-
-In opencode, open the repo you want to review (on the feature branch) and ask the session to review it, or invoke the **`review-pro`** skill. The agent runs the whole pipeline with its own tools — `git diff`, reads changed files, Globs `.review-pro/` for active stacks, dispatches reviewers (passing stack signals), and synthesizes the verdict. No env vars, no user-run scripts.
+> Local dev (no published package): `cd cli && npm install && npm run build && node dist/cli.js init`
 
 ## Validate
 

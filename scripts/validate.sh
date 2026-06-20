@@ -112,6 +112,8 @@ if [[ -d "$STACKS_DIR" ]] && command -v python3 >/dev/null 2>&1; then
       add_error "stacks/$pack_name/manifest.json: missing 'reviewers' list"
       continue
     fi
+    python3 -c "import json,sys; d=json.load(open(sys.argv[1])); assert isinstance(d.get('version'), str) and d['version']" "$pm" 2>/dev/null \
+      || add_error "stacks/$pack_name/manifest.json: missing 'version'"
     reviewers="$(python3 -c "import json;d=json.load(open('$pm'));print('\n'.join(d.get('reviewers',[])))" 2>/dev/null)"
     while IFS= read -r r; do
       [[ -n "$r" ]] || continue
@@ -125,6 +127,28 @@ if [[ -d "$STACKS_DIR" ]] && command -v python3 >/dev/null 2>&1; then
   done
   shopt -u nullglob
 fi
+
+# Guardrail: SKILL.md only under core/skills/ (skip build/deps dirs)
+shopt -s nullglob
+while IFS= read -r f; do
+  case "$f" in
+    "$SKILLS_DIR"/*/SKILL.md) ;;
+    *) add_error "$f: SKILL.md outside core/skills/";;
+  esac
+done < <(find "$ROOT" -name SKILL.md -type f \
+  -not -path '*/node_modules/*' -not -path '*/.git/*' \
+  -not -path '*/cli/plugin/*' -not -path '*/cli/dist/*' 2>/dev/null)
+
+# Guardrail: loads_skill: frontmatter only under core/agents/
+while IFS= read -r f; do
+  case "$f" in
+    "$AGENTS_DIR"/*.md) ;;
+    *) if head -n20 "$f" 2>/dev/null | grep -q '^loads_skill:'; then add_error "$f: agent frontmatter outside core/agents/"; fi;;
+  esac
+done < <(find "$ROOT" -name '*.md' -type f \
+  -not -path '*/node_modules/*' -not -path '*/.git/*' \
+  -not -path '*/cli/plugin/*' -not -path '*/cli/dist/*' 2>/dev/null)
+shopt -u nullglob
 
 [[ "$errors" -eq 0 ]] && { echo "OK: all artifacts valid"; exit 0; }
 exit 1

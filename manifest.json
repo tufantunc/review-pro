@@ -13,7 +13,9 @@
     { "name": "dry", "role": "reviewer" },
     { "name": "performance", "role": "reviewer" },
     { "name": "backend", "role": "reviewer" },
-    { "name": "frontend", "role": "reviewer" }
+    { "name": "frontend", "role": "reviewer" },
+    { "name": "a11y", "role": "reviewer" },
+    { "name": "db", "role": "reviewer" }
   ],
   "agents": [
     { "name": "review-pro-triage-subagent", "loads_skill": "review-pro-triage" },
@@ -25,6 +27,8 @@
     { "name": "dry-reviewer", "loads_skill": "dry" },
     { "name": "performance-reviewer", "loads_skill": "performance" },
     { "name": "backend-reviewer", "loads_skill": "backend" },
-    { "name": "frontend-reviewer", "loads_skill": "frontend" }
+    { "name": "frontend-reviewer", "loads_skill": "frontend" },
+    { "name": "a11y-reviewer", "loads_skill": "a11y" },
+    { "name": "db-reviewer", "loads_skill": "db" }
   ]
 }

@@ -1,0 +1,6 @@
+{
+  "name": "kotlin",
+  "version": "0.1.0",
+  "description": "Kotlin (Android + Ktor/Spring) signals for review-pro reviewers",
+  "reviewers": ["security", "correctness", "backend", "db", "performance", "tests"]
+}

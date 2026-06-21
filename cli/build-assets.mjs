@@ -20,4 +20,12 @@ const manifest = JSON.parse(fs.readFileSync(path.join(root, "manifest.json"), "u
 const reviewers = manifest.skills.filter((s) => s.role === "reviewer").map((s) => s.name);
 fs.writeFileSync(path.join(catalogDst, "reviewers.json"), JSON.stringify({ reviewers }, null, 2) + "\n");
 
-console.log(`built assets: ${reviewers.length} reviewers, catalog + plugin copied`);
+// Cursor plugin manifest (repo root .cursor-plugin/plugin.json) for flat-copy install.
+// installCore("cursor") looks it up at <pluginDir>/../.cursor-plugin/plugin.json, i.e. cli/.cursor-plugin/.
+const cursorManifestSrc = path.join(root, ".cursor-plugin", "plugin.json");
+if (fs.existsSync(cursorManifestSrc)) {
+  fs.mkdirSync(path.join(__dirname, ".cursor-plugin"), { recursive: true });
+  fs.cpSync(cursorManifestSrc, path.join(__dirname, ".cursor-plugin", "plugin.json"));
+}
+
+console.log(`built assets: ${reviewers.length} reviewers, catalog + plugin + cursor manifest copied`);

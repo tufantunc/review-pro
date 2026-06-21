@@ -1,12 +1,34 @@
 {
   "name": "review-pro",
   "version": "0.1.0",
-  "description": "Installer CLI for review-pro: install core plugin + stack packs (.review-pro/).",
+  "description": "Tiered AI code-review installer CLI: install the review-pro core (skills + subagents) into opencode, Claude Code, Cursor, Codex, plus stack packs.",
   "license": "MIT",
   "type": "module",
+  "author": "tufantunc (https://github.com/tufantunc)",
+  "homepage": "https://github.com/tufantunc/review-pro#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tufantunc/review-pro.git",
+    "directory": "cli"
+  },
+  "bugs": { "url": "https://github.com/tufantunc/review-pro/issues" },
+  "keywords": [
+    "code-review",
+    "ai",
+    "llm",
+    "agent",
+    "skills",
+    "subagents",
+    "security",
+    "opencode",
+    "cursor",
+    "claude-code",
+    "codex"
+  ],
   "bin": { "review-pro": "dist/cli.js" },
   "files": ["dist", "catalog", "plugin"],
   "engines": { "node": ">=18" },
+  "publishConfig": { "access": "public" },
   "scripts": {
     "build": "tsup && node build-assets.mjs",
     "test": "vitest run",

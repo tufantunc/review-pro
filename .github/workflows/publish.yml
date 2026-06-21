@@ -1,0 +1,46 @@
+name: Publish
+
+# Triggered ONLY by a `v*` git tag — never on branch pushes.
+# CI (build + tests) runs on every push via ci.yml; publishing is a deliberate release act.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          cache: npm
+          cache-dependency-path: cli/package-lock.json
+
+      - name: Install CLI deps
+        working-directory: cli
+        run: npm ci
+
+      - name: Build
+        working-directory: cli
+        run: npm run build
+
+      - name: Test
+        working-directory: cli
+        run: npm test
+
+      - name: Publish
+        working-directory: cli
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # NOTE: to enable npm provenance later (recommended for a security tool):
+      # 1) add `id-token: write` to this job's permissions
+      # 2) change the publish command to: npm publish --access public --provenance
+      # 3) on npmjs.com, configure provenance/trusted publishing for the package

@@ -1,0 +1,6 @@
+{
+  "name": "python",
+  "version": "0.1.0",
+  "description": "Python signals for review-pro reviewers",
+  "reviewers": ["security", "correctness", "craft", "backend", "db", "api-contract", "performance", "tests"]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "react-native",
+  "version": "0.1.0",
+  "description": "React Native signals for review-pro reviewers. Composes on top of typescript-react.",
+  "reviewers": ["frontend", "a11y", "performance", "tests"]
+}

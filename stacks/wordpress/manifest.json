@@ -1,0 +1,6 @@
+{
+  "name": "wordpress",
+  "version": "0.1.0",
+  "description": "WordPress signals (core + theme) for review-pro reviewers. Composes on top of php.",
+  "reviewers": ["security", "correctness", "craft", "performance", "tests"]
+}

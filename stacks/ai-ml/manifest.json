@@ -1,0 +1,6 @@
+{
+  "name": "ai-ml",
+  "version": "0.1.0",
+  "description": "AI/ML/LLM-app signals (model training, inference, LLM tooling) for review-pro reviewers",
+  "reviewers": ["security", "correctness", "craft", "backend", "performance", "tests"]
+}

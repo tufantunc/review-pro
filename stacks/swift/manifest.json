@@ -1,0 +1,6 @@
+{
+  "name": "swift",
+  "version": "0.1.0",
+  "description": "Swift (iOS/SwiftUI + Vapor) signals for review-pro reviewers",
+  "reviewers": ["security", "correctness", "backend", "db", "performance", "tests"]
+}

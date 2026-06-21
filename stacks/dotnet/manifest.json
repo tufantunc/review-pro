@@ -1,0 +1,6 @@
+{
+  "name": "dotnet",
+  "version": "0.1.0",
+  "description": ".NET (C# / ASP.NET Core / EF Core) signals for review-pro reviewers",
+  "reviewers": ["security", "correctness", "backend", "db", "performance", "tests"]
+}

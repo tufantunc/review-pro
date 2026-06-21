@@ -1,0 +1,6 @@
+{
+  "name": "flutter",
+  "version": "0.1.0",
+  "description": "Flutter (Dart) signals for review-pro reviewers",
+  "reviewers": ["frontend", "a11y", "performance", "tests"]
+}

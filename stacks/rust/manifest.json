@@ -1,0 +1,6 @@
+{
+  "name": "rust",
+  "version": "0.1.0",
+  "description": "Rust signals for review-pro reviewers",
+  "reviewers": ["security", "correctness", "backend", "db", "performance", "tests"]
+}

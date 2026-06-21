@@ -1,0 +1,6 @@
+{
+  "name": "php",
+  "version": "0.1.0",
+  "description": "PHP signals (plain PHP + framework-agnostic) for review-pro reviewers",
+  "reviewers": ["security", "correctness", "craft", "backend", "db", "performance", "tests"]
+}

@@ -2,6 +2,7 @@
 name: review-pro-triage-subagent
 description: Triage subagent (Stage 1). Classifies the diff, detects relevant reviewers + active stacks, scopes context, and emits a dispatch plan. Loads the review-pro-triage skill.
 loads_skill: review-pro-triage
+skills: [review-pro-triage]
 ---
 
 # Review-Pro Triage (subagent)

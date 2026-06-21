@@ -93,6 +93,10 @@ else
       if [[ -n "$ls_skill" ]] && [[ ! -f "$SKILLS_DIR/$ls_skill/SKILL.md" ]]; then
         add_error "$(basename "$a"): references missing skill '$ls_skill'"
       fi
+      skills_field="$(fm_get "$a" "skills")"
+      if [[ -n "$skills_field" ]] && ! echo "$skills_field" | grep -qwF "$ls_skill"; then
+        add_error "$(basename "$a"): skills: field must match loads_skill '$ls_skill'"
+      fi
     done
   else
     echo "WARN: python3 not found; skipping manifest/reference checks" >&2

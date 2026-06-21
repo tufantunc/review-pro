@@ -1,0 +1,15 @@
+{
+  "name": "review-pro",
+  "displayName": "Review-Pro",
+  "version": "0.1.0",
+  "description": "Tiered AI code-review: triage -> relevant specialist reviewers -> synthesis. Reviews AI-written code using AI agents.",
+  "author": { "name": "review-pro contributors" },
+  "homepage": "https://github.com/tufantunc/review-pro",
+  "repository": "https://github.com/tufantunc/review-pro",
+  "license": "MIT",
+  "category": "developer-tools",
+  "keywords": ["code-review", "security", "code-quality", "subagents", "ai-code"],
+  "tags": ["review", "quality", "shipping"],
+  "skills": "./core/skills/",
+  "agents": "./core/agents/"
+}

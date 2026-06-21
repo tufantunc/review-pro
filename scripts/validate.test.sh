@@ -185,6 +185,26 @@ out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "agent frontmatter outside core/agents"; then ok "stray agent frontmatter detected"; else bad "stray agent frontmatter not detected"; fi
 rm -rf "$T"
 
+# Case J: agent skills: field inconsistent with loads_skill: -> fail
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+cat > "$T/core/agents/security-reviewer.md" <<'EOF'
+---
+name: security-reviewer
+description: "x"
+loads_skill: security
+skills: [craft]
+---
+# body
+EOF
+cat > "$T/manifest.json" <<'EOF'
+{ "skills": [{"name":"security","role":"reviewer"}], "agents": [{"name":"security-reviewer","loads_skill":"security"}] }
+EOF
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "skills: field must match loads_skill"; then ok "agent skills/loads_skill mismatch detected"; else bad "mismatch not detected"; fi
+rm -rf "$T"
+
 echo "---"
 echo "pass=$pass fail=$fail"
 [[ "$fail" -eq 0 ]]

@@ -2,6 +2,7 @@
 name: review-pro-synthesize-subagent
 description: Synthesis subagent (Stage 3). Dedup, weight, resolve conflicts, calibrate severity, and produce the final verdict + report. Loads the review-pro-synthesize skill.
 loads_skill: review-pro-synthesize
+skills: [review-pro-synthesize]
 ---
 
 # Review-Pro Synthesis (subagent)

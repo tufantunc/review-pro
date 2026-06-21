@@ -20,14 +20,14 @@ afterEach(() => {
 
 describe("plugin", () => {
   it("installCore copies skills + agents into oc home", () => {
-    installCore(pluginSrc, ocHome);
+    installCore("opencode", pluginSrc, ocHome);
     expect(fs.existsSync(path.join(ocHome, "skills", "security", "SKILL.md"))).toBe(true);
     expect(fs.existsSync(path.join(ocHome, "agents", "security-reviewer.md"))).toBe(true);
   });
 
   it("installCore is idempotent", () => {
-    installCore(pluginSrc, ocHome);
-    expect(() => installCore(pluginSrc, ocHome)).not.toThrow();
+    installCore("opencode", pluginSrc, ocHome);
+    expect(() => installCore("opencode", pluginSrc, ocHome)).not.toThrow();
   });
 
   it("resolvePluginDir returns the provided arg", () => {

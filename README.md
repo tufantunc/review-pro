@@ -24,15 +24,13 @@ Complete: foundation + validation harness + shared docs + **all 12 specialist re
 
 Roadmap (post-MVP): Cursor & Claude Code adapters / `init` targets, remote stack registry, `--json` output, pre-commit mode, more stack packs.
 
-## Install (opencode, one-time)
+## Install (one-time)
 
 ```bash
-npx review-pro init          # installs core + interactive stack selection
-npx review-pro add node      # or add a stack non-interactively
+npx review-pro init                           # opencode (default)
+npx review-pro init --target claude-code      # or cursor | codex | all | auto
 ```
-Restart opencode, then in any repo open a branch and invoke the **`review-pro`** skill (or ask the session to review it). The agent does everything else natively.
-
-> Local dev (no published package): `cd cli && npm install && npm run build && node dist/cli.js init`
+Installs the review-pro core (skills + subagents) into the target platform's home from one canonical source. Codex agents are auto-transformed to TOML; the repo-root `.cursor-plugin/plugin.json` also lets Cursor `/add-plugin` it directly. Then `npx review-pro add <stack>` to install packs into `.review-pro/`, restart the tool, and invoke the **`review-pro`** skill.
 
 ## Validate
 

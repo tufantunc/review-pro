@@ -22,8 +22,8 @@ program.command("update [stack]").action((stack: string | undefined) => { update
 program
   .command("init")
   .option("--no-stacks", "install core only, skip stack selection")
-  .option("--opencode-home <path>", "opencode home (default: $OPENCODE_HOME or ~/.config/opencode)")
-  .action(async (opts: { stacks?: boolean; opencodeHome?: string }) => {
+  .option("-t, --target <platform>", "opencode | claude-code | cursor | codex | all | auto")
+  .action(async (opts: { stacks?: boolean; target?: string; opencodeHome?: string }) => {
     await init({ ...opts, ...program.opts() });
   });
 program.command("doctor").action(() => { doctor(program.opts()); });

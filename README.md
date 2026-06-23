@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/tufantunc/review-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/tufantunc/review-pro/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/review-pro)](https://www.npmjs.com/package/review-pro)
+[![website](https://img.shields.io/website?url=https%3A%2F%2Ftufantunc.github.io%2Freview-pro%2F&label=site)](https://tufantunc.github.io/review-pro/)
 [![license: MIT](https://img.shields.io/github/license/tufantunc/review-pro)](LICENSE)
 [![node](https://img.shields.io/node/v/review-pro)](https://www.npmjs.com/package/review-pro)
 [![platforms](https://img.shields.io/badge/platforms-opencode%20%7C%20Cursor%20%7C%20Claude%20Code%20%7C%20Codex-blue)](#install-one-time)

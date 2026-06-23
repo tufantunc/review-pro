@@ -1,5 +1,11 @@
 # review-pro
 
+[![CI](https://github.com/tufantunc/review-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/tufantunc/review-pro/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/review-pro)](https://www.npmjs.com/package/review-pro)
+[![license: MIT](https://img.shields.io/github/license/tufantunc/review-pro)](LICENSE)
+[![node](https://img.shields.io/node/v/review-pro)](https://www.npmjs.com/package/review-pro)
+[![platforms](https://img.shields.io/badge/platforms-opencode%20%7C%20Cursor%20%7C%20Claude%20Code%20%7C%20Codex-blue)](#install-one-time)
+
 Tiered AI code-review: **triage → relevant specialist reviewers → synthesis**. Built to review code written by AI agents — catching the issues AI-generated code actually ships with (hallucinated APIs, over-engineering, ignored conventions, needless dependencies), not just generic bugs.
 
 ## Why

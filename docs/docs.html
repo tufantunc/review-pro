@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Docs — review-pro</title>
+<meta name="description" content="review-pro documentation: install, stack packs, commands, manual install, running a review.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f6f7fb'/%3E%3Crect x='10.5' y='10.5' width='11' height='11' rx='2' transform='rotate(45 16 16)' fill='%234051d9'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<nav class="nav" aria-label="Primary">
+  <a class="brand" href="/review-pro/"><span class="brand__mark" aria-hidden="true"></span> review-pro</a>
+  <div class="nav__links">
+    <a href="/review-pro/#how">How it works</a>
+    <a href="/review-pro/#capabilities">Capabilities</a>
+    <a class="nav__keep is-active" href="docs.html">Docs</a>
+    <a href="https://github.com/tufantunc/review-pro" target="_blank" rel="noopener">GitHub</a>
+    <a class="nav__cta" href="#install">Install</a>
+  </div>
+</nav>
+
+<main class="docs wrap">
+  <aside class="toc" aria-label="On this page">
+    <p class="toc__title">On this page</p>
+    <ul>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#install">Install</a></li>
+      <li><a href="#manual-install">Manual install (no Node)</a></li>
+      <li><a href="#stack-packs">Stack packs</a></li>
+      <li><a href="#commands">Commands</a></li>
+      <li><a href="#run-a-review">Run a review</a></li>
+      <li><a href="#reviewers">The 12 reviewers</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+  </aside>
+
+  <article class="doc">
+    <h2 id="overview">Overview</h2>
+    <p>review-pro is a tiered AI code-review system: <strong>triage → relevant specialist reviewers → synthesis</strong>. It reviews code written by AI agents, using AI agents — built to catch the failure modes AI-generated code actually ships with: hallucinated APIs, over-engineering, ignored conventions, needless dependencies.</p>
+    <p>This CLI installs the review-pro core (12 reviewer skills + subagents + the <code>review-pro</code> orchestrator) into your agent tool, and the stack packs into your repo&rsquo;s <code>.review-pro/</code>. Supported targets: <strong>opencode · Claude Code · Cursor · Codex</strong>.</p>
+
+    <h2 id="install">Install</h2>
+    <p>One-time. Installs the core into a tool&rsquo;s home from one canonical source.</p>
+    <pre class="cmd"><code>npx review-pro init                           <span class="cmt"># opencode (default)</span>
+npx review-pro init <span class="prm">--target claude-code</span>      <span class="cmt"># or cursor | codex | all | auto</span></code></pre>
+    <h3>Per-platform notes</h3>
+    <ul>
+      <li><strong>opencode</strong> — skills to <code>~/.config/opencode/skills/</code>, agents to <code>~/.config/opencode/agents/</code> (<code>$OPENCODE_HOME</code> overrides).</li>
+      <li><strong>Claude Code</strong> — skills to <code>~/.claude/skills/</code>, agents to <code>~/.claude/agents/</code> (the agent <code>skills:</code> field preloads its rubric).</li>
+      <li><strong>Cursor</strong> — flat-copy into <code>~/.cursor/plugins/review-pro/&lt;version&gt;/</code>; or use Cursor <code>/add-plugin</code> on the repo directly (it ships a <code>.cursor-plugin/plugin.json</code>).</li>
+      <li><strong>Codex</strong> — skills to <code>~/.codex/skills/</code>, agents auto-transformed to <code>~/.codex/agents/*.toml</code> (<code>skills.config</code> wires each rubric).</li>
+    </ul>
+    <div class="callout"><p>Then add the stack packs you use (below), <strong>restart your tool</strong> so the new skills/agents are discovered, and run a review.</p></div>
+
+    <h2 id="manual-install">Manual install (no Node.js)</h2>
+    <p>review-pro is plain markdown skills and agents — no runtime dependency. If you don&rsquo;t have Node.js (or prefer not to use the CLI), copy the files by hand:</p>
+    <ol>
+      <li><strong>Core</strong> — copy <code>core/skills/&lt;name&gt;/</code> into your tool&rsquo;s skills folder, and <code>core/agents/*.md</code> into its agents folder (paths per platform above).</li>
+      <li><strong>Stack packs</strong> — copy <code>stacks/&lt;pack&gt;/</code> into the reviewed repo&rsquo;s <code>.review-pro/&lt;pack&gt;/</code>.</li>
+    </ol>
+    <pre class="cmd"><code><span class="cmt"># example: opencode core + python stack, by hand</span>
+cp -R core/skills/*           ~/.config/opencode/skills/
+cp    core/agents/*.md        ~/.config/opencode/agents/
+mkdir -p .review-pro &amp;&amp; cp -R stacks/python .review-pro/python</code></pre>
+    <p class="note">The CLI just automates these copies (plus the Codex <code>.md</code>→<code>.toml</code> transform and version tracking). Manual and CLI installs are equivalent.</p>
+
+    <h2 id="stack-packs">Stack packs</h2>
+    <p>Packs layer language/framework-specific signals onto the reviewers at review time. Install the ones a repo uses into its <code>.review-pro/</code>. Framework/domain packs compose on top of a language pack.</p>
+    <pre class="cmd"><code>npx review-pro                <span class="cmt"># interactive multi-select</span>
+npx review-pro add python     <span class="cmt"># one pack, CI-safe</span>
+npx review-pro list           <span class="cmt"># catalog + installed + drift</span></code></pre>
+    <p>Catalog (14): <code>python</code> · <code>go</code> · <code>rust</code> · <code>typescript-react</code> · <code>node</code> · <code>php</code> · <code>dotnet</code> · <code>kotlin</code> · <code>swift</code> · <code>flutter</code> · <code>nextjs</code> · <code>react-native</code> · <code>wordpress</code> · <code>ai-ml</code>. Examples: a Next.js repo activates <code>typescript-react</code> + <code>nextjs</code>; an LLM app activates <code>python</code> + <code>ai-ml</code>.</p>
+
+    <h2 id="commands">Commands</h2>
+    <table class="table">
+      <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>npx review-pro</code></td><td>Interactive — select stacks to install into <code>.review-pro/</code></td></tr>
+        <tr><td><code>init [--target &lt;platform&gt;]</code></td><td>Install the core plugin into a tool&rsquo;s home</td></tr>
+        <tr><td><code>add &lt;stack&gt;</code></td><td>Install one stack pack (non-interactive)</td></tr>
+        <tr><td><code>remove &lt;stack&gt;</code></td><td>Remove an installed pack</td></tr>
+        <tr><td><code>update [stack]</code></td><td>Refresh installed packs to the catalog version</td></tr>
+        <tr><td><code>list</code></td><td>Show catalog stacks + installed versions + drift</td></tr>
+        <tr><td><code>doctor</code></td><td>Validate installed packs (version drift, roster integrity, orphans)</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="run-a-review">Run a review</h2>
+    <p>After install + restart, in the repo you want to review (on a feature branch):</p>
+    <ul>
+      <li>ask the session to <strong>review this branch with review-pro</strong>, or</li>
+      <li>invoke the <strong><code>review-pro</code></strong> skill directly.</li>
+    </ul>
+    <p>The agent runs the whole pipeline natively — <code>git diff</code>, reads changed files, Globs <code>.review-pro/</code> for active stacks, dispatches the relevant reviewer subagents with their stack signals, and synthesizes one verdict: <strong>BLOCK / REQUEST CHANGES / APPROVE</strong>. No env vars, no scripts to run at review time.</p>
+
+    <h2 id="reviewers">The 12 reviewers</h2>
+    <p><code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code>. The <code>ai-antipatterns</code> reviewer is first-class: hallucinated APIs/symbols/imports, invented config/env keys, needless dependencies, and ignored existing helpers.</p>
+
+    <h2 id="faq">FAQ</h2>
+    <h3>Does it need Node.js?</h3>
+    <p>Only the installer CLI does (Node ≥ 18). The plugin itself is plain markdown skills and agents, so <a href="#manual-install">manual install</a> works without Node on any platform.</p>
+    <h3>How is this different from a single &ldquo;review this&rdquo; prompt?</h3>
+    <p>One prompt hands the whole diff to one agent and asks for everything. review-pro triages first, runs only the relevant specialists in parallel with scoped context, then synthesizes — so small changes stay cheap and large changes go deep, with severity calibrated against over-reporting.</p>
+    <h3>Where do stack packs come from?</h3>
+    <p>The catalog ships inside this package, snapshotted at publish time. New packs appear after a new version is published. See <code>stacks/CONTRIBUTING.md</code> in the repo to add your own.</p>
+    <h3>Is it really cross-platform?</h3>
+    <p>Yes — one canonical source installs into opencode, Claude Code, Cursor, and Codex. Codex agents are auto-transformed to TOML; the others consume the same markdown agents.</p>
+  </article>
+</main>
+
+<footer class="footer wrap">
+  <div class="footer__top">
+    <p class="footer__statement">Code review that thinks in stages.</p>
+    <div class="footer__links">
+      <a href="/review-pro/">Home</a>
+      <a href="docs.html">Docs</a>
+      <a href="https://github.com/tufantunc/review-pro" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://www.npmjs.com/package/review-pro" target="_blank" rel="noopener">npm</a>
+    </div>
+  </div>
+  <p class="footer__copy">MIT · review-pro · <a href="https://github.com/tufantunc/review-pro" style="color:inherit">github.com/tufantunc/review-pro</a></p>
+</footer>
+
+<script>
+  var io = new IntersectionObserver(function (es) {
+    es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });
+  }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
+  document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+  // active TOC link on scroll
+  var links = document.querySelectorAll('.toc a');
+  var map = {}; links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var headings = document.querySelectorAll('.doc h2[id]');
+  var obs = new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ links.forEach(function(l){l.classList.remove('is-active');}); var l=map[e.target.id]; if(l){l.classList.add('is-active');} } });
+  }, { rootMargin: "-20% 0px -75% 0px" });
+  headings.forEach(function(h){ obs.observe(h); });
+</script>
+</body>
+</html>

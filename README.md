@@ -1,10 +1,16 @@
 # review-pro
 
-Tiered AI code-review: **triage → relevant specialist reviewers → synthesis**. Reviews code written by AI agents, using AI agents. An open-source, cross-platform alternative to [cursor/plugins — thermos](https://github.com/cursor/plugins/tree/main/thermos).
+Tiered AI code-review: **triage → relevant specialist reviewers → synthesis**. Built to review code written by AI agents — catching the issues AI-generated code actually ships with (hallucinated APIs, over-engineering, ignored conventions, needless dependencies), not just generic bugs.
 
 ## Why
 
-`thermos` runs two reviewers on every review. review-pro runs a **triage** stage first, then dispatches only the **relevant specialists**, each with **scoped context** (not the whole diff), then **synthesizes** one verdict. This keeps small PRs cheap and large PRs deep, and adds an **AI-code anti-patterns** lens that thermos lacks.
+Most "review this" prompts hand one agent the whole diff and ask for everything. review-pro is tiered, so small changes stay cheap and large changes go deep:
+
+- **Triage** classifies the diff, dispatches only the **relevant specialists**, and scopes each one's context — a reviewer gets exactly what it needs (callers, repo search, schema, consumers), not the whole repo.
+- **12 specialist reviewers** each own a single concern — `security`, `correctness`, `craft`, `ai-antipatterns`, `dry`, `performance`, `backend`, `frontend`, `a11y`, `db`, `api-contract`, `tests` — and run in parallel, returning structured, evidence-backed findings.
+- **Synthesis** dedups overlaps, resolves cross-reviewer conflicts by domain ownership, calibrates severity (anti-overreporting), and emits one verdict: **BLOCK / REQUEST CHANGES / APPROVE**.
+
+The **AI-code anti-patterns** lens is first-class: hallucinated APIs/symbols, invented config keys, needless dependencies, and ignored existing helpers — the failure modes that come from code being written by an agent rather than a person.
 
 ## Architecture
 
@@ -18,11 +24,11 @@ triage (Stage 1) -> fan-out (Stage 2, parallel specialists) -> synthesis (Stage 
 
 See `docs/superpowers/specs/2026-06-20-review-pro-design.md` for the full design.
 
-## Status (v0.1 — MVP)
+## Status (v0.1)
 
-Complete: foundation + validation harness + shared docs + **12 specialist reviewers** + `review-pro` one-command orchestrator + `triage` & `synthesize` skills + subagents + the **`review-pro` CLI** (`npx review-pro`) + **cross-platform `init`** (opencode, Claude Code, Cursor, Codex) + **14 stack packs**.
+Complete: foundation + validation harness + shared docs + **12 specialist reviewers** + `review-pro` one-command orchestrator + `triage` & `synthesize` skills + subagents + the **`review-pro` CLI** (`npx review-pro`) + **cross-platform `init`** (opencode, Claude Code, Cursor, Codex) + **14 stack packs**. Published as [`review-pro` on npm](https://www.npmjs.com/package/review-pro).
 
-Roadmap (post-MVP): `npx review-pro` npm publish (currently local build), pre-commit mode, CI/headless execution mode (the prerequisite for `--json`/SARIF output), more stack packs.
+Roadmap (post-MVP): pre-commit mode, CI/headless execution mode (the prerequisite for `--json`/SARIF output), more stack packs.
 
 ## Install (one-time)
 
@@ -65,3 +71,9 @@ bash scripts/validate.test.sh # validator unit tests
 ## License
 
 MIT. See `LICENSE`.
+
+---
+
+## Acknowledgements
+
+review-pro started from an idea inspired by [cursor/plugins — thermos](https://github.com/cursor/plugins/tree/main/thermos), a two-reviewer Cursor plugin. It is an independent project — not a fork or a drop-in alternative: a tiered 12-reviewer system with stack packs and a cross-platform installer CLI.

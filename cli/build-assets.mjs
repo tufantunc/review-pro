@@ -13,6 +13,11 @@ const pluginDst = path.join(__dirname, "plugin");
 fs.rmSync(catalogDst, { recursive: true, force: true });
 fs.rmSync(pluginDst, { recursive: true, force: true });
 fs.cpSync(path.join(root, "stacks"), catalogDst, { recursive: true });
+// stacks/ ships repo docs (README.md, CONTRIBUTING.md) that aren't part of the
+// installer payload — drop them from the bundled catalog. (.npmignore can't,
+// because `catalog` is listed as a directory in package.json `files`.)
+fs.rmSync(path.join(catalogDst, "README.md"), { force: true });
+fs.rmSync(path.join(catalogDst, "CONTRIBUTING.md"), { force: true });
 fs.cpSync(path.join(root, "core"), pluginDst, { recursive: true });
 
 // reviewers.json from repo manifest.json (reviewer-role skills only)

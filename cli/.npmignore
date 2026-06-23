@@ -1,4 +1,0 @@
-# These live in the catalog because build-assets.mjs copies stacks/ wholesale,
-# but they're repo docs, not part of the published installer payload.
-catalog/README.md
-catalog/CONTRIBUTING.md

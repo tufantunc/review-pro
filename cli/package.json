@@ -1,6 +1,6 @@
 {
   "name": "review-pro",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Tiered AI code-review installer CLI: install the review-pro core (skills + subagents) into opencode, Claude Code, Cursor, Codex, plus stack packs.",
   "license": "MIT",
   "type": "module",

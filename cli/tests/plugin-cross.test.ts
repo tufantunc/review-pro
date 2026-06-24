@@ -34,30 +34,26 @@ describe("installCore per target", () => {
     expect(fs.existsSync(path.join(H("claude-code"), "agents", "security-reviewer.md"))).toBe(true);
   });
 
-  it("cursor flat-copies into plugins/review-pro/<ver>/ + skills + agents", () => {
-    installCore("cursor", pluginSrc, H("cursor"));
-    const dirs = fs.readdirSync(path.join(H("cursor"), "plugins", "review-pro"));
-    expect(dirs.length).toBeGreaterThan(0);
-    const ver = dirs[0];
-    expect(fs.existsSync(path.join(H("cursor"), "plugins", "review-pro", ver, "skills", "security", "SKILL.md"))).toBe(true);
-    expect(fs.existsSync(path.join(H("cursor"), "plugins", "review-pro", ver, "agents", "security-reviewer.md"))).toBe(true);
-  });
-
-  it("codex copies skills + transforms agents to .toml", () => {
-    installCore("codex", pluginSrc, H("codex"));
+  it("codex copies skills to skillsHome and transforms agents to .toml", () => {
+    installCore("codex", pluginSrc, H("codex"), path.join(H("codex"), "skills"));
     expect(fs.existsSync(path.join(H("codex"), "skills", "security", "SKILL.md"))).toBe(true);
     const toml = path.join(H("codex"), "agents", "security-reviewer.toml");
     expect(fs.existsSync(toml)).toBe(true);
     const content = fs.readFileSync(toml, "utf8");
     expect(content).toContain('name = "security-reviewer"');
-    expect(content).toContain('path = ');
+    expect(content).not.toContain('[[skills.config]]');
   });
 
   it("codex skips orchestrator subagents (triage/synthesize)", () => {
     fs.writeFileSync(path.join(pluginSrc, "agents", "review-pro-triage-subagent.md"),
       "---\nname: review-pro-triage-subagent\ndescription: \"x\"\nloads_skill: review-pro-triage\nskills: [review-pro-triage]\n---\n# body\n");
-    installCore("codex", pluginSrc, H("codex2"));
+    installCore("codex", pluginSrc, H("codex2"), path.join(H("codex2"), "skills"));
     expect(fs.existsSync(path.join(H("codex2"), "agents", "review-pro-triage-subagent.toml"))).toBe(false);
+  });
+
+  it("cursor is a no-op (installed via /add-plugin)", () => {
+    installCore("cursor", pluginSrc, H("cursor"));
+    expect(fs.existsSync(path.join(H("cursor"), "plugins"))).toBe(false);
   });
 
   it("detectInstalled returns targets whose homes exist", () => {

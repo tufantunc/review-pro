@@ -52,8 +52,8 @@ npx review-pro init <span class="prm">--target claude-code</span>      <span cla
     <ul>
       <li><strong>opencode</strong> — skills to <code>~/.config/opencode/skills/</code>, agents to <code>~/.config/opencode/agents/</code> (<code>$OPENCODE_HOME</code> overrides).</li>
       <li><strong>Claude Code</strong> — skills to <code>~/.claude/skills/</code>, agents to <code>~/.claude/agents/</code> (the agent <code>skills:</code> field preloads its rubric).</li>
-      <li><strong>Cursor</strong> — flat-copy into <code>~/.cursor/plugins/review-pro/&lt;version&gt;/</code>; or use Cursor <code>/add-plugin</code> on the repo directly (it ships a <code>.cursor-plugin/plugin.json</code>).</li>
-      <li><strong>Codex</strong> — skills to <code>~/.codex/skills/</code>, agents auto-transformed to <code>~/.codex/agents/*.toml</code> (<code>skills.config</code> wires each rubric).</li>
+      <li><strong>Cursor</strong> — installed via Cursor <code>/add-plugin</code>; run <code>/add-plugin https://github.com/tufantunc/review-pro</code> in Cursor (the repo ships a <code>.cursor-plugin/plugin.json</code>).</li>
+      <li><strong>Codex</strong> — skills to <code>~/.agents/skills/</code>, agents auto-transformed to <code>~/.codex/agents/*.toml</code>. Codex auto-discovers skills; agents inherit the session skill set.</li>
     </ul>
     <div class="callout"><p>Then add the stack packs you use (below), <strong>restart your tool</strong> so the new skills/agents are discovered, and run a review.</p></div>
 

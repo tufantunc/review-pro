@@ -61,14 +61,14 @@ function copyAgentsMd(src: string, dst: string): void {
   }
 }
 
-function installCodexAgents(src: string, dst: string, skillsAbsDir: string): void {
+function installCodexAgents(src: string, dst: string): void {
   if (!fs.existsSync(src)) return;
   fs.mkdirSync(dst, { recursive: true });
   for (const a of fs.readdirSync(src)) {
     if (!a.endsWith(".md")) continue;
     const agent = parseAgentMd(fs.readFileSync(path.join(src, a), "utf8"));
     if (ORCHESTRATOR_SKILLS.has(agent.loads_skill)) continue;
-    fs.writeFileSync(path.join(dst, `${agent.name}.toml`), mdToCodexToml(agent, skillsAbsDir));
+    fs.writeFileSync(path.join(dst, `${agent.name}.toml`), mdToCodexToml(agent));
   }
 }
 
@@ -76,6 +76,7 @@ export function installCore(
   target: Target,
   pluginDir: string = resolvePluginDir(),
   home: string = resolveHome(target),
+  skillsHome?: string,
 ): void {
   const skillsSrc = path.join(pluginDir, "skills");
   const agentsSrc = path.join(pluginDir, "agents");
@@ -88,21 +89,14 @@ export function installCore(
       return;
     }
     case "cursor": {
-      const ver = cliVersion();
-      const dest = path.join(home, "plugins", "review-pro", ver);
-      fs.rmSync(dest, { recursive: true, force: true });
-      copySkills(skillsSrc, path.join(dest, "skills"));
-      copyAgentsMd(agentsSrc, path.join(dest, "agents"));
-      const manifest = path.resolve(pluginDir, "..", ".cursor-plugin", "plugin.json");
-      if (fs.existsSync(manifest)) {
-        fs.mkdirSync(path.join(dest, ".cursor-plugin"), { recursive: true });
-        fs.cpSync(manifest, path.join(dest, ".cursor-plugin", "plugin.json"));
-      }
+      // Cursor plugins are installed via /add-plugin, not filesystem copy.
+      // The caller (init.ts) prints the guidance message.
       return;
     }
     case "codex": {
-      copySkills(skillsSrc, path.join(home, "skills"));
-      installCodexAgents(agentsSrc, path.join(home, "agents"), path.join(home, "skills"));
+      const sHome = skillsHome || path.join(os.homedir(), ".agents", "skills");
+      copySkills(skillsSrc, sHome);
+      installCodexAgents(agentsSrc, path.join(home, "agents"));
       return;
     }
   }

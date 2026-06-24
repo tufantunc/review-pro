@@ -22,13 +22,14 @@ describe("agents", () => {
     expect(a.body).toContain("review-pro subagent");
   });
 
-  it("transforms to codex toml with resolved skill path", () => {
+  it("transforms to codex toml without skills.config", () => {
     const a = parseAgentMd(MD);
-    const toml = mdToCodexToml(a, "/home/.codex/skills");
+    const toml = mdToCodexToml(a);
     expect(toml).toContain('name = "security-reviewer"');
     expect(toml).toContain('sandbox_mode = "read-only"');
     expect(toml).toContain('developer_instructions = """');
-    expect(toml).toContain('path = "/home/.codex/skills/security/SKILL.md"');
+    expect(toml).not.toContain('[[skills.config]]');
+    expect(toml).not.toContain('path =');
   });
 
   it("throws on missing frontmatter", () => {

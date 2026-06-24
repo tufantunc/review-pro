@@ -33,15 +33,12 @@ export function parseAgentMd(content: string): CanonicalAgent {
   };
 }
 
-export function mdToCodexToml(a: CanonicalAgent, skillsAbsDir: string): string {
-  const skillPath = path.join(skillsAbsDir, a.loads_skill, "SKILL.md");
+export function mdToCodexToml(a: CanonicalAgent): string {
   return `name = ${JSON.stringify(a.name)}
 description = ${JSON.stringify(a.description)}
 sandbox_mode = "read-only"
 developer_instructions = """
 ${a.body}
 """
-[[skills.config]]
-path = ${JSON.stringify(skillPath)}
 `;
 }

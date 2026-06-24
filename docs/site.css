@@ -74,11 +74,11 @@ code, kbd, pre { font-family: var(--font-outlier); }
 .brand { display: inline-flex; align-items: center; gap: 0.55rem; text-decoration: none; font-family: var(--font-display); font-weight: 600; letter-spacing: -0.015em; color: var(--color-ink); font-size: 1.05rem; }
 .brand__mark { width: 12px; height: 12px; background: var(--color-accent); border-radius: 3px; display: inline-block; transform: rotate(45deg); }
 .nav__links { display: flex; align-items: center; gap: 0.2rem; }
-.nav__links a {
+.nav__links a:not(.nav__cta) {
   font-size: 0.94rem; color: var(--color-muted); text-decoration: none;
   padding: 0.45rem 0.7rem; border-radius: 8px; white-space: nowrap;
 }
-.nav__links a:hover { color: var(--color-ink); background: var(--color-paper-2); }
+.nav__links a:not(.nav__cta):hover { color: var(--color-ink); background: var(--color-paper-2); }
 .nav__links a.is-active { color: var(--color-accent); }
 .nav__cta {
   font-family: var(--font-outlier); font-size: 0.82rem; letter-spacing: 0.01em;

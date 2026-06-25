@@ -34,28 +34,33 @@
       <a class="btn" href="docs.html">Read the docs</a>
     </div>
   </div>
-  <div class="demo reveal" id="demo" role="img" aria-label="Animated demo of review-pro running a code review">
-    <div class="demo__line demo__line--cmd">$ review-pro</div>
-    <div class="demo__line"></div>
-    <div class="demo__line demo__line--stage">→ triage</div>
-    <div class="demo__line demo__line--muted">  3 files changed · 5 reviewers dispatched</div>
-    <div class="demo__line"></div>
-    <div class="demo__line demo__line--ok">  security       ✓ 2 findings</div>
-    <div class="demo__line demo__line--ok">  correctness    ✓ 1 finding</div>
-    <div class="demo__line demo__line--ok">  craft          ✓ 1 finding</div>
-    <div class="demo__line demo__line--muted">  performance    ✓ clean</div>
-    <div class="demo__line demo__line--ok">  tests          ✓ 1 finding</div>
-    <div class="demo__line"></div>
-    <div class="demo__line demo__line--stage">→ synthesis</div>
-    <div class="demo__line demo__line--rule">  ───────────────────────────────────</div>
-    <div class="demo__line demo__line--warn">  VERDICT: REQUEST CHANGES</div>
-    <div class="demo__line"></div>
-    <div class="demo__line demo__line--hi">  [H] handler.ts:42   unvalidated input</div>
-    <div class="demo__line demo__line--hi">  [H] range.ts:14     off-by-one bug</div>
-    <div class="demo__line demo__line--warn">  [M] Big.tsx:1       file crosses 1k lines</div>
-    <div class="demo__line demo__line--rule">  ───────────────────────────────────</div>
-    <div class="demo__line"></div>
-    <div class="demo__line demo__line--muted">  flagged by: security, correctness, craft<span class="demo__cursor"></span></div>
+  <div class="demo reveal" id="demo" role="img" aria-label="Animated demo of review-pro running a code review in an agent session">
+    <div class="demo__user demo__reveal">
+      <div class="demo__avatar">U</div>
+      <div class="demo__user-body">Review this branch with review-pro</div>
+    </div>
+    <div class="demo__agent demo__reveal" id="d-triage">
+      <div class="demo__stage">Triage</div>
+      <div class="demo__text">3 files changed · dispatching 5 reviewers</div>
+    </div>
+    <div class="demo__agent demo__reveal" id="d-fanout">
+      <div class="demo__stage">Fan-out — 5 reviewers in parallel</div>
+      <div class="demo__reviewer" data-r><span class="demo__dot demo__dot--working"></span><span class="demo__name">security</span><span class="demo__result">2 findings</span></div>
+      <div class="demo__reviewer" data-r><span class="demo__dot demo__dot--working"></span><span class="demo__name">correctness</span><span class="demo__result">1 finding</span></div>
+      <div class="demo__reviewer" data-r><span class="demo__dot demo__dot--working"></span><span class="demo__name">craft</span><span class="demo__result">1 finding</span></div>
+      <div class="demo__reviewer" data-r><span class="demo__dot demo__dot--working"></span><span class="demo__name">performance</span><span class="demo__result">clean</span></div>
+      <div class="demo__reviewer" data-r><span class="demo__dot demo__dot--working"></span><span class="demo__name">tests</span><span class="demo__result">1 finding</span></div>
+    </div>
+    <div class="demo__agent demo__reveal" id="d-synth">
+      <div class="demo__stage">Synthesis</div>
+      <div class="demo__text">dedup · calibrate · verdict</div>
+    </div>
+    <div class="demo__verdict demo__reveal" id="d-verdict">
+      <div class="demo__verdict-label">Verdict: Request Changes</div>
+      <div class="demo__finding"><span class="demo__sev demo__sev--h">[H]</span><span><span class="demo__file">handler.ts:42</span> <span class="demo__finding-desc">unvalidated user input</span></span></div>
+      <div class="demo__finding"><span class="demo__sev demo__sev--h">[H]</span><span><span class="demo__file">range.ts:14</span> <span class="demo__finding-desc">off-by-one excludes last element</span></span></div>
+      <div class="demo__finding"><span class="demo__sev demo__sev--m">[M]</span><span><span class="demo__file">Big.tsx:1</span> <span class="demo__finding-desc">file crosses 1000 lines</span></span></div>
+    </div>
   </div>
 </header>
 
@@ -148,48 +153,70 @@ npx review-pro add <span class="prm">python</span>            <span class="cmt">
   }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
   document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
 
-  // --- Animated CLI demo ---
+  // --- Animated agent-harness demo ---
   (function () {
     var demo = document.getElementById('demo');
     if (!demo) return;
-    var lines = demo.querySelectorAll('.demo__line');
-    var cursor = demo.querySelector('.demo__cursor');
+    var reveals = demo.querySelectorAll('.demo__reveal');
+    var reviewers = demo.querySelectorAll('[data-r]');
+    var dots = demo.querySelectorAll('[data-r] .demo__dot');
+    var results = demo.querySelectorAll('[data-r] .demo__result');
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    // per-line delays (ms) — controls the pace of the demo
-    var delays = [400, 300, 500, 600, 200, 300, 300, 300, 300, 300, 300, 500, 200, 400, 200, 400, 400, 400, 200, 300];
+
+    function reset() {
+      reveals.forEach(function (el) { el.classList.remove('is-on'); });
+      dots.forEach(function (d) { d.classList.remove('demo__dot--done'); d.classList.add('demo__dot--working'); });
+      results.forEach(function (r) { r.classList.remove('is-show'); });
+    }
+
+    function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
     function play() {
-      lines.forEach(function (l) { l.classList.remove('is-on'); });
-      if (cursor) cursor.classList.add('is-hidden');
-      var i = 0;
-      function next() {
-        if (i >= lines.length) {
-          if (cursor) cursor.classList.remove('is-hidden');
-          setTimeout(play, 3500);
-          return;
+      reset();
+      delay(300).then(function () {
+        reveals[0].classList.add('is-on');                   // user prompt
+        return delay(600);
+      }).then(function () {
+        reveals[1].classList.add('is-on');                   // triage
+        return delay(550);
+      }).then(function () {
+        reveals[2].classList.add('is-on');                   // fan-out header
+        return delay(350);
+      }).then(function () {
+        // reviewers cascade: working dot → done + result
+        var chain = Promise.resolve();
+        for (var i = 0; i < reviewers.length; i++) {
+          chain = chain.then(function (idx) {
+            return function () {
+              dots[idx].classList.remove('demo__dot--working');
+              dots[idx].classList.add('demo__dot--done');
+              results[idx].classList.add('is-show');
+              return delay(220);
+            };
+          }(i));
         }
-        lines[i].classList.add('is-on');
-        i++;
-        setTimeout(next, delays[i] || 250);
-      }
-      next();
+        return chain;
+      }).then(function () {
+        reveals[3].classList.add('is-on');                   // synthesis
+        return delay(550);
+      }).then(function () {
+        reveals[4].classList.add('is-on');                   // verdict
+        return delay(3800);
+      }).then(play);
     }
 
     if (reduce) {
-      // show all immediately, no animation
-      lines.forEach(function (l) { l.classList.add('is-on'); });
-      if (cursor) cursor.classList.add('is-hidden');
+      reveals.forEach(function (el) { el.classList.add('is-on'); });
+      dots.forEach(function (d) { d.classList.remove('demo__dot--working'); d.classList.add('demo__dot--done'); });
+      results.forEach(function (r) { r.classList.add('is-show'); });
     } else {
       var started = false;
-      var visObs = new IntersectionObserver(function (es) {
+      var vis = new IntersectionObserver(function (es) {
         es.forEach(function (e) {
-          if (e.isIntersecting && !started) {
-            started = true;
-            play();
-          }
+          if (e.isIntersecting && !started) { started = true; play(); }
         });
       }, { threshold: 0.3 });
-      visObs.observe(demo);
+      vis.observe(demo);
     }
   })();
 </script>

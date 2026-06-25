@@ -176,6 +176,18 @@ npx review-pro add <span class="prm">python</span>            <span class="cmt">
 
     // Store all streamable text, then clear it (so JS controls the "typing")
     var streamEls = demo.querySelectorAll('[data-stream]');
+
+    // Measure the full-height (all content visible) to prevent layout shift during animation
+    demo.querySelectorAll('.demo__thinking').forEach(function (t) { t.classList.add('is-done'); });
+    demo.querySelectorAll('.demo__content').forEach(function (c) { c.classList.add('is-show'); });
+    demo.querySelectorAll('.demo__result').forEach(function (r) { r.classList.add('is-show'); });
+    demo.querySelectorAll('.demo__finding--reveal').forEach(function (f) { f.classList.add('is-on'); });
+    demo.style.minHeight = demo.scrollHeight + 'px';
+    demo.querySelectorAll('.demo__thinking').forEach(function (t) { t.classList.remove('is-done'); });
+    demo.querySelectorAll('.demo__content').forEach(function (c) { c.classList.remove('is-show'); });
+    demo.querySelectorAll('.demo__result').forEach(function (r) { r.classList.remove('is-show'); });
+    demo.querySelectorAll('.demo__finding--reveal').forEach(function (f) { f.classList.remove('is-on'); });
+
     streamEls.forEach(function (el) { el.dataset.text = el.textContent.trim(); el.textContent = ''; });
 
     function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }

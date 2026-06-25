@@ -39,27 +39,39 @@
       <div class="demo__avatar">U</div>
       <div class="demo__user-body">Review this branch with review-pro</div>
     </div>
-    <div class="demo__agent demo__reveal" id="d-triage">
+    <div class="demo__agent demo__reveal">
       <div class="demo__stage">Triage</div>
-      <div class="demo__text">3 files changed · dispatching 5 reviewers</div>
+      <div class="demo__thinking"><span></span><span></span><span></span></div>
+      <div class="demo__content">
+        <div class="demo__text">3 files changed · dispatching 5 reviewers</div>
+      </div>
     </div>
-    <div class="demo__agent demo__reveal" id="d-fanout">
+    <div class="demo__agent demo__reveal">
       <div class="demo__stage">Fan-out — 5 reviewers in parallel</div>
-      <div class="demo__reviewer" data-r><span class="demo__dot demo__dot--working"></span><span class="demo__name">security</span><span class="demo__result">2 findings</span></div>
-      <div class="demo__reviewer" data-r><span class="demo__dot demo__dot--working"></span><span class="demo__name">correctness</span><span class="demo__result">1 finding</span></div>
-      <div class="demo__reviewer" data-r><span class="demo__dot demo__dot--working"></span><span class="demo__name">craft</span><span class="demo__result">1 finding</span></div>
-      <div class="demo__reviewer" data-r><span class="demo__dot demo__dot--working"></span><span class="demo__name">performance</span><span class="demo__result">clean</span></div>
-      <div class="demo__reviewer" data-r><span class="demo__dot demo__dot--working"></span><span class="demo__name">tests</span><span class="demo__result">1 finding</span></div>
+      <div class="demo__thinking"><span></span><span></span><span></span></div>
+      <div class="demo__content">
+        <div class="demo__reviewer" data-r><span class="demo__dot demo__dot--working"></span><span class="demo__name">security</span><span class="demo__result">2 findings</span></div>
+        <div class="demo__reviewer" data-r><span class="demo__dot demo__dot--working"></span><span class="demo__name">correctness</span><span class="demo__result">1 finding</span></div>
+        <div class="demo__reviewer" data-r><span class="demo__dot demo__dot--working"></span><span class="demo__name">craft</span><span class="demo__result">1 finding</span></div>
+        <div class="demo__reviewer" data-r><span class="demo__dot demo__dot--working"></span><span class="demo__name">performance</span><span class="demo__result">clean</span></div>
+        <div class="demo__reviewer" data-r><span class="demo__dot demo__dot--working"></span><span class="demo__name">tests</span><span class="demo__result">1 finding</span></div>
+      </div>
     </div>
-    <div class="demo__agent demo__reveal" id="d-synth">
+    <div class="demo__agent demo__reveal">
       <div class="demo__stage">Synthesis</div>
-      <div class="demo__text">dedup · calibrate · verdict</div>
+      <div class="demo__thinking"><span></span><span></span><span></span></div>
+      <div class="demo__content">
+        <div class="demo__text">dedup · calibrate · verdict</div>
+      </div>
     </div>
-    <div class="demo__verdict demo__reveal" id="d-verdict">
-      <div class="demo__verdict-label">Verdict: Request Changes</div>
-      <div class="demo__finding"><span class="demo__sev demo__sev--h">[H]</span><span><span class="demo__file">handler.ts:42</span> <span class="demo__finding-desc">unvalidated user input</span></span></div>
-      <div class="demo__finding"><span class="demo__sev demo__sev--h">[H]</span><span><span class="demo__file">range.ts:14</span> <span class="demo__finding-desc">off-by-one excludes last element</span></span></div>
-      <div class="demo__finding"><span class="demo__sev demo__sev--m">[M]</span><span><span class="demo__file">Big.tsx:1</span> <span class="demo__finding-desc">file crosses 1000 lines</span></span></div>
+    <div class="demo__verdict demo__reveal">
+      <div class="demo__thinking"><span></span><span></span><span></span></div>
+      <div class="demo__content">
+        <div class="demo__verdict-label">Verdict: Request Changes</div>
+        <div class="demo__finding"><span class="demo__sev demo__sev--h">[H]</span><span><span class="demo__file">handler.ts:42</span> <span class="demo__finding-desc">unvalidated user input</span></span></div>
+        <div class="demo__finding"><span class="demo__sev demo__sev--h">[H]</span><span><span class="demo__file">range.ts:14</span> <span class="demo__finding-desc">off-by-one excludes last element</span></span></div>
+        <div class="demo__finding"><span class="demo__sev demo__sev--m">[M]</span><span><span class="demo__file">Big.tsx:1</span> <span class="demo__finding-desc">file crosses 1000 lines</span></span></div>
+      </div>
     </div>
   </div>
 </header>
@@ -153,60 +165,66 @@ npx review-pro add <span class="prm">python</span>            <span class="cmt">
   }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
   document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
 
-  // --- Animated agent-harness demo ---
+  // --- Animated agent-harness demo (thinking → result per stage) ---
   (function () {
     var demo = document.getElementById('demo');
     if (!demo) return;
     var reveals = demo.querySelectorAll('.demo__reveal');
-    var reviewers = demo.querySelectorAll('[data-r]');
     var dots = demo.querySelectorAll('[data-r] .demo__dot');
     var results = demo.querySelectorAll('[data-r] .demo__result');
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     function reset() {
       reveals.forEach(function (el) { el.classList.remove('is-on'); });
+      demo.querySelectorAll('.demo__thinking').forEach(function (t) { t.classList.remove('is-done'); });
+      demo.querySelectorAll('.demo__content').forEach(function (c) { c.classList.remove('is-show'); });
       dots.forEach(function (d) { d.classList.remove('demo__dot--done'); d.classList.add('demo__dot--working'); });
       results.forEach(function (r) { r.classList.remove('is-show'); });
     }
 
     function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
+    function stageDone(idx) {
+      var el = reveals[idx];
+      var t = el.querySelector('.demo__thinking');
+      var c = el.querySelector('.demo__content');
+      if (t) t.classList.add('is-done');
+      if (c) c.classList.add('is-show');
+    }
+
     function play() {
       reset();
-      delay(300).then(function () {
-        reveals[0].classList.add('is-on');                   // user prompt
-        return delay(600);
-      }).then(function () {
-        reveals[1].classList.add('is-on');                   // triage
-        return delay(550);
-      }).then(function () {
-        reveals[2].classList.add('is-on');                   // fan-out header
-        return delay(350);
-      }).then(function () {
-        // reviewers cascade: working dot → done + result
-        var chain = Promise.resolve();
-        for (var i = 0; i < reviewers.length; i++) {
-          chain = chain.then(function (idx) {
-            return function () {
-              dots[idx].classList.remove('demo__dot--working');
-              dots[idx].classList.add('demo__dot--done');
-              results[idx].classList.add('is-show');
-              return delay(220);
-            };
-          }(i));
-        }
-        return chain;
-      }).then(function () {
-        reveals[3].classList.add('is-on');                   // synthesis
-        return delay(550);
-      }).then(function () {
-        reveals[4].classList.add('is-on');                   // verdict
-        return delay(3800);
-      }).then(play);
+      delay(300)
+        .then(function () { reveals[0].classList.add('is-on'); return delay(500); })    // user
+        .then(function () { reveals[1].classList.add('is-on'); return delay(800); })    // triage thinking
+        .then(function () { stageDone(1); return delay(600); })                         // triage result
+        .then(function () { reveals[2].classList.add('is-on'); return delay(700); })    // fan-out thinking
+        .then(function () {
+          stageDone(2);                                                                  // reveal reviewer rows
+          var chain = delay(300);
+          for (var i = 0; i < dots.length; i++) {
+            chain = chain.then(function (idx) {
+              return function () {
+                dots[idx].classList.remove('demo__dot--working');
+                dots[idx].classList.add('demo__dot--done');
+                results[idx].classList.add('is-show');
+                return delay(200);
+              };
+            }(i));
+          }
+          return chain;
+        })
+        .then(function () { reveals[3].classList.add('is-on'); return delay(800); })    // synthesis thinking
+        .then(function () { stageDone(3); return delay(600); })                         // synthesis result
+        .then(function () { reveals[4].classList.add('is-on'); return delay(600); })    // verdict thinking
+        .then(function () { stageDone(4); return delay(3800); })                        // verdict result
+        .then(play);
     }
 
     if (reduce) {
       reveals.forEach(function (el) { el.classList.add('is-on'); });
+      demo.querySelectorAll('.demo__thinking').forEach(function (t) { t.classList.add('is-done'); });
+      demo.querySelectorAll('.demo__content').forEach(function (c) { c.classList.add('is-show'); });
       dots.forEach(function (d) { d.classList.remove('demo__dot--working'); d.classList.add('demo__dot--done'); });
       results.forEach(function (r) { r.classList.add('is-show'); });
     } else {

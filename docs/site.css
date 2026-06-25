@@ -155,6 +155,8 @@ code, kbd, pre { font-family: var(--font-outlier); }
 .demo__verdict { border: 1px solid var(--color-rule); border-radius: 10px; padding: 0.85rem 1rem; margin-top: 0.7rem; background: var(--color-paper); }
 .demo__verdict-label { font-family: var(--font-outlier); font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 0.5rem; }
 .demo__finding { display: grid; grid-template-columns: 1.5rem minmax(0,1fr); gap: 0.4rem; font-size: 0.78rem; padding: 0.18rem 0; align-items: baseline; }
+.demo__finding--reveal { opacity: 0; transition: opacity .3s ease; }
+.demo__finding--reveal.is-on { opacity: 1; }
 .demo__sev { font-family: var(--font-outlier); font-weight: 500; font-size: 0.72rem; }
 .demo__sev--h { color: oklch(48% 0.16 28); }
 .demo__sev--m { color: oklch(52% 0.13 60); }

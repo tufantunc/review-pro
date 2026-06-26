@@ -56,9 +56,18 @@ describe("installCore per target", () => {
     expect(fs.existsSync(path.join(H("cursor"), "plugins"))).toBe(false);
   });
 
-  it("detectInstalled returns targets whose homes exist", () => {
-    fs.mkdirSync(H("opencode"), { recursive: true });
-    const found = detectInstalled((t: Target) => H(t));
+  it("detectInstalled finds binaries in PATH (not stale dirs)", () => {
+    const origPath = process.env.PATH;
+    const binDir = fs.mkdtempSync(path.join(os.tmpdir(), "rp-bin-"));
+    const ext = process.platform === "win32" ? ".exe" : "";
+    fs.writeFileSync(path.join(binDir, "opencode" + ext), "");
+    fs.writeFileSync(path.join(binDir, "codex" + ext), "");
+    process.env.PATH = binDir;
+    const found = detectInstalled();
     expect(found).toContain("opencode");
+    expect(found).toContain("codex");
+    expect(found).not.toContain("claude-code");
+    process.env.PATH = origPath;
+    fs.rmSync(binDir, { recursive: true, force: true });
   });
 });

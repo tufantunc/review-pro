@@ -28,8 +28,38 @@ export function resolveHome(target: Target): string {
   }
 }
 
-export function detectInstalled(resolver: (t: Target) => string = resolveHome): Target[] {
-  return TARGETS.filter((t) => fs.existsSync(resolver(t)));
+const PLATFORM_BINARIES: Record<Target, string> = {
+  opencode: "opencode",
+  "claude-code": "claude",
+  cursor: "cursor",
+  codex: "codex",
+};
+
+function isBinaryInPath(binary: string): boolean {
+  const sep = process.platform === "win32" ? ";" : ":";
+  const exts = process.platform === "win32" ? [".exe", ".cmd", ".bat", ""] : [""];
+  const pathVar = process.env.PATH || process.env.Path || "";
+  return pathVar.split(sep).some(function (dir) {
+    return exts.some(function (ext) {
+      return fs.existsSync(path.join(dir, binary + ext));
+    });
+  });
+}
+
+function isMacOsAppInstalled(appName: string): boolean {
+  return process.platform === "darwin" && (
+    fs.existsSync(path.join("/Applications", appName)) ||
+    fs.existsSync(path.join(os.homedir(), "Applications", appName))
+  );
+}
+
+export function detectInstalled(): Target[] {
+  return TARGETS.filter(function (t) {
+    if (t === "cursor") {
+      return isBinaryInPath("cursor") || isMacOsAppInstalled("Cursor.app");
+    }
+    return isBinaryInPath(PLATFORM_BINARIES[t]);
+  });
 }
 
 function cliVersion(): string {

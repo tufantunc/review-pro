@@ -68,7 +68,7 @@ export async function init(opts: {
 
 function printRestart(): void {
   info("restart your agent tool so the new skills/agents are discovered.");
-  info("then trigger a review: \"review-pro ile bu branch'i incele\" or invoke the review-pro skill.");
+  info('then trigger a review: "review this branch with review-pro" or invoke the review-pro skill.');
 }
 
 async function selectPlatforms(): Promise<Target[]> {

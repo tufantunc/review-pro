@@ -29,7 +29,7 @@ Stacks land in the reviewed repo's `.review-pro/`. See `stacks/README.md`.
 
 ## Running a review (one command — no scripts required)
 
-In opencode, open the repo you want to review (on the feature branch) and ask the session to review it — e.g. *"review-pro ile bu branch'i incele"* or invoke the **`review-pro`** skill. The agent does everything with its own tools:
+In opencode, open the repo you want to review (on the feature branch) and ask the session to review it — e.g. *"review this branch with review-pro"* or invoke the **`review-pro`** skill. The agent does everything with its own tools:
 
 1. **Prep** — runs `git diff`, reads changed files, Globs `.review-pro/*/manifest.json` for active stacks.
 2. **Triage** (inline) — dispatch plan: which reviewers + scoped context.

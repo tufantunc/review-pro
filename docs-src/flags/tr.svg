@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40" role="img" aria-label="Türkçe">
+  <rect width="60" height="40" fill="#E30A17"/>
+  <circle cx="22.5" cy="20" r="9" fill="#FFFFFF"/>
+  <circle cx="26" cy="20" r="7.5" fill="#E30A17"/>
+  <path d="M 0 -2 L 0.449 -0.618 L 1.902 -0.618 L 0.727 0.236 L 1.176 1.618 L 0 0.764 L -1.176 1.618 L -0.727 0.236 L -1.902 -0.618 L -0.449 -0.618 Z" transform="translate(34 20) scale(1.6)" fill="#FFFFFF"/>
+</svg>

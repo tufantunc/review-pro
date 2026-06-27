@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="nl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Docs — review-pro</title>
-<meta name="description" content="review-pro documentation: install, stack packs, commands, manual install, running a review.">
+<title>Documentatie — review-pro</title>
+<meta name="description" content="review-pro-documentatie: installatie, stack-pakketten, commando's, handmatige installatie, een review uitvoeren.">
 <link rel="alternate" hreflang="en" href="https://tufantunc.github.io/review-pro/">
 <link rel="alternate" hreflang="tr" href="https://tufantunc.github.io/review-pro/tr/">
 <link rel="alternate" hreflang="zh" href="https://tufantunc.github.io/review-pro/zh/">
@@ -54,30 +54,18 @@
 <nav class="nav" aria-label="Primary">
   <a class="brand" href="index.html"><span class="brand__mark" aria-hidden="true"></span> review-pro</a>
   <div class="nav__links">
-    <a href="index.html#how">How it works</a>
-    <a href="index.html#capabilities">Capabilities</a>
-    <a class="nav__keep is-active" href="docs.html">Docs</a>
+    <a href="index.html#how">Hoe het werkt</a>
+    <a href="index.html#capabilities">Mogelijkheden</a>
+    <a class="nav__keep is-active" href="docs.html">Documentatie</a>
     <a href="https://github.com/tufantunc/review-pro" target="_blank" rel="noopener">GitHub</a>
-    <a class="nav__cta" href="docs.html#install">Install</a>
+    <a class="nav__cta" href="docs.html#install">Installeren</a>
     <div class="lang">
-      <button class="lang__btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Language EN">
+      <button class="lang__btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Taal NL">
         <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
-  <rect width="60" height="40" fill="#012169"/>
-  <path d="M0,0 L60,40 M60,0 L0,40" stroke="#FFFFFF" stroke-width="6"/>
-  <clipPath id="uk-saltire">
-    <path d="M0,0 L60,40 M60,0 L0,40" stroke="#FFFFFF" stroke-width="6"/>
-  </clipPath>
-  <g clip-path="url(#uk-saltire)" stroke="#C8102E" stroke-width="2.2">
-    <line x1="0" y1="0" x2="30" y2="20" transform="translate(-0.832 1.248)"/>
-    <line x1="30" y1="20" x2="60" y2="40" transform="translate(0.832 -1.248)"/>
-    <line x1="60" y1="0" x2="30" y2="20" transform="translate(-0.832 -1.248)"/>
-    <line x1="30" y1="20" x2="0" y2="40" transform="translate(0.832 1.248)"/>
-  </g>
-  <rect x="26" y="0" width="8" height="40" fill="#FFFFFF"/>
-  <rect x="0" y="16" width="60" height="8" fill="#FFFFFF"/>
-  <rect x="28" y="0" width="4" height="40" fill="#C8102E"/>
-  <rect x="0" y="18" width="60" height="4" fill="#C8102E"/>
-</svg><span class="lang__code">EN</span>
+  <rect width="60" height="13.333" y="0" fill="#AE1C28"/>
+  <rect width="60" height="13.333" y="13.333" fill="#FFFFFF"/>
+  <rect width="60" height="13.333" y="26.667" fill="#21468B"/>
+</svg><span class="lang__code">NL</span>
       </button>
       <ul class="lang__menu" role="menu" hidden>
         <li role="none"><a role="menuitem" data-lang="en" href="/review-pro/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
@@ -165,99 +153,99 @@
 
 <main class="docs wrap">
   <aside class="toc" aria-label="On this page">
-    <p class="toc__title">On this page</p>
+    <p class="toc__title">Op deze pagina</p>
     <ul>
-      <li><a href="#overview">Overview</a></li>
-      <li><a href="#install">Install</a></li>
-      <li><a href="#manual-install">Manual install (no Node)</a></li>
-      <li><a href="#stack-packs">Stack packs</a></li>
-      <li><a href="#commands">Commands</a></li>
-      <li><a href="#run-a-review">Run a review</a></li>
-      <li><a href="#reviewers">The 12 reviewers</a></li>
+      <li><a href="#overview">Overzicht</a></li>
+      <li><a href="#install">Installatie</a></li>
+      <li><a href="#manual-install">Handmatige installatie (zonder Node)</a></li>
+      <li><a href="#stack-packs">Stack-pakketten</a></li>
+      <li><a href="#commands">Commando's</a></li>
+      <li><a href="#run-a-review">Review uitvoeren</a></li>
+      <li><a href="#reviewers">De 12 reviewers</a></li>
       <li><a href="#faq">FAQ</a></li>
     </ul>
   </aside>
 
   <article class="doc">
-    <h2 id="overview">Overview</h2>
-    <p>review-pro is a tiered AI code-review system: <strong>triage → relevant specialist reviewers → synthesis</strong>. It reviews code written by AI agents, using AI agents — built to catch the failure modes AI-generated code actually ships with: hallucinated APIs, over-engineering, ignored conventions, needless dependencies.</p>
-    <p>This CLI installs the review-pro core (12 reviewer skills + subagents + the <code>review-pro</code> orchestrator) into your agent tool, and the stack packs into your repo’s <code>.review-pro/</code>. Supported targets: <strong>opencode · Claude Code · Cursor · Codex</strong>.</p>
+    <h2 id="overview">Overzicht</h2>
+    <p>review-pro is een gelaagd AI-code-reviewsysteem: <strong>triage → relevante specialistische reviewers → synthese</strong>. Het beoordeelt code die door AI-agents is geschreven met behulp van AI-agents — gebouwd om de foutpatronen te vangen die AI-gegenereerde code werkelijk meebrengt: gehallucineerde API's, over-engineering, genegeerde conventies, overbodige afhankelijkheden.</p>
+    <p>Deze CLI installeert de review-pro-kern (12 reviewer-skills + subagents + de <code>review-pro</code>-orchestrator) in je agent-tool, en de stack-pakketten in de <code>.review-pro/</code> van je repo. Ondersteunde doelen: <strong>opencode · Claude Code · Cursor · Codex</strong>.</p>
 
-    <h2 id="install">Install</h2>
-    <p>One-time. Interactive — it asks which platforms and which stack packs to install.</p>
+    <h2 id="install">Installatie</h2>
+    <p>Eenmalig. Interactief — het vraagt welke platformen en welke stack-pakketten te installeren.</p>
     <pre class="cmd"><code>npx review-pro init                           <span class="cmt"># interactive: pick platforms + stacks</span></code></pre>
-    <p class="note">Non-interactive (CI)? Use <code>--target &lt;platform|all|auto&gt;</code> and <code>--no-stacks</code>.</p>
-    <h3>Per-platform notes</h3>
+    <p class="note">Niet-interactief (CI)? Gebruik <code>--target &lt;platform|all|auto&gt;</code> en <code>--no-stacks</code>.</p>
+    <h3>Notities per platform</h3>
     <ul>
-      <li><strong>opencode</strong> — skills to <code>~/.config/opencode/skills/</code>, agents to <code>~/.config/opencode/agents/</code> (<code>$OPENCODE_HOME</code> overrides).</li>
-      <li><strong>Claude Code</strong> — skills to <code>~/.claude/skills/</code>, agents to <code>~/.claude/agents/</code> (the agent <code>skills:</code> field preloads its rubric).</li>
-      <li><strong>Cursor</strong> — installed via Cursor <code>/add-plugin</code>; run <code>/add-plugin https://github.com/tufantunc/review-pro</code> in Cursor (the repo ships a <code>.cursor-plugin/plugin.json</code>).</li>
-      <li><strong>Codex</strong> — skills to <code>~/.agents/skills/</code>, agents auto-transformed to <code>~/.codex/agents/*.toml</code>. Codex auto-discovers skills; agents inherit the session skill set.</li>
+      <li><strong>opencode</strong> — skills naar <code>~/.config/opencode/skills/</code>, agents naar <code>~/.config/opencode/agents/</code> (<code>$OPENCODE_HOME</code> overschrijft).</li>
+      <li><strong>Claude Code</strong> — skills naar <code>~/.claude/skills/</code>, agents naar <code>~/.claude/agents/</code> (het <code>skills:</code>-veld van de agent preloadt zijn rubriek).</li>
+      <li><strong>Cursor</strong> — geïnstalleerd via Cursor <code>/add-plugin</code>; voer <code>/add-plugin https://github.com/tufantunc/review-pro</code> uit in Cursor (de repo levert een <code>.cursor-plugin/plugin.json</code>).</li>
+      <li><strong>Codex</strong> — skills naar <code>~/.agents/skills/</code>, agents automatisch getransformeerd naar <code>~/.codex/agents/*.toml</code>. Codex ontdekt skills automatisch; agents erven de skill-set van de sessie.</li>
     </ul>
-    <div class="callout"><p>Then add the stack packs you use (below), <strong>restart your tool</strong> so the new skills/agents are discovered, and run a review.</p></div>
+    <div class="callout"><p>Voeg daarna de stack-pakketten toe die je gebruikt (hieronder), <strong>herstart je tool</strong> zodat de nieuwe skills/agents worden ontdekt, en voer een review uit.</p></div>
 
-    <h2 id="manual-install">Manual install (no Node.js)</h2>
-    <p>review-pro is plain markdown skills and agents — no runtime dependency. If you don’t have Node.js (or prefer not to use the CLI), copy the files by hand:</p>
+    <h2 id="manual-install">Handmatige installatie (zonder Node.js)</h2>
+    <p>review-pro bestaat uit gewone markdown-skills en -agents — geen runtime-afhankelijkheid. Als je geen Node.js hebt (of de CLI niet wilt gebruiken), kopieer de bestanden handmatig:</p>
     <ol>
-      <li><strong>Core</strong> — copy <code>core/skills/&lt;name&gt;/</code> into your tool’s skills folder, and <code>core/agents/*.md</code> into its agents folder (paths per platform above).</li>
-      <li><strong>Stack packs</strong> — copy <code>stacks/&lt;pack&gt;/</code> into the reviewed repo’s <code>.review-pro/&lt;pack&gt;/</code>.</li>
+      <li><strong>Kern</strong> — kopieer <code>core/skills/&lt;name&gt;/</code> naar de skills-map van je tool en <code>core/agents/*.md</code> naar diens agents-map (paden zoals hierboven per platform).</li>
+      <li><strong>Stack-pakketten</strong> — kopieer <code>stacks/&lt;pack&gt;/</code> naar de <code>.review-pro/&lt;pack&gt;/</code> van de beoordeelde repo.</li>
     </ol>
     <pre class="cmd"><code><span class="cmt"># example: opencode core + python stack, by hand</span>
 cp -R core/skills/*           ~/.config/opencode/skills/
 cp    core/agents/*.md        ~/.config/opencode/agents/
 mkdir -p .review-pro &amp;&amp; cp -R stacks/python .review-pro/python</code></pre>
-    <p class="note">The CLI just automates these copies (plus the Codex <code>.md</code>→<code>.toml</code> transform and version tracking). Manual and CLI installs are equivalent.</p>
+    <p class="note">De CLI automatiseert alleen deze kopieën (plus de Codex <code>.md</code>→<code>.toml</code>-transformatie en versie-tracking). Handmatige en CLI-installaties zijn equivalent.</p>
 
-    <h2 id="stack-packs">Stack packs</h2>
-    <p>Packs layer language/framework-specific signals onto the reviewers at review time. Install the ones a repo uses into its <code>.review-pro/</code>. Framework/domain packs compose on top of a language pack.</p>
+    <h2 id="stack-packs">Stack-pakketten</h2>
+    <p>Pakketten schakelen taal-/framework-specifieke signalen op de reviewers tijdens de review. Installeer de pakketten die een repo gebruikt in diens <code>.review-pro/</code>. Framework-/domein-pakketten combineren bovenop een taalpakket.</p>
     <pre class="cmd"><code>npx review-pro                <span class="cmt"># interactive multi-select</span>
 npx review-pro add python     <span class="cmt"># one pack, CI-safe</span>
 npx review-pro list           <span class="cmt"># catalog + installed + drift</span></code></pre>
-    <p>Catalog (14): <code>python</code> · <code>go</code> · <code>rust</code> · <code>typescript-react</code> · <code>node</code> · <code>php</code> · <code>dotnet</code> · <code>kotlin</code> · <code>swift</code> · <code>flutter</code> · <code>nextjs</code> · <code>react-native</code> · <code>wordpress</code> · <code>ai-ml</code>. Examples: a Next.js repo activates <code>typescript-react</code> + <code>nextjs</code>; an LLM app activates <code>python</code> + <code>ai-ml</code>.</p>
+    <p>Catalogus (14): <code>python</code> · <code>go</code> · <code>rust</code> · <code>typescript-react</code> · <code>node</code> · <code>php</code> · <code>dotnet</code> · <code>kotlin</code> · <code>swift</code> · <code>flutter</code> · <code>nextjs</code> · <code>react-native</code> · <code>wordpress</code> · <code>ai-ml</code>. Voorbeelden: een Next.js-repo activeert <code>typescript-react</code> + <code>nextjs</code>; een LLM-app activeert <code>python</code> + <code>ai-ml</code>.</p>
 
-    <h2 id="commands">Commands</h2>
+    <h2 id="commands">Commando's</h2>
     <table class="table">
-      <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+      <thead><tr><th>Commando</th><th>Wat het doet</th></tr></thead>
       <tbody>
-        <tr><td><code>npx review-pro</code></td><td>Interactive — select stacks to install into <code>.review-pro/</code></td></tr>
-        <tr><td><code>init [--target &lt;platform&gt;]</code></td><td>Install the core plugin into a tool’s home</td></tr>
-        <tr><td><code>add &lt;stack&gt;</code></td><td>Install one stack pack (non-interactive)</td></tr>
-        <tr><td><code>remove &lt;stack&gt;</code></td><td>Remove an installed pack</td></tr>
-        <tr><td><code>update [stack]</code></td><td>Refresh installed packs to the catalog version</td></tr>
-        <tr><td><code>list</code></td><td>Show catalog stacks + installed versions + drift</td></tr>
-        <tr><td><code>doctor</code></td><td>Validate installed packs (version drift, roster integrity, orphans)</td></tr>
+        <tr><td><code>npx review-pro</code></td><td>Interactief — selecteer stacks om in <code>.review-pro/</code> te installeren</td></tr>
+        <tr><td><code>init [--target &lt;platform&gt;]</code></td><td>Installeer de kern-plug-in in de home van een tool</td></tr>
+        <tr><td><code>add &lt;stack&gt;</code></td><td>Installeer één stack-pakket (niet-interactief)</td></tr>
+        <tr><td><code>remove &lt;stack&gt;</code></td><td>Verwijder een geïnstalleerd pakket</td></tr>
+        <tr><td><code>update [stack]</code></td><td>Ververs geïnstalleerde pakketten naar de catalogusversie</td></tr>
+        <tr><td><code>list</code></td><td>Toon catalogus-stacks + geïnstalleerde versies + drift</td></tr>
+        <tr><td><code>doctor</code></td><td>Valideer geïnstalleerde pakketten (versie-drift, roster-integriteit, wezen)</td></tr>
       </tbody>
     </table>
 
-    <h2 id="run-a-review">Run a review</h2>
-    <p>After install + restart, in the repo you want to review (on a feature branch):</p>
+    <h2 id="run-a-review">Review uitvoeren</h2>
+    <p>Na installatie + herstart, in de repo die je wilt beoordelen (op een feature-branch):</p>
     <ul>
-      <li>ask the session to <strong>review this branch with review-pro</strong>, or</li>
-      <li>invoke the <strong><code>review-pro</code></strong> skill directly.</li>
+      <li>vraag de sessie om <strong>deze branch te beoordelen met review-pro</strong>, of</li>
+      <li>roep de <strong><code>review-pro</code></strong>-skill direct aan.</li>
     </ul>
-    <p>The agent runs the whole pipeline natively — <code>git diff</code>, reads changed files, Globs <code>.review-pro/</code> for active stacks, dispatches the relevant reviewer subagents with their stack signals, and synthesizes one verdict: <strong>BLOCK / REQUEST CHANGES / APPROVE</strong>. No env vars, no scripts to run at review time.</p>
+    <p>De agent draait de hele pipeline native — <code>git diff</code>, leest gewijzigde bestanden, Globs <code>.review-pro/</code> voor actieve stacks, stuurt de relevante reviewer-subagents erop af met hun stack-signalen, en synthetiseert één vonnis: <strong>BLOCK / REQUEST CHANGES / APPROVE</strong>. Geen env-vars, geen scripts om uit te voeren op review-tijdstip.</p>
 
-    <h2 id="reviewers">The 12 reviewers</h2>
-    <p><code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code>. The <code>ai-antipatterns</code> reviewer is first-class: hallucinated APIs/symbols/imports, invented config/env keys, needless dependencies, and ignored existing helpers.</p>
+    <h2 id="reviewers">De 12 reviewers</h2>
+    <p><code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code>. De <code>ai-antipatterns</code>-reviewer is first-class: gehallucineerde API's/symbolen/imports, verzonnen config/env-keys, overbodige afhankelijkheden en genegeerde bestaande helpers.</p>
 
     <h2 id="faq">FAQ</h2>
-    <h3>Does it need Node.js?</h3>
-    <p>Only the installer CLI does (Node ≥ 18). The plugin itself is plain markdown skills and agents, so <a href="#manual-install">manual install</a> works without Node on any platform.</p>
-    <h3>How is this different from a single “review this” prompt?</h3>
-    <p>One prompt hands the whole diff to one agent and asks for everything. review-pro triages first, runs only the relevant specialists in parallel with scoped context, then synthesizes — so small changes stay cheap and large changes go deep, with severity calibrated against over-reporting.</p>
-    <h3>Where do stack packs come from?</h3>
-    <p>The catalog ships inside this package, snapshotted at publish time. New packs appear after a new version is published. See <code>stacks/CONTRIBUTING.md</code> in the repo to add your own.</p>
-    <h3>Is it really cross-platform?</h3>
-    <p>Yes — one canonical source installs into opencode, Claude Code, Cursor, and Codex. Codex agents are auto-transformed to TOML; the others consume the same markdown agents.</p>
+    <h3>Heeft het Node.js nodig?</h3>
+    <p>Alleen de installer-CLI (Node ≥ 18). De plug-in zelf bestaat uit gewone markdown-skills en -agents, dus <a href="#manual-install">handmatige installatie</a> werkt zonder Node op elk platform.</p>
+    <h3>Waar verschilt dit van één enkele &quot;beoordeel dit&quot;-prompt?</h3>
+    <p>Eén prompt overhandigt de hele diff aan één agent en vraagt alles. review-pro triageert eerst, draait alleen de relevante specialisten parallel met afgebakende context, en synthetiseert daarna — zodat kleine wijzigingen goedkoop blijven en grote diep gaan, met ern gekalibreerd tegen over-rapportage.</p>
+    <h3>Waar komen de stack-pakketten vandaan?</h3>
+    <p>De catalogus wordt meegeleverd in dit pakket, als momentopname bij publicatie. Nieuwe pakketten verschijnen nadat een nieuwe versie is gepubliceerd. Zie <code>stacks/CONTRIBUTING.md</code> in de repo om je eigen toe te voegen.</p>
+    <h3>Is het echt platformoverstijgend?</h3>
+    <p>Ja — één canonieke bron installeert in opencode, Claude Code, Cursor en Codex. Codex-agents worden automatisch naar TOML getransformeerd; de anderen consumeren dezelfde markdown-agents.</p>
   </article>
 </main>
 
 <footer class="footer wrap">
   <div class="footer__top">
-    <p class="footer__statement">Code review that thinks in stages.</p>
+    <p class="footer__statement">Code-review die in fases denkt.</p>
     <div class="footer__links">
       <a href="index.html">Home</a>
-      <a href="docs.html">Docs</a>
+      <a href="docs.html">Documentatie</a>
       <a href="https://github.com/tufantunc/review-pro" target="_blank" rel="noopener">GitHub</a>
       <a href="https://www.npmjs.com/package/review-pro" target="_blank" rel="noopener">npm</a>
     </div>

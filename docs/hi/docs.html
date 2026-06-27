@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>दस्तावेज़ — review-pro</title>
+<meta name="description" content="review-pro दस्तावेज़: इंस्टॉल, स्टैक पैक, कमांड, मैन्युअल इंस्टॉल, समीक्षा चलाना।">
+<link rel="alternate" hreflang="en" href="https://tufantunc.github.io/review-pro/">
+<link rel="alternate" hreflang="tr" href="https://tufantunc.github.io/review-pro/tr/">
+<link rel="alternate" hreflang="zh" href="https://tufantunc.github.io/review-pro/zh/">
+<link rel="alternate" hreflang="hi" href="https://tufantunc.github.io/review-pro/hi/">
+<link rel="alternate" hreflang="de" href="https://tufantunc.github.io/review-pro/de/">
+<link rel="alternate" hreflang="fr" href="https://tufantunc.github.io/review-pro/fr/">
+<link rel="alternate" hreflang="nl" href="https://tufantunc.github.io/review-pro/nl/">
+<link rel="alternate" hreflang="x-default" href="https://tufantunc.github.io/review-pro/">
+<script>(function () {
+  try {
+    var KEY = 'rp_lang';
+    if (localStorage.getItem(KEY)) return;           // user already chose
+    if (navigator.webdriver) return;                 // automation
+    var ua = navigator.userAgent || '';
+    if (/bot|crawl|spider|slurp|headless|wget|curl|lighthouse|pingdom/i.test(ua)) return;
+    var supported = ['en', 'tr', 'zh', 'hi', 'de', 'fr', 'nl'];
+    var cur = document.documentElement.lang;
+    var picks = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language];
+    var match = null;
+    for (var i = 0; i < picks.length; i++) {
+      var short = String(picks[i] || '').toLowerCase().split('-')[0];
+      if (supported.indexOf(short) >= 0) { match = short; break; }
+    }
+    if (match && match !== cur) {
+      var base = '/review-pro';
+      var rel = location.pathname.replace(base, '').replace(/\/index\.html$/, '/');
+      rel = rel.replace(/^\/(en|tr|zh|hi|de|fr|nl)(\/|$)/, '/');
+      rel = rel.replace(/\/+$/, '/');
+      var target = base + '/' + match + (rel === '/' ? '/' : rel);
+      target = target.replace(/\/{2,}/g, '/');
+      localStorage.setItem(KEY, match);
+      location.replace(target);
+    } else {
+      localStorage.setItem(KEY, cur);
+    }
+  } catch (e) {}
+})();
+</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23e8e1cf'/%3E%3Crect x='10.5' y='10.5' width='11' height='11' rx='2' transform='rotate(45 16 16)' fill='%232f6f55'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/review-pro/site.css">
+</head>
+<body>
+
+<nav class="nav" aria-label="Primary">
+  <a class="brand" href="index.html"><span class="brand__mark" aria-hidden="true"></span> review-pro</a>
+  <div class="nav__links">
+    <a href="index.html#how">यह कैसे काम करता है</a>
+    <a href="index.html#capabilities">क्षमताएँ</a>
+    <a class="nav__keep is-active" href="docs.html">दस्तावेज़</a>
+    <a href="https://github.com/tufantunc/review-pro" target="_blank" rel="noopener">GitHub</a>
+    <a class="nav__cta" href="docs.html#install">इंस्टॉल</a>
+    <div class="lang">
+      <button class="lang__btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="भाषा HI">
+        <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+  <rect width="60" height="13.333" y="0" fill="#FF9933"/>
+  <rect width="60" height="13.333" y="13.333" fill="#FFFFFF"/>
+  <rect width="60" height="13.333" y="26.667" fill="#138808"/>
+  <g stroke="#000080" stroke-width="0.5" fill="none">
+    <circle cx="30" cy="20" r="6"/>
+    <line x1="30" y1="20" x2="36" y2="20"/>
+    <line x1="30" y1="20" x2="35.796" y2="21.553"/>
+    <line x1="30" y1="20" x2="35.196" y2="23"/>
+    <line x1="30" y1="20" x2="34.243" y2="24.243"/>
+    <line x1="30" y1="20" x2="33" y2="25.196"/>
+    <line x1="30" y1="20" x2="31.553" y2="25.796"/>
+    <line x1="30" y1="20" x2="30" y2="26"/>
+    <line x1="30" y1="20" x2="28.447" y2="25.796"/>
+    <line x1="30" y1="20" x2="27" y2="25.196"/>
+    <line x1="30" y1="20" x2="25.757" y2="24.243"/>
+    <line x1="30" y1="20" x2="24.804" y2="23"/>
+    <line x1="30" y1="20" x2="24.204" y2="21.553"/>
+    <line x1="30" y1="20" x2="24" y2="20"/>
+    <line x1="30" y1="20" x2="24.204" y2="18.447"/>
+    <line x1="30" y1="20" x2="24.804" y2="17"/>
+    <line x1="30" y1="20" x2="25.757" y2="15.757"/>
+    <line x1="30" y1="20" x2="27" y2="14.804"/>
+    <line x1="30" y1="20" x2="28.447" y2="14.204"/>
+    <line x1="30" y1="20" x2="30" y2="14"/>
+    <line x1="30" y1="20" x2="31.553" y2="14.204"/>
+    <line x1="30" y1="20" x2="33" y2="14.804"/>
+    <line x1="30" y1="20" x2="34.243" y2="15.757"/>
+    <line x1="30" y1="20" x2="35.196" y2="17"/>
+    <line x1="30" y1="20" x2="35.796" y2="18.447"/>
+  </g>
+</svg><span class="lang__code">HI</span>
+      </button>
+      <ul class="lang__menu" role="menu" hidden>
+        <li role="none"><a role="menuitem" data-lang="en" href="/review-pro/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+  <rect width="60" height="40" fill="#012169"/>
+  <path d="M0,0 L60,40 M60,0 L0,40" stroke="#FFFFFF" stroke-width="6"/>
+  <clipPath id="uk-saltire">
+    <path d="M0,0 L60,40 M60,0 L0,40" stroke="#FFFFFF" stroke-width="6"/>
+  </clipPath>
+  <g clip-path="url(#uk-saltire)" stroke="#C8102E" stroke-width="2.2">
+    <line x1="0" y1="0" x2="30" y2="20" transform="translate(-0.832 1.248)"/>
+    <line x1="30" y1="20" x2="60" y2="40" transform="translate(0.832 -1.248)"/>
+    <line x1="60" y1="0" x2="30" y2="20" transform="translate(-0.832 -1.248)"/>
+    <line x1="30" y1="20" x2="0" y2="40" transform="translate(0.832 1.248)"/>
+  </g>
+  <rect x="26" y="0" width="8" height="40" fill="#FFFFFF"/>
+  <rect x="0" y="16" width="60" height="8" fill="#FFFFFF"/>
+  <rect x="28" y="0" width="4" height="40" fill="#C8102E"/>
+  <rect x="0" y="18" width="60" height="4" fill="#C8102E"/>
+</svg> English</a></li>
+        <li role="none"><a role="menuitem" data-lang="tr" href="/review-pro/tr/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+  <rect width="60" height="40" fill="#E30A17"/>
+  <circle cx="22.5" cy="20" r="9" fill="#FFFFFF"/>
+  <circle cx="26" cy="20" r="7.5" fill="#E30A17"/>
+  <path d="M 0 -2 L 0.449 -0.618 L 1.902 -0.618 L 0.727 0.236 L 1.176 1.618 L 0 0.764 L -1.176 1.618 L -0.727 0.236 L -1.902 -0.618 L -0.449 -0.618 Z" transform="translate(34 20) scale(1.6)" fill="#FFFFFF"/>
+</svg> Türkçe</a></li>
+        <li role="none"><a role="menuitem" data-lang="zh" href="/review-pro/zh/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+  <rect width="60" height="40" fill="#DE2910"/>
+  <path d="M 0 -2 L 0.449 -0.618 L 1.902 -0.618 L 0.727 0.236 L 1.176 1.618 L 0 0.764 L -1.176 1.618 L -0.727 0.236 L -1.902 -0.618 L -0.449 -0.618 Z" transform="translate(10 10) scale(3)" fill="#FFDE00"/>
+  <path d="M 0 -2 L 0.449 -0.618 L 1.902 -0.618 L 0.727 0.236 L 1.176 1.618 L 0 0.764 L -1.176 1.618 L -0.727 0.236 L -1.902 -0.618 L -0.449 -0.618 Z" transform="translate(20 4) rotate(239.04)" fill="#FFDE00"/>
+  <path d="M 0 -2 L 0.449 -0.618 L 1.902 -0.618 L 0.727 0.236 L 1.176 1.618 L 0 0.764 L -1.176 1.618 L -0.727 0.236 L -1.902 -0.618 L -0.449 -0.618 Z" transform="translate(24 8) rotate(261.87)" fill="#FFDE00"/>
+  <path d="M 0 -2 L 0.449 -0.618 L 1.902 -0.618 L 0.727 0.236 L 1.176 1.618 L 0 0.764 L -1.176 1.618 L -0.727 0.236 L -1.902 -0.618 L -0.449 -0.618 Z" transform="translate(24 14) rotate(285.94)" fill="#FFDE00"/>
+  <path d="M 0 -2 L 0.449 -0.618 L 1.902 -0.618 L 0.727 0.236 L 1.176 1.618 L 0 0.764 L -1.176 1.618 L -0.727 0.236 L -1.902 -0.618 L -0.449 -0.618 Z" transform="translate(20 18) rotate(308.66)" fill="#FFDE00"/>
+</svg> 中文</a></li>
+        <li role="none"><a role="menuitem" data-lang="hi" href="/review-pro/hi/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+  <rect width="60" height="13.333" y="0" fill="#FF9933"/>
+  <rect width="60" height="13.333" y="13.333" fill="#FFFFFF"/>
+  <rect width="60" height="13.333" y="26.667" fill="#138808"/>
+  <g stroke="#000080" stroke-width="0.5" fill="none">
+    <circle cx="30" cy="20" r="6"/>
+    <line x1="30" y1="20" x2="36" y2="20"/>
+    <line x1="30" y1="20" x2="35.796" y2="21.553"/>
+    <line x1="30" y1="20" x2="35.196" y2="23"/>
+    <line x1="30" y1="20" x2="34.243" y2="24.243"/>
+    <line x1="30" y1="20" x2="33" y2="25.196"/>
+    <line x1="30" y1="20" x2="31.553" y2="25.796"/>
+    <line x1="30" y1="20" x2="30" y2="26"/>
+    <line x1="30" y1="20" x2="28.447" y2="25.796"/>
+    <line x1="30" y1="20" x2="27" y2="25.196"/>
+    <line x1="30" y1="20" x2="25.757" y2="24.243"/>
+    <line x1="30" y1="20" x2="24.804" y2="23"/>
+    <line x1="30" y1="20" x2="24.204" y2="21.553"/>
+    <line x1="30" y1="20" x2="24" y2="20"/>
+    <line x1="30" y1="20" x2="24.204" y2="18.447"/>
+    <line x1="30" y1="20" x2="24.804" y2="17"/>
+    <line x1="30" y1="20" x2="25.757" y2="15.757"/>
+    <line x1="30" y1="20" x2="27" y2="14.804"/>
+    <line x1="30" y1="20" x2="28.447" y2="14.204"/>
+    <line x1="30" y1="20" x2="30" y2="14"/>
+    <line x1="30" y1="20" x2="31.553" y2="14.204"/>
+    <line x1="30" y1="20" x2="33" y2="14.804"/>
+    <line x1="30" y1="20" x2="34.243" y2="15.757"/>
+    <line x1="30" y1="20" x2="35.196" y2="17"/>
+    <line x1="30" y1="20" x2="35.796" y2="18.447"/>
+  </g>
+</svg> हिन्दी</a></li>
+        <li role="none"><a role="menuitem" data-lang="de" href="/review-pro/de/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+  <rect width="60" height="13.333" y="0" fill="#000000"/>
+  <rect width="60" height="13.333" y="13.333" fill="#DD0000"/>
+  <rect width="60" height="13.333" y="26.667" fill="#FFCE00"/>
+</svg> Deutsch</a></li>
+        <li role="none"><a role="menuitem" data-lang="fr" href="/review-pro/fr/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+  <rect width="20" height="40" x="0" fill="#0055A4"/>
+  <rect width="20" height="40" x="20" fill="#FFFFFF"/>
+  <rect width="20" height="40" x="40" fill="#EF4135"/>
+</svg> Français</a></li>
+        <li role="none"><a role="menuitem" data-lang="nl" href="/review-pro/nl/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+  <rect width="60" height="13.333" y="0" fill="#AE1C28"/>
+  <rect width="60" height="13.333" y="13.333" fill="#FFFFFF"/>
+  <rect width="60" height="13.333" y="26.667" fill="#21468B"/>
+</svg> Nederlands</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<main class="docs wrap">
+  <aside class="toc" aria-label="On this page">
+    <p class="toc__title">इस पेज पर</p>
+    <ul>
+      <li><a href="#overview">ओवरव्यू</a></li>
+      <li><a href="#install">इंस्टॉल</a></li>
+      <li><a href="#manual-install">मैन्युअल इंस्टॉल (Node नहीं)</a></li>
+      <li><a href="#stack-packs">स्टैक पैक</a></li>
+      <li><a href="#commands">कमांड</a></li>
+      <li><a href="#run-a-review">समीक्षा चलाएँ</a></li>
+      <li><a href="#reviewers">12 समीक्षक</a></li>
+      <li><a href="#faq">सामान्य प्रश्न</a></li>
+    </ul>
+  </aside>
+
+  <article class="doc">
+    <h2 id="overview">ओवरव्यू</h2>
+    <p>review-pro एक स्तरित AI कोड-समीक्षा प्रणाली है: <strong>छँटाई → संबंधित विशेषज्ञ समीक्षक → संश्लेषण</strong>। यह AI एजेंटों द्वारा लिखे गए कोड की समीक्षा AI एजेंटों से करवाता है — AI-जनित कोड की उन वास्तविक विफलताओं को पकड़ने के लिए बनाया गया: मनगढ़ंत API, अति-इंजीनियरिंग, उपेक्षित परिपाटियाँ, अनावश्यक डिपेंडेंसीज़।</p>
+    <p>यह CLI review-pro कोर (12 समीक्षक कौशल + सबएजेंट + <code>review-pro</code> ऑर्केस्ट्रेटर) को आपके एजेंट टूल में, और स्टैक पैक को आपकी रिपॉजिटरी के <code>.review-pro/</code> में इंस्टॉल करता है। समर्थित लक्ष्य: <strong>opencode · Claude Code · Cursor · Codex</strong>।</p>
+
+    <h2 id="install">इंस्टॉल</h2>
+    <p>एक बार। इंटरैक्टिव — यह पूछता है कि कौन से प्लेटफ़ॉर्म और कौन से स्टैक पैक इंस्टॉल करने हैं।</p>
+    <pre class="cmd"><code>npx review-pro init                           <span class="cmt"># interactive: pick platforms + stacks</span></code></pre>
+    <p class="note">नॉन-इंटरैक्टिव (CI)? <code>--target &lt;platform|all|auto&gt;</code> और <code>--no-stacks</code> का उपयोग करें।</p>
+    <h3>प्रति-प्लेटफ़ॉर्म नोट्स</h3>
+    <ul>
+      <li><strong>opencode</strong> — कौशल <code>~/.config/opencode/skills/</code> में, एजेंट <code>~/.config/opencode/agents/</code> में (<code>$OPENCODE_HOME</code> ओवरराइड करता है)।</li>
+      <li><strong>Claude Code</strong> — कौशल <code>~/.claude/skills/</code> में, एजेंट <code>~/.claude/agents/</code> में (एजेंट का <code>skills:</code> फ़ील्ड इसका रूबरिक प्रीलोड करता है)।</li>
+      <li><strong>Cursor</strong> — Cursor के <code>/add-plugin</code> से इंस्टॉल; Cursor में <code>/add-plugin https://github.com/tufantunc/review-pro</code> चलाएँ (रिपॉजिटरी में एक <code>.cursor-plugin/plugin.json</code> आता है)।</li>
+      <li><strong>Codex</strong> — कौशल <code>~/.agents/skills/</code> में, एजेंट स्वतः <code>~/.codex/agents/*.toml</code> में बदल जाते हैं। Codex कौशल स्वतः खोज लेता है; एजेंट सत्र के कौशल-समुच्चय को विरासत में लेते हैं।</li>
+    </ul>
+    <div class="callout"><p>फिर अपने उपयोग के स्टैक पैक जोड़ें (नीचे), नए कौशल/एजेंट खोजे जाने के लिए अपना <strong>टूल पुनर्प्रारंभ करें</strong>, और एक समीक्षा चलाएँ।</p></div>
+
+    <h2 id="manual-install">मैन्युअल इंस्टॉल (Node.js नहीं)</h2>
+    <p>review-pro सादा markdown कौशल और एजेंट हैं — कोई रनटाइम डिपेंडेंसी नहीं। यदि आपके पास Node.js नहीं है (या CLI उपयोग नहीं करना चाहते), फ़ाइलों को हाथ से कॉपी करें:</p>
+    <ol>
+      <li><strong>कोर</strong> — <code>core/skills/&lt;name&gt;/</code> को अपने टूल के कौशल फ़ोल्डर में, और <code>core/agents/*.md</code> को उसके एजेंट फ़ोल्डर में कॉपी करें (ऊपर प्लेटफ़ॉर्म अनुसार पथ)।</li>
+      <li><strong>स्टैक पैक</strong> — <code>stacks/&lt;pack&gt;/</code> को समीक्षित रिपॉजिटरी के <code>.review-pro/&lt;pack&gt;/</code> में कॉपी करें।</li>
+    </ol>
+    <pre class="cmd"><code><span class="cmt"># example: opencode core + python stack, by hand</span>
+cp -R core/skills/*           ~/.config/opencode/skills/
+cp    core/agents/*.md        ~/.config/opencode/agents/
+mkdir -p .review-pro &amp;&amp; cp -R stacks/python .review-pro/python</code></pre>
+    <p class="note">CLI केवल इन कॉपीज़ को स्वचालित करता है (साथ ही Codex <code>.md</code>→<code>.toml</code> ट्रांसफ़ॉर्म और संस्करण ट्रैकिंग)। मैन्युअल और CLI इंस्टॉल समतुल्य हैं।</p>
+
+    <h2 id="stack-packs">स्टैक पैक</h2>
+    <p>पैक समीक्षण के समय समीक्षकों पर भाषा/फ़्रेमवर्क-विशिष्ट संकेत स्तरित करते हैं। किसी रिपॉजिटरी द्वारा उपयोग किए जाने वाले पैक उसके <code>.review-pro/</code> में इंस्टॉल करें। फ़्रेमवर्क/डोमेन पैक एक भाषा पैक के ऊपर संयोजित होते हैं।</p>
+    <pre class="cmd"><code>npx review-pro                <span class="cmt"># interactive multi-select</span>
+npx review-pro add python     <span class="cmt"># one pack, CI-safe</span>
+npx review-pro list           <span class="cmt"># catalog + installed + drift</span></code></pre>
+    <p>कैटलॉग (14): <code>python</code> · <code>go</code> · <code>rust</code> · <code>typescript-react</code> · <code>node</code> · <code>php</code> · <code>dotnet</code> · <code>kotlin</code> · <code>swift</code> · <code>flutter</code> · <code>nextjs</code> · <code>react-native</code> · <code>wordpress</code> · <code>ai-ml</code>। उदाहरण: एक Next.js रिपॉजिटरी <code>typescript-react</code> + <code>nextjs</code> सक्रिय करती है; एक LLM ऐप <code>python</code> + <code>ai-ml</code> सक्रिय करता है।</p>
+
+    <h2 id="commands">कमांड</h2>
+    <table class="table">
+      <thead><tr><th>कमांड</th><th>क्या करता है</th></tr></thead>
+      <tbody>
+        <tr><td><code>npx review-pro</code></td><td>इंटरैक्टिव — <code>.review-pro/</code> में इंस्टॉल करने के लिए स्टैक चुनें</td></tr>
+        <tr><td><code>init [--target &lt;platform&gt;]</code></td><td>कोर प्लगइन को किसी टूल के होम में इंस्टॉल करें</td></tr>
+        <tr><td><code>add &lt;stack&gt;</code></td><td>एक स्टैक पैक इंस्टॉल करें (नॉन-इंटरैक्टिव)</td></tr>
+        <tr><td><code>remove &lt;stack&gt;</code></td><td>इंस्टॉल किए गए पैक को हटाएँ</td></tr>
+        <tr><td><code>update [stack]</code></td><td>इंस्टॉल किए गए पैक को कैटलॉग संस्करण में ताज़ा करें</td></tr>
+        <tr><td><code>list</code></td><td>कैटलॉग स्टैक + इंस्टॉल किए गए संस्करण + ड्रिफ़्ट दिखाएँ</td></tr>
+        <tr><td><code>doctor</code></td><td>इंस्टॉल किए गए पैक सत्यापित करें (संस्करण ड्रिफ़्ट, रोस्टर अखंडता, अनाथ)</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="run-a-review">समीक्षा चलाएँ</h2>
+    <p>इंस्टॉल + पुनर्प्रारंभ के बाद, उस रिपॉजिटरी में जिसकी आप समीक्षा करना चाहते हैं (एक फ़ीचर ब्रांच पर):</p>
+    <ul>
+      <li>सत्र से <strong>इस ब्रांच की review-pro से समीक्षा करने</strong> को कहें, या</li>
+      <li><strong><code>review-pro</code></strong> कौशल सीधे कॉल करें।</li>
+    </ul>
+    <p>एजेंट पूरा पाइपलाइन स्वदेशी रूप से चलाता है — <code>git diff</code>, बदली हुई फ़ाइलें पढ़ता है, सक्रिय स्टैक के लिए <code>.review-pro/</code> को स्कैन करता है, संबंधित समीक्षक सबएजेंट को उनके स्टैक संकेतों के साथ भेजता है, और एक निर्णय संश्लेषित करता है: <strong>BLOCK / REQUEST CHANGES / APPROVE</strong>। समीक्षण के समय कोई env वैरिएबल नहीं, चलाने के लिए कोई स्क्रिप्ट नहीं।</p>
+
+    <h2 id="reviewers">12 समीक्षक</h2>
+    <p><code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code>। <code>ai-antipatterns</code> समीक्षक प्रथम-श्रेणी है: मनगढ़ंत API/सिंबल/इम्पोर्ट, मनगढ़ंत कॉन्फ़िग/एनव कुंजी, अनावश्यक डिपेंडेंसीज़, और उपेक्षित मौजूदा हेल्पर्स।</p>
+
+    <h2 id="faq">सामान्य प्रश्न</h2>
+    <h3>क्या इसे Node.js चाहिए?</h3>
+    <p>केवल इंस्टॉलर CLI को (Node ≥ 18)। प्लगइन स्वयं सादा markdown कौशल और एजेंट हैं, इसलिए <a href="#manual-install">मैन्युअल इंस्टॉल</a> किसी भी प्लेटफ़ॉर्म पर Node के बिना काम करता है।</p>
+    <h3>यह एकल “इसकी समीक्षा करो” प्रॉम्प्ट से कैसे अलग है?</h3>
+    <p>एकल प्रॉम्प्ट पूरा diff एक एजेंट को दे देता है और सब कुछ माँगता है। review-pro पहले छँटाई करता है, केवल संबंधित विशेषज्ञों को सीमित संदर्भ के साथ समानांतर चलाता है, फिर संश्लेषित करता है — इसलिए छोटे बदलाव सस्ते रहते हैं और बड़े बदलाव गहराई में जाते हैं, गंभीरता अति-रिपोर्टिंग के विरुद्ध अंशांकित।</p>
+    <h3>स्टैक पैक कहाँ से आते हैं?</h3>
+    <p>कैटलॉग इस पैकेज के अंदर आता है, प्रकाशन के समय स्नैपशॉट किया गया। नए पैक एक नया संस्करण प्रकाशित होने के बाद दिखते हैं। अपना जोड़ने के लिए रिपॉजिटरी में <code>stacks/CONTRIBUTING.md</code> देखें।</p>
+    <h3>क्या यह सच में क्रॉस-प्लेटफ़ॉर्म है?</h3>
+    <p>हाँ — एक ही कैनोनिकल स्रोत opencode, Claude Code, Cursor और Codex में इंस्टॉल होता है। Codex एजेंट स्वतः TOML में बदल जाते हैं; बाकी वही markdown एजेंट उपयोग करते हैं।</p>
+  </article>
+</main>
+
+<footer class="footer wrap">
+  <div class="footer__top">
+    <p class="footer__statement">चरणों में सोचने वाली कोड समीक्षा।</p>
+    <div class="footer__links">
+      <a href="index.html">होम</a>
+      <a href="docs.html">दस्तावेज़</a>
+      <a href="https://github.com/tufantunc/review-pro" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://www.npmjs.com/package/review-pro" target="_blank" rel="noopener">npm</a>
+    </div>
+  </div>
+  <p class="footer__copy">MIT · review-pro · <a href="https://github.com/tufantunc/review-pro" style="color:inherit">github.com/tufantunc/review-pro</a></p>
+</footer>
+
+<script>
+  var io = new IntersectionObserver(function (es) {
+    es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });
+  }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
+  document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+  // active TOC link on scroll
+  var links = document.querySelectorAll('.toc a');
+  var map = {}; links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var headings = document.querySelectorAll('.doc h2[id]');
+  var obs = new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ links.forEach(function(l){l.classList.remove('is-active');}); var l=map[e.target.id]; if(l){l.classList.add('is-active');} } });
+  }, { rootMargin: "-20% 0px -75% 0px" });
+  headings.forEach(function(h){ obs.observe(h); });
+</script>
+<script>
+  (function () {
+    var btn = document.querySelector('.lang__btn');
+    var menu = document.querySelector('.lang__menu');
+    if (!btn || !menu) return;
+    var cur = document.documentElement.lang;
+    menu.querySelectorAll('a').forEach(function (a) {
+      if (a.dataset.lang === cur) a.setAttribute('aria-current', 'true');
+    });
+    function open() { menu.hidden = false; btn.setAttribute('aria-expanded', 'true'); }
+    function close() { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); }
+    btn.addEventListener('click', function (e) { e.stopPropagation(); menu.hidden ? open() : close(); });
+    document.addEventListener('click', function (e) { if (!menu.contains(e.target) && e.target !== btn) close(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    btn.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault(); open(); var f = menu.querySelector('a'); if (f) f.focus();
+      }
+    });
+  })();
+</script>
+</body>
+</html>

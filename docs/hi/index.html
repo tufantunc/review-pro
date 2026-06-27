@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="hi">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>review-pro — tiered AI code review</title>
-<meta name="description" content="review-pro reviews AI-written code in stages: triage dispatches the relevant specialists, each runs in its own scope, then synthesis returns one verdict. Built for the failure modes AI code ships with.">
+<title>review-pro — स्तरित AI कोड समीक्षा</title>
+<meta name="description" content="review-pro AI-लिखित कोड का चरणबद्ध समीक्षण करता है: छँटाई संबंधित विशेषज्ञों को भेजती है, प्रत्येक अपने क्षेत्र में चलता है, फिर संश्लेषण एक निर्णय लौटाता है। AI कोड की उन वास्तविक विफलताओं के लिए बनाया गया है जो वास्तव में आती हैं।">
 <link rel="alternate" hreflang="en" href="https://tufantunc.github.io/review-pro/">
 <link rel="alternate" hreflang="tr" href="https://tufantunc.github.io/review-pro/tr/">
 <link rel="alternate" hreflang="zh" href="https://tufantunc.github.io/review-pro/zh/">
@@ -54,30 +54,45 @@
 <nav class="nav" aria-label="Primary">
   <a class="brand" href="index.html"><span class="brand__mark" aria-hidden="true"></span> review-pro</a>
   <div class="nav__links">
-    <a href="index.html#how">How it works</a>
-    <a href="index.html#capabilities">Capabilities</a>
-    <a class="nav__keep" href="docs.html">Docs</a>
+    <a href="index.html#how">यह कैसे काम करता है</a>
+    <a href="index.html#capabilities">क्षमताएँ</a>
+    <a class="nav__keep" href="docs.html">दस्तावेज़</a>
     <a href="https://github.com/tufantunc/review-pro" target="_blank" rel="noopener">GitHub</a>
-    <a class="nav__cta" href="docs.html#install">Install</a>
+    <a class="nav__cta" href="docs.html#install">इंस्टॉल</a>
     <div class="lang">
-      <button class="lang__btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Language EN">
+      <button class="lang__btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="भाषा HI">
         <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
-  <rect width="60" height="40" fill="#012169"/>
-  <path d="M0,0 L60,40 M60,0 L0,40" stroke="#FFFFFF" stroke-width="6"/>
-  <clipPath id="uk-saltire">
-    <path d="M0,0 L60,40 M60,0 L0,40" stroke="#FFFFFF" stroke-width="6"/>
-  </clipPath>
-  <g clip-path="url(#uk-saltire)" stroke="#C8102E" stroke-width="2.2">
-    <line x1="0" y1="0" x2="30" y2="20" transform="translate(-0.832 1.248)"/>
-    <line x1="30" y1="20" x2="60" y2="40" transform="translate(0.832 -1.248)"/>
-    <line x1="60" y1="0" x2="30" y2="20" transform="translate(-0.832 -1.248)"/>
-    <line x1="30" y1="20" x2="0" y2="40" transform="translate(0.832 1.248)"/>
+  <rect width="60" height="13.333" y="0" fill="#FF9933"/>
+  <rect width="60" height="13.333" y="13.333" fill="#FFFFFF"/>
+  <rect width="60" height="13.333" y="26.667" fill="#138808"/>
+  <g stroke="#000080" stroke-width="0.5" fill="none">
+    <circle cx="30" cy="20" r="6"/>
+    <line x1="30" y1="20" x2="36" y2="20"/>
+    <line x1="30" y1="20" x2="35.796" y2="21.553"/>
+    <line x1="30" y1="20" x2="35.196" y2="23"/>
+    <line x1="30" y1="20" x2="34.243" y2="24.243"/>
+    <line x1="30" y1="20" x2="33" y2="25.196"/>
+    <line x1="30" y1="20" x2="31.553" y2="25.796"/>
+    <line x1="30" y1="20" x2="30" y2="26"/>
+    <line x1="30" y1="20" x2="28.447" y2="25.796"/>
+    <line x1="30" y1="20" x2="27" y2="25.196"/>
+    <line x1="30" y1="20" x2="25.757" y2="24.243"/>
+    <line x1="30" y1="20" x2="24.804" y2="23"/>
+    <line x1="30" y1="20" x2="24.204" y2="21.553"/>
+    <line x1="30" y1="20" x2="24" y2="20"/>
+    <line x1="30" y1="20" x2="24.204" y2="18.447"/>
+    <line x1="30" y1="20" x2="24.804" y2="17"/>
+    <line x1="30" y1="20" x2="25.757" y2="15.757"/>
+    <line x1="30" y1="20" x2="27" y2="14.804"/>
+    <line x1="30" y1="20" x2="28.447" y2="14.204"/>
+    <line x1="30" y1="20" x2="30" y2="14"/>
+    <line x1="30" y1="20" x2="31.553" y2="14.204"/>
+    <line x1="30" y1="20" x2="33" y2="14.804"/>
+    <line x1="30" y1="20" x2="34.243" y2="15.757"/>
+    <line x1="30" y1="20" x2="35.196" y2="17"/>
+    <line x1="30" y1="20" x2="35.796" y2="18.447"/>
   </g>
-  <rect x="26" y="0" width="8" height="40" fill="#FFFFFF"/>
-  <rect x="0" y="16" width="60" height="8" fill="#FFFFFF"/>
-  <rect x="28" y="0" width="4" height="40" fill="#C8102E"/>
-  <rect x="0" y="18" width="60" height="4" fill="#C8102E"/>
-</svg><span class="lang__code">EN</span>
+</svg><span class="lang__code">HI</span>
       </button>
       <ul class="lang__menu" role="menu" hidden>
         <li role="none"><a role="menuitem" data-lang="en" href="/review-pro/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
@@ -166,12 +181,12 @@
 <main>
 <header class="hero hero--split wrap">
   <div class="reveal">
-    <p class="eyebrow">Tiered AI code review</p>
-    <h1 class="hero__title">Twelve specialists.<br>One <em>verdict</em>.</h1>
-    <p class="hero__sub">review-pro reviews AI-written code in stages. Triage dispatches only the relevant specialists, each runs in its own scoped context, then synthesis returns one verdict. Built for the failure modes AI code actually ships with.</p>
+    <p class="eyebrow">स्तरित AI कोड समीक्षा</p>
+    <h1 class="hero__title">बारह विशेषज्ञ।<br>एक <em>निर्णय</em>।</h1>
+    <p class="hero__sub">review-pro AI-लिखित कोड का चरणबद्ध समीक्षण करता है। छँटाई केवल संबंधित विशेषज्ञों को भेजती है, प्रत्येक अपने सीमित संदर्भ में चलता है, फिर संश्लेषण एक निर्णय लौटाता है। AI कोड की उन वास्तविक विफलताओं के लिए बनाया गया है जो वास्तव में आती हैं।</p>
     <div class="hero__cta">
-      <a class="btn btn--primary" href="docs.html#install">Install</a>
-      <a class="btn" href="docs.html">Read the docs</a>
+      <a class="btn btn--primary" href="docs.html#install">इंस्टॉल</a>
+      <a class="btn" href="docs.html">दस्तावेज़ पढ़ें</a>
     </div>
   </div>
   <div class="demo reveal" id="demo" role="img" aria-label="Animated demo of review-pro running a code review in an agent session">
@@ -218,55 +233,55 @@
 
 <section class="pipeline wrap" id="how">
   <div class="stage reveal">
-    <div class="stage__num">01<span>STAGE</span></div>
+    <div class="stage__num">01<span>चरण</span></div>
     <div>
-      <h2 class="stage__title">Triage</h2>
-      <p class="stage__body">Classify the diff and dispatch only the specialists that matter for this change. Each one gets scoped context — callers, repo search, schema, consumers — not the whole repository.</p>
-      <div class="stage__tags"><span class="tag">classify</span><span class="tag">scope</span><span class="tag">dispatch</span></div>
+      <h2 class="stage__title">छँटाई</h2>
+      <p class="stage__body">diff को वर्गीकृत करें और केवल उन विशेषज्ञों को भेजें जो इस बदलाव के लिए मायने रखते हैं। प्रत्येक को सीमित संदर्भ मिलता है — कॉलर्स, रिपॉजिटरी खोज, स्कीमा, उपभोक्ता — पूरी रिपॉजिटरी नहीं।</p>
+      <div class="stage__tags"><span class="tag">वर्गीकृत</span><span class="tag">दायरा</span><span class="tag">प्रेषण</span></div>
     </div>
   </div>
   <div class="stage reveal">
-    <div class="stage__num">02<span>STAGE</span></div>
+    <div class="stage__num">02<span>चरण</span></div>
     <div>
-      <h2 class="stage__title">Fan-out</h2>
-      <p class="stage__body">The relevant specialists run in parallel. Twelve reviewers, each owns one concern, each returns structured, evidence-backed findings with file, line, impact, and remedy.</p>
-      <div class="stage__tags"><span class="tag">parallel</span><span class="tag">scoped</span><span class="tag">structured</span></div>
+      <h2 class="stage__title">वितरण</h2>
+      <p class="stage__body">संबंधित विशेषज्ञ समानांतर चलते हैं। बारह समीक्षक, प्रत्येक एक ही चिंता का स्वामी, प्रत्येक संरचित, साक्ष्य-आधारित निष्कर्ष लौटाता है — फ़ाइल, पंक्ति, प्रभाव और उपाय के साथ।</p>
+      <div class="stage__tags"><span class="tag">समानांतर</span><span class="tag">सीमित</span><span class="tag">संरचित</span></div>
     </div>
   </div>
   <div class="stage reveal">
-    <div class="stage__num">03<span>STAGE</span></div>
+    <div class="stage__num">03<span>चरण</span></div>
     <div>
-      <h2 class="stage__title">Synthesis</h2>
-      <p class="stage__body">Dedupe overlaps, resolve cross-reviewer conflicts by domain ownership, calibrate severity against over-reporting, and emit one verdict — <strong>BLOCK</strong>, <strong>REQUEST CHANGES</strong>, or <strong>APPROVE</strong>.</p>
-      <div class="stage__tags"><span class="tag">dedupe</span><span class="tag">resolve</span><span class="tag">verdict</span></div>
+      <h2 class="stage__title">संश्लेषण</h2>
+      <p class="stage__body">ओवरलैप को डी-डुप्लिकेट करें, क्रॉस-रिव्युअर संघर्षों को डोमेन स्वामित्व से हल करें, अति-रिपोर्टिंग के विरुद्ध गंभीरता अंशांकित करें, और एक निर्णय दें — <strong>BLOCK</strong>, <strong>REQUEST CHANGES</strong>, या <strong>APPROVE</strong>।</p>
+      <div class="stage__tags"><span class="tag">दोहराव हटाएँ</span><span class="tag">हल करें</span><span class="tag">निर्णय</span></div>
     </div>
   </div>
 </section>
 
 <section class="cap wrap" id="capabilities">
   <div class="section__head reveal">
-    <p class="section__eyebrow">Capabilities</p>
-    <h2 class="section__title">A review bench, not one big guess.</h2>
-    <p class="section__lead">Every specialist owns a single concern and a strict rubric. A first-class AI-anti-patterns lens catches what generic reviewers miss — hallucinated APIs, over-engineering, ignored helpers, needless dependencies.</p>
+    <p class="section__eyebrow">क्षमताएँ</p>
+    <h2 class="section__title">एक समीक्षण बेंच, कोई एक बड़ा अनुमान नहीं।</h2>
+    <p class="section__lead">हर विशेषज्ञ एक ही चिंता और एक सख्त रूबरिक का स्वामी है। एक प्रथम-श्रेणी AI-एंटी-पैटर्न लेंस वह पकड़ लेता है जो सामान्य समीक्षक छोड़ देते हैं — मनगढ़ंत API, अति-इंजीनियरिंग, उपेक्षित हेल्पर्स, अनावश्यक डिपेंडेंसीज़।</p>
   </div>
   <div class="grid reveal">
     <div class="card">
-      <h3>12 specialist reviewers</h3>
-      <p>Each owns one concern, with a strict, calibrated rubric and structured output.</p>
+      <h3>12 विशेषज्ञ समीक्षक</h3>
+      <p>प्रत्येक एक चिंता का स्वामी है, एक सख्त, अंशांकित रूबरिक और संरचित आउटपुट के साथ।</p>
       <div class="pillset">
         <span class="tag">security</span><span class="tag">correctness</span><span class="tag">craft</span><span class="tag">ai-antipatterns</span><span class="tag">dry</span><span class="tag">performance</span><span class="tag">backend</span><span class="tag">frontend</span><span class="tag">a11y</span><span class="tag">db</span><span class="tag">api-contract</span><span class="tag">tests</span>
       </div>
     </div>
     <div class="card">
-      <h3>14 stack packs</h3>
-      <p>Language &amp; framework signals layered onto the core rubrics at review time. Framework packs compose on a language pack.</p>
+      <h3>14 स्टैक पैक</h3>
+      <p>समीक्षण के समय मूल रूबरिक पर भाषा और फ़्रेमवर्क संकेत स्तरित किए जाते हैं। फ़्रेमवर्क पैक एक भाषा पैक पर संयोजित होते हैं।</p>
       <div class="pillset">
         <span class="tag">python</span><span class="tag">go</span><span class="tag">rust</span><span class="tag">typescript-react</span><span class="tag">node</span><span class="tag">php</span><span class="tag">dotnet</span><span class="tag">kotlin</span><span class="tag">swift</span><span class="tag">flutter</span><span class="tag">nextjs</span><span class="tag">react-native</span><span class="tag">wordpress</span><span class="tag">ai-ml</span>
       </div>
     </div>
     <div class="card">
-      <h3>4 platforms</h3>
-      <p>One canonical source installs into each tool from a single command. Codex agents auto-transform to TOML; Cursor can <code>/add-plugin</code> the repo directly.</p>
+      <h3>4 प्लेटफ़ॉर्म</h3>
+      <p>एक ही कैनोनिकल स्रोत एक ही कमांड से हर टूल में इंस्टॉल होता है। Codex एजेंट स्वतः TOML में बदल जाते हैं; Cursor सीधे रिपॉजिटरी को <code>/add-plugin</code> कर सकता है।</p>
       <div class="pillset">
         <span class="tag">opencode</span><span class="tag">Cursor</span><span class="tag">Claude&nbsp;Code</span><span class="tag">Codex</span>
       </div>
@@ -276,23 +291,23 @@
 
 <section class="install wrap">
   <div class="install__inner reveal">
-    <p class="section__eyebrow">Install</p>
-    <h2 class="section__title" style="font-size:var(--text-xl);">One command. No lock-in.</h2>
-    <p class="section__lead" style="margin-bottom:0.2rem;">Install the core into your tool, then add the stack packs you use.</p>
+    <p class="section__eyebrow">इंस्टॉल</p>
+    <h2 class="section__title" style="font-size:var(--text-xl);">एक कमांड। कोई लॉक-इन नहीं।</h2>
+    <p class="section__lead" style="margin-bottom:0.2rem;">अपने टूल में कोर इंस्टॉल करें, फिर अपने उपयोग के स्टैक पैक जोड़ें।</p>
     <pre class="cmd"><code>npx review-pro init            <span class="cmt"># interactive: pick platforms + stacks</span>
 npx review-pro add <span class="prm">python</span>      <span class="cmt"># add a stack to .review-pro/</span></code></pre>
-    <p class="note">No Node.js? review-pro is plain markdown skills and agents — copy them into your tool’s folder and it works the same. See the <a href="docs.html#manual-install">manual install guide</a>.</p>
-    <p class="note">Then restart your tool and run a review — open a branch and ask the session to review it, or invoke the <span class="kbd">review-pro</span> skill.</p>
+    <p class="note">Node.js नहीं है? review-pro सादा markdown कौशल और एजेंट हैं — उन्हें अपने टूल के फ़ोल्डर में कॉपी करें और यह वैसे ही काम करता है। <a href="docs.html#manual-install">मैन्युअल इंस्टॉल गाइड</a> देखें।</p>
+    <p class="note">फिर अपना टूल पुनर्प्रारंभ करें और एक समीक्षा चलाएँ — एक ब्रांच खोलें और सत्र से इसकी समीक्षा करने को कहें, या <span class="kbd">review-pro</span> कौशल कॉल करें।</p>
   </div>
 </section>
 </main>
 
 <footer class="footer wrap">
   <div class="footer__top">
-    <p class="footer__statement">Code review that thinks in stages.</p>
+    <p class="footer__statement">चरणों में सोचने वाली कोड समीक्षा।</p>
     <div class="footer__links">
-      <a href="index.html">Home</a>
-      <a href="docs.html">Docs</a>
+      <a href="index.html">होम</a>
+      <a href="docs.html">दस्तावेज़</a>
       <a href="https://github.com/tufantunc/review-pro" target="_blank" rel="noopener">GitHub</a>
       <a href="https://www.npmjs.com/package/review-pro" target="_blank" rel="noopener">npm</a>
     </div>

@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>review-pro — tiered AI code review</title>
-<meta name="description" content="review-pro reviews AI-written code in stages: triage dispatches the relevant specialists, each runs in its own scope, then synthesis returns one verdict. Built for the failure modes AI code ships with.">
+<title>review-pro — gestaffelte KI-Codeprüfung</title>
+<meta name="description" content="review-pro prüft KI-geschriebenen Code in Stufen: Das Triage leitet die relevanten Spezialisten weiter, jeder läuft in seinem eigenen Geltungsbereich, danach gibt die Synthese ein Urteil zurück. Gebaut für die Fehlermuster, mit denen KI-Code ausgeliefert wird.">
 <link rel="alternate" hreflang="en" href="https://tufantunc.github.io/review-pro/">
 <link rel="alternate" hreflang="tr" href="https://tufantunc.github.io/review-pro/tr/">
 <link rel="alternate" hreflang="zh" href="https://tufantunc.github.io/review-pro/zh/">
@@ -54,30 +54,18 @@
 <nav class="nav" aria-label="Primary">
   <a class="brand" href="index.html"><span class="brand__mark" aria-hidden="true"></span> review-pro</a>
   <div class="nav__links">
-    <a href="index.html#how">How it works</a>
-    <a href="index.html#capabilities">Capabilities</a>
-    <a class="nav__keep" href="docs.html">Docs</a>
+    <a href="index.html#how">Funktionsweise</a>
+    <a href="index.html#capabilities">Funktionen</a>
+    <a class="nav__keep" href="docs.html">Doku</a>
     <a href="https://github.com/tufantunc/review-pro" target="_blank" rel="noopener">GitHub</a>
-    <a class="nav__cta" href="docs.html#install">Install</a>
+    <a class="nav__cta" href="docs.html#install">Installation</a>
     <div class="lang">
-      <button class="lang__btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Language EN">
+      <button class="lang__btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Sprache DE">
         <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
-  <rect width="60" height="40" fill="#012169"/>
-  <path d="M0,0 L60,40 M60,0 L0,40" stroke="#FFFFFF" stroke-width="6"/>
-  <clipPath id="uk-saltire">
-    <path d="M0,0 L60,40 M60,0 L0,40" stroke="#FFFFFF" stroke-width="6"/>
-  </clipPath>
-  <g clip-path="url(#uk-saltire)" stroke="#C8102E" stroke-width="2.2">
-    <line x1="0" y1="0" x2="30" y2="20" transform="translate(-0.832 1.248)"/>
-    <line x1="30" y1="20" x2="60" y2="40" transform="translate(0.832 -1.248)"/>
-    <line x1="60" y1="0" x2="30" y2="20" transform="translate(-0.832 -1.248)"/>
-    <line x1="30" y1="20" x2="0" y2="40" transform="translate(0.832 1.248)"/>
-  </g>
-  <rect x="26" y="0" width="8" height="40" fill="#FFFFFF"/>
-  <rect x="0" y="16" width="60" height="8" fill="#FFFFFF"/>
-  <rect x="28" y="0" width="4" height="40" fill="#C8102E"/>
-  <rect x="0" y="18" width="60" height="4" fill="#C8102E"/>
-</svg><span class="lang__code">EN</span>
+  <rect width="60" height="13.333" y="0" fill="#000000"/>
+  <rect width="60" height="13.333" y="13.333" fill="#DD0000"/>
+  <rect width="60" height="13.333" y="26.667" fill="#FFCE00"/>
+</svg><span class="lang__code">DE</span>
       </button>
       <ul class="lang__menu" role="menu" hidden>
         <li role="none"><a role="menuitem" data-lang="en" href="/review-pro/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
@@ -166,12 +154,12 @@
 <main>
 <header class="hero hero--split wrap">
   <div class="reveal">
-    <p class="eyebrow">Tiered AI code review</p>
-    <h1 class="hero__title">Twelve specialists.<br>One <em>verdict</em>.</h1>
-    <p class="hero__sub">review-pro reviews AI-written code in stages. Triage dispatches only the relevant specialists, each runs in its own scoped context, then synthesis returns one verdict. Built for the failure modes AI code actually ships with.</p>
+    <p class="eyebrow">Gestaffelte KI-Codeprüfung</p>
+    <h1 class="hero__title">Zwölf Spezialisten.<br>Ein <em>Urteil</em>.</h1>
+    <p class="hero__sub">review-pro prüft KI-geschriebenen Code in Stufen. Das Triage leitet nur die relevanten Spezialisten weiter, jeder läuft in seinem eigenen Geltungsbereich, dann gibt die Synthese ein Urteil zurück. Gebaut für die Fehlermuster, die KI-Code tatsächlich ausliefert.</p>
     <div class="hero__cta">
-      <a class="btn btn--primary" href="docs.html#install">Install</a>
-      <a class="btn" href="docs.html">Read the docs</a>
+      <a class="btn btn--primary" href="docs.html#install">Installation</a>
+      <a class="btn" href="docs.html">Zur Doku</a>
     </div>
   </div>
   <div class="demo reveal" id="demo" role="img" aria-label="Animated demo of review-pro running a code review in an agent session">
@@ -218,55 +206,55 @@
 
 <section class="pipeline wrap" id="how">
   <div class="stage reveal">
-    <div class="stage__num">01<span>STAGE</span></div>
+    <div class="stage__num">01<span>STUFE</span></div>
     <div>
       <h2 class="stage__title">Triage</h2>
-      <p class="stage__body">Classify the diff and dispatch only the specialists that matter for this change. Each one gets scoped context — callers, repo search, schema, consumers — not the whole repository.</p>
-      <div class="stage__tags"><span class="tag">classify</span><span class="tag">scope</span><span class="tag">dispatch</span></div>
+      <p class="stage__body">Klassifiziere den Diff und leite nur die Spezialisten weiter, die für diese Änderung wichtig sind. Jeder erhält einen Geltungsbereich — Aufrufer, Repo-Suche, Schema, Konsumenten — nicht das gesamte Repository.</p>
+      <div class="stage__tags"><span class="tag">klassifizieren</span><span class="tag">eingrenzen</span><span class="tag">weiterleiten</span></div>
     </div>
   </div>
   <div class="stage reveal">
-    <div class="stage__num">02<span>STAGE</span></div>
+    <div class="stage__num">02<span>STUFE</span></div>
     <div>
-      <h2 class="stage__title">Fan-out</h2>
-      <p class="stage__body">The relevant specialists run in parallel. Twelve reviewers, each owns one concern, each returns structured, evidence-backed findings with file, line, impact, and remedy.</p>
-      <div class="stage__tags"><span class="tag">parallel</span><span class="tag">scoped</span><span class="tag">structured</span></div>
+      <h2 class="stage__title">Verteilung</h2>
+      <p class="stage__body">Die relevanten Spezialisten laufen parallel. Zwölf Prüfer, jeder besitzt ein Anliegen, jeder liefert strukturierte, belegte Befunde mit Datei, Zeile, Auswirkung und Abhilfe.</p>
+      <div class="stage__tags"><span class="tag">parallel</span><span class="tag">eingegrenzt</span><span class="tag">strukturiert</span></div>
     </div>
   </div>
   <div class="stage reveal">
-    <div class="stage__num">03<span>STAGE</span></div>
+    <div class="stage__num">03<span>STUFE</span></div>
     <div>
-      <h2 class="stage__title">Synthesis</h2>
-      <p class="stage__body">Dedupe overlaps, resolve cross-reviewer conflicts by domain ownership, calibrate severity against over-reporting, and emit one verdict — <strong>BLOCK</strong>, <strong>REQUEST CHANGES</strong>, or <strong>APPROVE</strong>.</p>
-      <div class="stage__tags"><span class="tag">dedupe</span><span class="tag">resolve</span><span class="tag">verdict</span></div>
+      <h2 class="stage__title">Synthese</h2>
+      <p class="stage__body">Dedupliziere Überschneidungen, löse Konflikte zwischen Prüfern nach Fachverantwortung, kalibriere den Schweregrad gegen Übermeldungen und gib ein Urteil heraus — <strong>BLOCK</strong>, <strong>REQUEST CHANGES</strong> oder <strong>APPROVE</strong>.</p>
+      <div class="stage__tags"><span class="tag">deduplizieren</span><span class="tag">auflösen</span><span class="tag">Urteil</span></div>
     </div>
   </div>
 </section>
 
 <section class="cap wrap" id="capabilities">
   <div class="section__head reveal">
-    <p class="section__eyebrow">Capabilities</p>
-    <h2 class="section__title">A review bench, not one big guess.</h2>
-    <p class="section__lead">Every specialist owns a single concern and a strict rubric. A first-class AI-anti-patterns lens catches what generic reviewers miss — hallucinated APIs, over-engineering, ignored helpers, needless dependencies.</p>
+    <p class="section__eyebrow">Funktionen</p>
+    <h2 class="section__title">Eine Prüfbank, nicht eine große Vermutung.</h2>
+    <p class="section__lead">Jeder Spezialist besitzt ein einziges Anliegen und eine strenge Rubrik. Eine erstklassige KI-Anti-Pattern-Linse erfasst, was generische Prüfer übersehen — halluzinierte APIs, Über-Engineering, ignorierte Helfer, überflüssige Abhängigkeiten.</p>
   </div>
   <div class="grid reveal">
     <div class="card">
-      <h3>12 specialist reviewers</h3>
-      <p>Each owns one concern, with a strict, calibrated rubric and structured output.</p>
+      <h3>12 Spezialisten-Prüfer</h3>
+      <p>Jeder besitzt ein Anliegen, mit einer strengen, kalibrierten Rubrik und strukturierter Ausgabe.</p>
       <div class="pillset">
         <span class="tag">security</span><span class="tag">correctness</span><span class="tag">craft</span><span class="tag">ai-antipatterns</span><span class="tag">dry</span><span class="tag">performance</span><span class="tag">backend</span><span class="tag">frontend</span><span class="tag">a11y</span><span class="tag">db</span><span class="tag">api-contract</span><span class="tag">tests</span>
       </div>
     </div>
     <div class="card">
-      <h3>14 stack packs</h3>
-      <p>Language &amp; framework signals layered onto the core rubrics at review time. Framework packs compose on a language pack.</p>
+      <h3>14 Stack-Pakete</h3>
+      <p>Sprach- und Framework-Signale werden zur Prüfzeit auf die Kernrubriken geschichtet. Framework-Pakete setzen auf einem Sprachpaket auf.</p>
       <div class="pillset">
         <span class="tag">python</span><span class="tag">go</span><span class="tag">rust</span><span class="tag">typescript-react</span><span class="tag">node</span><span class="tag">php</span><span class="tag">dotnet</span><span class="tag">kotlin</span><span class="tag">swift</span><span class="tag">flutter</span><span class="tag">nextjs</span><span class="tag">react-native</span><span class="tag">wordpress</span><span class="tag">ai-ml</span>
       </div>
     </div>
     <div class="card">
-      <h3>4 platforms</h3>
-      <p>One canonical source installs into each tool from a single command. Codex agents auto-transform to TOML; Cursor can <code>/add-plugin</code> the repo directly.</p>
+      <h3>4 Plattformen</h3>
+      <p>Eine kanonische Quelle installiert sich mit einem einzigen Befehl in jedes Tool. Codex-Agenten werden automatisch zu TOML transformiert; Cursor kann das Repo per <code>/add-plugin</code> direkt hinzufügen.</p>
       <div class="pillset">
         <span class="tag">opencode</span><span class="tag">Cursor</span><span class="tag">Claude&nbsp;Code</span><span class="tag">Codex</span>
       </div>
@@ -276,23 +264,23 @@
 
 <section class="install wrap">
   <div class="install__inner reveal">
-    <p class="section__eyebrow">Install</p>
-    <h2 class="section__title" style="font-size:var(--text-xl);">One command. No lock-in.</h2>
-    <p class="section__lead" style="margin-bottom:0.2rem;">Install the core into your tool, then add the stack packs you use.</p>
+    <p class="section__eyebrow">Installation</p>
+    <h2 class="section__title" style="font-size:var(--text-xl);">Ein Befehl. Kein Lock-in.</h2>
+    <p class="section__lead" style="margin-bottom:0.2rem;">Installiere den Kern in dein Tool und füge dann die Stack-Pakete hinzu, die du nutzt.</p>
     <pre class="cmd"><code>npx review-pro init            <span class="cmt"># interactive: pick platforms + stacks</span>
 npx review-pro add <span class="prm">python</span>      <span class="cmt"># add a stack to .review-pro/</span></code></pre>
-    <p class="note">No Node.js? review-pro is plain markdown skills and agents — copy them into your tool’s folder and it works the same. See the <a href="docs.html#manual-install">manual install guide</a>.</p>
-    <p class="note">Then restart your tool and run a review — open a branch and ask the session to review it, or invoke the <span class="kbd">review-pro</span> skill.</p>
+    <p class="note">Kein Node.js? review-pro besteht aus reinen Markdown-Skills und -Agenten — kopiere sie in den Ordner deines Tools und es funktioniert genauso. Siehe die <a href="docs.html#manual-install">Anleitung zur manuellen Installation</a>.</p>
+    <p class="note">Starte dann dein Tool neu und führe eine Prüfung aus — öffne einen Branch und bitte die Session, ihn zu prüfen, oder rufe den <span class="kbd">review-pro</span>-Skill auf.</p>
   </div>
 </section>
 </main>
 
 <footer class="footer wrap">
   <div class="footer__top">
-    <p class="footer__statement">Code review that thinks in stages.</p>
+    <p class="footer__statement">Codeprüfung, die in Stufen denkt.</p>
     <div class="footer__links">
-      <a href="index.html">Home</a>
-      <a href="docs.html">Docs</a>
+      <a href="index.html">Start</a>
+      <a href="docs.html">Doku</a>
       <a href="https://github.com/tufantunc/review-pro" target="_blank" rel="noopener">GitHub</a>
       <a href="https://www.npmjs.com/package/review-pro" target="_blank" rel="noopener">npm</a>
     </div>

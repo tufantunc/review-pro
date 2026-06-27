@@ -16,11 +16,12 @@
 <script>(function () {
   try {
     var KEY = 'rp_lang';
-    if (localStorage.getItem(KEY)) return;           // user already chose
+    if (localStorage.getItem(KEY)) return;           // already detected/chosen — skip (anti-loop)
     if (navigator.webdriver) return;                 // automation
     var ua = navigator.userAgent || '';
     if (/bot|crawl|spider|slurp|headless|wget|curl|lighthouse|pingdom/i.test(ua)) return;
-    var supported = ['en', 'tr', 'zh', 'hi', 'de', 'fr', 'nl'];
+    var supported = ["en","tr","zh","hi","de","fr","nl"];
+    var base = '/review-pro';
     var cur = document.documentElement.lang;
     var picks = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language];
     var match = null;
@@ -29,27 +30,28 @@
       if (supported.indexOf(short) >= 0) { match = short; break; }
     }
     if (match && match !== cur) {
-      var base = '/review-pro';
+      var langRe = new RegExp('^\\/(' + supported.join('|') + ')(\\/|$)');
       var rel = location.pathname.replace(base, '').replace(/\/index\.html$/, '/');
-      rel = rel.replace(/^\/(en|tr|zh|hi|de|fr|nl)(\/|$)/, '/');
+      rel = rel.replace(langRe, '/');
       rel = rel.replace(/\/+$/, '/');
-      var target = base + '/' + match + (rel === '/' ? '/' : rel);
+      // English is served from the root, not under /en/
+      var target = match === 'en' ? (base + rel) : (base + '/' + match + rel);
       target = target.replace(/\/{2,}/g, '/');
-      localStorage.setItem(KEY, match);
+      try { localStorage.setItem(KEY, match); } catch (e) {}  // best-effort; don't gate the redirect on storage
       location.replace(target);
     } else {
-      localStorage.setItem(KEY, cur);
+      try { localStorage.setItem(KEY, cur); } catch (e) {}
     }
   } catch (e) {}
 })();
 </script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23e8e1cf'/%3E%3Crect x='10.5' y='10.5' width='11' height='11' rx='2' transform='rotate(45 16 16)' fill='%232f6f55'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/review-pro/fonts/fonts.css">
+
 <link rel="stylesheet" href="/review-pro/site.css">
 </head>
 <body>
+<a class="skip-link" href="#main">Skip to content</a>
 
 <nav class="nav" aria-label="Primary">
   <a class="brand" href="index.html"><span class="brand__mark" aria-hidden="true"></span> review-pro</a>
@@ -59,17 +61,17 @@
     <a class="nav__keep is-active" href="docs.html">Dokümanlar</a>
     <a href="https://github.com/tufantunc/review-pro" target="_blank" rel="noopener">GitHub</a>
     <a class="nav__cta" href="docs.html#install">Kurulum</a>
-    <div class="lang">
-      <button class="lang__btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Dil TR">
-        <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+     <div class="lang">
+       <button class="lang__btn" type="button" aria-expanded="false" aria-controls="lang-menu" aria-label="Dil TR">
+         <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
   <rect width="60" height="40" fill="#E30A17"/>
   <circle cx="22.5" cy="20" r="9" fill="#FFFFFF"/>
   <circle cx="26" cy="20" r="7.5" fill="#E30A17"/>
   <path d="M 0 -2 L 0.449 -0.618 L 1.902 -0.618 L 0.727 0.236 L 1.176 1.618 L 0 0.764 L -1.176 1.618 L -0.727 0.236 L -1.902 -0.618 L -0.449 -0.618 Z" transform="translate(34 20) scale(1.6)" fill="#FFFFFF"/>
 </svg><span class="lang__code">TR</span>
-      </button>
-      <ul class="lang__menu" role="menu" hidden>
-        <li role="none"><a role="menuitem" data-lang="en" href="/review-pro/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+       </button>
+       <ul class="lang__menu" id="lang-menu" hidden>
+         <li><a data-lang="en" href="/review-pro/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
   <rect width="60" height="40" fill="#012169"/>
   <path d="M0,0 L60,40 M60,0 L0,40" stroke="#FFFFFF" stroke-width="6"/>
   <clipPath id="uk-saltire">
@@ -86,13 +88,13 @@
   <rect x="28" y="0" width="4" height="40" fill="#C8102E"/>
   <rect x="0" y="18" width="60" height="4" fill="#C8102E"/>
 </svg> English</a></li>
-        <li role="none"><a role="menuitem" data-lang="tr" href="/review-pro/tr/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+         <li><a data-lang="tr" href="/review-pro/tr/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
   <rect width="60" height="40" fill="#E30A17"/>
   <circle cx="22.5" cy="20" r="9" fill="#FFFFFF"/>
   <circle cx="26" cy="20" r="7.5" fill="#E30A17"/>
   <path d="M 0 -2 L 0.449 -0.618 L 1.902 -0.618 L 0.727 0.236 L 1.176 1.618 L 0 0.764 L -1.176 1.618 L -0.727 0.236 L -1.902 -0.618 L -0.449 -0.618 Z" transform="translate(34 20) scale(1.6)" fill="#FFFFFF"/>
 </svg> Türkçe</a></li>
-        <li role="none"><a role="menuitem" data-lang="zh" href="/review-pro/zh/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+         <li><a data-lang="zh" href="/review-pro/zh/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
   <rect width="60" height="40" fill="#DE2910"/>
   <path d="M 0 -2 L 0.449 -0.618 L 1.902 -0.618 L 0.727 0.236 L 1.176 1.618 L 0 0.764 L -1.176 1.618 L -0.727 0.236 L -1.902 -0.618 L -0.449 -0.618 Z" transform="translate(10 10) scale(3)" fill="#FFDE00"/>
   <path d="M 0 -2 L 0.449 -0.618 L 1.902 -0.618 L 0.727 0.236 L 1.176 1.618 L 0 0.764 L -1.176 1.618 L -0.727 0.236 L -1.902 -0.618 L -0.449 -0.618 Z" transform="translate(20 4) rotate(239.04)" fill="#FFDE00"/>
@@ -100,7 +102,7 @@
   <path d="M 0 -2 L 0.449 -0.618 L 1.902 -0.618 L 0.727 0.236 L 1.176 1.618 L 0 0.764 L -1.176 1.618 L -0.727 0.236 L -1.902 -0.618 L -0.449 -0.618 Z" transform="translate(24 14) rotate(285.94)" fill="#FFDE00"/>
   <path d="M 0 -2 L 0.449 -0.618 L 1.902 -0.618 L 0.727 0.236 L 1.176 1.618 L 0 0.764 L -1.176 1.618 L -0.727 0.236 L -1.902 -0.618 L -0.449 -0.618 Z" transform="translate(20 18) rotate(308.66)" fill="#FFDE00"/>
 </svg> 中文</a></li>
-        <li role="none"><a role="menuitem" data-lang="hi" href="/review-pro/hi/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+         <li><a data-lang="hi" href="/review-pro/hi/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
   <rect width="60" height="13.333" y="0" fill="#FF9933"/>
   <rect width="60" height="13.333" y="13.333" fill="#FFFFFF"/>
   <rect width="60" height="13.333" y="26.667" fill="#138808"/>
@@ -132,27 +134,27 @@
     <line x1="30" y1="20" x2="35.796" y2="18.447"/>
   </g>
 </svg> हिन्दी</a></li>
-        <li role="none"><a role="menuitem" data-lang="de" href="/review-pro/de/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+         <li><a data-lang="de" href="/review-pro/de/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
   <rect width="60" height="13.333" y="0" fill="#000000"/>
   <rect width="60" height="13.333" y="13.333" fill="#DD0000"/>
   <rect width="60" height="13.333" y="26.667" fill="#FFCE00"/>
 </svg> Deutsch</a></li>
-        <li role="none"><a role="menuitem" data-lang="fr" href="/review-pro/fr/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+         <li><a data-lang="fr" href="/review-pro/fr/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
   <rect width="20" height="40" x="0" fill="#0055A4"/>
   <rect width="20" height="40" x="20" fill="#FFFFFF"/>
   <rect width="20" height="40" x="40" fill="#EF4135"/>
 </svg> Français</a></li>
-        <li role="none"><a role="menuitem" data-lang="nl" href="/review-pro/nl/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+         <li><a data-lang="nl" href="/review-pro/nl/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
   <rect width="60" height="13.333" y="0" fill="#AE1C28"/>
   <rect width="60" height="13.333" y="13.333" fill="#FFFFFF"/>
   <rect width="60" height="13.333" y="26.667" fill="#21468B"/>
 </svg> Nederlands</a></li>
-      </ul>
-    </div>
+       </ul>
+     </div>
   </div>
 </nav>
 
-<main class="docs wrap">
+<main class="docs wrap" id="main" tabindex="-1">
   <aside class="toc" aria-label="On this page">
     <p class="toc__title">Bu sayfada</p>
     <ul>
@@ -186,7 +188,7 @@
     <div class="callout"><p>Sonra kullandığın yığın paketlerini ekle (aşağıda), yeni becerilerin/ajanların keşfedilmesi için <strong>aracını yeniden başlat</strong> ve bir inceleme çalıştır.</p></div>
 
     <h2 id="manual-install">El ile kurulum (Node.js yok)</h2>
-    <p>review-pro düz markdown beceri ve ajanlarıdır — çalışma zamanı bağımlılığı yoktur. Node.js'in yoksa (veya CLI'yı kullanmayı tercih etmiyorsan) dosyaları elle kopyala:</p>
+    <p>review-pro düz markdown beceri ve ajanlarıdır — çalışma zamanı bağımlılığı yoktur. Node.js&#39;in yoksa (veya CLI&#39;yı kullanmayı tercih etmiyorsan) dosyaları elle kopyala:</p>
     <ol>
       <li><strong>Çekirdek</strong> — <code>core/skills/&lt;name&gt;/</code> klasörünü aracının beceriler klasörüne ve <code>core/agents/*.md</code> dosyalarını ajanlar klasörüne kopyala (yukarıdaki platform başına yollar).</li>
       <li><strong>Yığın paketleri</strong> — <code>stacks/&lt;pack&gt;/</code> klasörünü incelenen deponun <code>.review-pro/&lt;pack&gt;/</code> konumuna kopyala.</li>
@@ -233,11 +235,11 @@ npx review-pro list           <span class="cmt"># catalog + installed + drift</s
     <h3>Node.js gerektiriyor mu?</h3>
     <p>Yalnızca kurulum CLI'sı gerektirir (Node ≥ 18). Eklentinin kendisi düz markdown beceri ve ajanlarıdır, bu yüzden <a href="#manual-install">el ile kurulum</a> herhangi bir platformda Node olmadan çalışır.</p>
     <h3>Tek bir “bunu incele” isteğinden farkı ne?</h3>
-    <p>Tek bir istek tüm diff'i tek bir ajana verir ve her şeyi ister. review-pro önce triyaj yapar, yalnızca ilgili uzmanları kapsamlı bağlamla paralel çalıştırır, ardından sentezler — böylece küçük değişiklikler ucuz kalır, büyük değişiklikler derinleşir ve şiddet aşırı raporlamaya karşı kalibre edilir.</p>
+    <p>Tek bir istek tüm diff&#39;i tek bir ajana verir ve her şeyi ister. review-pro önce triyaj yapar, yalnızca ilgili uzmanları kapsamlı bağlamla paralel çalıştırır, ardından sentezler — böylece küçük değişiklikler ucuz kalır, büyük değişiklikler derinleşir ve şiddet aşırı raporlamaya karşı kalibre edilir.</p>
     <h3>Yığın paketleri nereden gelir?</h3>
     <p>Katalog bu paketin içinde, yayımlama anında anlık görüntü olarak gelir. Yeni paketler yeni bir sürüm yayımlandıktan sonra görünür. Kendininkini eklemek için depodaki <code>stacks/CONTRIBUTING.md</code> dosyasına bak.</p>
     <h3>Gerçekten platformlar arası mı?</h3>
-    <p>Evet — tek bir kanonik kaynak opencode, Claude Code, Cursor ve Codex'e kurulur. Codex ajanları otomatik olarak TOML'a dönüştürülür; diğerleri aynı markdown ajanları kullanır.</p>
+    <p>Evet — tek bir kanonik kaynak opencode, Claude Code, Cursor ve Codex&#39;e kurulur. Codex ajanları otomatik olarak TOML&#39;a dönüştürülür; diğerleri aynı markdown ajanları kullanır.</p>
   </article>
 </main>
 
@@ -268,26 +270,44 @@ npx review-pro list           <span class="cmt"># catalog + installed + drift</s
   }, { rootMargin: "-20% 0px -75% 0px" });
   headings.forEach(function(h){ obs.observe(h); });
 </script>
-<script>
-  (function () {
-    var btn = document.querySelector('.lang__btn');
-    var menu = document.querySelector('.lang__menu');
-    if (!btn || !menu) return;
-    var cur = document.documentElement.lang;
-    menu.querySelectorAll('a').forEach(function (a) {
-      if (a.dataset.lang === cur) a.setAttribute('aria-current', 'true');
-    });
-    function open() { menu.hidden = false; btn.setAttribute('aria-expanded', 'true'); }
-    function close() { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); }
-    btn.addEventListener('click', function (e) { e.stopPropagation(); menu.hidden ? open() : close(); });
-    document.addEventListener('click', function (e) { if (!menu.contains(e.target) && e.target !== btn) close(); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
-    btn.addEventListener('keydown', function (e) {
-      if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault(); open(); var f = menu.querySelector('a'); if (f) f.focus();
-      }
-    });
-  })();
+<script>// Language switcher — disclosure pattern (button + list of navigation links).
+// Inlined into every page via the /*LANGMENU*/ marker by scripts/build-site.js.
+(function () {
+  var lang = document.querySelector('.lang');
+  if (!lang) return;
+  var btn = lang.querySelector('.lang__btn');
+  var menu = lang.querySelector('.lang__menu');
+  if (!btn || !menu) return;
+
+  var cur = document.documentElement.lang;
+  menu.querySelectorAll('a').forEach(function (a) {
+    if (a.dataset.lang === cur) a.setAttribute('aria-current', 'page');
+  });
+
+  function open() { menu.hidden = false; btn.setAttribute('aria-expanded', 'true'); }
+  function close(restoreFocus) {
+    menu.hidden = true;
+    btn.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) btn.focus();
+  }
+
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    menu.hidden ? open() : close(false);
+  });
+  // dismiss on outside click
+  document.addEventListener('click', function (e) {
+    if (!lang.contains(e.target)) close(false);
+  });
+  // Escape returns focus to the trigger
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') close(true);
+  });
+  // dismiss when focus leaves the widget (Tab past the last link)
+  lang.addEventListener('focusout', function (e) {
+    if (!lang.contains(e.relatedTarget)) close(false);
+  });
+})();
 </script>
 </body>
 </html>

@@ -16,11 +16,12 @@
 <script>(function () {
   try {
     var KEY = 'rp_lang';
-    if (localStorage.getItem(KEY)) return;           // user already chose
+    if (localStorage.getItem(KEY)) return;           // already detected/chosen — skip (anti-loop)
     if (navigator.webdriver) return;                 // automation
     var ua = navigator.userAgent || '';
     if (/bot|crawl|spider|slurp|headless|wget|curl|lighthouse|pingdom/i.test(ua)) return;
-    var supported = ['en', 'tr', 'zh', 'hi', 'de', 'fr', 'nl'];
+    var supported = ["en","tr","zh","hi","de","fr","nl"];
+    var base = '/review-pro';
     var cur = document.documentElement.lang;
     var picks = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language];
     var match = null;
@@ -29,27 +30,28 @@
       if (supported.indexOf(short) >= 0) { match = short; break; }
     }
     if (match && match !== cur) {
-      var base = '/review-pro';
+      var langRe = new RegExp('^\\/(' + supported.join('|') + ')(\\/|$)');
       var rel = location.pathname.replace(base, '').replace(/\/index\.html$/, '/');
-      rel = rel.replace(/^\/(en|tr|zh|hi|de|fr|nl)(\/|$)/, '/');
+      rel = rel.replace(langRe, '/');
       rel = rel.replace(/\/+$/, '/');
-      var target = base + '/' + match + (rel === '/' ? '/' : rel);
+      // English is served from the root, not under /en/
+      var target = match === 'en' ? (base + rel) : (base + '/' + match + rel);
       target = target.replace(/\/{2,}/g, '/');
-      localStorage.setItem(KEY, match);
+      try { localStorage.setItem(KEY, match); } catch (e) {}  // best-effort; don't gate the redirect on storage
       location.replace(target);
     } else {
-      localStorage.setItem(KEY, cur);
+      try { localStorage.setItem(KEY, cur); } catch (e) {}
     }
   } catch (e) {}
 })();
 </script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23e8e1cf'/%3E%3Crect x='10.5' y='10.5' width='11' height='11' rx='2' transform='rotate(45 16 16)' fill='%232f6f55'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/review-pro/fonts/fonts.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="/review-pro/site.css">
 </head>
 <body>
+<a class="skip-link" href="#main">Skip to content</a>
 
 <nav class="nav" aria-label="Primary">
   <a class="brand" href="index.html"><span class="brand__mark" aria-hidden="true"></span> review-pro</a>
@@ -60,7 +62,7 @@
     <a href="https://github.com/tufantunc/review-pro" target="_blank" rel="noopener">GitHub</a>
     <a class="nav__cta" href="docs.html#install">इंस्टॉल</a>
     <div class="lang">
-      <button class="lang__btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="भाषा HI">
+      <button class="lang__btn" type="button" aria-expanded="false" aria-controls="lang-menu" aria-label="भाषा HI">
         <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
   <rect width="60" height="13.333" y="0" fill="#FF9933"/>
   <rect width="60" height="13.333" y="13.333" fill="#FFFFFF"/>
@@ -94,8 +96,8 @@
   </g>
 </svg><span class="lang__code">HI</span>
       </button>
-      <ul class="lang__menu" role="menu" hidden>
-        <li role="none"><a role="menuitem" data-lang="en" href="/review-pro/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+      <ul class="lang__menu" id="lang-menu" hidden>
+        <li><a data-lang="en" href="/review-pro/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
   <rect width="60" height="40" fill="#012169"/>
   <path d="M0,0 L60,40 M60,0 L0,40" stroke="#FFFFFF" stroke-width="6"/>
   <clipPath id="uk-saltire">
@@ -112,13 +114,13 @@
   <rect x="28" y="0" width="4" height="40" fill="#C8102E"/>
   <rect x="0" y="18" width="60" height="4" fill="#C8102E"/>
 </svg> English</a></li>
-        <li role="none"><a role="menuitem" data-lang="tr" href="/review-pro/tr/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+        <li><a data-lang="tr" href="/review-pro/tr/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
   <rect width="60" height="40" fill="#E30A17"/>
   <circle cx="22.5" cy="20" r="9" fill="#FFFFFF"/>
   <circle cx="26" cy="20" r="7.5" fill="#E30A17"/>
   <path d="M 0 -2 L 0.449 -0.618 L 1.902 -0.618 L 0.727 0.236 L 1.176 1.618 L 0 0.764 L -1.176 1.618 L -0.727 0.236 L -1.902 -0.618 L -0.449 -0.618 Z" transform="translate(34 20) scale(1.6)" fill="#FFFFFF"/>
 </svg> Türkçe</a></li>
-        <li role="none"><a role="menuitem" data-lang="zh" href="/review-pro/zh/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+        <li><a data-lang="zh" href="/review-pro/zh/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
   <rect width="60" height="40" fill="#DE2910"/>
   <path d="M 0 -2 L 0.449 -0.618 L 1.902 -0.618 L 0.727 0.236 L 1.176 1.618 L 0 0.764 L -1.176 1.618 L -0.727 0.236 L -1.902 -0.618 L -0.449 -0.618 Z" transform="translate(10 10) scale(3)" fill="#FFDE00"/>
   <path d="M 0 -2 L 0.449 -0.618 L 1.902 -0.618 L 0.727 0.236 L 1.176 1.618 L 0 0.764 L -1.176 1.618 L -0.727 0.236 L -1.902 -0.618 L -0.449 -0.618 Z" transform="translate(20 4) rotate(239.04)" fill="#FFDE00"/>
@@ -126,7 +128,7 @@
   <path d="M 0 -2 L 0.449 -0.618 L 1.902 -0.618 L 0.727 0.236 L 1.176 1.618 L 0 0.764 L -1.176 1.618 L -0.727 0.236 L -1.902 -0.618 L -0.449 -0.618 Z" transform="translate(24 14) rotate(285.94)" fill="#FFDE00"/>
   <path d="M 0 -2 L 0.449 -0.618 L 1.902 -0.618 L 0.727 0.236 L 1.176 1.618 L 0 0.764 L -1.176 1.618 L -0.727 0.236 L -1.902 -0.618 L -0.449 -0.618 Z" transform="translate(20 18) rotate(308.66)" fill="#FFDE00"/>
 </svg> 中文</a></li>
-        <li role="none"><a role="menuitem" data-lang="hi" href="/review-pro/hi/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+        <li><a data-lang="hi" href="/review-pro/hi/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
   <rect width="60" height="13.333" y="0" fill="#FF9933"/>
   <rect width="60" height="13.333" y="13.333" fill="#FFFFFF"/>
   <rect width="60" height="13.333" y="26.667" fill="#138808"/>
@@ -158,17 +160,17 @@
     <line x1="30" y1="20" x2="35.796" y2="18.447"/>
   </g>
 </svg> हिन्दी</a></li>
-        <li role="none"><a role="menuitem" data-lang="de" href="/review-pro/de/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+        <li><a data-lang="de" href="/review-pro/de/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
   <rect width="60" height="13.333" y="0" fill="#000000"/>
   <rect width="60" height="13.333" y="13.333" fill="#DD0000"/>
   <rect width="60" height="13.333" y="26.667" fill="#FFCE00"/>
 </svg> Deutsch</a></li>
-        <li role="none"><a role="menuitem" data-lang="fr" href="/review-pro/fr/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+        <li><a data-lang="fr" href="/review-pro/fr/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
   <rect width="20" height="40" x="0" fill="#0055A4"/>
   <rect width="20" height="40" x="20" fill="#FFFFFF"/>
   <rect width="20" height="40" x="40" fill="#EF4135"/>
 </svg> Français</a></li>
-        <li role="none"><a role="menuitem" data-lang="nl" href="/review-pro/nl/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+        <li><a data-lang="nl" href="/review-pro/nl/"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
   <rect width="60" height="13.333" y="0" fill="#AE1C28"/>
   <rect width="60" height="13.333" y="13.333" fill="#FFFFFF"/>
   <rect width="60" height="13.333" y="26.667" fill="#21468B"/>
@@ -178,7 +180,7 @@
   </div>
 </nav>
 
-<main>
+<main id="main" tabindex="-1">
 <header class="hero hero--split wrap">
   <div class="reveal">
     <p class="eyebrow">स्तरित AI कोड समीक्षा</p>
@@ -384,6 +386,7 @@ npx review-pro add <span class="prm">python</span>      <span class="cmt"># add 
 
     function play() {
       reset();
+      playing = true;
       delay(300)
         .then(function () { reveals[0].classList.add('is-on'); return delay(500); })
         // Triage: think → stream
@@ -426,7 +429,7 @@ npx review-pro add <span class="prm">python</span>      <span class="cmt"># add 
           return chain;
         })
         .then(function () { return delay(3500); })
-        .then(play);
+        .then(function () { playing = false; if (inView) play(); });
     }
 
     if (reduce) {
@@ -438,36 +441,56 @@ npx review-pro add <span class="prm">python</span>      <span class="cmt"># add 
       streamEls.forEach(function (el) { el.textContent = el.dataset.text; });
       demo.querySelectorAll('.demo__finding--reveal').forEach(function (f) { f.classList.add('is-on'); });
     } else {
-      var started = false;
+      var started = false, inView = false, playing = false;
       var vis = new IntersectionObserver(function (es) {
         es.forEach(function (e) {
+          inView = e.isIntersecting;
           if (e.isIntersecting && !started) { started = true; play(); }
+          else if (e.isIntersecting && started && !playing) { play(); }
         });
       }, { threshold: 0.3 });
       vis.observe(demo);
     }
   })();
 </script>
-<script>
-  (function () {
-    var btn = document.querySelector('.lang__btn');
-    var menu = document.querySelector('.lang__menu');
-    if (!btn || !menu) return;
-    var cur = document.documentElement.lang;
-    menu.querySelectorAll('a').forEach(function (a) {
-      if (a.dataset.lang === cur) a.setAttribute('aria-current', 'true');
-    });
-    function open() { menu.hidden = false; btn.setAttribute('aria-expanded', 'true'); }
-    function close() { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); }
-    btn.addEventListener('click', function (e) { e.stopPropagation(); menu.hidden ? open() : close(); });
-    document.addEventListener('click', function (e) { if (!menu.contains(e.target) && e.target !== btn) close(); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
-    btn.addEventListener('keydown', function (e) {
-      if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault(); open(); var f = menu.querySelector('a'); if (f) f.focus();
-      }
-    });
-  })();
+<script>// Language switcher — disclosure pattern (button + list of navigation links).
+// Inlined into every page via the /*LANGMENU*/ marker by scripts/build-site.js.
+(function () {
+  var lang = document.querySelector('.lang');
+  if (!lang) return;
+  var btn = lang.querySelector('.lang__btn');
+  var menu = lang.querySelector('.lang__menu');
+  if (!btn || !menu) return;
+
+  var cur = document.documentElement.lang;
+  menu.querySelectorAll('a').forEach(function (a) {
+    if (a.dataset.lang === cur) a.setAttribute('aria-current', 'page');
+  });
+
+  function open() { menu.hidden = false; btn.setAttribute('aria-expanded', 'true'); }
+  function close(restoreFocus) {
+    menu.hidden = true;
+    btn.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) btn.focus();
+  }
+
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    menu.hidden ? open() : close(false);
+  });
+  // dismiss on outside click
+  document.addEventListener('click', function (e) {
+    if (!lang.contains(e.target)) close(false);
+  });
+  // Escape returns focus to the trigger
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') close(true);
+  });
+  // dismiss when focus leaves the widget (Tab past the last link)
+  lang.addEventListener('focusout', function (e) {
+    if (!lang.contains(e.relatedTarget)) close(false);
+  });
+})();
 </script>
 </body>
 </html>

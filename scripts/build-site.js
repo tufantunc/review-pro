@@ -30,3 +30,26 @@ export function renderTemplate(tmpl, dict) {
   out = out.replace(escRe, (_, k) => escapeHtml(val(k)));
   return out;
 }
+
+// --- Config / helpers ---
+
+export function assertParity(reference, candidate, lang) {
+  const missing = Object.keys(reference).filter((k) => !(k in candidate));
+  if (missing.length) {
+    throw new Error(`i18n parity error [${lang}] missing keys: ${missing.join(', ')}`);
+  }
+}
+
+export function assertNoTokens(rendered, lang, page) {
+  if (/\{\{|\}\}/.test(rendered)) {
+    throw new Error(`Unrendered token in ${lang}/${page}`);
+  }
+}
+
+// Merge translator copy with computed (non-translated) keys for renderTemplate.
+export function buildContext({ lang, copy, flags }) {
+  const ctx = { ...copy, lang, code: lang.toUpperCase() };
+  for (const code of SUPPORTED) ctx[`flag.${code}`] = flags[code];
+  ctx['flag.current'] = flags[lang];
+  return ctx;
+}

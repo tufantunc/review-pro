@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { escapeHtml, renderTemplate } from './build-site.js';
+import { escapeHtml, renderTemplate, assertParity, assertNoTokens, buildContext } from './build-site.js';
 
 test('escapeHtml escapes & < > "', () => {
   assert.equal(escapeHtml('a & <b> "c"'), 'a &amp; &lt;b&gt; &quot;c&quot;');
@@ -33,4 +33,33 @@ test('renderTemplate throws on prototype-inherited keys', () => {
 
 test('renderTemplate supports dotted keys and whitespace tolerance', () => {
   assert.equal(renderTemplate('{{ nav.how }}', { 'nav.how': 'How it works' }), 'How it works');
+});
+
+test('assertParity passes when keys match', () => {
+  assertParity({ a: '1', b: '2' }, { a: 'x', b: 'y' }, 'tr'); // does not throw
+});
+
+test('assertParity throws listing missing keys', () => {
+  assert.throws(
+    () => assertParity({ a: '1', b: '2' }, { a: 'x' }, 'tr'),
+    /tr.*missing.*b/i
+  );
+});
+
+test('assertNoTokens throws on leftover braces', () => {
+  assert.throws(() => assertNoTokens('hi {{x}}', 'tr', 'index.html'), /Unrendered token/);
+  assert.doesNotThrow(() => assertNoTokens('clean', 'en', 'index.html'));
+});
+
+test('buildContext merges copy + computed keys', () => {
+  const ctx = buildContext({
+    lang: 'tr',
+    copy: { 'nav.how': 'Nasil' },
+    flags: { tr: '<svg id="tr"/>', en: '<svg id="en"/>' },
+  });
+  assert.equal(ctx.lang, 'tr');
+  assert.equal(ctx.code, 'TR');
+  assert.equal(ctx['nav.how'], 'Nasil');
+  assert.equal(ctx['flag.current'], '<svg id="tr"/>');
+  assert.equal(ctx['flag.en'], '<svg id="en"/>');
 });

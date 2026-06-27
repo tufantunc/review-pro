@@ -6,6 +6,18 @@ review-pro ships as the **`review-pro`** npm package (source in `cli/`).
 
 `npm run build` copies `stacks/` → `cli/catalog/`, and that catalog is what the published package ships. **A new stack pack is NOT visible to `npx review-pro` users until a new version is published.** Plan releases around meaningful batches rather than per-pack.
 
+## Site (GitHub Pages)
+
+The marketing/docs site under `docs/` is **generated** from `docs-src/` (tokenized templates + `i18n/*.json` dictionaries + flags + `detect.js`) by `scripts/build-site.js`. After editing any source, rebuild and commit the output:
+
+```bash
+node scripts/build-site.js
+git add docs
+git commit -m "feat(site): rebuild generated site"
+```
+
+CI runs `node --test scripts/build-site.test.js` and asserts `git diff --exit-code docs` is clean (no uncommitted drift between `docs-src/` and `docs/`). English lives at the root (`/review-pro/`); other languages in `docs/<lang>/`.
+
 ## Version policy (semver)
 
 | Change | Bump | Example |

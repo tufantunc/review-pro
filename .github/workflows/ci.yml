@@ -35,3 +35,9 @@ jobs:
         run: |
           ./scripts/validate.sh
           bash scripts/validate.test.sh
+
+      - name: Site i18n build (tests + sync)
+        run: |
+          node --test scripts/build-site.test.js
+          node scripts/build-site.js
+          git diff --exit-code docs

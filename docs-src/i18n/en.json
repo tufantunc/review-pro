@@ -1,18 +1,15 @@
 {
   "title": "review-pro — tiered AI code review",
   "meta.description": "review-pro reviews AI-written code in stages: triage dispatches the relevant specialists, each runs in its own scope, then synthesis returns one verdict. Built for the failure modes AI code ships with.",
-
   "nav.how": "How it works",
   "nav.capabilities": "Capabilities",
   "nav.docs": "Docs",
   "nav.install": "Install",
-
   "hero.eyebrow": "Tiered AI code review",
   "hero.title": "Twelve specialists.<br>One <em>verdict</em>.",
   "hero.sub": "review-pro reviews AI-written code in stages. Triage dispatches only the relevant specialists, each runs in its own scoped context, then synthesis returns one verdict. Built for the failure modes AI code actually ships with.",
   "hero.cta.install": "Install",
   "hero.cta.docs": "Read the docs",
-
   "pipeline.stage.label": "STAGE",
   "pipeline.s1.title": "Triage",
   "pipeline.s1.body": "Classify the diff and dispatch only the specialists that matter for this change. Each one gets scoped context — callers, repo search, schema, consumers — not the whole repository.",
@@ -29,7 +26,6 @@
   "pipeline.s3.tag1": "dedupe",
   "pipeline.s3.tag2": "resolve",
   "pipeline.s3.tag3": "verdict",
-
   "cap.eyebrow": "Capabilities",
   "cap.title": "A review bench, not one big guess.",
   "cap.lead": "Every specialist owns a single concern and a strict rubric. A first-class AI-anti-patterns lens catches what generic reviewers miss — hallucinated APIs, over-engineering, ignored helpers, needless dependencies.",
@@ -39,19 +35,15 @@
   "cap.c2.body": "Language & framework signals layered onto the core rubrics at review time. Framework packs compose on a language pack.",
   "cap.c3.title": "4 platforms",
   "cap.c3.body": "One canonical source installs into each tool from a single command. Codex agents auto-transform to TOML; Cursor can <code>/add-plugin</code> the repo directly.",
-
   "install.eyebrow": "Install",
   "install.title": "One command. No lock-in.",
   "install.lead": "Install the core into your tool, then add the stack packs you use.",
   "install.note1": "No Node.js? review-pro is plain markdown skills and agents — copy them into your tool’s folder and it works the same. See the <a href=\"docs.html#manual-install\">manual install guide</a>.",
   "install.note2": "Then restart your tool and run a review — open a branch and ask the session to review it, or invoke the <span class=\"kbd\">review-pro</span> skill.",
-
   "footer.statement": "Code review that thinks in stages.",
   "footer.home": "Home",
-
   "docs.title": "Docs — review-pro",
   "docs.meta.description": "review-pro documentation: install, stack packs, commands, manual install, running a review.",
-
   "docs.toc.title": "On this page",
   "docs.toc.overview": "Overview",
   "docs.toc.install": "Install",
@@ -61,11 +53,9 @@
   "docs.toc.run": "Run a review",
   "docs.toc.reviewers": "The 12 reviewers",
   "docs.toc.faq": "FAQ",
-
   "docs.overview.h2": "Overview",
   "docs.overview.p1": "review-pro is a tiered AI code-review system: <strong>triage → relevant specialist reviewers → synthesis</strong>. It reviews code written by AI agents, using AI agents — built to catch the failure modes AI-generated code actually ships with: hallucinated APIs, over-engineering, ignored conventions, needless dependencies.",
   "docs.overview.p2": "This CLI installs the review-pro core (12 reviewer skills + subagents + the <code>review-pro</code> orchestrator) into your agent tool, and the stack packs into your repo’s <code>.review-pro/</code>. Supported targets: <strong>opencode · Claude Code · Cursor · Codex</strong>.",
-
   "docs.install.h2": "Install",
   "docs.install.p": "One-time. Interactive — it asks which platforms and which stack packs to install.",
   "docs.install.note": "Non-interactive (CI)? Use <code>--target &lt;platform|all|auto&gt;</code> and <code>--no-stacks</code>.",
@@ -75,17 +65,14 @@
   "docs.install.li3": "<strong>Cursor</strong> — installed via Cursor <code>/add-plugin</code>; run <code>/add-plugin https://github.com/tufantunc/review-pro</code> in Cursor (the repo ships a <code>.cursor-plugin/plugin.json</code>).",
   "docs.install.li4": "<strong>Codex</strong> — skills to <code>~/.agents/skills/</code>, agents auto-transformed to <code>~/.codex/agents/*.toml</code>. Codex auto-discovers skills; agents inherit the session skill set.",
   "docs.install.callout": "Then add the stack packs you use (below), <strong>restart your tool</strong> so the new skills/agents are discovered, and run a review.",
-
   "docs.manual.h2": "Manual install (no Node.js)",
   "docs.manual.p": "review-pro is plain markdown skills and agents — no runtime dependency. If you don’t have Node.js (or prefer not to use the CLI), copy the files by hand:",
   "docs.manual.ol1": "<strong>Core</strong> — copy <code>core/skills/&lt;name&gt;/</code> into your tool’s skills folder, and <code>core/agents/*.md</code> into its agents folder (paths per platform above).",
   "docs.manual.ol2": "<strong>Stack packs</strong> — copy <code>stacks/&lt;pack&gt;/</code> into the reviewed repo’s <code>.review-pro/&lt;pack&gt;/</code>.",
   "docs.manual.note": "The CLI just automates these copies (plus the Codex <code>.md</code>→<code>.toml</code> transform and version tracking). Manual and CLI installs are equivalent.",
-
   "docs.stacks.h2": "Stack packs",
   "docs.stacks.p": "Packs layer language/framework-specific signals onto the reviewers at review time. Install the ones a repo uses into its <code>.review-pro/</code>. Framework/domain packs compose on top of a language pack.",
   "docs.stacks.catalog": "Catalog (14): <code>python</code> · <code>go</code> · <code>rust</code> · <code>typescript-react</code> · <code>node</code> · <code>php</code> · <code>dotnet</code> · <code>kotlin</code> · <code>swift</code> · <code>flutter</code> · <code>nextjs</code> · <code>react-native</code> · <code>wordpress</code> · <code>ai-ml</code>. Examples: a Next.js repo activates <code>typescript-react</code> + <code>nextjs</code>; an LLM app activates <code>python</code> + <code>ai-ml</code>.",
-
   "docs.commands.h2": "Commands",
   "docs.commands.th1": "Command",
   "docs.commands.th2": "What it does",
@@ -96,16 +83,13 @@
   "docs.commands.r5": "Refresh installed packs to the catalog version",
   "docs.commands.r6": "Show catalog stacks + installed versions + drift",
   "docs.commands.r7": "Validate installed packs (version drift, roster integrity, orphans)",
-
   "docs.run.h2": "Run a review",
   "docs.run.p": "After install + restart, in the repo you want to review (on a feature branch):",
   "docs.run.li1": "ask the session to <strong>review this branch with review-pro</strong>, or",
   "docs.run.li2": "invoke the <strong><code>review-pro</code></strong> skill directly.",
   "docs.run.final": "The agent runs the whole pipeline natively — <code>git diff</code>, reads changed files, Globs <code>.review-pro/</code> for active stacks, dispatches the relevant reviewer subagents with their stack signals, and synthesizes one verdict: <strong>BLOCK / REQUEST CHANGES / APPROVE</strong>. No env vars, no scripts to run at review time.",
-
   "docs.reviewers.h2": "The 12 reviewers",
   "docs.reviewers.p": "<code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code>. The <code>ai-antipatterns</code> reviewer is first-class: hallucinated APIs/symbols/imports, invented config/env keys, needless dependencies, and ignored existing helpers.",
-
   "docs.faq.h2": "FAQ",
   "docs.faq.q1": "Does it need Node.js?",
   "docs.faq.a1": "Only the installer CLI does (Node ≥ 18). The plugin itself is plain markdown skills and agents, so <a href=\"#manual-install\">manual install</a> works without Node on any platform.",
@@ -114,5 +98,6 @@
   "docs.faq.q3": "Where do stack packs come from?",
   "docs.faq.a3": "The catalog ships inside this package, snapshotted at publish time. New packs appear after a new version is published. See <code>stacks/CONTRIBUTING.md</code> in the repo to add your own.",
   "docs.faq.q4": "Is it really cross-platform?",
-  "docs.faq.a4": "Yes — one canonical source installs into opencode, Claude Code, Cursor, and Codex. Codex agents are auto-transformed to TOML; the others consume the same markdown agents."
+  "docs.faq.a4": "Yes — one canonical source installs into opencode, Claude Code, Cursor, and Codex. Codex agents are auto-transformed to TOML; the others consume the same markdown agents.",
+  "nav.language": "Language"
 }

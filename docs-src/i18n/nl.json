@@ -1,18 +1,15 @@
 {
   "title": "review-pro — gelaagde AI-code-review",
   "meta.description": "review-pro beoordeelt AI-geschreven code in fases: de triage stuurt de relevante specialisten erop af, elk draait in zijn eigen scope, daarna levert de synthese één vonnis. Gebouwd voor de foutpatronen die AI-code meebrengt.",
-
   "nav.how": "Hoe het werkt",
   "nav.capabilities": "Mogelijkheden",
   "nav.docs": "Documentatie",
   "nav.install": "Installeren",
-
   "hero.eyebrow": "Gelaagde AI-code-review",
   "hero.title": "Twaalf specialisten.<br>Eén <em>vonnis</em>.",
   "hero.sub": "review-pro beoordeelt AI-geschreven code in fases. De triage stuurt alleen de relevante specialisten erop af, elk draait in zijn eigen afgebakende context, daarna levert de synthese één vonnis. Gebouwd voor de foutpatronen die AI-code werkelijk meebrengt.",
   "hero.cta.install": "Installeren",
   "hero.cta.docs": "Documentatie lezen",
-
   "pipeline.stage.label": "FASE",
   "pipeline.s1.title": "Triage",
   "pipeline.s1.body": "Classificeer de diff en stuur alleen de specialisten erop af die voor deze wijziging relevant zijn. Elk krijgt een afgebakende context — callers, repo-zoekactie, schema, consumers — niet de hele repository.",
@@ -29,7 +26,6 @@
   "pipeline.s3.tag1": "dubbele weghalen",
   "pipeline.s3.tag2": "oplossen",
   "pipeline.s3.tag3": "vonnis",
-
   "cap.eyebrow": "Mogelijkheden",
   "cap.title": "Een review-bank, niet één grote gok.",
   "cap.lead": "Elke specialist is eigenaar van één concern en een strikte rubriek. Een first-class AI-anti-patterns-lens vangt wat generieke reviewers missen — gehallucineerde API's, over-engineering, genegeerde helpers, overbodige afhankelijkheden.",
@@ -39,19 +35,15 @@
   "cap.c2.body": "Taal- en frameworks-signalen worden tijdens de review op de kernrubrieken geschakeld. Framework-pakketten combineren bovenop een taalpakket.",
   "cap.c3.title": "4 platformen",
   "cap.c3.body": "Eén canonieke bron installeert in elk tool via één commando. Codex-agents worden automatisch naar TOML getransformeerd; Cursor kan de repo direct via <code>/add-plugin</code> toevoegen.",
-
   "install.eyebrow": "Installeren",
   "install.title": "Eén commando. Geen lock-in.",
   "install.lead": "Installeer de kern in je tool en voeg daarna de stack-pakketten toe die je gebruikt.",
   "install.note1": "Geen Node.js? review-pro bestaat uit gewone markdown-skills en -agents — kopieer ze naar de map van je tool en het werkt hetzelfde. Zie de <a href=\"docs.html#manual-install\">handleiding voor handmatige installatie</a>.",
   "install.note2": "Herstart daarna je tool en voer een review uit — open een branch en vraag de sessie deze te beoordelen, of roep de <span class=\"kbd\">review-pro</span>-skill aan.",
-
   "footer.statement": "Code-review die in fases denkt.",
   "footer.home": "Home",
-
   "docs.title": "Documentatie — review-pro",
   "docs.meta.description": "review-pro-documentatie: installatie, stack-pakketten, commando's, handmatige installatie, een review uitvoeren.",
-
   "docs.toc.title": "Op deze pagina",
   "docs.toc.overview": "Overzicht",
   "docs.toc.install": "Installatie",
@@ -61,11 +53,9 @@
   "docs.toc.run": "Review uitvoeren",
   "docs.toc.reviewers": "De 12 reviewers",
   "docs.toc.faq": "FAQ",
-
   "docs.overview.h2": "Overzicht",
   "docs.overview.p1": "review-pro is een gelaagd AI-code-reviewsysteem: <strong>triage → relevante specialistische reviewers → synthese</strong>. Het beoordeelt code die door AI-agents is geschreven met behulp van AI-agents — gebouwd om de foutpatronen te vangen die AI-gegenereerde code werkelijk meebrengt: gehallucineerde API's, over-engineering, genegeerde conventies, overbodige afhankelijkheden.",
   "docs.overview.p2": "Deze CLI installeert de review-pro-kern (12 reviewer-skills + subagents + de <code>review-pro</code>-orchestrator) in je agent-tool, en de stack-pakketten in de <code>.review-pro/</code> van je repo. Ondersteunde doelen: <strong>opencode · Claude Code · Cursor · Codex</strong>.",
-
   "docs.install.h2": "Installatie",
   "docs.install.p": "Eenmalig. Interactief — het vraagt welke platformen en welke stack-pakketten te installeren.",
   "docs.install.note": "Niet-interactief (CI)? Gebruik <code>--target &lt;platform|all|auto&gt;</code> en <code>--no-stacks</code>.",
@@ -75,17 +65,14 @@
   "docs.install.li3": "<strong>Cursor</strong> — geïnstalleerd via Cursor <code>/add-plugin</code>; voer <code>/add-plugin https://github.com/tufantunc/review-pro</code> uit in Cursor (de repo levert een <code>.cursor-plugin/plugin.json</code>).",
   "docs.install.li4": "<strong>Codex</strong> — skills naar <code>~/.agents/skills/</code>, agents automatisch getransformeerd naar <code>~/.codex/agents/*.toml</code>. Codex ontdekt skills automatisch; agents erven de skill-set van de sessie.",
   "docs.install.callout": "Voeg daarna de stack-pakketten toe die je gebruikt (hieronder), <strong>herstart je tool</strong> zodat de nieuwe skills/agents worden ontdekt, en voer een review uit.",
-
   "docs.manual.h2": "Handmatige installatie (zonder Node.js)",
   "docs.manual.p": "review-pro bestaat uit gewone markdown-skills en -agents — geen runtime-afhankelijkheid. Als je geen Node.js hebt (of de CLI niet wilt gebruiken), kopieer de bestanden handmatig:",
   "docs.manual.ol1": "<strong>Kern</strong> — kopieer <code>core/skills/&lt;name&gt;/</code> naar de skills-map van je tool en <code>core/agents/*.md</code> naar diens agents-map (paden zoals hierboven per platform).",
   "docs.manual.ol2": "<strong>Stack-pakketten</strong> — kopieer <code>stacks/&lt;pack&gt;/</code> naar de <code>.review-pro/&lt;pack&gt;/</code> van de beoordeelde repo.",
   "docs.manual.note": "De CLI automatiseert alleen deze kopieën (plus de Codex <code>.md</code>→<code>.toml</code>-transformatie en versie-tracking). Handmatige en CLI-installaties zijn equivalent.",
-
   "docs.stacks.h2": "Stack-pakketten",
   "docs.stacks.p": "Pakketten schakelen taal-/framework-specifieke signalen op de reviewers tijdens de review. Installeer de pakketten die een repo gebruikt in diens <code>.review-pro/</code>. Framework-/domein-pakketten combineren bovenop een taalpakket.",
   "docs.stacks.catalog": "Catalogus (14): <code>python</code> · <code>go</code> · <code>rust</code> · <code>typescript-react</code> · <code>node</code> · <code>php</code> · <code>dotnet</code> · <code>kotlin</code> · <code>swift</code> · <code>flutter</code> · <code>nextjs</code> · <code>react-native</code> · <code>wordpress</code> · <code>ai-ml</code>. Voorbeelden: een Next.js-repo activeert <code>typescript-react</code> + <code>nextjs</code>; een LLM-app activeert <code>python</code> + <code>ai-ml</code>.",
-
   "docs.commands.h2": "Commando's",
   "docs.commands.th1": "Commando",
   "docs.commands.th2": "Wat het doet",
@@ -96,16 +83,13 @@
   "docs.commands.r5": "Ververs geïnstalleerde pakketten naar de catalogusversie",
   "docs.commands.r6": "Toon catalogus-stacks + geïnstalleerde versies + drift",
   "docs.commands.r7": "Valideer geïnstalleerde pakketten (versie-drift, roster-integriteit, wezen)",
-
   "docs.run.h2": "Review uitvoeren",
   "docs.run.p": "Na installatie + herstart, in de repo die je wilt beoordelen (op een feature-branch):",
   "docs.run.li1": "vraag de sessie om <strong>deze branch te beoordelen met review-pro</strong>, of",
   "docs.run.li2": "roep de <strong><code>review-pro</code></strong>-skill direct aan.",
   "docs.run.final": "De agent draait de hele pipeline native — <code>git diff</code>, leest gewijzigde bestanden, Globs <code>.review-pro/</code> voor actieve stacks, stuurt de relevante reviewer-subagents erop af met hun stack-signalen, en synthetiseert één vonnis: <strong>BLOCK / REQUEST CHANGES / APPROVE</strong>. Geen env-vars, geen scripts om uit te voeren op review-tijdstip.",
-
   "docs.reviewers.h2": "De 12 reviewers",
   "docs.reviewers.p": "<code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code>. De <code>ai-antipatterns</code>-reviewer is first-class: gehallucineerde API's/symbolen/imports, verzonnen config/env-keys, overbodige afhankelijkheden en genegeerde bestaande helpers.",
-
   "docs.faq.h2": "FAQ",
   "docs.faq.q1": "Heeft het Node.js nodig?",
   "docs.faq.a1": "Alleen de installer-CLI (Node ≥ 18). De plug-in zelf bestaat uit gewone markdown-skills en -agents, dus <a href=\"#manual-install\">handmatige installatie</a> werkt zonder Node op elk platform.",
@@ -114,5 +98,6 @@
   "docs.faq.q3": "Waar komen de stack-pakketten vandaan?",
   "docs.faq.a3": "De catalogus wordt meegeleverd in dit pakket, als momentopname bij publicatie. Nieuwe pakketten verschijnen nadat een nieuwe versie is gepubliceerd. Zie <code>stacks/CONTRIBUTING.md</code> in de repo om je eigen toe te voegen.",
   "docs.faq.q4": "Is het echt platformoverstijgend?",
-  "docs.faq.a4": "Ja — één canonieke bron installeert in opencode, Claude Code, Cursor en Codex. Codex-agents worden automatisch naar TOML getransformeerd; de anderen consumeren dezelfde markdown-agents."
+  "docs.faq.a4": "Ja — één canonieke bron installeert in opencode, Claude Code, Cursor en Codex. Codex-agents worden automatisch naar TOML getransformeerd; de anderen consumeren dezelfde markdown-agents.",
+  "nav.language": "Taal"
 }

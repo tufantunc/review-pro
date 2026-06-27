@@ -31,7 +31,7 @@
     <a href="https://github.com/tufantunc/review-pro" target="_blank" rel="noopener">GitHub</a>
     <a class="nav__cta" href="docs.html#install">{{nav.install}}</a>
     <div class="lang">
-      <button class="lang__btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Language">
+      <button class="lang__btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="{{nav.language}} {{code}}">
         {{{flag.current}}}<span class="lang__code">{{code}}</span>
       </button>
       <ul class="lang__menu" role="menu" hidden>
@@ -47,6 +47,7 @@
   </div>
 </nav>
 
+<main>
 <header class="hero hero--split wrap">
   <div class="reveal">
     <p class="eyebrow">{{hero.eyebrow}}</p>
@@ -168,6 +169,7 @@ npx review-pro add <span class="prm">python</span>      <span class="cmt"># add 
     <p class="note">{{{install.note2}}}</p>
   </div>
 </section>
+</main>
 
 <footer class="footer wrap">
   <div class="footer__top">

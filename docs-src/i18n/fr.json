@@ -1,18 +1,15 @@
 {
   "title": "review-pro — revue de code IA par paliers",
   "meta.description": "review-pro examine le code écrit par l'IA par paliers : le triage répartit les spécialistes pertinents, chacun s'exécute dans son propre périmètre, puis la synthèse renvoie un verdict unique. Conçu pour les défaillances que le code IA embarque réellement.",
-
   "nav.how": "Fonctionnement",
   "nav.capabilities": "Fonctionnalités",
   "nav.docs": "Documentation",
   "nav.install": "Installation",
-
   "hero.eyebrow": "Revue de code IA par paliers",
   "hero.title": "Douze spécialistes.<br>Un seul <em>verdict</em>.",
   "hero.sub": "review-pro examine le code écrit par l'IA par paliers. Le triage ne répartit que les spécialistes pertinents, chacun s'exécute dans son propre contexte délimité, puis la synthèse renvoie un verdict unique. Conçu pour les défaillances que le code IA embarque réellement.",
   "hero.cta.install": "Installer",
   "hero.cta.docs": "Lire la documentation",
-
   "pipeline.stage.label": "PALIER",
   "pipeline.s1.title": "Triage",
   "pipeline.s1.body": "Classifie le diff et ne répartit que les spécialistes importants pour ce changement. Chacun reçoit un contexte délimité — appelants, recherche dans le dépôt, schéma, consommateurs — pas tout le dépôt.",
@@ -29,7 +26,6 @@
   "pipeline.s3.tag1": "dédupliquer",
   "pipeline.s3.tag2": "résoudre",
   "pipeline.s3.tag3": "verdict",
-
   "cap.eyebrow": "Fonctionnalités",
   "cap.title": "Un banc de revue, pas une seule grande supposition.",
   "cap.lead": "Chaque spécialiste possède un seul sujet et une grille stricte. Une lentille anti-patterns IA de premier plan capte ce que les relecteurs génériques manquent — APIs hallucinées, sur-ingénierie, helpers ignorés, dépendances superflues.",
@@ -39,19 +35,15 @@
   "cap.c2.body": "Les signaux propres au langage et au framework sont ajoutés aux grilles centrales au moment de la revue. Les packs de framework se composent sur un pack de langage.",
   "cap.c3.title": "4 plateformes",
   "cap.c3.body": "Une source canonique s'installe dans chaque outil via une seule commande. Les agents Codex sont auto-transformés en TOML ; Cursor peut <code>/add-plugin</code> le dépôt directement.",
-
   "install.eyebrow": "Installation",
   "install.title": "Une commande. Sans verrouillage.",
   "install.lead": "Installe le cœur dans ton outil, puis ajoute les packs de stack que tu utilises.",
   "install.note1": "Pas de Node.js ? review-pro n'est que des skills et agents markdown — copie-les dans le dossier de ton outil et il fonctionne pareil. Voir le <a href=\"docs.html#manual-install\">guide d'installation manuelle</a>.",
   "install.note2": "Redémarre ensuite ton outil et lance une revue — ouvre une branche et demande à la session de l'examiner, ou invoque la skill <span class=\"kbd\">review-pro</span>.",
-
   "footer.statement": "La revue de code qui pense par paliers.",
   "footer.home": "Accueil",
-
   "docs.title": "Documentation — review-pro",
   "docs.meta.description": "Documentation review-pro : installation, packs de stack, commandes, installation manuelle, lancer une revue.",
-
   "docs.toc.title": "Sur cette page",
   "docs.toc.overview": "Vue d'ensemble",
   "docs.toc.install": "Installation",
@@ -61,11 +53,9 @@
   "docs.toc.run": "Lancer une revue",
   "docs.toc.reviewers": "Les 12 relecteurs",
   "docs.toc.faq": "FAQ",
-
   "docs.overview.h2": "Vue d'ensemble",
   "docs.overview.p1": "review-pro est un système de revue de code IA par paliers : <strong>triage → relecteurs spécialistes pertinents → synthèse</strong>. Il examine le code écrit par des agents IA à l'aide d'agents IA — conçu pour capter les défaillances que le code généré par IA embarque réellement : APIs hallucinées, sur-ingénierie, conventions ignorées, dépendances superflues.",
   "docs.overview.p2": "Cette CLI installe le cœur de review-pro (12 skills de relecture + sous-agents + l'orchestrateur <code>review-pro</code>) dans ton outil d'agents, et les packs de stack dans le <code>.review-pro/</code> de ton dépôt. Cibles prises en charge : <strong>opencode · Claude Code · Cursor · Codex</strong>.",
-
   "docs.install.h2": "Installation",
   "docs.install.p": "Une seule fois. Interactive — elle demande quelles plateformes et quels packs de stack installer.",
   "docs.install.note": "Non-interactive (CI) ? Utilise <code>--target &lt;platform|all|auto&gt;</code> et <code>--no-stacks</code>.",
@@ -75,17 +65,14 @@
   "docs.install.li3": "<strong>Cursor</strong> — installé via <code>/add-plugin</code> de Cursor ; exécute <code>/add-plugin https://github.com/tufantunc/review-pro</code> dans Cursor (le dépôt embarque un <code>.cursor-plugin/plugin.json</code>).",
   "docs.install.li4": "<strong>Codex</strong> — skills vers <code>~/.agents/skills/</code>, agents auto-transformés en <code>~/.codex/agents/*.toml</code>. Codex découvre les skills automatiquement ; les agents héritent du jeu de skills de la session.",
   "docs.install.callout": "Ajoute ensuite les packs de stack que tu utilises (ci-dessous), <strong>redémarre ton outil</strong> pour que les nouvelles skills/agents soient découverts, et lance une revue.",
-
   "docs.manual.h2": "Installation manuelle (sans Node.js)",
   "docs.manual.p": "review-pro n'est que des skills et agents markdown — aucune dépendance d'exécution. Si tu n'as pas Node.js (ou préfères ne pas utiliser la CLI), copie les fichiers à la main :",
   "docs.manual.ol1": "<strong>Cœur</strong> — copie <code>core/skills/&lt;name&gt;/</code> dans le dossier des skills de ton outil et <code>core/agents/*.md</code> dans son dossier des agents (chemins selon la plateforme ci-dessus).",
   "docs.manual.ol2": "<strong>Packs de stack</strong> — copie <code>stacks/&lt;pack&gt;/</code> dans le <code>.review-pro/&lt;pack&gt;/</code> du dépôt examiné.",
   "docs.manual.note": "La CLI se contente d'automatiser ces copies (plus la transformation Codex <code>.md</code>→<code>.toml</code> et le suivi de version). Les installations manuelle et par CLI sont équivalentes.",
-
   "docs.stacks.h2": "Packs de stack",
   "docs.stacks.p": "Les packs ajoutent aux relecteurs, au moment de la revue, des signaux propres au langage/framework. Installe ceux qu'un dépôt utilise dans son <code>.review-pro/</code>. Les packs de framework/domaine se composent sur un pack de langage.",
   "docs.stacks.catalog": "Catalogue (14) : <code>python</code> · <code>go</code> · <code>rust</code> · <code>typescript-react</code> · <code>node</code> · <code>php</code> · <code>dotnet</code> · <code>kotlin</code> · <code>swift</code> · <code>flutter</code> · <code>nextjs</code> · <code>react-native</code> · <code>wordpress</code> · <code>ai-ml</code>. Exemples : un dépôt Next.js active <code>typescript-react</code> + <code>nextjs</code> ; une app LLM active <code>python</code> + <code>ai-ml</code>.",
-
   "docs.commands.h2": "Commandes",
   "docs.commands.th1": "Commande",
   "docs.commands.th2": "Ce qu'elle fait",
@@ -96,16 +83,13 @@
   "docs.commands.r5": "Rafraîchit les packs installés vers la version du catalogue",
   "docs.commands.r6": "Affiche les stacks du catalogue + les versions installées + la dérive",
   "docs.commands.r7": "Valide les packs installés (dérive de version, intégrité du roster, orphelins)",
-
   "docs.run.h2": "Lancer une revue",
   "docs.run.p": "Après installation + redémarrage, dans le dépôt à examiner (sur une branche de fonctionnalité) :",
   "docs.run.li1": "demande à la session de <strong>examiner cette branche avec review-pro</strong>, ou",
   "docs.run.li2": "invoque directement la skill <strong><code>review-pro</code></strong>.",
   "docs.run.final": "L'agent exécute tout le pipeline nativement — <code>git diff</code>, lit les fichiers modifiés, parcourt <code>.review-pro/</code> pour les stacks actifs, répartit les sous-agents relecteurs pertinents avec leurs signaux de stack, et synthétise un verdict : <strong>BLOCK / REQUEST CHANGES / APPROVE</strong>. Aucune variable d'env, aucun script à lancer au moment de la revue.",
-
   "docs.reviewers.h2": "Les 12 relecteurs",
   "docs.reviewers.p": "<code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code>. Le relecteur <code>ai-antipatterns</code> est de premier plan : APIs/symboles/imports hallucinés, clés de config/env inventées, dépendances superflues et helpers existants ignorés.",
-
   "docs.faq.h2": "FAQ",
   "docs.faq.q1": "Faut-il Node.js ?",
   "docs.faq.a1": "Seule la CLI d'installation en a besoin (Node ≥ 18). Le plugin lui-même n'est que des skills et agents markdown, donc l'<a href=\"#manual-install\">installation manuelle</a> fonctionne sans Node sur toute plateforme.",
@@ -114,5 +98,6 @@
   "docs.faq.q3": "D'où viennent les packs de stack ?",
   "docs.faq.a3": "Le catalogue est livré dans ce paquet, sous forme d'instantané à la publication. De nouveaux packs apparaissent après la publication d'une nouvelle version. Voir <code>stacks/CONTRIBUTING.md</code> dans le dépôt pour ajouter les tiens.",
   "docs.faq.q4": "Est-ce vraiment multiplateforme ?",
-  "docs.faq.a4": "Oui — une source canonique s'installe dans opencode, Claude Code, Cursor et Codex. Les agents Codex sont auto-transformés en TOML ; les autres consomment les mêmes agents markdown."
+  "docs.faq.a4": "Oui — une source canonique s'installe dans opencode, Claude Code, Cursor et Codex. Les agents Codex sont auto-transformés en TOML ; les autres consomment les mêmes agents markdown.",
+  "nav.language": "Langue"
 }

@@ -90,8 +90,9 @@ test('buildAll renders EN to root and others to subdirs, inlines detect + flags'
     const trDocs = readFileSync(join(out, 'tr', 'docs.html'), 'utf8');
     assert.match(enIdx, /lang="en"/);
     assert.match(trDocs, /lang="tr"/);
-    assert.ok(enIdx.includes('How it works') && enIdx.includes('<svg id="en"/>'));
-    assert.ok(enIdx.includes('<svg id="de"/>'), 'all flags load even when only en/tr are built');
+    assert.ok(enIdx.includes('How it works'));
+    assert.ok(enIdx.includes('<svg aria-hidden="true" focusable="false" id="en"/>'), 'inlined flags are decorative');
+    assert.ok(enIdx.includes('<svg aria-hidden="true" focusable="false" id="de"/>'), 'all flags load even when only en/tr are built');
     assert.ok(trDocs.includes('Nasil') && trDocs.includes('console.log("detect");'));
     assert.ok(!/\{\{/.test(enIdx) && !/\{\{/.test(trDocs));
   } finally {

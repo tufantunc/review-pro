@@ -61,6 +61,12 @@ function loadFlags(srcDir, langs) {
   for (const l of langs) {
     let svg = readFileSync(join(srcDir, 'flags', `${l}.svg`), 'utf8');
     svg = svg.replace(/<\?xml.*?\?>/g, '').trim(); // drop XML prolog for inline use
+    // Flags are decorative where inlined (a text label is always present);
+    // strip the standalone role/label and hide from AT.
+    svg = svg.replace(/<svg\b([^>]*)>/, (_, attrs) => {
+      const a = attrs.replace(/\s*role="img"/g, '').replace(/\s*aria-label="[^"]*"/g, '');
+      return `<svg aria-hidden="true" focusable="false"${a}>`;
+    });
     flags[l] = svg;
   }
   return flags;

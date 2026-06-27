@@ -75,7 +75,7 @@ export function buildAll({ srcDir, outDir, langs = SUPPORTED }) {
     if (l !== 'en') assertParity(copy.en, copy[l], l); // translators can't drop keys
   }
   const detect = readFileSync(join(srcDir, 'detect.js'), 'utf8');
-  const flags = loadFlags(srcDir, langs);
+  const flags = loadFlags(srcDir, SUPPORTED); // flags are a shared set; every page's dropdown needs all 7
 
   const written = [];
   for (const l of langs) {

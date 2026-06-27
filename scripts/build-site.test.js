@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { escapeHtml, renderTemplate, assertParity, assertNoTokens, buildContext, buildAll } from './build-site.js';
+import { escapeHtml, renderTemplate, assertParity, assertNoTokens, buildContext, buildAll, SUPPORTED } from './build-site.js';
 
 test('escapeHtml escapes & < > "', () => {
   assert.equal(escapeHtml('a & <b> "c"'), 'a &amp; &lt;b&gt; &quot;c&quot;');
@@ -72,13 +72,13 @@ test('buildAll renders EN to root and others to subdirs, inlines detect + flags'
     const src = join(tmp, 'src'), out = join(tmp, 'out');
     mkdirSync(join(src, 'i18n'), { recursive: true });
     mkdirSync(join(src, 'flags'), { recursive: true });
-    const pageBody = '<body>{{{flag.current}}} {{code}} {{nav.how}}</body>';
+    const pageBody = '<body>{{{flag.current}}} {{code}} {{nav.how}} {{{flag.de}}}</body>';
     writeFileSync(join(src, 'index.html'), `<html lang="{{lang}}"><head><script>/*DETECT*/</script></head>${pageBody}`);
     writeFileSync(join(src, 'docs.html'), `<html lang="{{lang}}"><head><script>/*DETECT*/</script></head>${pageBody}`);
     writeFileSync(join(src, 'i18n', 'en.json'), JSON.stringify({ 'nav.how': 'How it works' }));
     writeFileSync(join(src, 'i18n', 'tr.json'), JSON.stringify({ 'nav.how': 'Nasil' }));
     writeFileSync(join(src, 'detect.js'), 'console.log("detect");');
-    for (const l of ['en', 'tr']) writeFileSync(join(src, 'flags', `${l}.svg`), `<svg id="${l}"/>`);
+    for (const l of SUPPORTED) writeFileSync(join(src, 'flags', `${l}.svg`), `<svg id="${l}"/>`);
 
     const written = buildAll({ srcDir: src, outDir: out, langs: ['en', 'tr'] });
 
@@ -91,6 +91,7 @@ test('buildAll renders EN to root and others to subdirs, inlines detect + flags'
     assert.match(enIdx, /lang="en"/);
     assert.match(trDocs, /lang="tr"/);
     assert.ok(enIdx.includes('How it works') && enIdx.includes('<svg id="en"/>'));
+    assert.ok(enIdx.includes('<svg id="de"/>'), 'all flags load even when only en/tr are built');
     assert.ok(trDocs.includes('Nasil') && trDocs.includes('console.log("detect");'));
     assert.ok(!/\{\{/.test(enIdx) && !/\{\{/.test(trDocs));
   } finally {

@@ -26,3 +26,11 @@ test('renderTemplate leaves non-token content untouched', () => {
   const t = '<code>npx review-pro init</code> {{x}}';
   assert.equal(renderTemplate(t, { x: 'hi' }), '<code>npx review-pro init</code> hi');
 });
+
+test('renderTemplate throws on prototype-inherited keys', () => {
+  assert.throws(() => renderTemplate('{{toString}}', {}), /Missing i18n key: toString/);
+});
+
+test('renderTemplate supports dotted keys and whitespace tolerance', () => {
+  assert.equal(renderTemplate('{{ nav.how }}', { 'nav.how': 'How it works' }), 'How it works');
+});

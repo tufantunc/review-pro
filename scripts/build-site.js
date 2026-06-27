@@ -23,7 +23,7 @@ export function renderTemplate(tmpl, dict) {
   const rawRe = /\{\{\{\s*([\w.-]+)\s*\}\}\}/g;
   const escRe = /\{\{\s*([\w.-]+)\s*\}\}/g;
   const val = (key) => {
-    if (!(key in dict)) throw new Error(`Missing i18n key: ${key}`);
+    if (!Object.hasOwn(dict, key)) throw new Error(`Missing i18n key: ${key}`);
     return dict[key];
   };
   let out = tmpl.replace(rawRe, (_, k) => val(k));

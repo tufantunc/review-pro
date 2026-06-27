@@ -1,11 +1,12 @@
 (function () {
   try {
     var KEY = 'rp_lang';
-    if (localStorage.getItem(KEY)) return;           // user already chose
+    if (localStorage.getItem(KEY)) return;           // already detected/chosen — skip (anti-loop)
     if (navigator.webdriver) return;                 // automation
     var ua = navigator.userAgent || '';
     if (/bot|crawl|spider|slurp|headless|wget|curl|lighthouse|pingdom/i.test(ua)) return;
-    var supported = ['en', 'tr', 'zh', 'hi', 'de', 'fr', 'nl'];
+    var supported = {{{supported_list}}};
+    var base = '{{base}}';
     var cur = document.documentElement.lang;
     var picks = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language];
     var match = null;
@@ -14,16 +15,17 @@
       if (supported.indexOf(short) >= 0) { match = short; break; }
     }
     if (match && match !== cur) {
-      var base = '/review-pro';
+      var langRe = new RegExp('^\\/(' + supported.join('|') + ')(\\/|$)');
       var rel = location.pathname.replace(base, '').replace(/\/index\.html$/, '/');
-      rel = rel.replace(/^\/(en|tr|zh|hi|de|fr|nl)(\/|$)/, '/');
+      rel = rel.replace(langRe, '/');
       rel = rel.replace(/\/+$/, '/');
-      var target = base + '/' + match + (rel === '/' ? '/' : rel);
+      // English is served from the root, not under /en/
+      var target = match === 'en' ? (base + rel) : (base + '/' + match + rel);
       target = target.replace(/\/{2,}/g, '/');
-      localStorage.setItem(KEY, match);
+      try { localStorage.setItem(KEY, match); } catch (e) {}  // best-effort; don't gate the redirect on storage
       location.replace(target);
     } else {
-      localStorage.setItem(KEY, cur);
+      try { localStorage.setItem(KEY, cur); } catch (e) {}
     }
   } catch (e) {}
 })();

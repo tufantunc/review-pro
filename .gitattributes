@@ -1,0 +1,4 @@
+# docs/ is generated from docs-src/ by scripts/build-site.js (CI asserts no drift).
+# Mark it linguist-generated so GitHub collapses it in diffs/excludes from language stats.
+docs/** linguist-generated=true
+docs-src/** linguist-generated=false

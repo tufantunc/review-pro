@@ -15,7 +15,8 @@ export function escapeHtml(s) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 // Replace {{{key}}} (raw) first, then {{key}} (escaped). Throws on missing key.
@@ -41,16 +42,22 @@ export function assertParity(reference, candidate, lang) {
 }
 
 export function assertNoTokens(rendered, lang, page) {
-  if (/\{\{|\}\}/.test(rendered)) {
+  // Match only real token syntax ({{key}} / {{{key}}}), not stray braces in inline JS or code samples.
+  if (/\{\{\{?\s*[\w.-]+\s*\}?\}\}/.test(rendered)) {
     throw new Error(`Unrendered token in ${lang}/${page}`);
   }
 }
 
 // Merge translator copy with computed (non-translated) keys for renderTemplate.
+const NOTO = {
+  hi: '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600&display=swap">',
+  zh: '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&display=swap">',
+};
 export function buildContext({ lang, copy, flags }) {
   const ctx = { ...copy, lang, code: lang.toUpperCase() };
   for (const code of SUPPORTED) ctx[`flag.${code}`] = flags[code];
   ctx['flag.current'] = flags[lang];
+  ctx['fonts_noto'] = NOTO[lang] || ''; // load Devanagari/CJK only on the pages that need them
   return ctx;
 }
 
@@ -73,6 +80,9 @@ function loadFlags(srcDir, langs) {
 }
 
 export function buildAll({ srcDir, outDir, langs = SUPPORTED }) {
+  if (!langs.includes('en')) {
+    throw new Error("buildAll: 'en' must be included in langs (parity reference)");
+  }
   const copy = {};
   for (const l of langs) {
     copy[l] = JSON.parse(readFileSync(join(srcDir, 'i18n', `${l}.json`), 'utf8'));
@@ -80,7 +90,12 @@ export function buildAll({ srcDir, outDir, langs = SUPPORTED }) {
   for (const l of langs) {
     if (l !== 'en') assertParity(copy.en, copy[l], l); // translators can't drop keys
   }
-  const detect = readFileSync(join(srcDir, 'detect.js'), 'utf8');
+  // detect.js is rendered through the same engine so SUPPORTED/BASE flow from one source.
+  const detect = renderTemplate(readFileSync(join(srcDir, 'detect.js'), 'utf8'), {
+    supported_list: JSON.stringify(SUPPORTED),
+    base: BASE,
+  });
+  const langMenu = readFileSync(join(srcDir, 'lang-menu.js'), 'utf8');
   const flags = loadFlags(srcDir, SUPPORTED); // flags are a shared set; every page's dropdown needs all 7
 
   const written = [];
@@ -88,6 +103,7 @@ export function buildAll({ srcDir, outDir, langs = SUPPORTED }) {
     for (const page of PAGES) {
       let tmpl = readFileSync(join(srcDir, page), 'utf8');
       tmpl = tmpl.replace('/*DETECT*/', () => detect);
+      tmpl = tmpl.replace('/*LANGMENU*/', () => langMenu);
       const ctx = buildContext({ lang: l, copy: copy[l], flags });
       const rendered = renderTemplate(tmpl, ctx);
       assertNoTokens(rendered, l, page);

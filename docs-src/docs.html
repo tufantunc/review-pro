@@ -15,12 +15,12 @@
 <link rel="alternate" hreflang="x-default" href="https://tufantunc.github.io/review-pro/">
 <script>/*DETECT*/</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23e8e1cf'/%3E%3Crect x='10.5' y='10.5' width='11' height='11' rx='2' transform='rotate(45 16 16)' fill='%232f6f55'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/review-pro/fonts/fonts.css">
+{{{fonts_noto}}}
 <link rel="stylesheet" href="/review-pro/site.css">
 </head>
 <body>
+<a class="skip-link" href="#main">Skip to content</a>
 
 <nav class="nav" aria-label="Primary">
   <a class="brand" href="index.html"><span class="brand__mark" aria-hidden="true"></span> review-pro</a>
@@ -30,24 +30,24 @@
     <a class="nav__keep is-active" href="docs.html">{{nav.docs}}</a>
     <a href="https://github.com/tufantunc/review-pro" target="_blank" rel="noopener">GitHub</a>
     <a class="nav__cta" href="docs.html#install">{{nav.install}}</a>
-    <div class="lang">
-      <button class="lang__btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="{{nav.language}} {{code}}">
-        {{{flag.current}}}<span class="lang__code">{{code}}</span>
-      </button>
-      <ul class="lang__menu" role="menu" hidden>
-        <li role="none"><a role="menuitem" data-lang="en" href="/review-pro/">{{{flag.en}}} English</a></li>
-        <li role="none"><a role="menuitem" data-lang="tr" href="/review-pro/tr/">{{{flag.tr}}} Türkçe</a></li>
-        <li role="none"><a role="menuitem" data-lang="zh" href="/review-pro/zh/">{{{flag.zh}}} 中文</a></li>
-        <li role="none"><a role="menuitem" data-lang="hi" href="/review-pro/hi/">{{{flag.hi}}} हिन्दी</a></li>
-        <li role="none"><a role="menuitem" data-lang="de" href="/review-pro/de/">{{{flag.de}}} Deutsch</a></li>
-        <li role="none"><a role="menuitem" data-lang="fr" href="/review-pro/fr/">{{{flag.fr}}} Français</a></li>
-        <li role="none"><a role="menuitem" data-lang="nl" href="/review-pro/nl/">{{{flag.nl}}} Nederlands</a></li>
-      </ul>
-    </div>
+     <div class="lang">
+       <button class="lang__btn" type="button" aria-expanded="false" aria-controls="lang-menu" aria-label="{{nav.language}} {{code}}">
+         {{{flag.current}}}<span class="lang__code">{{code}}</span>
+       </button>
+       <ul class="lang__menu" id="lang-menu" hidden>
+         <li><a data-lang="en" href="/review-pro/">{{{flag.en}}} English</a></li>
+         <li><a data-lang="tr" href="/review-pro/tr/">{{{flag.tr}}} Türkçe</a></li>
+         <li><a data-lang="zh" href="/review-pro/zh/">{{{flag.zh}}} 中文</a></li>
+         <li><a data-lang="hi" href="/review-pro/hi/">{{{flag.hi}}} हिन्दी</a></li>
+         <li><a data-lang="de" href="/review-pro/de/">{{{flag.de}}} Deutsch</a></li>
+         <li><a data-lang="fr" href="/review-pro/fr/">{{{flag.fr}}} Français</a></li>
+         <li><a data-lang="nl" href="/review-pro/nl/">{{{flag.nl}}} Nederlands</a></li>
+       </ul>
+     </div>
   </div>
 </nav>
 
-<main class="docs wrap">
+<main class="docs wrap" id="main" tabindex="-1">
   <aside class="toc" aria-label="On this page">
     <p class="toc__title">{{docs.toc.title}}</p>
     <ul>
@@ -163,26 +163,6 @@ npx review-pro list           <span class="cmt"># catalog + installed + drift</s
   }, { rootMargin: "-20% 0px -75% 0px" });
   headings.forEach(function(h){ obs.observe(h); });
 </script>
-<script>
-  (function () {
-    var btn = document.querySelector('.lang__btn');
-    var menu = document.querySelector('.lang__menu');
-    if (!btn || !menu) return;
-    var cur = document.documentElement.lang;
-    menu.querySelectorAll('a').forEach(function (a) {
-      if (a.dataset.lang === cur) a.setAttribute('aria-current', 'true');
-    });
-    function open() { menu.hidden = false; btn.setAttribute('aria-expanded', 'true'); }
-    function close() { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); }
-    btn.addEventListener('click', function (e) { e.stopPropagation(); menu.hidden ? open() : close(); });
-    document.addEventListener('click', function (e) { if (!menu.contains(e.target) && e.target !== btn) close(); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
-    btn.addEventListener('keydown', function (e) {
-      if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault(); open(); var f = menu.querySelector('a'); if (f) f.focus();
-      }
-    });
-  })();
-</script>
+<script>/*LANGMENU*/</script>
 </body>
 </html>

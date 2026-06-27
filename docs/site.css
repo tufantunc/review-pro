@@ -289,4 +289,14 @@ pre.cmd { white-space: pre; }
 }
 .lang__menu a:hover { background: var(--color-paper-2); color: var(--color-ink); }
 .lang__menu a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
-.lang__menu a[aria-current="true"] { color: var(--color-accent); font-weight: 600; }
+.lang__menu a[aria-current="page"] { color: var(--color-accent); font-weight: 600; }
+
+/* Skip to content (keyboard/SR bypass) */
+.skip-link {
+  position: absolute; top: 0; left: 0; z-index: 100;
+  transform: translateY(-150%);
+  padding: 0.5rem 0.9rem; background: var(--color-accent); color: #fff;
+  border-radius: 0 0 8px 8px; text-decoration: none; font-size: 0.85rem;
+  transition: transform 0.15s ease;
+}
+.skip-link:focus { transform: translateY(0); }

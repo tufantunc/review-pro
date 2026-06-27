@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{title}}</title>
+<meta name="description" content="{{meta.description}}">
+<link rel="alternate" hreflang="en" href="https://tufantunc.github.io/review-pro/">
+<link rel="alternate" hreflang="tr" href="https://tufantunc.github.io/review-pro/tr/">
+<link rel="alternate" hreflang="zh" href="https://tufantunc.github.io/review-pro/zh/">
+<link rel="alternate" hreflang="hi" href="https://tufantunc.github.io/review-pro/hi/">
+<link rel="alternate" hreflang="de" href="https://tufantunc.github.io/review-pro/de/">
+<link rel="alternate" hreflang="fr" href="https://tufantunc.github.io/review-pro/fr/">
+<link rel="alternate" hreflang="nl" href="https://tufantunc.github.io/review-pro/nl/">
+<link rel="alternate" hreflang="x-default" href="https://tufantunc.github.io/review-pro/">
+<script>/*DETECT*/</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23e8e1cf'/%3E%3Crect x='10.5' y='10.5' width='11' height='11' rx='2' transform='rotate(45 16 16)' fill='%232f6f55'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/review-pro/site.css">
+</head>
+<body>
+
+<nav class="nav" aria-label="Primary">
+  <a class="brand" href="index.html"><span class="brand__mark" aria-hidden="true"></span> review-pro</a>
+  <div class="nav__links">
+    <a href="index.html#how">{{nav.how}}</a>
+    <a href="index.html#capabilities">{{nav.capabilities}}</a>
+    <a class="nav__keep" href="docs.html">{{nav.docs}}</a>
+    <a href="https://github.com/tufantunc/review-pro" target="_blank" rel="noopener">GitHub</a>
+    <a class="nav__cta" href="docs.html#install">{{nav.install}}</a>
+    <div class="lang">
+      <button class="lang__btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Language">
+        {{{flag.current}}}<span class="lang__code">{{code}}</span>
+      </button>
+      <ul class="lang__menu" role="menu" hidden>
+        <li role="none"><a role="menuitem" data-lang="en" href="/review-pro/">{{{flag.en}}} English</a></li>
+        <li role="none"><a role="menuitem" data-lang="tr" href="/review-pro/tr/">{{{flag.tr}}} Türkçe</a></li>
+        <li role="none"><a role="menuitem" data-lang="zh" href="/review-pro/zh/">{{{flag.zh}}} 中文</a></li>
+        <li role="none"><a role="menuitem" data-lang="hi" href="/review-pro/hi/">{{{flag.hi}}} हिन्दी</a></li>
+        <li role="none"><a role="menuitem" data-lang="de" href="/review-pro/de/">{{{flag.de}}} Deutsch</a></li>
+        <li role="none"><a role="menuitem" data-lang="fr" href="/review-pro/fr/">{{{flag.fr}}} Français</a></li>
+        <li role="none"><a role="menuitem" data-lang="nl" href="/review-pro/nl/">{{{flag.nl}}} Nederlands</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<header class="hero hero--split wrap">
+  <div class="reveal">
+    <p class="eyebrow">{{hero.eyebrow}}</p>
+    <h1 class="hero__title">{{{hero.title}}}</h1>
+    <p class="hero__sub">{{hero.sub}}</p>
+    <div class="hero__cta">
+      <a class="btn btn--primary" href="docs.html#install">{{hero.cta.install}}</a>
+      <a class="btn" href="docs.html">{{hero.cta.docs}}</a>
+    </div>
+  </div>
+  <div class="demo reveal" id="demo" role="img" aria-label="Animated demo of review-pro running a code review in an agent session">
+    <div class="demo__user demo__reveal">
+      <div class="demo__avatar">U</div>
+      <div class="demo__user-body">Review this branch with review-pro</div>
+    </div>
+    <div class="demo__agent demo__reveal">
+      <div class="demo__stage">Triage</div>
+      <div class="demo__thinking"><span></span><span></span><span></span></div>
+      <div class="demo__content">
+        <div class="demo__text" data-stream>3 files changed · dispatching 5 reviewers</div>
+      </div>
+    </div>
+    <div class="demo__agent demo__reveal">
+      <div class="demo__stage">Fan-out — 5 reviewers in parallel</div>
+      <div class="demo__thinking"><span></span><span></span><span></span></div>
+      <div class="demo__content">
+        <div class="demo__reviewer" data-r><span class="demo__dot demo__dot--working"></span><span class="demo__name">security</span><span class="demo__result" data-stream>2 findings</span></div>
+        <div class="demo__reviewer" data-r><span class="demo__dot demo__dot--working"></span><span class="demo__name">correctness</span><span class="demo__result" data-stream>1 finding</span></div>
+        <div class="demo__reviewer" data-r><span class="demo__dot demo__dot--working"></span><span class="demo__name">craft</span><span class="demo__result" data-stream>1 finding</span></div>
+        <div class="demo__reviewer" data-r><span class="demo__dot demo__dot--working"></span><span class="demo__name">performance</span><span class="demo__result" data-stream>clean</span></div>
+        <div class="demo__reviewer" data-r><span class="demo__dot demo__dot--working"></span><span class="demo__name">tests</span><span class="demo__result" data-stream>1 finding</span></div>
+      </div>
+    </div>
+    <div class="demo__agent demo__reveal">
+      <div class="demo__stage">Synthesis</div>
+      <div class="demo__thinking"><span></span><span></span><span></span></div>
+      <div class="demo__content">
+        <div class="demo__text" data-stream>dedup · calibrate · verdict</div>
+      </div>
+    </div>
+    <div class="demo__verdict demo__reveal">
+      <div class="demo__thinking"><span></span><span></span><span></span></div>
+      <div class="demo__content">
+        <div class="demo__verdict-label" data-stream>Verdict: Request Changes</div>
+        <div class="demo__finding demo__finding--reveal"><span class="demo__sev demo__sev--h">[H]</span><span><span class="demo__file">handler.ts:42</span> <span class="demo__finding-desc" data-stream>unvalidated user input</span></span></div>
+        <div class="demo__finding demo__finding--reveal"><span class="demo__sev demo__sev--h">[H]</span><span><span class="demo__file">range.ts:14</span> <span class="demo__finding-desc" data-stream>off-by-one excludes last element</span></span></div>
+        <div class="demo__finding demo__finding--reveal"><span class="demo__sev demo__sev--m">[M]</span><span><span class="demo__file">Big.tsx:1</span> <span class="demo__finding-desc" data-stream>file crosses 1000 lines</span></span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="pipeline wrap" id="how">
+  <div class="stage reveal">
+    <div class="stage__num">01<span>{{pipeline.stage.label}}</span></div>
+    <div>
+      <h2 class="stage__title">{{pipeline.s1.title}}</h2>
+      <p class="stage__body">{{pipeline.s1.body}}</p>
+      <div class="stage__tags"><span class="tag">{{pipeline.s1.tag1}}</span><span class="tag">{{pipeline.s1.tag2}}</span><span class="tag">{{pipeline.s1.tag3}}</span></div>
+    </div>
+  </div>
+  <div class="stage reveal">
+    <div class="stage__num">02<span>{{pipeline.stage.label}}</span></div>
+    <div>
+      <h2 class="stage__title">{{pipeline.s2.title}}</h2>
+      <p class="stage__body">{{pipeline.s2.body}}</p>
+      <div class="stage__tags"><span class="tag">{{pipeline.s2.tag1}}</span><span class="tag">{{pipeline.s2.tag2}}</span><span class="tag">{{pipeline.s2.tag3}}</span></div>
+    </div>
+  </div>
+  <div class="stage reveal">
+    <div class="stage__num">03<span>{{pipeline.stage.label}}</span></div>
+    <div>
+      <h2 class="stage__title">{{pipeline.s3.title}}</h2>
+      <p class="stage__body">{{{pipeline.s3.body}}}</p>
+      <div class="stage__tags"><span class="tag">{{pipeline.s3.tag1}}</span><span class="tag">{{pipeline.s3.tag2}}</span><span class="tag">{{pipeline.s3.tag3}}</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="cap wrap" id="capabilities">
+  <div class="section__head reveal">
+    <p class="section__eyebrow">{{cap.eyebrow}}</p>
+    <h2 class="section__title">{{cap.title}}</h2>
+    <p class="section__lead">{{cap.lead}}</p>
+  </div>
+  <div class="grid reveal">
+    <div class="card">
+      <h3>{{cap.c1.title}}</h3>
+      <p>{{cap.c1.body}}</p>
+      <div class="pillset">
+        <span class="tag">security</span><span class="tag">correctness</span><span class="tag">craft</span><span class="tag">ai-antipatterns</span><span class="tag">dry</span><span class="tag">performance</span><span class="tag">backend</span><span class="tag">frontend</span><span class="tag">a11y</span><span class="tag">db</span><span class="tag">api-contract</span><span class="tag">tests</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>{{cap.c2.title}}</h3>
+      <p>{{cap.c2.body}}</p>
+      <div class="pillset">
+        <span class="tag">python</span><span class="tag">go</span><span class="tag">rust</span><span class="tag">typescript-react</span><span class="tag">node</span><span class="tag">php</span><span class="tag">dotnet</span><span class="tag">kotlin</span><span class="tag">swift</span><span class="tag">flutter</span><span class="tag">nextjs</span><span class="tag">react-native</span><span class="tag">wordpress</span><span class="tag">ai-ml</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>{{cap.c3.title}}</h3>
+      <p>{{{cap.c3.body}}}</p>
+      <div class="pillset">
+        <span class="tag">opencode</span><span class="tag">Cursor</span><span class="tag">Claude&nbsp;Code</span><span class="tag">Codex</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="install wrap">
+  <div class="install__inner reveal">
+    <p class="section__eyebrow">{{install.eyebrow}}</p>
+    <h2 class="section__title" style="font-size:var(--text-xl);">{{install.title}}</h2>
+    <p class="section__lead" style="margin-bottom:0.2rem;">{{install.lead}}</p>
+    <pre class="cmd"><code>npx review-pro init            <span class="cmt"># interactive: pick platforms + stacks</span>
+npx review-pro add <span class="prm">python</span>      <span class="cmt"># add a stack to .review-pro/</span></code></pre>
+    <p class="note">{{{install.note1}}}</p>
+    <p class="note">{{{install.note2}}}</p>
+  </div>
+</section>
+
+<footer class="footer wrap">
+  <div class="footer__top">
+    <p class="footer__statement">{{footer.statement}}</p>
+    <div class="footer__links">
+      <a href="index.html">{{footer.home}}</a>
+      <a href="docs.html">{{nav.docs}}</a>
+      <a href="https://github.com/tufantunc/review-pro" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://www.npmjs.com/package/review-pro" target="_blank" rel="noopener">npm</a>
+    </div>
+  </div>
+  <p class="footer__copy">MIT · review-pro · <a href="https://github.com/tufantunc/review-pro" style="color:inherit">github.com/tufantunc/review-pro</a></p>
+</footer>
+
+<script>
+  var io = new IntersectionObserver(function (es) {
+    es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });
+  }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
+  document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+
+  // --- Animated agent-harness demo (thinking → streaming text per stage) ---
+  (function () {
+    var demo = document.getElementById('demo');
+    if (!demo) return;
+    var reveals = demo.querySelectorAll('.demo__reveal');
+    var dots = demo.querySelectorAll('[data-r] .demo__dot');
+    var results = demo.querySelectorAll('[data-r] .demo__result');
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Store all streamable text, then clear it (so JS controls the "typing")
+    var streamEls = demo.querySelectorAll('[data-stream]');
+
+    // Measure the full-height (all content visible) to prevent layout shift during animation
+    demo.querySelectorAll('.demo__thinking').forEach(function (t) { t.classList.add('is-done'); });
+    demo.querySelectorAll('.demo__content').forEach(function (c) { c.classList.add('is-show'); });
+    demo.querySelectorAll('.demo__result').forEach(function (r) { r.classList.add('is-show'); });
+    demo.querySelectorAll('.demo__finding--reveal').forEach(function (f) { f.classList.add('is-on'); });
+    demo.style.minHeight = demo.scrollHeight + 'px';
+    demo.querySelectorAll('.demo__thinking').forEach(function (t) { t.classList.remove('is-done'); });
+    demo.querySelectorAll('.demo__content').forEach(function (c) { c.classList.remove('is-show'); });
+    demo.querySelectorAll('.demo__result').forEach(function (r) { r.classList.remove('is-show'); });
+    demo.querySelectorAll('.demo__finding--reveal').forEach(function (f) { f.classList.remove('is-on'); });
+
+    streamEls.forEach(function (el) { el.dataset.text = el.textContent.trim(); el.textContent = ''; });
+
+    function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+    function typeText(el, perWord) {
+      perWord = perWord || 50;
+      var text = el.dataset.text || '';
+      var parts = text.split(/(\s+)/);
+      return new Promise(function (resolve) {
+        var i = 0;
+        function next() {
+          if (i >= parts.length) { resolve(); return; }
+          el.textContent += parts[i];
+          var chunk = parts[i]; i++;
+          if (/\S/.test(chunk)) setTimeout(next, perWord); else next();
+        }
+        next();
+      });
+    }
+
+    function reset() {
+      reveals.forEach(function (el) { el.classList.remove('is-on'); });
+      demo.querySelectorAll('.demo__thinking').forEach(function (t) { t.classList.remove('is-done'); });
+      demo.querySelectorAll('.demo__content').forEach(function (c) { c.classList.remove('is-show'); });
+      streamEls.forEach(function (el) { el.textContent = ''; });
+      dots.forEach(function (d) { d.classList.remove('demo__dot--done'); d.classList.add('demo__dot--working'); });
+      results.forEach(function (r) { r.classList.remove('is-show'); });
+      demo.querySelectorAll('.demo__finding--reveal').forEach(function (f) { f.classList.remove('is-on'); });
+    }
+
+    function stageDone(idx) {
+      var el = reveals[idx];
+      var t = el.querySelector('.demo__thinking');
+      var c = el.querySelector('.demo__content');
+      if (t) t.classList.add('is-done');
+      if (c) c.classList.add('is-show');
+    }
+
+    function play() {
+      reset();
+      delay(300)
+        .then(function () { reveals[0].classList.add('is-on'); return delay(500); })
+        // Triage: think → stream
+        .then(function () { reveals[1].classList.add('is-on'); return delay(800); })
+        .then(function () { stageDone(1); return typeText(reveals[1].querySelector('[data-stream]')); })
+        .then(function () { return delay(400); })
+        // Fan-out: think → cascade reviewers (each: dot done → result streams)
+        .then(function () { reveals[2].classList.add('is-on'); return delay(700); })
+        .then(function () {
+          stageDone(2);
+          var chain = delay(300);
+          for (var i = 0; i < dots.length; i++) {
+            chain = chain.then(function (idx) { return function () {
+              dots[idx].classList.remove('demo__dot--working');
+              dots[idx].classList.add('demo__dot--done');
+              results[idx].classList.add('is-show');
+              return typeText(results[idx], 40).then(function () { return delay(120); });
+            }; }(i));
+          }
+          return chain;
+        })
+        // Synthesis: think → stream
+        .then(function () { reveals[3].classList.add('is-on'); return delay(800); })
+        .then(function () { stageDone(3); return typeText(reveals[3].querySelector('[data-stream]')); })
+        .then(function () { return delay(500); })
+        // Verdict: think → stream label → cascade findings
+        .then(function () { reveals[4].classList.add('is-on'); return delay(600); })
+        .then(function () { stageDone(4); return typeText(reveals[4].querySelector('.demo__verdict-label')); })
+        .then(function () { return delay(300); })
+        .then(function () {
+          var findings = reveals[4].querySelectorAll('.demo__finding--reveal');
+          var descs = reveals[4].querySelectorAll('.demo__finding-desc');
+          var chain = Promise.resolve();
+          for (var j = 0; j < findings.length; j++) {
+            chain = chain.then(function (idx) { return function () {
+              findings[idx].classList.add('is-on');
+              return typeText(descs[idx], 45).then(function () { return delay(250); });
+            }; }(j));
+          }
+          return chain;
+        })
+        .then(function () { return delay(3500); })
+        .then(play);
+    }
+
+    if (reduce) {
+      reveals.forEach(function (el) { el.classList.add('is-on'); });
+      demo.querySelectorAll('.demo__thinking').forEach(function (t) { t.classList.add('is-done'); });
+      demo.querySelectorAll('.demo__content').forEach(function (c) { c.classList.add('is-show'); });
+      dots.forEach(function (d) { d.classList.remove('demo__dot--working'); d.classList.add('demo__dot--done'); });
+      results.forEach(function (r) { r.classList.add('is-show'); });
+      streamEls.forEach(function (el) { el.textContent = el.dataset.text; });
+      demo.querySelectorAll('.demo__finding--reveal').forEach(function (f) { f.classList.add('is-on'); });
+    } else {
+      var started = false;
+      var vis = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting && !started) { started = true; play(); }
+        });
+      }, { threshold: 0.3 });
+      vis.observe(demo);
+    }
+  })();
+</script>
+<script>
+  (function () {
+    var btn = document.querySelector('.lang__btn');
+    var menu = document.querySelector('.lang__menu');
+    if (!btn || !menu) return;
+    var cur = document.documentElement.lang;
+    menu.querySelectorAll('a').forEach(function (a) {
+      if (a.dataset.lang === cur) a.setAttribute('aria-current', 'true');
+    });
+    function open() { menu.hidden = false; btn.setAttribute('aria-expanded', 'true'); }
+    function close() { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); }
+    btn.addEventListener('click', function (e) { e.stopPropagation(); menu.hidden ? open() : close(); });
+    document.addEventListener('click', function (e) { if (!menu.contains(e.target) && e.target !== btn) close(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    btn.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault(); open(); var f = menu.querySelector('a'); if (f) f.focus();
+      }
+    });
+  })();
+</script>
+</body>
+</html>

@@ -31,12 +31,6 @@ triage (Stage 1) -> fan-out (Stage 2, parallel specialists) -> synthesis (Stage 
 
 See `docs/superpowers/specs/2026-06-20-review-pro-design.md` for the full design.
 
-## Status (v0.1)
-
-Complete: foundation + validation harness + shared docs + **12 specialist reviewers** + `review-pro` one-command orchestrator + `triage` & `synthesize` skills + subagents + the **`review-pro` CLI** (`npx review-pro`) + **cross-platform `init`** (opencode, Claude Code, Cursor, Codex) + **14 stack packs**. Published as [`review-pro` on npm](https://www.npmjs.com/package/review-pro).
-
-Roadmap (post-MVP): pre-commit mode, CI/headless execution mode (the prerequisite for `--json`/SARIF output), more stack packs.
-
 ## Install (one-time)
 
 ```bash
@@ -66,7 +60,7 @@ Packs add language/framework-specific signals to reviewers. Install into a repo 
 | `wordpress` | framework | 5 | `php` |
 | `ai-ml` | domain | 6 | (typically `python`) |
 
-See `stacks/CONTRIBUTING.md` to add your own. Every pack is catalog-curated and validated by `scripts/validate.sh`.
+See [`stacks/CONTRIBUTING.md`](stacks/CONTRIBUTING.md) to add your own. Every pack is catalog-curated and validated by `scripts/validate.sh`.
 
 ## Validate
 

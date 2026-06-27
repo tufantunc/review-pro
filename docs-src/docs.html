@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{docs.title}}</title>
+<meta name="description" content="{{docs.meta.description}}">
+<link rel="alternate" hreflang="en" href="https://tufantunc.github.io/review-pro/">
+<link rel="alternate" hreflang="tr" href="https://tufantunc.github.io/review-pro/tr/">
+<link rel="alternate" hreflang="zh" href="https://tufantunc.github.io/review-pro/zh/">
+<link rel="alternate" hreflang="hi" href="https://tufantunc.github.io/review-pro/hi/">
+<link rel="alternate" hreflang="de" href="https://tufantunc.github.io/review-pro/de/">
+<link rel="alternate" hreflang="fr" href="https://tufantunc.github.io/review-pro/fr/">
+<link rel="alternate" hreflang="nl" href="https://tufantunc.github.io/review-pro/nl/">
+<link rel="alternate" hreflang="x-default" href="https://tufantunc.github.io/review-pro/">
+<script>/*DETECT*/</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23e8e1cf'/%3E%3Crect x='10.5' y='10.5' width='11' height='11' rx='2' transform='rotate(45 16 16)' fill='%232f6f55'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/review-pro/site.css">
+</head>
+<body>
+
+<nav class="nav" aria-label="Primary">
+  <a class="brand" href="index.html"><span class="brand__mark" aria-hidden="true"></span> review-pro</a>
+  <div class="nav__links">
+    <a href="index.html#how">{{nav.how}}</a>
+    <a href="index.html#capabilities">{{nav.capabilities}}</a>
+    <a class="nav__keep is-active" href="docs.html">{{nav.docs}}</a>
+    <a href="https://github.com/tufantunc/review-pro" target="_blank" rel="noopener">GitHub</a>
+    <a class="nav__cta" href="docs.html#install">{{nav.install}}</a>
+    <div class="lang">
+      <button class="lang__btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Language">
+        {{{flag.current}}}<span class="lang__code">{{code}}</span>
+      </button>
+      <ul class="lang__menu" role="menu" hidden>
+        <li role="none"><a role="menuitem" data-lang="en" href="/review-pro/">{{{flag.en}}} English</a></li>
+        <li role="none"><a role="menuitem" data-lang="tr" href="/review-pro/tr/">{{{flag.tr}}} Türkçe</a></li>
+        <li role="none"><a role="menuitem" data-lang="zh" href="/review-pro/zh/">{{{flag.zh}}} 中文</a></li>
+        <li role="none"><a role="menuitem" data-lang="hi" href="/review-pro/hi/">{{{flag.hi}}} हिन्दी</a></li>
+        <li role="none"><a role="menuitem" data-lang="de" href="/review-pro/de/">{{{flag.de}}} Deutsch</a></li>
+        <li role="none"><a role="menuitem" data-lang="fr" href="/review-pro/fr/">{{{flag.fr}}} Français</a></li>
+        <li role="none"><a role="menuitem" data-lang="nl" href="/review-pro/nl/">{{{flag.nl}}} Nederlands</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<main class="docs wrap">
+  <aside class="toc" aria-label="On this page">
+    <p class="toc__title">{{docs.toc.title}}</p>
+    <ul>
+      <li><a href="#overview">{{docs.toc.overview}}</a></li>
+      <li><a href="#install">{{docs.toc.install}}</a></li>
+      <li><a href="#manual-install">{{docs.toc.manual}}</a></li>
+      <li><a href="#stack-packs">{{docs.toc.stacks}}</a></li>
+      <li><a href="#commands">{{docs.toc.commands}}</a></li>
+      <li><a href="#run-a-review">{{docs.toc.run}}</a></li>
+      <li><a href="#reviewers">{{docs.toc.reviewers}}</a></li>
+      <li><a href="#faq">{{docs.toc.faq}}</a></li>
+    </ul>
+  </aside>
+
+  <article class="doc">
+    <h2 id="overview">{{docs.overview.h2}}</h2>
+    <p>{{{docs.overview.p1}}}</p>
+    <p>{{{docs.overview.p2}}}</p>
+
+    <h2 id="install">{{docs.install.h2}}</h2>
+    <p>{{docs.install.p}}</p>
+    <pre class="cmd"><code>npx review-pro init                           <span class="cmt"># interactive: pick platforms + stacks</span></code></pre>
+    <p class="note">{{{docs.install.note}}}</p>
+    <h3>{{docs.install.h3}}</h3>
+    <ul>
+      <li>{{{docs.install.li1}}}</li>
+      <li>{{{docs.install.li2}}}</li>
+      <li>{{{docs.install.li3}}}</li>
+      <li>{{{docs.install.li4}}}</li>
+    </ul>
+    <div class="callout"><p>{{{docs.install.callout}}}</p></div>
+
+    <h2 id="manual-install">{{docs.manual.h2}}</h2>
+    <p>{{docs.manual.p}}</p>
+    <ol>
+      <li>{{{docs.manual.ol1}}}</li>
+      <li>{{{docs.manual.ol2}}}</li>
+    </ol>
+    <pre class="cmd"><code><span class="cmt"># example: opencode core + python stack, by hand</span>
+cp -R core/skills/*           ~/.config/opencode/skills/
+cp    core/agents/*.md        ~/.config/opencode/agents/
+mkdir -p .review-pro &amp;&amp; cp -R stacks/python .review-pro/python</code></pre>
+    <p class="note">{{{docs.manual.note}}}</p>
+
+    <h2 id="stack-packs">{{docs.stacks.h2}}</h2>
+    <p>{{{docs.stacks.p}}}</p>
+    <pre class="cmd"><code>npx review-pro                <span class="cmt"># interactive multi-select</span>
+npx review-pro add python     <span class="cmt"># one pack, CI-safe</span>
+npx review-pro list           <span class="cmt"># catalog + installed + drift</span></code></pre>
+    <p>{{{docs.stacks.catalog}}}</p>
+
+    <h2 id="commands">{{docs.commands.h2}}</h2>
+    <table class="table">
+      <thead><tr><th>{{docs.commands.th1}}</th><th>{{docs.commands.th2}}</th></tr></thead>
+      <tbody>
+        <tr><td><code>npx review-pro</code></td><td>{{{docs.commands.r1}}}</td></tr>
+        <tr><td><code>init [--target &lt;platform&gt;]</code></td><td>{{docs.commands.r2}}</td></tr>
+        <tr><td><code>add &lt;stack&gt;</code></td><td>{{docs.commands.r3}}</td></tr>
+        <tr><td><code>remove &lt;stack&gt;</code></td><td>{{docs.commands.r4}}</td></tr>
+        <tr><td><code>update [stack]</code></td><td>{{docs.commands.r5}}</td></tr>
+        <tr><td><code>list</code></td><td>{{docs.commands.r6}}</td></tr>
+        <tr><td><code>doctor</code></td><td>{{docs.commands.r7}}</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="run-a-review">{{docs.run.h2}}</h2>
+    <p>{{docs.run.p}}</p>
+    <ul>
+      <li>{{{docs.run.li1}}}</li>
+      <li>{{{docs.run.li2}}}</li>
+    </ul>
+    <p>{{{docs.run.final}}}</p>
+
+    <h2 id="reviewers">{{docs.reviewers.h2}}</h2>
+    <p>{{{docs.reviewers.p}}}</p>
+
+    <h2 id="faq">{{docs.faq.h2}}</h2>
+    <h3>{{docs.faq.q1}}</h3>
+    <p>{{{docs.faq.a1}}}</p>
+    <h3>{{docs.faq.q2}}</h3>
+    <p>{{docs.faq.a2}}</p>
+    <h3>{{docs.faq.q3}}</h3>
+    <p>{{{docs.faq.a3}}}</p>
+    <h3>{{docs.faq.q4}}</h3>
+    <p>{{docs.faq.a4}}</p>
+  </article>
+</main>
+
+<footer class="footer wrap">
+  <div class="footer__top">
+    <p class="footer__statement">{{footer.statement}}</p>
+    <div class="footer__links">
+      <a href="index.html">{{footer.home}}</a>
+      <a href="docs.html">{{nav.docs}}</a>
+      <a href="https://github.com/tufantunc/review-pro" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://www.npmjs.com/package/review-pro" target="_blank" rel="noopener">npm</a>
+    </div>
+  </div>
+  <p class="footer__copy">MIT · review-pro · <a href="https://github.com/tufantunc/review-pro" style="color:inherit">github.com/tufantunc/review-pro</a></p>
+</footer>
+
+<script>
+  var io = new IntersectionObserver(function (es) {
+    es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });
+  }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
+  document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+  // active TOC link on scroll
+  var links = document.querySelectorAll('.toc a');
+  var map = {}; links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var headings = document.querySelectorAll('.doc h2[id]');
+  var obs = new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ links.forEach(function(l){l.classList.remove('is-active');}); var l=map[e.target.id]; if(l){l.classList.add('is-active');} } });
+  }, { rootMargin: "-20% 0px -75% 0px" });
+  headings.forEach(function(h){ obs.observe(h); });
+</script>
+<script>
+  (function () {
+    var btn = document.querySelector('.lang__btn');
+    var menu = document.querySelector('.lang__menu');
+    if (!btn || !menu) return;
+    var cur = document.documentElement.lang;
+    menu.querySelectorAll('a').forEach(function (a) {
+      if (a.dataset.lang === cur) a.setAttribute('aria-current', 'true');
+    });
+    function open() { menu.hidden = false; btn.setAttribute('aria-expanded', 'true'); }
+    function close() { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); }
+    btn.addEventListener('click', function (e) { e.stopPropagation(); menu.hidden ? open() : close(); });
+    document.addEventListener('click', function (e) { if (!menu.contains(e.target) && e.target !== btn) close(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    btn.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault(); open(); var f = menu.querySelector('a'); if (f) f.focus();
+      }
+    });
+  })();
+</script>
+</body>
+</html>

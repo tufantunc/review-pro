@@ -72,9 +72,9 @@ test('buildAll renders EN to root and others to subdirs, inlines detect + flags'
     const src = join(tmp, 'src'), out = join(tmp, 'out');
     mkdirSync(join(src, 'i18n'), { recursive: true });
     mkdirSync(join(src, 'flags'), { recursive: true });
-    writeFileSync(join(src, 'index.html'),
-      '<html lang="{{lang}}"><head><script>/*DETECT*/</script></head>' +
-      '<body>{{{flag.current}}} {{code}} {{nav.how}} <a href="/review-pro/">English</a></body></html>');
+    const pageBody = '<body>{{{flag.current}}} {{code}} {{nav.how}}</body>';
+    writeFileSync(join(src, 'index.html'), `<html lang="{{lang}}"><head><script>/*DETECT*/</script></head>${pageBody}`);
+    writeFileSync(join(src, 'docs.html'), `<html lang="{{lang}}"><head><script>/*DETECT*/</script></head>${pageBody}`);
     writeFileSync(join(src, 'i18n', 'en.json'), JSON.stringify({ 'nav.how': 'How it works' }));
     writeFileSync(join(src, 'i18n', 'tr.json'), JSON.stringify({ 'nav.how': 'Nasil' }));
     writeFileSync(join(src, 'detect.js'), 'console.log("detect");');
@@ -82,14 +82,17 @@ test('buildAll renders EN to root and others to subdirs, inlines detect + flags'
 
     const written = buildAll({ srcDir: src, outDir: out, langs: ['en', 'tr'] });
 
-    assert.deepEqual(written.sort(), [join(out, 'index.html'), join(out, 'tr', 'index.html')].sort());
-    const en = readFileSync(join(out, 'index.html'), 'utf8');
-    const tr = readFileSync(join(out, 'tr', 'index.html'), 'utf8');
-    assert.match(en, /lang="en"/);
-    assert.match(tr, /lang="tr"/);
-    assert.ok(en.includes('How it works') && en.includes('<svg id="en"/>')); // flag inlined
-    assert.ok(tr.includes('Nasil') && tr.includes('console.log("detect");')); // detect inlined
-    assert.ok(!/\{\{/.test(en) && !/\{\{/.test(tr));
+    assert.deepEqual(
+      written.sort(),
+      [join(out, 'index.html'), join(out, 'docs.html'), join(out, 'tr', 'index.html'), join(out, 'tr', 'docs.html')].sort()
+    );
+    const enIdx = readFileSync(join(out, 'index.html'), 'utf8');
+    const trDocs = readFileSync(join(out, 'tr', 'docs.html'), 'utf8');
+    assert.match(enIdx, /lang="en"/);
+    assert.match(trDocs, /lang="tr"/);
+    assert.ok(enIdx.includes('How it works') && enIdx.includes('<svg id="en"/>'));
+    assert.ok(trDocs.includes('Nasil') && trDocs.includes('console.log("detect");'));
+    assert.ok(!/\{\{/.test(enIdx) && !/\{\{/.test(trDocs));
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }

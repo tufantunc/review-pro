@@ -1,6 +1,6 @@
 // Site i18n build: render tokenized templates against per-language dictionaries.
 // Zero dependencies. Node >= 18. ESM.
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -80,10 +80,8 @@ export function buildAll({ srcDir, outDir, langs = SUPPORTED }) {
   const written = [];
   for (const l of langs) {
     for (const page of PAGES) {
-      const tmplPath = join(srcDir, page);
-      if (!existsSync(tmplPath)) continue; // forward-looking page not yet present
-      let tmpl = readFileSync(tmplPath, 'utf8');
-      tmpl = tmpl.replace('/*DETECT*/', () => detect); // inline detection script
+      let tmpl = readFileSync(join(srcDir, page), 'utf8');
+      tmpl = tmpl.replace('/*DETECT*/', () => detect);
       const ctx = buildContext({ lang: l, copy: copy[l], flags });
       const rendered = renderTemplate(tmpl, ctx);
       assertNoTokens(rendered, l, page);

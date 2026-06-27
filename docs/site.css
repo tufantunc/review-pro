@@ -273,8 +273,8 @@ pre.cmd { white-space: pre; }
 }
 .lang__btn:hover { color: var(--color-ink); background: var(--color-paper-2); }
 .lang__btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
-.lang__flag { width: 20px; height: auto; border-radius: 2px; display: block; }
-.lang__menu .lang__flag { width: 18px; }
+.lang__btn svg, .lang__menu a svg { width: 20px; aspect-ratio: 3 / 2; height: auto; border-radius: 2px; display: block; flex-shrink: 0; }
+.lang__menu a svg { width: 18px; }
 .lang__code { font-weight: 600; letter-spacing: 0.02em; }
 .lang__menu {
   position: absolute; right: 0; top: calc(100% + 4px); z-index: 50;

@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { escapeHtml, renderTemplate, assertParity, assertNoTokens, buildContext } from './build-site.js';
+import { rmSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { escapeHtml, renderTemplate, assertParity, assertNoTokens, buildContext, buildAll } from './build-site.js';
 
 test('escapeHtml escapes & < > "', () => {
   assert.equal(escapeHtml('a & <b> "c"'), 'a &amp; &lt;b&gt; &quot;c&quot;');
@@ -62,4 +64,33 @@ test('buildContext merges copy + computed keys', () => {
   assert.equal(ctx['nav.how'], 'Nasil');
   assert.equal(ctx['flag.current'], '<svg id="tr"/>');
   assert.equal(ctx['flag.en'], '<svg id="en"/>');
+});
+
+test('buildAll renders EN to root and others to subdirs, inlines detect + flags', () => {
+  const tmp = join(process.cwd(), '.tmp-build-test');
+  try {
+    const src = join(tmp, 'src'), out = join(tmp, 'out');
+    mkdirSync(join(src, 'i18n'), { recursive: true });
+    mkdirSync(join(src, 'flags'), { recursive: true });
+    writeFileSync(join(src, 'index.html'),
+      '<html lang="{{lang}}"><head><script>/*DETECT*/</script></head>' +
+      '<body>{{{flag.current}}} {{code}} {{nav.how}} <a href="/review-pro/">English</a></body></html>');
+    writeFileSync(join(src, 'i18n', 'en.json'), JSON.stringify({ 'nav.how': 'How it works' }));
+    writeFileSync(join(src, 'i18n', 'tr.json'), JSON.stringify({ 'nav.how': 'Nasil' }));
+    writeFileSync(join(src, 'detect.js'), 'console.log("detect");');
+    for (const l of ['en', 'tr']) writeFileSync(join(src, 'flags', `${l}.svg`), `<svg id="${l}"/>`);
+
+    const written = buildAll({ srcDir: src, outDir: out, langs: ['en', 'tr'] });
+
+    assert.deepEqual(written.sort(), [join(out, 'index.html'), join(out, 'tr', 'index.html')].sort());
+    const en = readFileSync(join(out, 'index.html'), 'utf8');
+    const tr = readFileSync(join(out, 'tr', 'index.html'), 'utf8');
+    assert.match(en, /lang="en"/);
+    assert.match(tr, /lang="tr"/);
+    assert.ok(en.includes('How it works') && en.includes('<svg id="en"/>')); // flag inlined
+    assert.ok(tr.includes('Nasil') && tr.includes('console.log("detect");')); // detect inlined
+    assert.ok(!/\{\{/.test(en) && !/\{\{/.test(tr));
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
 });

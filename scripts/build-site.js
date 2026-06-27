@@ -1,6 +1,6 @@
 // Site i18n build: render tokenized templates against per-language dictionaries.
 // Zero dependencies. Node >= 18. ESM.
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -52,4 +52,54 @@ export function buildContext({ lang, copy, flags }) {
   for (const code of SUPPORTED) ctx[`flag.${code}`] = flags[code];
   ctx['flag.current'] = flags[lang];
   return ctx;
+}
+
+const PAGES = ['index.html', 'docs.html'];
+
+function loadFlags(srcDir, langs) {
+  const flags = {};
+  for (const l of langs) {
+    let svg = readFileSync(join(srcDir, 'flags', `${l}.svg`), 'utf8');
+    svg = svg.replace(/<\?xml.*?\?>/g, '').trim(); // drop XML prolog for inline use
+    flags[l] = svg;
+  }
+  return flags;
+}
+
+export function buildAll({ srcDir, outDir, langs = SUPPORTED }) {
+  const copy = {};
+  for (const l of langs) {
+    copy[l] = JSON.parse(readFileSync(join(srcDir, 'i18n', `${l}.json`), 'utf8'));
+  }
+  for (const l of langs) {
+    if (l !== 'en') assertParity(copy.en, copy[l], l); // translators can't drop keys
+  }
+  const detect = readFileSync(join(srcDir, 'detect.js'), 'utf8');
+  const flags = loadFlags(srcDir, langs);
+
+  const written = [];
+  for (const l of langs) {
+    for (const page of PAGES) {
+      const tmplPath = join(srcDir, page);
+      if (!existsSync(tmplPath)) continue; // forward-looking page not yet present
+      let tmpl = readFileSync(tmplPath, 'utf8');
+      tmpl = tmpl.replace('/*DETECT*/', () => detect); // inline detection script
+      const ctx = buildContext({ lang: l, copy: copy[l], flags });
+      const rendered = renderTemplate(tmpl, ctx);
+      assertNoTokens(rendered, l, page);
+      const outPath = l === 'en' ? join(outDir, page) : join(outDir, l, page);
+      mkdirSync(dirname(outPath), { recursive: true });
+      writeFileSync(outPath, rendered);
+      written.push(outPath);
+    }
+  }
+  return written;
+}
+
+// CLI entrypoint: `node scripts/build-site.js`
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const srcDir = join(ROOT, 'docs-src');
+  const outDir = join(ROOT, 'docs');
+  const written = buildAll({ srcDir, outDir });
+  console.log(`site: wrote ${written.length} pages across ${SUPPORTED.length} languages -> ${relative(ROOT, outDir)}/`);
 }

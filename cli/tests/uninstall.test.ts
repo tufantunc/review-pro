@@ -85,16 +85,19 @@ describe("uninstallCore per target", () => {
     expect(() => uninstallCore("opencode", pluginSrc, H("empty"))).not.toThrow();
   });
 
-  it("codex is a no-op when plugin agents dir is absent", () => {
+  it("codex removes skills even when plugin agents dir is absent", () => {
     const emptyPlugin = fs.mkdtempSync(path.join(os.tmpdir(), "rp-empty-"));
     fs.mkdirSync(path.join(emptyPlugin, "skills", "security"), { recursive: true });
     fs.writeFileSync(path.join(emptyPlugin, "skills", "security", "SKILL.md"), "# s");
-    // NOTE: no agents/ dir created
+    const codexSkills = path.join(H("codex-empty"), "skills");
+    installCore("codex", pluginSrc, H("codex-empty"), codexSkills);
+    expect(fs.existsSync(path.join(codexSkills, "security"))).toBe(true);
     try {
-      expect(() => uninstallCore("codex", emptyPlugin, H("codex-empty"), path.join(H("codex-empty"), "skills"))).not.toThrow();
+      expect(() => uninstallCore("codex", emptyPlugin, H("codex-empty"), codexSkills)).not.toThrow();
     } finally {
       fs.rmSync(emptyPlugin, { recursive: true, force: true });
     }
+    expect(fs.existsSync(path.join(codexSkills, "security"))).toBe(false);
   });
 
   it("does not touch a user's own skill folder", () => {

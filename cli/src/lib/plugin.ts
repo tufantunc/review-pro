@@ -178,14 +178,15 @@ export function uninstallCore(
       return;
     }
     case "codex": {
-      if (!fs.existsSync(agentsSrc)) return;
       const sHome = skillsHome || path.join(os.homedir(), ".agents", "skills");
       for (const s of skillNames) fs.rmSync(path.join(sHome, s), { recursive: true, force: true });
-      for (const a of fs.readdirSync(agentsSrc)) {
-        if (!a.endsWith(".md")) continue;
-        const agent = parseAgentMd(fs.readFileSync(path.join(agentsSrc, a), "utf8"));
-        if (ORCHESTRATOR_SKILLS.has(agent.loads_skill)) continue;
-        fs.rmSync(path.join(home, "agents", `${agent.name}.toml`), { force: true });
+      if (fs.existsSync(agentsSrc)) {
+        for (const a of fs.readdirSync(agentsSrc)) {
+          if (!a.endsWith(".md")) continue;
+          const agent = parseAgentMd(fs.readFileSync(path.join(agentsSrc, a), "utf8"));
+          if (ORCHESTRATOR_SKILLS.has(agent.loads_skill)) continue;
+          fs.rmSync(path.join(home, "agents", `${agent.name}.toml`), { force: true });
+        }
       }
       return;
     }

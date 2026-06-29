@@ -83,7 +83,7 @@
   "docs.commands.r5": "Kurulu paketleri katalog sürümüne yenile",
   "docs.commands.r6": "Katalog yığınlarını + kurulu sürümleri + sapmayı göster",
   "docs.commands.r7": "Kurulu paketleri doğrula (sürüm sapması, kadro bütünlüğü, yetimler)",
-  "docs.commands.r8": "Çekirdek eklentiyi bir aracın ev dizininden kaldırır (agent + skill). <code>.review-pro/</code> içindeki yığın paketleri dokunulmaz.",
+  "docs.commands.r8": "Çekirdek eklentiyi bir aracın ev dizininden kaldırır (agents + skills). <code>.review-pro/</code> içindeki yığın paketleri dokunulmaz.",
   "docs.run.h2": "İnceleme çalıştır",
   "docs.run.p": "Kurulum + yeniden başlatma sonrasında, incelemek istediğin depoda (bir özellik dalında):",
   "docs.run.li1": "oturumdan <strong>bu dalı review-pro ile incele</strong> iste, ya da",

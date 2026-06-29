@@ -5,6 +5,7 @@ import { add } from "./commands/add.js";
 import { remove } from "./commands/remove.js";
 import { update } from "./commands/update.js";
 import { init } from "./commands/init.js";
+import { uninstall } from "./commands/uninstall.js";
 import { doctor } from "./commands/doctor.js";
 
 const program = new Command();
@@ -25,6 +26,13 @@ program
   .option("-t, --target <platform>", "opencode | claude-code | cursor | codex | all | auto")
   .action(async (opts: { stacks?: boolean; target?: string; opencodeHome?: string }) => {
     await init({ ...opts, ...program.opts() });
+  });
+program
+  .command("uninstall")
+  .option("-t, --target <platform>", "opencode | claude-code | cursor | codex | all | auto")
+  .option("-y, --yes", "skip confirmation prompt")
+  .action(async (opts: { target?: string; yes?: boolean }) => {
+    await uninstall({ ...opts, ...program.opts() });
   });
 program.command("doctor").action(() => { doctor(program.opts()); });
 

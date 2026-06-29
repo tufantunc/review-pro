@@ -83,6 +83,7 @@
   "docs.commands.r5": "Refresh installed packs to the catalog version",
   "docs.commands.r6": "Show catalog stacks + installed versions + drift",
   "docs.commands.r7": "Validate installed packs (version drift, roster integrity, orphans)",
+  "docs.commands.r8": "Remove the core plugin from a tool’s home (agents + skills). Stack packs in <code>.review-pro/</code> are untouched.",
   "docs.run.h2": "Run a review",
   "docs.run.p": "After install + restart, in the repo you want to review (on a feature branch):",
   "docs.run.li1": "ask the session to <strong>review this branch with review-pro</strong>, or",

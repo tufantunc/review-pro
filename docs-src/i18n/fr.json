@@ -83,6 +83,7 @@
   "docs.commands.r5": "Rafraîchit les packs installés vers la version du catalogue",
   "docs.commands.r6": "Affiche les stacks du catalogue + les versions installées + la dérive",
   "docs.commands.r7": "Valide les packs installés (dérive de version, intégrité du roster, orphelins)",
+  "docs.commands.r8": "Supprime le plugin cœur du dossier d’un outil (agents + skills). Les packs de stack dans <code>.review-pro/</code> ne sont pas touchés.",
   "docs.run.h2": "Lancer une revue",
   "docs.run.p": "Après installation + redémarrage, dans le dépôt à examiner (sur une branche de fonctionnalité) :",
   "docs.run.li1": "demande à la session de <strong>examiner cette branche avec review-pro</strong>, ou",

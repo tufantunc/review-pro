@@ -83,6 +83,7 @@
   "docs.commands.r5": "Ververs geïnstalleerde pakketten naar de catalogusversie",
   "docs.commands.r6": "Toon catalogus-stacks + geïnstalleerde versies + drift",
   "docs.commands.r7": "Valideer geïnstalleerde pakketten (versie-drift, roster-integriteit, wezen)",
+  "docs.commands.r8": "Verwijdert de kern-plug-in uit de home van een tool (agents + skills). Stack-pakketten in <code>.review-pro/</code> worden niet aangeraakt.",
   "docs.run.h2": "Review uitvoeren",
   "docs.run.p": "Na installatie + herstart, in de repo die je wilt beoordelen (op een feature-branch):",
   "docs.run.li1": "vraag de sessie om <strong>deze branch te beoordelen met review-pro</strong>, of",

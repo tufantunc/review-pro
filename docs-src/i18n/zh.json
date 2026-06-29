@@ -83,6 +83,7 @@
   "docs.commands.r5": "把已安装的包刷新到目录版本",
   "docs.commands.r6": "显示目录技术栈 + 已安装版本 + 漂移",
   "docs.commands.r7": "校验已安装的包（版本漂移、名册完整性、孤儿项）",
+  "docs.commands.r8": "从工具主目录移除核心插件（agent + skill）。<code>.review-pro/</code> 中的技术栈包不受影响。",
   "docs.run.h2": "运行审查",
   "docs.run.p": "安装 + 重启之后，在你要审查的仓库中（位于某个功能分支上）：",
   "docs.run.li1": "让会话<strong>用 review-pro 审查这个分支</strong>，或",

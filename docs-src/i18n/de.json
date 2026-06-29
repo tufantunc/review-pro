@@ -83,6 +83,7 @@
   "docs.commands.r5": "Installierte Pakete auf die Katalogversion aktualisieren",
   "docs.commands.r6": "Katalog-Stacks + installierte Versionen + Drift anzeigen",
   "docs.commands.r7": "Installierte Pakete validieren (Versionsdrift, Roster-Integrität, Waisen)",
+  "docs.commands.r8": "Entfernt das Kern-Plugin aus dem Home eines Tools (Agenten + Skills). Stack-Pakete in <code>.review-pro/</code> bleiben unangetastet.",
   "docs.run.h2": "Prüfung ausführen",
   "docs.run.p": "Nach Installation + Neustart, im Repo, das du prüfen willst (auf einem Feature-Branch):",
   "docs.run.li1": "bitte die Session, <strong>diesen Branch mit review-pro zu prüfen</strong>, oder",

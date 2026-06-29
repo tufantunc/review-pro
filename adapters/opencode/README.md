@@ -19,6 +19,14 @@ node dist/cli.js init
 
 > opencode skill loading from `$OC_HOME/skills/` is confirmed. Agent/subagent loading paths can vary by opencode version — after `init`, restart opencode and verify your agents appear.
 
+## Uninstall
+
+```bash
+npx review-pro uninstall --target opencode   # removes core skills + agents from $OC_HOME
+```
+
+Mirrors `init`'s `--target` logic (`all` / `auto` / comma-list). Removes every `core/skills/<name>/` and `core/agents/*.md` `init` copied into `$OPENCODE_HOME`; leaves your own skills/agents and the `skills/`/`agents/` dirs themselves untouched. Stack packs (`.review-pro/`) are repo-local — `npx review-pro remove <stack>` or `rm -rf .review-pro`.
+
 ## Install stacks (per repo)
 
 ```bash

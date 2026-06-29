@@ -56,11 +56,22 @@ The agent runs the whole pipeline natively (`git diff`, reads changed files, Glo
 | --- | --- |
 | `npx review-pro` | interactive — select stacks to install into `.review-pro/` |
 | `init [--target <platform>]` | install the core plugin into a tool's home |
+| `uninstall [--target <platform>]` | remove the core plugin from a tool's home |
 | `add <stack>` | install one stack pack (non-interactive, CI-safe) |
 | `remove <stack>` | remove an installed pack |
 | `update [stack]` | refresh installed packs to the catalog version |
 | `list` | show catalog stacks + installed versions + drift |
 | `doctor` | validate installed packs (version drift, roster integrity, orphans) |
+
+## Uninstall
+
+Removes the review-pro core (the agents + skills `init` copied) from a tool's home. Mirrors `init`'s `--target` logic.
+
+```bash
+npx review-pro uninstall --target opencode   # or claude-code | codex | all | auto
+```
+
+Stack packs (`.review-pro/`) live in your repo and are **not** touched — remove them with `npx review-pro remove <stack>` or `rm -rf .review-pro`. Cursor manages its own plugins: run `/remove-plugin review-pro` in Cursor.
 
 ## Requirements & license
 

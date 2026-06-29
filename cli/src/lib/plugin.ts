@@ -178,6 +178,7 @@ export function uninstallCore(
       return;
     }
     case "codex": {
+      if (!fs.existsSync(agentsSrc)) return;
       const sHome = skillsHome || path.join(os.homedir(), ".agents", "skills");
       for (const s of skillNames) fs.rmSync(path.join(sHome, s), { recursive: true, force: true });
       for (const a of fs.readdirSync(agentsSrc)) {

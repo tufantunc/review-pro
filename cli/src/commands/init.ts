@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { checkbox, confirm } from "@inquirer/prompts";
-import { installCore, detectInstalled, TARGETS, type Target } from "../lib/plugin.js";
+import { installCore, detectInstalled, resolveTargets, TARGETS, type Target } from "../lib/plugin.js";
 import { runInteractive } from "./interactive.js";
 import { info, warn, fail } from "../lib/log.js";
 
@@ -84,15 +84,4 @@ async function selectPlatforms(): Promise<Target[]> {
 
 function looksLikeProjectRoot(dir: string): boolean {
   return PROJECT_MARKERS.some((m) => fs.existsSync(path.join(dir, m)));
-}
-
-function resolveTargets(target: string): Target[] {
-  if (target === "all") return [...TARGETS];
-  if (target === "auto") return detectInstalled();
-  if ((TARGETS as readonly string[]).includes(target)) return [target as Target];
-  const parts = target.split(",").map((s) => s.trim());
-  if (parts.every((p) => (TARGETS as readonly string[]).includes(p))) {
-    return parts as Target[];
-  }
-  return [];
 }

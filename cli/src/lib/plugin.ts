@@ -62,6 +62,17 @@ export function detectInstalled(): Target[] {
   });
 }
 
+export function resolveTargets(target: string): Target[] {
+  if (target === "all") return [...TARGETS];
+  if (target === "auto") return detectInstalled();
+  if ((TARGETS as readonly string[]).includes(target)) return [target as Target];
+  const parts = target.split(",").map((s) => s.trim());
+  if (parts.every((p) => (TARGETS as readonly string[]).includes(p))) {
+    return parts as Target[];
+  }
+  return [];
+}
+
 function cliVersion(): string {
   const p = path.resolve(__dirname, "..", "package.json");
   try {

@@ -142,3 +142,51 @@ export function installCore(
     }
   }
 }
+
+function listSkillNames(src: string): string[] {
+  if (!fs.existsSync(src)) return [];
+  return fs.readdirSync(src, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name);
+}
+
+function listAgentNames(src: string): string[] {
+  if (!fs.existsSync(src)) return [];
+  return fs.readdirSync(src)
+    .filter((f) => f.endsWith(".md"))
+    .map((f) => f.slice(0, -3));
+}
+
+export function uninstallCore(
+  target: Target,
+  pluginDir: string = resolvePluginDir(),
+  home: string = resolveHome(target),
+  skillsHome?: string,
+): void {
+  const skillsSrc = path.join(pluginDir, "skills");
+  const agentsSrc = path.join(pluginDir, "agents");
+  const skillNames = listSkillNames(skillsSrc);
+
+  switch (target) {
+    case "opencode":
+    case "claude-code": {
+      for (const s of skillNames) fs.rmSync(path.join(home, "skills", s), { recursive: true, force: true });
+      for (const a of listAgentNames(agentsSrc)) fs.rmSync(path.join(home, "agents", `${a}.md`), { force: true });
+      return;
+    }
+    case "cursor": {
+      return;
+    }
+    case "codex": {
+      const sHome = skillsHome || path.join(os.homedir(), ".agents", "skills");
+      for (const s of skillNames) fs.rmSync(path.join(sHome, s), { recursive: true, force: true });
+      for (const a of fs.readdirSync(agentsSrc)) {
+        if (!a.endsWith(".md")) continue;
+        const agent = parseAgentMd(fs.readFileSync(path.join(agentsSrc, a), "utf8"));
+        if (ORCHESTRATOR_SKILLS.has(agent.loads_skill)) continue;
+        fs.rmSync(path.join(home, "agents", `${agent.name}.toml`), { force: true });
+      }
+      return;
+    }
+  }
+}

@@ -71,6 +71,8 @@ Removes the review-pro core (the agents + skills `init` copied) from a tool's ho
 npx review-pro uninstall --target opencode   # or claude-code | codex | all | auto
 ```
 
+Add `-y` to skip the confirmation prompt (CI).
+
 Stack packs (`.review-pro/`) live in your repo and are **not** touched — remove them with `npx review-pro remove <stack>` or `rm -rf .review-pro`. Cursor manages its own plugins: run `/remove-plugin review-pro` in Cursor.
 
 ## Requirements & license

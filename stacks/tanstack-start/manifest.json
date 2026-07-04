@@ -1,0 +1,6 @@
+{
+  "name": "tanstack-start",
+  "version": "0.1.0",
+  "description": "TanStack Start (full-stack React on TanStack Router + Vite + Nitro) signals for review-pro reviewers. Composes on top of typescript-react.",
+  "reviewers": ["security", "correctness", "performance", "frontend"]
+}

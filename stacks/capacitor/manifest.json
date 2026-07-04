@@ -1,0 +1,6 @@
+{
+  "name": "capacitor",
+  "version": "0.1.0",
+  "description": "Capacitor (native runtime for web apps) signals for review-pro reviewers. Framework-agnostic; composes on top of the web framework pack (e.g. typescript-react).",
+  "reviewers": ["security", "correctness", "performance", "frontend", "a11y"]
+}

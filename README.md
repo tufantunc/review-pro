@@ -57,12 +57,16 @@ Packs add language/framework-specific signals to reviewers. Install into a repo 
 | `kotlin` | language | 6 | — |
 | `swift` | language | 6 | — |
 | `flutter` | framework | 4 | — |
+| `capacitor` | framework | 5 | `typescript-react` † |
 | `nextjs` | framework | 4 | `typescript-react` |
+| `tanstack-start` | framework | 4 | `typescript-react` |
 | `react-native` | framework | 4 | `typescript-react` |
 | `wordpress` | framework | 5 | `php` |
 | `ai-ml` | domain | 6 | (typically `python`) |
 
 See [`stacks/CONTRIBUTING.md`](stacks/CONTRIBUTING.md) to add your own. Every pack is catalog-curated and validated by `scripts/validate.sh`.
+
+† `capacitor` is framework-agnostic and composes on whichever web framework pack is active (React via `typescript-react`, Angular, Vue, …).
 
 ## Validate
 

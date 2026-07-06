@@ -1,0 +1,46 @@
+name: Deploy Pages
+
+# Custom Pages deployment (build_type: workflow) replacing GitHub's
+# auto-generated `pages-build-deployment`, which still targets Node.js 20
+# (actions/checkout@v4, actions/upload-artifact@v4) and triggers deprecation
+# warnings. All actions here run on Node.js 24.
+#
+# The site under docs/ is pre-built and committed to main by CI
+# (scripts/build-site.js), so this workflow only uploads and deploys it.
+on:
+  push:
+    branches: [main]
+    paths: ['docs/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent Pages deployment, don't cancel in-flight runs.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

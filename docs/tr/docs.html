@@ -175,6 +175,13 @@
     <p>Bu CLI, review-pro çekirdeğini (12 inceleyici becerisi + alt ajanlar + <code>review-pro</code> orkestratörü) araç ajanına ve yığın paketlerini deponun <code>.review-pro/</code> klasörüne kurar. Desteklenen hedefler: <strong>opencode · Claude Code · Cursor · Codex</strong>.</p>
 
     <h2 id="install">Kurulum</h2>
+
+    <h3>Claude Code: eklenti olarak kurulum</h3>
+    <p>Bu depoyu eklenti pazarı olarak ekler, sonra çekirdeği oradan kurar. Node.js gerekmez. Yığın paketleri yine CLI’dan gelir.</p>
+    <pre class="cmd"><code>/plugin marketplace add <span class="prm">tufantunc/review-pro</span>
+/plugin install <span class="prm">review-pro@review-pro</span></code></pre>
+
+    <h3>Her platform: kurulum CLI’ı</h3>
     <p>Tek seferlik. Etkileşimli — hangi platformların ve hangi yığın paketlerinin kurulacağını sorar.</p>
     <pre class="cmd"><code>npx review-pro init                           <span class="cmt"># interactive: pick platforms + stacks</span></code></pre>
     <p class="note">Etkileşimsiz (CI)? <code>--target &lt;platform|all|auto&gt;</code> ve <code>--no-stacks</code> kullan.</p>

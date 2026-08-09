@@ -212,6 +212,9 @@ pre.cmd { white-space: pre; }
 .cmd .cmt { color: var(--color-muted); }
 .note { color: var(--color-muted); font-size: 0.94rem; margin: 1rem 0 0; max-width: 64ch; }
 .note a { color: var(--color-accent); }
+/* Caption above a .cmd block when a section offers more than one install path. */
+.cmd-label { color: var(--color-muted); font-family: var(--font-outlier); font-size: 0.84rem; letter-spacing: 0.03em; margin: 1.5rem 0 0.5rem; }
+.cmd-label + .cmd { margin-top: 0; }
 .kbd { font-family: var(--font-outlier); font-size: 0.85em; border: 1px solid var(--color-rule); border-radius: 6px; padding: 0.08rem 0.4rem; color: var(--color-muted); background: var(--color-paper-2); }
 
 /* ---------- Docs layout ---------- */

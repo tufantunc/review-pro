@@ -12,10 +12,15 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the GitHub Release for this tag
+      id-token: write # npm provenance attestation
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0 # release notes are generated from history
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
@@ -34,13 +39,27 @@ jobs:
         working-directory: cli
         run: npm test
 
+      - name: Verify tag matches cli/package.json version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p "require('./cli/package.json').version")"
+          if [ "$tag" != "$pkg" ]; then
+            echo "::error::Tag v$tag does not match cli/package.json version $pkg"
+            exit 1
+          fi
+          echo "Tag and package version agree: $pkg"
+
       - name: Publish
         working-directory: cli
-        run: npm publish --access public
+        run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      # NOTE: to enable npm provenance later (recommended for a security tool):
-      # 1) add `id-token: write` to this job's permissions
-      # 2) change the publish command to: npm publish --access public --provenance
-      # 3) on npmjs.com, configure provenance/trusted publishing for the package
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            --verify-tag

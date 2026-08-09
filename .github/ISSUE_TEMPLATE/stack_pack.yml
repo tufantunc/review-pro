@@ -1,0 +1,77 @@
+name: 🧩 Stack pack request
+description: Request a new language/framework pack, or propose signals for an existing one.
+title: '[stack] '
+labels: ['stack-pack']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Packs add **stack-specific** signals on top of a reviewer's core rubric.
+
+        The bar: a signal must be concrete and tied to a real API or construct in the stack. "Be careful with errors" is core territory. "`eval()` on dynamic input → RCE in CPython" is a pack signal.
+
+        Want to write it yourself? [`stacks/CONTRIBUTING.md`](https://github.com/tufantunc/review-pro/blob/main/stacks/CONTRIBUTING.md) has the format — PRs are very welcome.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: New pack or existing one
+      options:
+        - New pack
+        - New signals for an existing pack
+        - Fix a wrong signal in an existing pack
+    validations:
+      required: true
+
+  - type: input
+    id: pack
+    attributes:
+      label: Stack
+      description: 'Existing packs: typescript-react, node, python, go, dotnet, rust, php, kotlin, swift, flutter, capacitor, nextjs, tanstack-start, react-native, wordpress, ai-ml'
+      placeholder: 'django'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Pack type
+      options:
+        - language
+        - framework (composes on a language pack)
+        - domain
+    validations:
+      required: true
+
+  - type: input
+    id: composes
+    attributes:
+      label: Composes on
+      description: For a framework/domain pack, which language pack does it layer onto?
+      placeholder: 'python'
+
+  - type: textarea
+    id: signals
+    attributes:
+      label: Concrete signals
+      description: One per line. Name the real API/construct and the failure it causes.
+      placeholder: |
+        - `.objects.get()` inside a loop over a queryset → N+1 (performance)
+        - `mark_safe()` on request data → XSS, Critical (security)
+        - Missing `select_for_update()` in a balance-mutating view → lost update (db)
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why the core rubric doesn't already cover this
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I'm willing to open the PR for this

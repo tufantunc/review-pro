@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔒 Report a security vulnerability
+    url: https://github.com/tufantunc/review-pro/security/advisories/new
+    about: Never report vulnerabilities in a public issue. Use a private advisory instead.
+  - name: 📖 Documentation
+    url: https://tufantunc.github.io/review-pro/
+    about: Install steps, commands, stack pack catalog — in 7 languages.
+  - name: 🧩 Contributing a stack pack
+    url: https://github.com/tufantunc/review-pro/blob/main/stacks/CONTRIBUTING.md
+    about: The pack format, manifest rules, and authoring checklist.

@@ -1,0 +1,80 @@
+name: 🐛 Bug report
+description: The CLI, the installer, or the review run itself misbehaves.
+title: '[bug] '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For a reviewer that flagged the wrong thing (or missed something), use the **False positive or missed finding** template instead.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where
+      options:
+        - CLI — init / uninstall
+        - CLI — add / remove (stack packs)
+        - Installed skills or agents (wrong place, wrong format)
+        - Review run — crashes or never completes
+        - Docs / site
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. npx review-pro init --target claude-code
+        2. npx review-pro add nextjs
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Output / error
+      description: Full command output or stack trace. Redact any tokens or paths you'd rather not share.
+      render: shell
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Agent tool
+      options: [opencode, Claude Code, Cursor, Codex, other]
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: review-pro version
+      description: 'Run: npx review-pro --version'
+      placeholder: '0.4.1'
+    validations:
+      required: true
+
+  - type: input
+    id: env
+    attributes:
+      label: OS and Node version
+      placeholder: 'macOS 15.5, Node 22.14'
+    validations:
+      required: true

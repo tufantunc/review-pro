@@ -1,0 +1,97 @@
+name: 🎯 False positive or missed finding
+description: A reviewer flagged something it shouldn't have, or missed something it should have caught.
+title: '[review] '
+labels: ['review-quality']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        These are the most useful reports this project gets. Rubrics get calibrated from real examples, not from theory.
+
+        **Redact anything proprietary** — a minimal reconstruction of the pattern is more useful than a real snippet anyway.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What happened
+      options:
+        - False positive — flagged something that is fine
+        - Missed finding — did not flag a real problem
+        - Wrong severity — right call, wrong weight
+        - Wrong verdict — findings were fine, BLOCK/APPROVE was not
+    validations:
+      required: true
+
+  - type: dropdown
+    id: reviewer
+    attributes:
+      label: Which reviewer
+      description: If you are not sure, pick the closest concern.
+      options:
+        - security
+        - correctness
+        - craft
+        - ai-antipatterns
+        - dry
+        - performance
+        - backend
+        - frontend
+        - a11y
+        - db
+        - api-contract
+        - tests
+        - triage (wrong reviewers dispatched)
+        - synthesis (dedup / conflict / severity)
+        - not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: code
+    attributes:
+      label: The code
+      description: The smallest snippet that reproduces the behavior.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What the reviewer said
+      description: Paste the finding verbatim, or write "nothing — it was not flagged".
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What the correct call would have been
+      description: And why. If this is a false positive, explain what makes the code actually safe here.
+    validations:
+      required: true
+
+  - type: input
+    id: stacks
+    attributes:
+      label: Active stack packs
+      description: Contents of `.review-pro/` in the repo you reviewed.
+      placeholder: typescript-react, nextjs
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Agent tool
+      options: [opencode, Claude Code, Cursor, Codex, other]
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: review-pro version
+      placeholder: '0.4.1'
+    validations:
+      required: true

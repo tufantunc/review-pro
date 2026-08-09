@@ -1,0 +1,15 @@
+# Default owner for everything not matched below.
+* @tufantunc
+
+# The product surface — reviewer rubrics and orchestration.
+/core/ @tufantunc
+
+# Release, supply chain, and CI. Changes here affect the published artifact.
+/.github/workflows/ @tufantunc
+/.github/dependabot.yml @tufantunc
+/cli/package.json @tufantunc
+/manifest.json @tufantunc
+/SECURITY.md @tufantunc
+
+# Generated — regenerate with scripts/build-site.js, never edit by hand.
+/docs/ @tufantunc

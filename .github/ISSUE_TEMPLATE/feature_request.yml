@@ -1,0 +1,51 @@
+name: 💡 Feature request
+description: A new CLI capability, platform target, or reviewer.
+title: '[feat] '
+labels: ['enhancement']
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - CLI (command, flag, install behavior)
+        - New platform target
+        - New reviewer
+        - Orchestration (triage / synthesis)
+        - Docs / site
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do that review-pro makes hard or impossible today? Describe the situation, not the solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you'd like instead
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you've tried or considered
+      description: Including "why an existing reviewer or stack pack doesn't cover it".
+
+  - type: markdown
+    attributes:
+      value: |
+        **A note on new reviewers:** the bar is that the concern isn't already owned by one of the 12, *and* triage can tell when it's relevant. Reviewers that fire on every diff make the whole system noisier.
+
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I'm willing to open the PR for this

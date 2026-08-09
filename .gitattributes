@@ -2,3 +2,6 @@
 # Mark it linguist-generated so GitHub collapses it in diffs/excludes from language stats.
 docs/** linguist-generated=true
 docs-src/** linguist-generated=false
+
+# The recorded demo is a binary artifact, not reviewable source.
+assets/demo.gif binary

@@ -186,6 +186,13 @@
     <p>This CLI installs the review-pro core (12 reviewer skills + subagents + the <code>review-pro</code> orchestrator) into your agent tool, and the stack packs into your repo’s <code>.review-pro/</code>. Supported targets: <strong>opencode · Claude Code · Cursor · Codex</strong>.</p>
 
     <h2 id="install">Install</h2>
+
+    <h3>Claude Code: install as a plugin</h3>
+    <p>Adds this repository as a plugin marketplace, then installs the core from it. No Node.js required. Stack packs still come from the CLI.</p>
+    <pre class="cmd"><code>/plugin marketplace add <span class="prm">tufantunc/review-pro</span>
+/plugin install <span class="prm">review-pro@review-pro</span></code></pre>
+
+    <h3>Any platform: installer CLI</h3>
     <p>One-time. Interactive — it asks which platforms and which stack packs to install.</p>
     <pre class="cmd"><code>npx review-pro init                           <span class="cmt"># interactive: pick platforms + stacks</span></code></pre>
     <p class="note">Non-interactive (CI)? Use <code>--target &lt;platform|all|auto&gt;</code> and <code>--no-stacks</code>.</p>

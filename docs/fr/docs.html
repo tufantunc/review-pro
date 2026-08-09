@@ -174,6 +174,13 @@
     <p>Cette CLI installe le cœur de review-pro (12 skills de relecture + sous-agents + l'orchestrateur <code>review-pro</code>) dans ton outil d'agents, et les packs de stack dans le <code>.review-pro/</code> de ton dépôt. Cibles prises en charge : <strong>opencode · Claude Code · Cursor · Codex</strong>.</p>
 
     <h2 id="install">Installation</h2>
+
+    <h3>Claude Code : installer en tant que plugin</h3>
+    <p>Ajoute ce dépôt comme marketplace de plugins, puis y installe le cœur. Aucun Node.js requis. Les packs de stack passent toujours par la CLI.</p>
+    <pre class="cmd"><code>/plugin marketplace add <span class="prm">tufantunc/review-pro</span>
+/plugin install <span class="prm">review-pro@review-pro</span></code></pre>
+
+    <h3>Toute plateforme : CLI d’installation</h3>
     <p>Une seule fois. Interactive — elle demande quelles plateformes et quels packs de stack installer.</p>
     <pre class="cmd"><code>npx review-pro init                           <span class="cmt"># interactive: pick platforms + stacks</span></code></pre>
     <p class="note">Non-interactive (CI) ? Utilise <code>--target &lt;platform|all|auto&gt;</code> et <code>--no-stacks</code>.</p>

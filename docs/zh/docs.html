@@ -177,6 +177,13 @@
     <p>本 CLI 会把 review-pro 核心（12 个审查技能 + 子智能体 + <code>review-pro</code> 编排器）安装进你的智能体工具，并把技术栈包安装进你仓库的 <code>.review-pro/</code>。支持的目标：<strong>opencode · Claude Code · Cursor · Codex</strong>。</p>
 
     <h2 id="install">安装</h2>
+
+    <h3>Claude Code：作为插件安装</h3>
+    <p>将本仓库添加为插件市场，然后从中安装核心。无需 Node.js。技术栈包仍通过 CLI 安装。</p>
+    <pre class="cmd"><code>/plugin marketplace add <span class="prm">tufantunc/review-pro</span>
+/plugin install <span class="prm">review-pro@review-pro</span></code></pre>
+
+    <h3>任意平台：安装器 CLI</h3>
     <p>一次性。交互式——它会询问要安装哪些平台、哪些技术栈包。</p>
     <pre class="cmd"><code>npx review-pro init                           <span class="cmt"># interactive: pick platforms + stacks</span></code></pre>
     <p class="note">非交互式（CI）？使用 <code>--target &lt;platform|all|auto&gt;</code> 与 <code>--no-stacks</code>。</p>

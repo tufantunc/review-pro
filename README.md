@@ -6,6 +6,7 @@
 [![license: MIT](https://img.shields.io/github/license/tufantunc/review-pro)](LICENSE)
 [![node](https://img.shields.io/node/v/review-pro)](https://www.npmjs.com/package/review-pro)
 [![platforms](https://img.shields.io/badge/platforms-opencode%20%7C%20Cursor%20%7C%20Claude%20Code%20%7C%20Codex-blue)](#install-one-time)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/tufantunc/review-pro/badge)](https://scorecard.dev/viewer/?uri=github.com/tufantunc/review-pro)
 
 Tiered AI code-review: **triage → relevant specialist reviewers → synthesis**. Built to review code written by AI agents — catching the issues AI-generated code actually ships with (hallucinated APIs, over-engineering, ignored conventions, needless dependencies), not just generic bugs.
 
@@ -33,10 +34,20 @@ See `docs/superpowers/specs/2026-06-20-review-pro-design.md` for the full design
 
 ## Install (one-time)
 
+**Claude Code** — as a plugin, no Node.js required:
+
+```
+/plugin marketplace add tufantunc/review-pro
+/plugin install review-pro@review-pro
+```
+
+**Any platform** — via the installer CLI:
+
 ```bash
 npx review-pro init                           # opencode (default)
 npx review-pro init --target claude-code      # or cursor | codex | all | auto
 ```
+
 Installs the review-pro core (skills + subagents) into the target platform's home from one canonical source. Codex agents are auto-transformed to TOML; the repo-root `.cursor-plugin/plugin.json` also lets Cursor `/add-plugin` it directly. Then `npx review-pro add <stack>` to install packs into `.review-pro/`, restart the tool, and invoke the **`review-pro`** skill.
 
 **Uninstall** the core with `npx review-pro uninstall --target <platform>` (removes agents + skills from the tool home; stack packs in `.review-pro/` are repo-local — see `npx review-pro remove`).
@@ -74,6 +85,14 @@ See [`stacks/CONTRIBUTING.md`](stacks/CONTRIBUTING.md) to add your own. Every pa
 ./scripts/validate.sh         # structural check: frontmatter, sections, manifest, references
 bash scripts/validate.test.sh # validator unit tests
 ```
+
+## Contributing
+
+Most of review-pro is plain markdown — you don't need to be a TypeScript developer to improve it. The most valuable contributions are **false-positive and missed-finding reports**: rubrics get calibrated from real examples.
+
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — where things live, the four kinds of contribution, the checks to run
+- [`stacks/CONTRIBUTING.md`](stacks/CONTRIBUTING.md) — the stack pack format and authoring checklist
+- [`SECURITY.md`](SECURITY.md) — vulnerability reporting (never a public issue) and supply-chain posture
 
 ## License
 

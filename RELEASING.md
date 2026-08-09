@@ -37,9 +37,28 @@ Publishing is triggered by a `v*` tag, never by a branch push. CI (`.github/work
    git tag vX.Y.Z
    git push origin vX.Y.Z
    ```
-4. The Publish action builds, tests, and runs `npm publish` using the `NPM_TOKEN` repo secret. Watch the **Actions** tab; the package appears on npmjs.com.
+4. The Publish action builds, tests, verifies the tag matches `cli/package.json`, runs `npm publish --provenance`, and creates the **GitHub Release** with generated notes. Watch the **Actions** tab; the package appears on npmjs.com.
 
-> The tag must match `cli/package.json` `version`. The action does not rewrite versions.
+> The tag must match `cli/package.json` `version` — the workflow fails fast if it doesn't. The action never rewrites versions.
+
+Release notes come from `--generate-notes`, which groups merged PRs by title. Conventional Commit titles (`feat(cli): …`, `fix(reviewers): …`) are what make that output readable.
+
+## Plugin manifests to bump alongside the version
+
+Three files carry a version and are **not** bumped automatically:
+
+| File | Field |
+|---|---|
+| `cli/package.json` | `version` |
+| `.claude-plugin/marketplace.json` | `version` and `plugins[0].version` |
+| `core/.claude-plugin/plugin.json` | `version` |
+
+`.cursor-plugin/plugin.json` carries its own independent version. Validate the Claude Code manifests after editing:
+
+```bash
+claude plugin validate .        # marketplace manifest
+claude plugin validate ./core   # plugin manifest
+```
 
 ## One-time setup
 
@@ -47,6 +66,8 @@ Publishing is triggered by a `v*` tag, never by a branch push. CI (`.github/work
 2. **GitHub secret** — repo Settings → Secrets and variables → Actions → New repository secret → name `NPM_TOKEN`, paste the token.
 3. **Package name** — confirm `npm view review-pro` is free; if taken, publish under a scope (`@tufantunc/review-pro`) and keep the `bin` name `review-pro`.
 
-## Provenance (optional, recommended)
+## Provenance (enabled)
 
-For a security tool, [npm provenance](https://docs.npmjs.com/generating-provenance-statements) ties the package to this GitHub build. To enable: add `id-token: write` to the publish job's permissions, append `--provenance` to the publish command, and configure the package on npmjs.com. (See the comment in `.github/workflows/publish.yml`.)
+[npm provenance](https://docs.npmjs.com/generating-provenance-statements) is on: the publish job has `id-token: write` and publishes with `--provenance`, so every release carries a signed attestation tying the tarball to this repo and workflow. npmjs.com shows a **Provenance** section on the package page.
+
+If a publish fails with an OIDC or provenance error, check that (a) the job still has `id-token: write`, and (b) the `repository.url` in `cli/package.json` still matches this repo — provenance verification compares them.

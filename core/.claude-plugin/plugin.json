@@ -1,0 +1,20 @@
+{
+  "name": "review-pro",
+  "version": "0.4.1",
+  "description": "Tiered AI code-review: triage -> relevant specialist reviewers -> synthesis. Built to catch what AI-written code actually ships with — hallucinated APIs, over-engineering, ignored conventions, needless dependencies. Invoke the `review-pro` skill on a branch or PR.",
+  "author": {
+    "name": "tufantunc",
+    "url": "https://github.com/tufantunc"
+  },
+  "homepage": "https://tufantunc.github.io/review-pro/",
+  "repository": "https://github.com/tufantunc/review-pro",
+  "license": "MIT",
+  "keywords": [
+    "code-review",
+    "ai-code-review",
+    "security",
+    "code-quality",
+    "subagents",
+    "skills"
+  ]
+}

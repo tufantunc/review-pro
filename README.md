@@ -10,6 +10,10 @@
 
 Tiered AI code-review: **triage → relevant specialist reviewers → synthesis**. Built to review code written by AI agents — catching the issues AI-generated code actually ships with (hallucinated APIs, over-engineering, ignored conventions, needless dependencies), not just generic bugs.
 
+![Installing the review-pro core and two stack packs, then listing the catalog](assets/demo.gif)
+
+<sub>One command installs 12 specialist reviewers into your agent tool. Then add the packs for your stack. Re-record with `./scripts/record-demo.sh`.</sub>
+
 ## Why
 
 Most "review this" prompts hand one agent the whole diff and ask for everything. review-pro is tiered, so small changes stay cheap and large changes go deep:
@@ -22,15 +26,70 @@ The **AI-code anti-patterns** lens is first-class: hallucinated APIs/symbols, in
 
 ## Architecture
 
-```
-triage (Stage 1) -> fan-out (Stage 2, parallel specialists) -> synthesis (Stage 3)
+```mermaid
+flowchart TB
+    D["diff"] --> T
+
+    subgraph S1["Stage 1 — triage"]
+        T["classify the diff<br/>select reviewers · scope context"]
+    end
+
+    subgraph S2["Stage 2 — only the relevant specialists, in parallel"]
+        R1["security"]
+        R2["correctness"]
+        R3["ai-antipatterns"]
+        R4["…9 more"]
+    end
+
+    subgraph S3["Stage 3 — synthesis"]
+        Y["dedup · resolve conflicts · calibrate severity"]
+    end
+
+    T --> R1 & R2 & R3 & R4
+    R1 & R2 & R3 & R4 --> Y
+    Y --> V["verdict: BLOCK · REQUEST CHANGES · APPROVE"]
+
+    P[".review-pro/ stack packs"] -.->|stack signals| S2
 ```
 
-- **Triage** classifies the diff, picks relevant reviewers, scopes context, emits a dispatch plan.
+- **Triage** classifies the diff, picks relevant reviewers, scopes context, emits a dispatch plan. A one-line CSS change does not wake the `db` reviewer.
 - **Fan-out** runs only the selected specialists in parallel; each applies its core rubric plus any stack signals from the repo's `.review-pro/`.
 - **Synthesis** dedups, weights, resolves conflicts by domain ownership, calibrates severity, emits one verdict.
 
 See `docs/superpowers/specs/2026-06-20-review-pro-design.md` for the full design.
+
+## What a review looks like
+
+Synthesis emits one deduped report — not twelve separate reviewer dumps. Each finding carries its evidence, its remedy, and which reviewers independently raised it.
+
+<details>
+<summary>Example report shape</summary>
+
+```
+## Verdict: BLOCK
+
+### Critical
+- [Critical] src/api/orders.ts:42 — missing ownership check
+  impact: any authenticated user can update another user's order
+  remedy: authorize(ctx.userId === order.userId)
+  flagged by: security, backend
+
+### High
+- [High] src/hooks/useCart.ts:88 — useEffect refetches on every render
+  impact: one request per render; the cart endpoint is unpaginated
+  remedy: memoize the dependency array; the `items` object is rebuilt inline
+  flagged by: performance, frontend
+
+### Medium
+- [Medium] src/lib/retry.ts:1 — reimplements the existing `withRetry` helper
+  impact: two retry policies drift apart
+  remedy: use src/shared/withRetry.ts (already handles jitter)
+  flagged by: dry, ai-antipatterns
+```
+
+Illustrative of the output format — not the result of a specific run. Severity thresholds and the verdict rule live in `core/shared/severity.md`.
+
+</details>
 
 ## Install (one-time)
 

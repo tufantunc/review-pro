@@ -15,6 +15,7 @@ Most of it is plain markdown. You do not need to be a TypeScript developer to ma
 | `cli/` | The `npx review-pro` installer (TypeScript, published to npm) |
 | `docs-src/` → `docs/` | The site. **`docs/` is generated** — never edit it by hand |
 | `scripts/` | `validate.sh`, `build-site.js`, and their tests |
+| `studies/` | Pre-registered evaluations of review-pro against real agent-authored PRs — methodology and hand-verified findings |
 
 ## The four kinds of contribution
 

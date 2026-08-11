@@ -8,11 +8,30 @@
 [![platforms](https://img.shields.io/badge/platforms-opencode%20%7C%20Cursor%20%7C%20Claude%20Code%20%7C%20Codex-blue)](#install-one-time)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/tufantunc/review-pro/badge)](https://scorecard.dev/viewer/?uri=github.com/tufantunc/review-pro)
 
-Tiered AI code-review: **triage → relevant specialist reviewers → synthesis**. Built to review code written by AI agents — catching the issues AI-generated code actually ships with (hallucinated APIs, over-engineering, ignored conventions, needless dependencies), not just generic bugs.
+**The diff is where the change is. The repository is where the evidence is.**
+
+review-pro is an open-source, repository-aware code review system for coding agents — **Claude Code, opencode, Cursor, Codex**. Triage reads the diff and dispatches only the relevant specialists of twelve; they run in parallel, each required to **locate evidence in the repository** before making a claim; synthesis dedups their findings into one verdict: **BLOCK / REQUEST CHANGES / APPROVE**.
+
+Built for AI-written code — not because agents invent APIs (in [our pre-registered study](studies/2026-08-copilot-pr-pilot) of merged Copilot PRs, they almost never did), but because they write locally plausible code that misses what the repository already knows: the guard added after an incident, the canonical helper, the convention every sibling file follows. That evidence lives in files the diff never touches — so review has to leave the diff.
 
 ![Installing the review-pro core and two stack packs, then listing the catalog](assets/demo.gif)
 
 <sub>One command installs 12 specialist reviewers into your agent tool. Then add the packs for your stack. Re-record with `./scripts/record-demo.sh`.</sub>
+
+## When to use it
+
+Reach for review-pro when:
+
+- a coding agent implemented a **multi-file change** and you want an independent, evidence-backed review before merging;
+- the change is a **refactor, dependency upgrade, or API/schema change** — where the justification depends on things outside the diff;
+- the repository is **unfamiliar** (to you or to the agent) and its conventions matter;
+- **green CI isn't enough** — tests pass, but nobody has traced the callers, the error paths, or the upstream source.
+
+Skip it when:
+
+- you need formatting, linting, or type-checking — use a linter, formatter, or your typechecker;
+- the change is a one-liner an agent can sanity-check inline;
+- you need a guarantee — review-pro is a reviewer, not a verifier: it raises located evidence, it does not prove the absence of bugs.
 
 ## Why
 
@@ -22,7 +41,7 @@ Most "review this" prompts hand one agent the whole diff and ask for everything.
 - **12 specialist reviewers** each own a single concern — `security`, `correctness`, `craft`, `ai-antipatterns`, `dry`, `performance`, `backend`, `frontend`, `a11y`, `db`, `api-contract`, `tests` — and run in parallel, returning structured, evidence-backed findings.
 - **Synthesis** dedups overlaps, resolves cross-reviewer conflicts by domain ownership, calibrates severity (anti-overreporting), and emits one verdict: **BLOCK / REQUEST CHANGES / APPROVE**.
 
-The **AI-code anti-patterns** lens is first-class: hallucinated APIs/symbols, invented config keys, needless dependencies, and ignored existing helpers — the failure modes that come from code being written by an agent rather than a person.
+The **ai-antipatterns** reviewer owns agent-specific failure modes — hallucinated APIs/symbols, invented config keys, needless dependencies, ignored existing helpers. Our [pilot study](studies/2026-08-copilot-pr-pilot) on merged Copilot PRs found the hallucination categories barely fire in practice; **ignored conventions carried every finding that mattered**. The rubrics are calibrated from that kind of evidence — and from [reported false positives](https://github.com/tufantunc/review-pro/issues/new/choose).
 
 ## Architecture
 
@@ -110,6 +129,18 @@ npx review-pro init --target claude-code      # or cursor | codex | all | auto
 Installs the review-pro core (skills + subagents) into the target platform's home from one canonical source. Codex agents are auto-transformed to TOML; the repo-root `.cursor-plugin/plugin.json` also lets Cursor `/add-plugin` it directly. Then `npx review-pro add <stack>` to install packs into `.review-pro/`, restart the tool, and invoke the **`review-pro`** skill.
 
 **Uninstall** the core with `npx review-pro uninstall --target <platform>` (removes agents + skills from the tool home; stack packs in `.review-pro/` are repo-local — see `npx review-pro remove`).
+
+## Updating
+
+Installs are snapshots — the CLI copies skills and agents into your tool's home and stack packs into your repo, so a new release changes nothing until you pull it:
+
+```bash
+npx review-pro@latest init --target <platform>   # refresh the core (skills + agents)
+npx review-pro@latest update                     # refresh stack packs in .review-pro/
+npx review-pro@latest doctor                     # show drift between installed and catalog
+```
+
+Claude Code plugin installs update with `claude plugin update review-pro` (restart the session afterwards). To hear about new releases, watch the repo: **Watch → Custom → Releases**.
 
 ## Stack packs (catalog)
 

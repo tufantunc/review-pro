@@ -2,7 +2,7 @@
 
 A pre-registered pilot: review-pro run against **three merged, agent-authored pull requests** in established .NET organisations, with every finding used in the write-up verified by hand against the repository or upstream source.
 
-**Headline result:** the falsifiable AI-antipattern categories (hallucinated APIs, invented config, needless dependencies) fired **once across three cases**. What fired repeatedly was `ignored-convention` — locally plausible code written without the codebase's accumulated knowledge: an existing shallow-clone guard, an upstream deserializer's actual nullability, a sibling helper's coupling direction. The full argument lives in the article; the evidence lives here.
+**Headline result:** the falsifiable AI-antipattern categories (hallucinated APIs, invented config, needless dependencies) fired **once across three cases**. What fired repeatedly was `ignored-convention` — locally plausible code written without the codebase's accumulated knowledge: an existing shallow-clone guard, an upstream deserializer's actual nullability, a sibling helper's coupling direction. The full argument lives in [the article](https://dev.to/tufan_tunc/the-agent-didnt-hallucinate-it-ignored-what-the-repo-already-knew-2m44); the evidence lives here.
 
 ## Contents
 

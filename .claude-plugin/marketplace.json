@@ -1,6 +1,6 @@
 {
   "name": "review-pro",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Tiered AI code-review for Claude Code: triage -> relevant specialist reviewers -> synthesis.",
   "owner": {
     "name": "tufantunc",
@@ -10,7 +10,7 @@
     {
       "name": "review-pro",
       "source": "./core",
-      "version": "0.4.1",
+      "version": "0.5.0",
       "description": "Tiered AI code-review: triage -> relevant specialist reviewers -> synthesis. Built to catch what AI-written code actually ships with — hallucinated APIs, over-engineering, ignored conventions, needless dependencies."
     }
   ]

@@ -51,7 +51,7 @@ Additional harnesses (opencode, Codex) with their arm models fixed per-phase by
 dated amendment **before** any of that phase's scored runs — including a per-phase
 definition of what that harness's "standard review" is (it is not uniform across
 harnesses). Standing constraint: **GLM-family models are permanently ineligible
-as arms** in any phase, because GLM-5.2 is the judge (see Judge protocol).
+as arms** in any phase, because a GLM model is the judge (see Judge protocol).
 
 ## Corpus and sampling
 
@@ -62,7 +62,7 @@ as arms** in any phase, because GLM-5.2 is the judge (see Judge protocol).
 - The sample's language/category composition is reported as-is; no re-drawing.
   If the seed produces a skewed sample, that is reported, not fixed.
 - Instance order within the run follows the converted file; a partial run (see
-  Budget) truncates in that fixed order — no post-hoc instance selection.
+  Stopping rule) truncates in that fixed order — no post-hoc instance selection.
 
 ## Adapter rules (A2)
 
@@ -103,7 +103,8 @@ stays "pattern observed," never "proved."
 
 ## Judge protocol
 
-- One judge model for **all** arms and **all** phases: **GLM-5.2**.
+- One judge model for **all** arms and **all** phases: **GLM-5.3**
+  (amended from 5.2 — see Amendment 1).
 - **Family-exclusion rule:** the judge may not share a model family with any arm's
   reviewer model, in any phase. Phase 1 arms are Anthropic → satisfied. The rule
   is enforced forward by construction: GLM-family models are permanently excluded
@@ -162,8 +163,8 @@ adapter is frozen — before the smoke run, and therefore still before any score
 | review-pro | `v0.5.0` @ `26341fe` |
 | Claude Code CLI | `2.1.208` |
 | A1/A2 model | `claude-opus-5` — reasoning effort **high**; the mechanism for fixing effort in headless mode is verified and documented at freeze, and if it cannot be fixed, the arm is recorded as "harness default effort" rather than claimed |
-| Judge | GLM-5.2 (exact model id + endpoint recorded *(at freeze)*) |
-| Fork branch + commit | *(at freeze)* |
+| Judge | GLM-5.3 (exact model id + endpoint recorded *(at freeze)*) |
+| Fork branch + commit | `feat/review-pro-reviewer` — head at freeze *(at freeze)*; resume landed in `e491d7b` |
 | Adapter file sha | *(at freeze)* |
 
 ## Stopping rule
@@ -186,6 +187,64 @@ that fixed-order prefix**, labeled as such, with the reason stated.
   the fork; either way linked from the study README.
 - **Local only:** API keys (`.env`), repo clone caches, virtualenvs. Nothing
   scored lives only on a laptop.
+
+## Amendment 1, 2026-08-13 — judge version, resumable runs, execution environment
+
+Made before the smoke run and therefore before any scored run. Nothing about the
+hypotheses, endpoints, sampling, or judge *family* changes.
+
+**1. Judge is GLM-5.3, not 5.2.** A newer version of the same family became
+available. The family-exclusion rule is unaffected: GLM-family models remain
+permanently ineligible as arms. All references above read as GLM-5.3.
+
+**2. Review runs are resumable, and stopping is expected.** The framework
+originally re-reviewed every instance unconditionally; the fork now skips
+instances whose result file already exists
+([`e491d7b`](https://github.com/tufantunc/aacr-bench/commit/e491d7b)). This was
+added *before* the smoke run so it is part of the frozen state, not a mid-study
+change. Properties, all verified against the code by driving the stage with a
+stubbed reviewer:
+
+- Skipping never reorders — the remaining instances keep the order fixed by the
+  sampling seed, so a resumed run cannot become a re-sampled run.
+- Skipped instances still appear in the run summary, so counts stay honest.
+- The check is symmetric across arms: it changes no arm's behaviour, only whether
+  finished work is repeated.
+
+**This opens one gaming route, and it is closed here:** with resume available,
+someone could delete a result they disliked and re-review that instance.
+Therefore — **resume may only skip or continue. Deleting a result and
+re-reviewing (including via `--force`) is permitted solely for infrastructure
+failures, and every such instance is logged with its reason in the published
+run record.** This is the resume-aware form of "first scored run counts."
+
+Practical consequence: the arms run against subscription quotas (Anthropic for
+the arms, z.ai for the judge), both of which have rolling windows. A run that
+exhausts a window **stops**; the study continues on a later day with the same
+command and the same `--run-id`. Elapsed calendar time is therefore not a
+methodological quantity, and `n = 30` stands rather than being reduced to fit a
+single sitting.
+
+**3. Execution environment is the host, not a container — stated for
+reproducibility.** The framework clones the benchmark's repositories onto the
+host and invokes the harness CLI as a subprocess; there is no container
+isolation. Two consequences recorded honestly:
+
+- The only isolation we add is credential/config isolation: the review-pro arm
+  installs into a throwaway `CLAUDE_CONFIG_DIR` per instance, so the operator's
+  real agent home is never read or written.
+- Reviewers operate inside checkouts of third-party repositories with edit
+  permission enabled, and the worktree is cleaned after each instance. Anyone
+  replicating this should decide for themselves whether to add container
+  isolation; the corpus is 50 established open-source projects rather than
+  arbitrary code, which is why we accepted the host-level run.
+
+**4. Sleep is a hazard during a run, not between runs.** Per-instance timeouts
+are wall-clock, so a machine sleeping mid-review longer than the timeout will
+time that instance out (findings already reported through MCP survive; the rest
+is lost and the instance is recorded as a timeout — never silently re-run, per
+the rule above). Runs are therefore launched under `caffeinate -is`. Sleeping
+between runs is harmless.
 
 ## Conflict of interest
 

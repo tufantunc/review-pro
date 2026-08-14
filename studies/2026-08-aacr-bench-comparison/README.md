@@ -32,7 +32,7 @@ by review-pro through an adapter that reports into the same finding contract. Th
 readout is the **within-instance paired delta**, which is also the defense against
 training-data contamination: these are public PRs, contamination inflates both
 arms of the same model, and the delta survives it. One non-Anthropic judge
-(GLM-5.2) scores every arm, three rounds, averaged.
+(GLM-5.3) scores every arm, three rounds, averaged.
 
 Full design, endpoints, anti-gaming rules, and limitations:
 **[PRE-REGISTRATION.md](PRE-REGISTRATION.md)**.

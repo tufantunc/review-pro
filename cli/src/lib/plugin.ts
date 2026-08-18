@@ -82,6 +82,37 @@ function cliVersion(): string {
   }
 }
 
+/** Shared contracts live beside skills, mirroring the repo's core/ layout:
+ *  rubrics reference `shared/<file>.md` relative to the skills root's parent, so
+ *  installing them anywhere else leaves those pointers dangling. */
+function copyShared(src: string, dst: string): void {
+  if (!fs.existsSync(src)) return;
+  fs.mkdirSync(dst, { recursive: true });
+  for (const f of listSharedNames(src)) {
+    fs.cpSync(path.join(src, f), path.join(dst, f));
+  }
+}
+
+function listSharedNames(src: string): string[] {
+  if (!fs.existsSync(src)) return [];
+  return fs
+    .readdirSync(src, { withFileTypes: true })
+    .filter((d) => d.isFile() && d.name.endsWith(".md"))
+    .map((d) => d.name)
+    .sort();
+}
+
+/** Remove only the files we ship, then the dir if nothing else is left. */
+function removeShared(src: string, dst: string): void {
+  if (!fs.existsSync(dst)) return;
+  for (const f of listSharedNames(src)) fs.rmSync(path.join(dst, f), { force: true });
+  try {
+    if (fs.readdirSync(dst).length === 0) fs.rmdirSync(dst);
+  } catch {
+    // leave a non-empty or unreadable dir alone
+  }
+}
+
 function copySkills(src: string, dst: string): void {
   if (!fs.existsSync(src)) return;
   fs.mkdirSync(dst, { recursive: true });
@@ -121,11 +152,13 @@ export function installCore(
 ): void {
   const skillsSrc = path.join(pluginDir, "skills");
   const agentsSrc = path.join(pluginDir, "agents");
+  const sharedSrc = path.join(pluginDir, "shared");
 
   switch (target) {
     case "opencode":
     case "claude-code": {
       copySkills(skillsSrc, path.join(home, "skills"));
+      copyShared(sharedSrc, path.join(home, "shared"));
       copyAgentsMd(agentsSrc, path.join(home, "agents"));
       return;
     }
@@ -137,6 +170,7 @@ export function installCore(
     case "codex": {
       const sHome = skillsHome || path.join(os.homedir(), ".agents", "skills");
       copySkills(skillsSrc, sHome);
+      copyShared(sharedSrc, path.join(path.dirname(sHome), "shared"));
       installCodexAgents(agentsSrc, path.join(home, "agents"));
       return;
     }
@@ -165,12 +199,14 @@ export function uninstallCore(
 ): void {
   const skillsSrc = path.join(pluginDir, "skills");
   const agentsSrc = path.join(pluginDir, "agents");
+  const sharedSrc = path.join(pluginDir, "shared");
   const skillNames = listSkillNames(skillsSrc);
 
   switch (target) {
     case "opencode":
     case "claude-code": {
       for (const s of skillNames) fs.rmSync(path.join(home, "skills", s), { recursive: true, force: true });
+      removeShared(sharedSrc, path.join(home, "shared"));
       for (const a of listAgentNames(agentsSrc)) fs.rmSync(path.join(home, "agents", `${a}.md`), { force: true });
       return;
     }
@@ -180,6 +216,7 @@ export function uninstallCore(
     case "codex": {
       const sHome = skillsHome || path.join(os.homedir(), ".agents", "skills");
       for (const s of skillNames) fs.rmSync(path.join(sHome, s), { recursive: true, force: true });
+      removeShared(sharedSrc, path.join(path.dirname(sHome), "shared"));
       if (fs.existsSync(agentsSrc)) {
         for (const a of fs.readdirSync(agentsSrc)) {
           if (!a.endsWith(".md")) continue;

@@ -17,8 +17,9 @@ You are the orchestrator's first stage. You do NOT review code yourself. You pre
 2. **Classify each changed file** into buckets: `backend | frontend | test | db-migration | config-infra | docs | build-deps`.
 3. **Detect active stacks**: `Glob .review-pro/*/manifest.json` — each match is a stack the user installed (via `npx review-pro`). These are the repo's `active_stacks`. (No auto-detection from `package.json` — stacks are explicitly installed per repo.) If `.review-pro/` is absent/empty, `active_stacks: []` and reviewers run core-only.
 4. **Decide which reviewers to dispatch** using the signal map below. Be conservative: when relevance is uncertain, dispatch. Skipping a real issue is worse than paying for one extra subagent.
-5. **Scope context per dispatched reviewer** per `core/shared/context-policy.md`: every reviewer gets diff + changed files; add the reviewer-specific scoped extras.
-6. **Emit the dispatch plan** (YAML below) and hand off to Stage 2 (fan-out). Do not run the reviewers inline unless the platform adapter requires it.
+5. **Classify the diff's weight** as `diff_class`: `trivial` if the changed-file set is docs-only (every file in the `docs` bucket) or the whole diff is a single file under ~20 changed lines; `substantive` otherwise. Emit it in the plan — Stage 3 reads it and must not re-derive it.
+6. **Scope context per dispatched reviewer** per `core/shared/context-policy.md`: every reviewer gets diff + changed files; add the reviewer-specific scoped extras.
+7. **Emit the dispatch plan** (YAML below) and hand off to Stage 2 (fan-out). Do not run the reviewers inline unless the platform adapter requires it.
 
 ## Signal map (non-exhaustive)
 - migration files / `CREATE|ALTER|DROP` / schema files → `db`
@@ -35,6 +36,8 @@ You are the orchestrator's first stage. You do NOT review code yourself. You pre
 base: <branch>
 active_stacks: [<stack>, ...]
 changed_files_total: <n>
+changed_files: [<paths>]        # the full changed-file list; Stage 3 needs it
+diff_class: trivial | substantive
 dispatch:
   <reviewer>:
     context:

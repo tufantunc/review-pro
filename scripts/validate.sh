@@ -59,13 +59,62 @@ for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
     v="$(fm_get "$skill_md" "$k")"
     [[ -n "$v" ]] || add_error "$skill_md: missing frontmatter key '$k'"
   done
-  if ! is_orchestrator "$name"; then
+  if is_orchestrator "$name"; then
+    # Orchestrators have no shared section contract, but each has sections whose
+    # silent removal would break the pipeline. Checked per orchestrator.
+    # bash 3.2 (macOS default) errors on "${arr[@]}" for an empty array under
+    # `set -u`, so drive the loop off a newline-delimited string instead.
+    req=""
+    case "$name" in
+      review-pro-triage)     req=$'## Steps\n## Signal map (non-exhaustive)\n## Dispatch plan format\n## Output discipline' ;;
+      review-pro-synthesize) req=$'## Steps\n## Out-of-diff evidence check\n## Conflict ownership\n## Output' ;;
+    esac
+    if [[ -n "$req" ]]; then
+      while IFS= read -r h; do
+        [[ -n "$h" ]] || continue
+        grep -qxF "$h" "$skill_md" || add_error "$skill_md: missing section '$h'"
+      done <<< "$req"
+    fi
+  else
     for h in "${REQ_SECTIONS[@]}"; do
-      grep -qF "$h" "$skill_md" || add_error "$skill_md: missing section '$h'"
+      # -x anchors to a whole line: demoting '## X' to '### X' must fail, not pass.
+      grep -qxF "$h" "$skill_md" || add_error "$skill_md: missing section '$h'"
     done
   fi
 done
 shopt -u nullglob
+
+# Schema-rule parity: reviewer agent bodies embed the output schema inline (see
+# core/shared/reviewer-directive.md) rather than loading core/shared/, and the CLI
+# does not install core/shared/ at all. So a rule added to output-schema.md reaches
+# reviewers only if the bodies carry it. Guard the seam.
+SCHEMA_DOC="$ROOT/core/shared/output-schema.md"
+SCHEMA_KEYS=("evidence_refs" "same evidence bar")
+if [[ -f "$SCHEMA_DOC" ]]; then
+  for key in "${SCHEMA_KEYS[@]}"; do
+    grep -qF "$key" "$SCHEMA_DOC" || add_error "core/shared/output-schema.md: expected schema rule mentioning '$key'"
+    for body in "$ROOT"/core/agents/*-reviewer.md; do
+      grep -qF "$key" "$body" || add_error "$(basename "$body"): inline output schema is missing '$key' (out of sync with core/shared/output-schema.md)"
+    done
+  done
+fi
+
+# Pointer resolution: rubrics reference `shared/<file>.md` relative to the skills
+# root's parent. Every referenced target must exist in core/shared/, and the CLI
+# must actually install that directory — otherwise the pointers dangle in a real
+# install (see issue #25).
+SHARED_DIR="$ROOT/core/shared"
+for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
+  [[ -f "$skill_md" ]] || continue
+  while IFS= read -r ref; do
+    [[ -n "$ref" ]] || continue
+    [[ -f "$SHARED_DIR/${ref#shared/}" ]] || add_error "$skill_md: references '$ref' but core/shared/${ref#shared/} does not exist"
+  done < <(grep -oE 'shared/[a-z-]+\.md' "$skill_md" | sort -u)
+done
+if [[ -f "$ROOT/cli/src/lib/plugin.ts" ]]; then
+  grep -qE 'copyShared[^A-Za-z0-9_]*\(' "$ROOT/cli/src/lib/plugin.ts" \
+    || add_error "cli/src/lib/plugin.ts: no copyShared — core/shared/ would not reach an install, dangling every 'shared/<file>.md' pointer"
+fi
 
 MANIFEST="$ROOT/manifest.json"
 AGENTS_DIR="$ROOT/core/agents"

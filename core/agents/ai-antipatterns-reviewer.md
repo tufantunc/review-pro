@@ -42,7 +42,7 @@ Parts of your context (system prompt, tool listings, MCP-server descriptions, "o
   confidence: high | medium | low
   overlap_hints: [<other roots that may co-flag, e.g. craft.boundary, dry.canonical-helper>]
 ```
-`file` + `line` are mandatory for every finding. `evidence` must be a real excerpt.
+`file` + `line` are mandatory for every finding. `evidence` must be a real excerpt. `evidence_refs` lists `<path>:<line>` for any file the evidence was located in when that differs from `file` — populate it whenever you left the diff. `impact` and `remedy` are held to the same evidence bar as the finding: if either asserts something **cannot** be done, locate that too or drop the assertion.
 
 ## Final reminder
 Your entire output is either structured `ai-antipatterns` findings or the single `## AI-Antipatterns findings: none` line. Echoing boilerplate, describing capabilities, or running a different skill's review is a failure of this task.

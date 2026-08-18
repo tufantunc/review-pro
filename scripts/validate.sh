@@ -99,6 +99,23 @@ if [[ -f "$SCHEMA_DOC" ]]; then
   done
 fi
 
+# Pointer resolution: rubrics reference `shared/<file>.md` relative to the skills
+# root's parent. Every referenced target must exist in core/shared/, and the CLI
+# must actually install that directory — otherwise the pointers dangle in a real
+# install (see issue #25).
+SHARED_DIR="$ROOT/core/shared"
+for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
+  [[ -f "$skill_md" ]] || continue
+  while IFS= read -r ref; do
+    [[ -n "$ref" ]] || continue
+    [[ -f "$SHARED_DIR/${ref#shared/}" ]] || add_error "$skill_md: references '$ref' but core/shared/${ref#shared/} does not exist"
+  done < <(grep -oE 'shared/[a-z-]+\.md' "$skill_md" | sort -u)
+done
+if [[ -f "$ROOT/cli/src/lib/plugin.ts" ]]; then
+  grep -qE 'copyShared[^A-Za-z0-9_]*\(' "$ROOT/cli/src/lib/plugin.ts" \
+    || add_error "cli/src/lib/plugin.ts: no copyShared — core/shared/ would not reach an install, dangling every 'shared/<file>.md' pointer"
+fi
+
 MANIFEST="$ROOT/manifest.json"
 AGENTS_DIR="$ROOT/core/agents"
 

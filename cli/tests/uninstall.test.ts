@@ -12,6 +12,8 @@ beforeEach(() => {
   fs.writeFileSync(path.join(pluginSrc, "skills", "security", "SKILL.md"), "# s");
   fs.mkdirSync(path.join(pluginSrc, "skills", "craft"), { recursive: true });
   fs.writeFileSync(path.join(pluginSrc, "skills", "craft", "SKILL.md"), "# c");
+  fs.mkdirSync(path.join(pluginSrc, "shared"), { recursive: true });
+  fs.writeFileSync(path.join(pluginSrc, "shared", "output-schema.md"), "# schema");
   fs.mkdirSync(path.join(pluginSrc, "agents"), { recursive: true });
   fs.writeFileSync(
     path.join(pluginSrc, "agents", "security-reviewer.md"),
@@ -49,6 +51,33 @@ describe("uninstallCore per target", () => {
     expect(fs.existsSync(path.join(H("opencode"), "agents", "security-reviewer.md"))).toBe(false);
     expect(fs.existsSync(path.join(H("opencode"), "skills"))).toBe(true);
     expect(fs.existsSync(path.join(H("opencode"), "agents"))).toBe(true);
+  });
+
+  it("removes shipped shared/ files, and leaves a user's own file alone", () => {
+    const home = H("opencode");
+    installCore("opencode", pluginSrc, home);
+    expect(fs.existsSync(path.join(home, "shared", "output-schema.md"))).toBe(true);
+    // a file we never shipped must survive, and keep the dir alive with it
+    fs.writeFileSync(path.join(home, "shared", "mine.md"), "# mine");
+    uninstallCore("opencode", pluginSrc, home);
+    expect(fs.existsSync(path.join(home, "shared", "output-schema.md"))).toBe(false);
+    expect(fs.existsSync(path.join(home, "shared", "mine.md"))).toBe(true);
+  });
+
+  it("removes the shared dir when nothing else is left in it", () => {
+    const home = H("claude-code");
+    installCore("claude-code", pluginSrc, home);
+    uninstallCore("claude-code", pluginSrc, home);
+    expect(fs.existsSync(path.join(home, "shared"))).toBe(false);
+  });
+
+  it("codex removes shared beside its skills home", () => {
+    const home = H("codex");
+    const sHome = path.join(home, "skills");
+    installCore("codex", pluginSrc, home, sHome);
+    expect(fs.existsSync(path.join(home, "shared", "output-schema.md"))).toBe(true);
+    uninstallCore("codex", pluginSrc, home, sHome);
+    expect(fs.existsSync(path.join(home, "shared"))).toBe(false);
   });
 
   it("claude-code removes skills + agents", () => {

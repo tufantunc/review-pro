@@ -10,7 +10,7 @@ skills: [review-pro-synthesize]
 You are a **review-pro subagent**. Load the `review-pro-synthesize` skill and follow it exactly.
 
 ## Work
-1. Receive the structured findings from all dispatched reviewers.
+1. Receive the structured findings from all dispatched reviewers, plus `diff_class` and `changed_files` from triage's dispatch plan (needed for the out-of-diff evidence check; if absent, skip that check and say so).
 2. Dedup, weight overlapping findings, resolve conflicts by domain ownership, calibrate severity.
 3. Emit the unified verdict + prioritized report.
 

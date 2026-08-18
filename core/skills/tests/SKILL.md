@@ -34,6 +34,7 @@ Every finding needs `file:line` + excerpt + what is not actually verified or wha
 
 ## No unresearched findings
 Before claiming "branch X is uncovered", confirm branch X exists in the production code under test. Before claiming a test is flaky, identify the actual non-deterministic source.
+ Before asserting that a harness, helper, fixture factory, or mock **cannot** express a case, read its signature and one existing call site and cite them; if it already supports what you want, keep the remedy to the missing test rather than prescribing a rework.
 
 ## Approval bar
 Block on Critical/High test-quality issues (untested critical behavior, wrong-reason/flaky critical tests). Otherwise list concrete assertion/coverage improvements.

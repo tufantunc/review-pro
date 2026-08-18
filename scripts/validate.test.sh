@@ -40,6 +40,10 @@ name: review-pro-triage
 description: "triage"
 ---
 # Triage
+## Steps
+## Signal map (non-exhaustive)
+## Dispatch plan format
+## Output discipline
 EOF
 }
 
@@ -205,6 +209,33 @@ out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "skills: field must match loads_skill"; then ok "agent skills/loads_skill mismatch detected"; else bad "mismatch not detected"; fi
 rm -rf "$T"
 
+[[ "$fail" -eq 0 ]]
+
+# Case H: orchestrator missing a required section -> fail, mentions it
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md"
+grep -v '^## Dispatch plan format$' "$T/core/skills/review-pro-triage/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-triage/SKILL.md"
+cat > "$T/manifest.json" <<'EOF'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
+EOF
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "missing section '## Dispatch plan format'"; then ok "orchestrator missing section detected"; else bad "orchestrator missing section not detected"; fi
+rm -rf "$T"
+
+# Case I: H2 demoted to H3 must fail (guards the unanchored-grep regression)
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md"
+sed 's/^## Tone$/### Tone/' "$T/core/skills/security/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/security/SKILL.md"
+cat > "$T/manifest.json" <<'EOF'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
+EOF
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "missing section '## Tone'"; then ok "H2->H3 demotion detected"; else bad "H2->H3 demotion not detected"; fi
+rm -rf "$T"
+
 echo "---"
 echo "pass=$pass fail=$fail"
-[[ "$fail" -eq 0 ]]

@@ -7,7 +7,7 @@ Triage adds scoped extra context per reviewer so each subagent gets what it need
 | Reviewer | Extra scoped context |
 |---|---|
 | security | callers/callees of changed security-relevant code; related tests |
-| correctness | consumers of changed functions; related error paths |
+| correctness | consumers of changed functions; related error paths; in-repo traces of any env var / flag / config key the change reads (definition, other read sites, CI workflows, deployment manifests, Dockerfiles, `.env` examples, config schemas) |
 | craft / ai-antipatterns | neighboring module code; existing conventions & helpers (repo search) |
 | dry | repo-wide symbol & pattern search for duplicates / existing helpers |
 | db | migration history; schema definitions |
@@ -16,4 +16,4 @@ Triage adds scoped extra context per reviewer so each subagent gets what it need
 | performance | query definitions; hot-path / render files |
 | frontend / a11y | design-system tokens; shared UI primitives |
 
-Principle: scoped, not whole-repo. Only `dry`, `craft`, and `ai-antipatterns` ever do repo-wide search, and only for symbols/patterns relevant to the diff.
+Principle: scoped, not whole-repo. Only `dry`, `craft`, `ai-antipatterns`, and — for config-key traces only — `correctness` ever do repo-wide search, and only for symbols/patterns relevant to the diff.

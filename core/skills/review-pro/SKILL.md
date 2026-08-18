@@ -31,7 +31,7 @@ For each reviewer in the dispatch plan:
 If a reviewer subagent is unavailable on your platform, perform that review **inline**: apply the core skill (which you Read from the plugin) plus the stack signals to the scoped context, and emit findings in the shared schema.
 
 ### 4. Synthesis (you, inline)
-Follow the `review-pro-synthesize` skill over ALL collected findings: dedup by `(file, line±5, category-root, overlap_hints)`, weight overlaps, resolve conflicts by domain ownership, calibrate severity (anti-overreporting), and emit the verdict.
+Follow the `review-pro-synthesize` skill over ALL collected findings, passing it the `diff_class` and `changed_files` you determined in triage: dedup by `(file, line±5, category-root, overlap_hints)`, weight overlaps, resolve conflicts by domain ownership, calibrate severity (anti-overreporting), and emit the verdict.
 
 ## Output
 Return ONLY the final synthesis report:

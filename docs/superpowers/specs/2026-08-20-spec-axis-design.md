@@ -118,13 +118,24 @@ of this design and would have produced a fabricated location in the report:
   problem. The rule: the first line of the changed hunk where the requirement would
   have landed, and `line: 0` when there is no such hunk. Zero is not a real line, so
   it reads as "nowhere in particular" rather than as a false coordinate.
-- **The fallback cannot be "the spec source itself".** Two of the four `kind` values,
+- **The fallback was wrong twice before it was right, and both earlier answers are
+  recorded below rather than deleted.** The first draft said to point `file` at the spec
+  source; this section then said the opposite, that it cannot be, and to drop the
+  finding; the section on synthesis further down states the final answer, which is that
+  it *is* the spec source with `line: 0`, made safe by an explicit grant in
+  `output-schema.md` and a dedup key that no longer collides. Read that section, not
+  this bullet, for the rule. What follows is why the middle answer was reached, and it
+  is still true as far as it goes:
+
+  Two of the four `kind` values,
   `issue` and `pr-body`, have no repository path at all, and they are the common case.
   `file: #412` satisfies the schema's letter, nothing else, and poisons the dedup key
   `(file, line±5, category-root, overlap_hints)`. Instead: point `file` at the changed
   file whose subject area the requirement belongs to, with `line: 0`. If the diff has
-  no such file, the finding is not reportable as `missing` on this diff, and dropping
-  it is correct.
+  no such file, this bullet's answer was to drop the finding. **That answer is
+  superseded**: see "A spec finding's `file` may be a non-repository reference" below,
+  which is the shipped rule. Dropping an unattempted requirement is exactly the bug
+  rounds three and six were spent removing, so do not implement this paragraph.
 
 **Scope creep needs a bar or the axis becomes a noise source.** Only excess that
 carries cost or risk is flagged: a new dependency, a new public API, a new config

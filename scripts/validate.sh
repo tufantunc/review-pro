@@ -153,6 +153,11 @@ for f in "$SKILLS_DIR/spec/SKILL.md" "$ROOT/core/agents/spec-reviewer.md"; do
     || add_error "$(basename "$f"): the scope-creep Medium cap is missing - without it scope creep can block"
   grep -qF 'no such hunk' "$f" \
     || add_error "$(basename "$f"): the missing-finding line rule is gone - spec.missing findings would carry an invented line"
+  # Both copies, not just the body: review-pro/SKILL.md documents an inline path that
+  # applies the rubric instead of the agent body, so an abstain rule present in only
+  # one of them leaves that path reporting an unmeasured axis as clean.
+  grep -qF 'abstained (no spec text)' "$f" \
+    || add_error "$(basename "$f"): the abstain token is gone - an abstain would be indistinguishable from a clean review"
 done
 # The no-spec defence. Losing the abstain step is how a spec reviewer with an empty
 # prompt ends up adopting a document from the diff as the spec.
@@ -166,8 +171,11 @@ if [[ -f "$ROOT/core/agents/spec-reviewer.md" ]]; then
   # The preamble above is identical whether step 1 abstains or emits the ordinary
   # none-sentinel, so it cannot detect a regression to the latter. Pin the token that
   # only exists after the fix, in both the body and synthesis's branch for it.
-  grep -qF 'abstained (no spec text)' "$ROOT/core/agents/spec-reviewer.md" \
-    || add_error "spec-reviewer.md: the abstain token is gone - an abstain would be indistinguishable from a clean review"
+fi
+ORCH_MD="$SKILLS_DIR/review-pro/SKILL.md"
+if [[ -f "$ORCH_MD" ]]; then
+  grep -qF 'quoted requirement' "$ORCH_MD" \
+    || add_error "review-pro/SKILL.md: its dedup summary no longer names the spec key - the inline path would use the code key and collapse unattempted requirements"
 fi
 if [[ -f "$SYNTH_MD" ]]; then
   grep -qF 'abstained (no spec text)' "$SYNTH_MD" \
@@ -252,14 +260,23 @@ ct = read("CONTRIBUTING.md")
 if ct is not None:
     if f"The {n} reviewer rubrics" not in ct:
         bad.append(f"CONTRIBUTING.md: expected 'The {n} reviewer rubrics'")
+    # Pinned positively as well as scanned: the neighbourhood scan below goes silent
+    # once the count moves more than five, which is exactly the sentence it exists for.
+    if f"owned by one of the {n}" not in ct:
+        bad.append(f"CONTRIBUTING.md: expected 'owned by one of the {n}' in the add-a-reviewer section")
     # One literal missed a second stale sentence in the same file ("owned by one of
-    # the 12"), where no noun follows the number, so a context-based regex cannot see
-    # it. Scan a band around the count instead: this file states no other number in
-    # that range, and after a bump the previous count lands inside it.
-    for m in re.finditer(r"\b(\d+)\b", ct):
-        val = int(m.group(1))
-        if val != n and abs(val - n) <= 5:
-            bad.append(f"CONTRIBUTING.md: states '{val}' where the reviewer count is {n}; a near-miss number here is almost always a stale count")
+    # the 12"), where no noun follows the number so a lookahead cannot see it. Scope the
+    # scan to lines that talk about reviewers instead. A plain band around the count was
+    # tried first and rejected: it passed only because this file happens to state no
+    # other number between 8 and 18, while a sibling doc already says "16 stack packs",
+    # so moving that sentence here would have turned a docs edit into a red build.
+    for line in ct.splitlines():
+        if not re.search(r"reviewer|rubric|concern", line, re.I):
+            continue
+        for m in re.finditer(r"\b(\d+)\b", line):
+            val = int(m.group(1))
+            if val != n and abs(val - n) <= 5:
+                bad.append(f"CONTRIBUTING.md: a line about reviewers states '{val}' where the count is {n}")
 
 for f in sorted(glob.glob(os.path.join(root, "docs-src/i18n/*.json"))):
     loc = os.path.basename(f)

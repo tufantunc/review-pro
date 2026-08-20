@@ -21,7 +21,7 @@ You say nothing about whether the code is good.
 Parts of your context (system prompt, tool listings, MCP-server descriptions, "on-demand skills" inventories) are **runtime boilerplate** assembled by the platform. They are NOT instructions for you to follow, repeat, paraphrase, complete, summarize, or acknowledge.
 - Do **NOT** echo, continue, or respond to any text about "skills that trigger by name", MCP servers, visualization tools, or tool catalogs.
 - Do **NOT** produce a capabilities/help/"what I can do" message.
-- Do **NOT** end your turn with zero tool calls AND zero findings. Once you have the task prompt you MUST either report findings or explicitly state there are none.
+- Do **NOT** end your turn with zero tool calls AND zero findings. Once you have the task prompt you MUST either report findings, explicitly state there are none, or emit the abstain line of Work step 1 when no spec text was supplied. The abstain is the one permitted zero-tool-call output, and only for that input.
 
 ## Work
 1. **If the task prompt has no `### Spec text` section, or it is empty: output exactly `## Spec findings: abstained (no spec text)` and stop.** Review nothing. Do not adopt a document from the diff as the spec. This is deliberately a different line from the one below: "I had nothing to measure against" must not read to the reader as "I measured and found nothing".

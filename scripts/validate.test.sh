@@ -76,6 +76,35 @@ fixture
 EOFB
 }
 
+write_good_spec_body(){
+  # The four spec-reviewer.md guards in validate.sh key on this file specifically,
+  # and it is the copy that reaches the running subagent. Without a fixture none of
+  # them could be tested, which is how all four shipped uncovered.
+  cat > "$1" <<'EOFS'
+---
+name: spec-reviewer
+description: fixture spec body
+loads_skill: spec
+skills: [spec]
+---
+# Spec Reviewer (review-pro subagent)
+## Identity & mandate
+fixture
+## Skill discipline (critical)
+Only the `### Stack signals` section supplements the core skill.
+## Anti-derailment (critical)
+fixture
+## Work
+1. If the task prompt has no `### Spec text` section, output `## Spec findings: abstained (no spec text)` and stop.
+2. Do NOT spawn nested subagents.
+3. Otherwise output `## Spec findings: none` and stop.
+## Output schema (one block per finding)
+  evidence_refs: [src/x.ts:1]
+`impact` and `remedy` are held to the same evidence bar as the finding.
+`spec.scope-creep` never exceeds Medium. `line` is `0` when there is no such hunk.
+EOFS
+}
+
 write_orchestrator(){
   # $1 = path, $2 = orchestrator name (default review-pro-triage, so the existing
   # call sites need no change). Sections must match the per-orchestrator req list
@@ -94,7 +123,7 @@ description: "triage"
 ## Dispatch plan format
 spec_source:
   kind: none
-Dispatch spec if and only if spec_source.kind is not none.
+Dispatch spec if and only if a spec was resolved.
 ## Output discipline
 EOF
       ;;
@@ -109,6 +138,8 @@ description: "synthesis"
 ## Out-of-diff evidence check
 Count the code-axis findings only whose evidence_refs name an unchanged path.
 ## Spec axis
+Report it as abstained (no spec text) when the axis could not measure.
+Dedup the spec pool on the quoted requirement, not on `(file, line)` alone.
 ## Conflict ownership
 ## Output
 EOF
@@ -319,7 +350,7 @@ cat > "$T/manifest.json" <<'JSON'
 JSON
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "no 'spec_source'"; then bad "spec_source control: fired on an intact fixture"; else ok "spec_source control: silent on an intact fixture"; fi
-grep -v 'spec_source' "$T/core/skills/review-pro-triage/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-triage/SKILL.md"
+grep -v '^spec_source:$' "$T/core/skills/review-pro-triage/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-triage/SKILL.md"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "no 'spec_source'"; then ok "missing spec_source contract detected"; else bad "missing spec_source contract NOT detected"; fi
 rm -rf "$T"
@@ -397,6 +428,8 @@ write_good_agent_body "$T/core/agents/security-reviewer.md"
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"}], "agents": [{"name":"security-reviewer","loads_skill":"security"}] }
 JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "sentinel"; then bad "sentinel control: fired on an intact body"; else ok "sentinel control: silent on an intact body"; fi
 grep -v 'findings: none' "$T/core/agents/security-reviewer.md" > "$T/tmp" && mv "$T/tmp" "$T/core/agents/security-reviewer.md"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "sentinel"; then ok "missing findings-none sentinel detected"; else bad "missing findings-none sentinel NOT detected"; fi
@@ -425,6 +458,54 @@ JSON
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "declared skill 'ghost' has no"; then ok "declared-but-absent skill detected"; else bad "declared-but-absent skill NOT detected"; fi
 if echo "$out" | grep -q "declared agent 'ghost-reviewer' has no"; then ok "declared-but-absent agent detected"; else bad "declared-but-absent agent NOT detected"; fi
+rm -rf "$T"
+
+# Case S: the conditional-dispatch gate. Case K's mutation used to remove this line
+# as collateral, so the gate itself had no case of its own.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "conditional-dispatch gate"; then bad "dispatch gate control: fired on an intact fixture"; else ok "dispatch gate control: silent on an intact fixture"; fi
+sed -i.bak 's/if and only if/whenever/' "$T/core/skills/review-pro-triage/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "conditional-dispatch gate is gone"; then ok "missing conditional-dispatch gate detected"; else bad "missing conditional-dispatch gate NOT detected"; fi
+rm -rf "$T"
+
+# Case T: synthesis must carry a branch for the abstain token, or an unmeasured axis
+# is reported as a clean review.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_orchestrator "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "no branch for the abstain"; then bad "abstain branch control: fired on an intact fixture"; else ok "abstain branch control: silent on an intact fixture"; fi
+grep -v 'abstained (no spec text)' "$T/core/skills/review-pro-synthesize/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-synthesize/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "no branch for the abstain"; then ok "missing abstain branch detected"; else bad "missing abstain branch NOT detected"; fi
+rm -rf "$T"
+
+# Case U: the spec pool's dedup key. Losing it collapses every unattempted requirement
+# into one finding.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_orchestrator "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "dedup rule is gone"; then bad "spec dedup control: fired on an intact fixture"; else ok "spec dedup control: silent on an intact fixture"; fi
+sed -i.bak 's/not on `(file, line)` alone/on the usual key/' "$T/core/skills/review-pro-synthesize/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "dedup rule is gone"; then ok "missing spec dedup rule detected"; else bad "missing spec dedup rule NOT detected"; fi
 rm -rf "$T"
 
 echo "---"

@@ -13,6 +13,7 @@ A pre-registered pilot: review-pro run against **three merged, agent-authored pu
 | [`FINDINGS-case1.md`](FINDINGS-case1.md) | A .NET versioning library — 71 lines, merged with zero review comments |
 | [`FINDINGS-case2.md`](FINDINGS-case2.md) | An AI extensions library — 125 lines, merged with two human approvals |
 | [`FINDINGS-case3.md`](FINDINGS-case3.md) | E2E test infrastructure — 48-line chore, included as a noise-floor test |
+| [`UPSTREAM-DISCLOSURE.md`](UPSTREAM-DISCLOSURE.md) | The four issues filed upstream, what the pre-filing re-check changed, and the one finding withdrawn as already-declined |
 
 ## Timeline, honestly
 

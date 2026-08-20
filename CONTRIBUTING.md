@@ -78,7 +78,7 @@ Scopes in use: `cli`, `reviewers`, `stacks`, `site`, `docs`, `ci`, `deps`.
 
 A new reviewer is a larger change — open an issue first. It requires a skill in `core/skills/`, an agent in `core/agents/`, entries in `manifest.json`, triage dispatch rules, synthesis domain-ownership rules, and a decision about which existing packs should cover it.
 
-The bar: the concern must not already be owned by one of the 12, and triage must be able to tell when it is relevant. Reviewers that fire on everything make the whole system noisier.
+The bar: the concern must not already be owned by one of the 13, and triage must be able to tell when it is relevant. Reviewers that fire on everything make the whole system noisier.
 
 ## Releasing
 

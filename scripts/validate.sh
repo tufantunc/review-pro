@@ -173,6 +173,13 @@ if command -v python3 >/dev/null 2>&1 && [[ -f "$ROOT/manifest.json" ]]; then
   python3 - "$ROOT" <<'PYCHK' || errors=$((errors+1))
 import json, sys, glob, os, re
 root = sys.argv[1]
+# Numeral words per locale, because two site keys spell the count rather than
+# writing a digit. Extend this when the count changes or a locale is added; the
+# check fails loudly rather than silently when an entry is absent.
+NUMERALS = {
+    "en": {13: "Thirteen"}, "de": {13: "Dreizehn"}, "fr": {13: "Treize"},
+    "nl": {13: "Dertien"}, "tr": {13: "On üç"}, "hi": {13: "तेरह"}, "zh": {13: "十三"},
+}
 m = json.load(open(os.path.join(root, "manifest.json")))
 names = sorted(s["name"] for s in m.get("skills", []) if s.get("role") == "reviewer")
 n = len(names)
@@ -191,6 +198,19 @@ if rd is not None:
     for nm in names:
         if f"`{nm}`" not in rd:
             bad.append(f"README.md: reviewer '{nm}' is missing from the enumeration")
+    # The README's mermaid diagram names a few reviewers and abbreviates the rest as
+    # "...N more". Nothing in that string contains the count, so a grep for the old
+    # number cannot find it; it was stale for exactly that reason.
+    mm = re.search(r"\u2026(\d+) more", rd)
+    if mm:
+        named = sum(1 for nm in names if f'["{nm}"]' in rd)
+        if named + int(mm.group(1)) != n:
+            bad.append(
+                f"README.md: the architecture diagram names {named} reviewers and says "
+                f"'...{mm.group(1)} more', which totals {named + int(mm.group(1))}, not {n}"
+            )
+    else:
+        bad.append("README.md: the architecture diagram's '...N more' node is gone; the count can no longer be checked")
 
 lt = read("llms.txt") or read(os.path.join("docs", "llms.txt"))
 if lt is not None and f"of {n} reviewers" not in lt:
@@ -216,23 +236,19 @@ if cp is not None:
     if f"{n} specialist reviewers" not in desc:
         bad.append(f"cli/package.json: description does not state {n} specialist reviewers")
 
-    # The README's mermaid diagram names a few reviewers and abbreviates the rest as
-    # "...N more". Nothing in that string contains the count, so a grep for the old
-    # number cannot find it; it was stale for exactly that reason.
-    mm = re.search(r"\u2026(\d+) more", rd)
-    if mm:
-        named = sum(1 for nm in names if f'["{nm}"]' in rd)
-        if named + int(mm.group(1)) != n:
-            bad.append(
-                f"README.md: the architecture diagram names {named} reviewers and says "
-                f"'...{mm.group(1)} more', which totals {named + int(mm.group(1))}, not {n}"
-            )
-    else:
-        bad.append("README.md: the architecture diagram's '...N more' node is gone; the count can no longer be checked")
 
 ct = read("CONTRIBUTING.md")
-if ct is not None and f"The {n} reviewer rubrics" not in ct:
-    bad.append(f"CONTRIBUTING.md: expected 'The {n} reviewer rubrics'")
+if ct is not None:
+    if f"The {n} reviewer rubrics" not in ct:
+        bad.append(f"CONTRIBUTING.md: expected 'The {n} reviewer rubrics'")
+    # One literal missed a second stale sentence in the same file ("owned by one of
+    # the 12"), where no noun follows the number, so a context-based regex cannot see
+    # it. Scan a band around the count instead: this file states no other number in
+    # that range, and after a bump the previous count lands inside it.
+    for m in re.finditer(r"\b(\d+)\b", ct):
+        val = int(m.group(1))
+        if val != n and abs(val - n) <= 5:
+            bad.append(f"CONTRIBUTING.md: states '{val}' where the reviewer count is {n}; a near-miss number here is almost always a stale count")
 
 for f in sorted(glob.glob(os.path.join(root, "docs-src/i18n/*.json"))):
     d = json.load(open(f, encoding="utf-8"))
@@ -243,8 +259,23 @@ for f in sorted(glob.glob(os.path.join(root, "docs-src/i18n/*.json"))):
             bad.append(f"docs-src/i18n/{loc}: reviewer '{nm}' missing from docs.reviewers.p")
     for k in ("cap.c1.title", "docs.toc.reviewers", "docs.reviewers.h2", "docs.overview.p2"):
         v = d.get(k)
-        if v and str(n) not in v:
+        if v is None:
+            bad.append(f"docs-src/i18n/{loc}: key '{k}' is missing, so its count cannot be checked")
+        elif str(n) not in v:
             bad.append(f"docs-src/i18n/{loc}: '{k}' does not state {n}")
+    # The hero H1 and the Stage 2 explainer spell the count as a WORD, so the digit
+    # test above structurally cannot see them. They were the largest text on the
+    # published page and stayed stale through four review rounds for that reason.
+    lang = loc[:-5] if loc.endswith(".json") else loc
+    word = NUMERALS.get(lang, {}).get(n)
+    for k in ("hero.title", "pipeline.s2.body"):
+        v = d.get(k)
+        if v is None:
+            bad.append(f"docs-src/i18n/{loc}: key '{k}' is missing, so its count cannot be checked")
+        elif word is None:
+            bad.append(f"docs-src/i18n/{loc}: no numeral word known for {n} in locale '{lang}'; add it to NUMERALS in scripts/validate.sh")
+        elif word not in v:
+            bad.append(f"docs-src/i18n/{loc}: '{k}' does not spell {n} as '{word}'")
 
 for b in bad:
     print("FAIL: " + b, file=sys.stderr)

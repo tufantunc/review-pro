@@ -10,13 +10,13 @@
 
 **The diff is where the change is. The repository is where the evidence is.**
 
-review-pro is an open-source, repository-aware code review system for coding agents — **Claude Code, opencode, Cursor, Codex**. Triage reads the diff and dispatches only the relevant specialists of twelve; they run in parallel, each required to **locate evidence in the repository** before making a claim; synthesis dedups their findings into one verdict: **BLOCK / REQUEST CHANGES / APPROVE**.
+review-pro is an open-source, repository-aware code review system for coding agents — **Claude Code, opencode, Cursor, Codex**. Triage reads the diff and dispatches only the relevant specialists of thirteen; they run in parallel, each required to **locate evidence in the repository** before making a claim; synthesis dedups their findings into one verdict: **BLOCK / REQUEST CHANGES / APPROVE**.
 
 Built for AI-written code — not because agents invent APIs (in [our pre-registered study](studies/2026-08-copilot-pr-pilot) of merged Copilot PRs, they almost never did), but because they write locally plausible code that misses what the repository already knows: the guard added after an incident, the canonical helper, the convention every sibling file follows. That evidence lives in files the diff never touches — so review has to leave the diff.
 
 ![Installing the review-pro core and two stack packs, then listing the catalog](assets/demo.gif)
 
-<sub>One command installs 12 specialist reviewers into your agent tool. Then add the packs for your stack. Re-record with `./scripts/record-demo.sh`.</sub>
+<sub>One command installs 13 specialist reviewers into your agent tool. Then add the packs for your stack. Re-record with `./scripts/record-demo.sh`.</sub>
 
 ## When to use it
 
@@ -38,7 +38,7 @@ Skip it when:
 Most "review this" prompts hand one agent the whole diff and ask for everything. review-pro is tiered, so small changes stay cheap and large changes go deep:
 
 - **Triage** classifies the diff, dispatches only the **relevant specialists**, and scopes each one's context — a reviewer gets exactly what it needs (callers, repo search, schema, consumers), not the whole repo.
-- **12 specialist reviewers** each own a single concern — `security`, `correctness`, `craft`, `ai-antipatterns`, `dry`, `performance`, `backend`, `frontend`, `a11y`, `db`, `api-contract`, `tests` — and run in parallel, returning structured, evidence-backed findings.
+- **13 specialist reviewers** each own a single concern — `security`, `correctness`, `craft`, `ai-antipatterns`, `dry`, `performance`, `backend`, `frontend`, `a11y`, `db`, `api-contract`, `tests`, `spec` — and run in parallel, returning structured, evidence-backed findings.
 - **Synthesis** dedups overlaps, resolves cross-reviewer conflicts by domain ownership, calibrates severity (anti-overreporting), and emits one verdict: **BLOCK / REQUEST CHANGES / APPROVE**.
 
 The **ai-antipatterns** reviewer owns agent-specific failure modes — hallucinated APIs/symbols, invented config keys, needless dependencies, ignored existing helpers. Our [pilot study](studies/2026-08-copilot-pr-pilot) on merged Copilot PRs found the hallucination categories barely fire in practice; **ignored conventions carried every finding that mattered**. The rubrics are calibrated from that kind of evidence — and from [reported false positives](https://github.com/tufantunc/review-pro/issues/new/choose).
@@ -79,7 +79,7 @@ See `docs/superpowers/specs/2026-06-20-review-pro-design.md` for the full design
 
 ## What a review looks like
 
-Synthesis emits one deduped report — not twelve separate reviewer dumps. Each finding carries its evidence, its remedy, and which reviewers independently raised it.
+Synthesis emits one deduped report — not thirteen separate reviewer dumps. Each finding carries its evidence, its remedy, and which reviewers independently raised it.
 
 <details>
 <summary>Example report shape</summary>
@@ -192,4 +192,6 @@ MIT. See `LICENSE`.
 
 ## Acknowledgements
 
-review-pro started from an idea inspired by [cursor/plugins — thermos](https://github.com/cursor/plugins/tree/main/thermos), a two-reviewer Cursor plugin. It is an independent project — not a fork or a drop-in alternative: a tiered 12-reviewer system with stack packs and a cross-platform installer CLI.
+review-pro started from an idea inspired by [cursor/plugins — thermos](https://github.com/cursor/plugins/tree/main/thermos), a two-reviewer Cursor plugin. It is an independent project — not a fork or a drop-in alternative: a tiered 13-reviewer system with stack packs and a cross-platform installer CLI.
+
+The **Spec axis**, which reviews a diff against the issue it came from rather than against the code alone, is borrowed from the `code-review` skill in [mattpocock/skills](https://github.com/mattpocock/skills). That skill runs two axes, Standards and Spec, and deliberately refuses to merge them. The second axis was the piece review-pro was missing, and the argument for keeping the axes separate is theirs.

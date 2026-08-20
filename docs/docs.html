@@ -175,7 +175,7 @@
       <li><a href="#stack-packs">Stack packs</a></li>
       <li><a href="#commands">Commands</a></li>
       <li><a href="#run-a-review">Run a review</a></li>
-      <li><a href="#reviewers">The 12 reviewers</a></li>
+      <li><a href="#reviewers">The 13 reviewers</a></li>
       <li><a href="#faq">FAQ</a></li>
     </ul>
   </aside>
@@ -183,7 +183,7 @@
   <article class="doc">
     <h2 id="overview">Overview</h2>
     <p>review-pro is a tiered AI code-review system: <strong>triage → relevant specialist reviewers → synthesis</strong>. It reviews code written by AI agents, using AI agents — built to catch the failure modes AI-generated code actually ships with: hallucinated APIs, over-engineering, ignored conventions, needless dependencies.</p>
-    <p>This CLI installs the review-pro core (12 reviewer skills + subagents + the <code>review-pro</code> orchestrator) into your agent tool, and the stack packs into your repo’s <code>.review-pro/</code>. Supported targets: <strong>opencode · Claude Code · Cursor · Codex</strong>.</p>
+    <p>This CLI installs the review-pro core (13 reviewer skills + subagents + the <code>review-pro</code> orchestrator) into your agent tool, and the stack packs into your repo’s <code>.review-pro/</code>. Supported targets: <strong>opencode · Claude Code · Cursor · Codex</strong>.</p>
 
     <h2 id="install">Install</h2>
 
@@ -247,8 +247,8 @@ npx review-pro list           <span class="cmt"># catalog + installed + drift</s
     </ul>
     <p>The agent runs the whole pipeline natively — <code>git diff</code>, reads changed files, Globs <code>.review-pro/</code> for active stacks, dispatches the relevant reviewer subagents with their stack signals, and synthesizes one verdict: <strong>BLOCK / REQUEST CHANGES / APPROVE</strong>. No env vars, no scripts to run at review time.</p>
 
-    <h2 id="reviewers">The 12 reviewers</h2>
-    <p><code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code>. The <code>ai-antipatterns</code> reviewer is first-class: hallucinated APIs/symbols/imports, invented config/env keys, needless dependencies, and ignored existing helpers.</p>
+    <h2 id="reviewers">The 13 reviewers</h2>
+    <p><code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code> · <code>spec</code>. The <code>ai-antipatterns</code> reviewer is first-class: hallucinated APIs/symbols/imports, invented config/env keys, needless dependencies, and ignored existing helpers.</p>
 
     <h2 id="faq">FAQ</h2>
     <h3>Does it need Node.js?</h3>

@@ -163,7 +163,7 @@
       <li><a href="#stack-packs">Stack-Pakete</a></li>
       <li><a href="#commands">Befehle</a></li>
       <li><a href="#run-a-review">Prüfung ausführen</a></li>
-      <li><a href="#reviewers">Die 12 Prüfer</a></li>
+      <li><a href="#reviewers">Die 13 Prüfer</a></li>
       <li><a href="#faq">FAQ</a></li>
     </ul>
   </aside>
@@ -171,7 +171,7 @@
   <article class="doc">
     <h2 id="overview">Überblick</h2>
     <p>review-pro ist ein gestaffeltes KI-Codeprüfungssystem: <strong>Triage → relevante Spezialisten-Prüfer → Synthese</strong>. Es prüft Code, der von KI-Agenten geschrieben wurde, mit KI-Agenten — gebaut, um die Fehlermuster zu erfassen, die KI-generierter Code tatsächlich ausliefert: halluzinierte APIs, Über-Engineering, ignorierte Konventionen, überflüssige Abhängigkeiten.</p>
-    <p>Diese CLI installiert den review-pro-Kern (12 Prüfer-Skills + Subagenten + den <code>review-pro</code>-Orchestrator) in dein Agenten-Tool und die Stack-Pakete in die <code>.review-pro/</code> deines Repos. Unterstützte Ziele: <strong>opencode · Claude Code · Cursor · Codex</strong>.</p>
+    <p>Diese CLI installiert den review-pro-Kern (13 Prüfer-Skills + Subagenten + den <code>review-pro</code>-Orchestrator) in dein Agenten-Tool und die Stack-Pakete in die <code>.review-pro/</code> deines Repos. Unterstützte Ziele: <strong>opencode · Claude Code · Cursor · Codex</strong>.</p>
 
     <h2 id="install">Installation</h2>
 
@@ -235,8 +235,8 @@ npx review-pro list           <span class="cmt"># catalog + installed + drift</s
     </ul>
     <p>Der Agent führt die gesamte Pipeline nativ aus — <code>git diff</code>, liest geänderte Dateien, durchsucht <code>.review-pro/</code> nach aktiven Stacks, leitet die relevanten Prüfer-Subagenten mit ihren Stack-Signalen weiter und synthetisiert ein Urteil: <strong>BLOCK / REQUEST CHANGES / APPROVE</strong>. Keine Env-Vars, keine Skripte zur Prüfzeit.</p>
 
-    <h2 id="reviewers">Die 12 Prüfer</h2>
-    <p><code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code>. Der <code>ai-antipatterns</code>-Prüfer ist erstklassig: halluzinierte APIs/Symbole/Imports, erfundene Config-/Env-Keys, überflüssige Abhängigkeiten und ignorierte bestehende Helfer.</p>
+    <h2 id="reviewers">Die 13 Prüfer</h2>
+    <p><code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code> · <code>spec</code>. Der <code>ai-antipatterns</code>-Prüfer ist erstklassig: halluzinierte APIs/Symbole/Imports, erfundene Config-/Env-Keys, überflüssige Abhängigkeiten und ignorierte bestehende Helfer.</p>
 
     <h2 id="faq">FAQ</h2>
     <h3>Braucht es Node.js?</h3>

@@ -190,7 +190,7 @@
       <li><a href="#stack-packs">स्टैक पैक</a></li>
       <li><a href="#commands">कमांड</a></li>
       <li><a href="#run-a-review">समीक्षा चलाएँ</a></li>
-      <li><a href="#reviewers">12 समीक्षक</a></li>
+      <li><a href="#reviewers">13 समीक्षक</a></li>
       <li><a href="#faq">सामान्य प्रश्न</a></li>
     </ul>
   </aside>
@@ -198,7 +198,7 @@
   <article class="doc">
     <h2 id="overview">ओवरव्यू</h2>
     <p>review-pro एक स्तरित AI कोड-समीक्षा प्रणाली है: <strong>छँटाई → संबंधित विशेषज्ञ समीक्षक → संश्लेषण</strong>। यह AI एजेंटों द्वारा लिखे गए कोड की समीक्षा AI एजेंटों से करवाता है — AI-जनित कोड की उन वास्तविक विफलताओं को पकड़ने के लिए बनाया गया: मनगढ़ंत API, अति-इंजीनियरिंग, उपेक्षित परिपाटियाँ, अनावश्यक डिपेंडेंसीज़।</p>
-    <p>यह CLI review-pro कोर (12 समीक्षक कौशल + सबएजेंट + <code>review-pro</code> ऑर्केस्ट्रेटर) को आपके एजेंट टूल में, और स्टैक पैक को आपकी रिपॉजिटरी के <code>.review-pro/</code> में इंस्टॉल करता है। समर्थित लक्ष्य: <strong>opencode · Claude Code · Cursor · Codex</strong>।</p>
+    <p>यह CLI review-pro कोर (13 समीक्षक कौशल + सबएजेंट + <code>review-pro</code> ऑर्केस्ट्रेटर) को आपके एजेंट टूल में, और स्टैक पैक को आपकी रिपॉजिटरी के <code>.review-pro/</code> में इंस्टॉल करता है। समर्थित लक्ष्य: <strong>opencode · Claude Code · Cursor · Codex</strong>।</p>
 
     <h2 id="install">इंस्टॉल</h2>
 
@@ -262,8 +262,8 @@ npx review-pro list           <span class="cmt"># catalog + installed + drift</s
     </ul>
     <p>एजेंट पूरा पाइपलाइन स्वदेशी रूप से चलाता है — <code>git diff</code>, बदली हुई फ़ाइलें पढ़ता है, सक्रिय स्टैक के लिए <code>.review-pro/</code> को स्कैन करता है, संबंधित समीक्षक सबएजेंट को उनके स्टैक संकेतों के साथ भेजता है, और एक निर्णय संश्लेषित करता है: <strong>BLOCK / REQUEST CHANGES / APPROVE</strong>। समीक्षण के समय कोई env वैरिएबल नहीं, चलाने के लिए कोई स्क्रिप्ट नहीं।</p>
 
-    <h2 id="reviewers">12 समीक्षक</h2>
-    <p><code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code>। <code>ai-antipatterns</code> समीक्षक प्रथम-श्रेणी है: मनगढ़ंत API/सिंबल/इम्पोर्ट, मनगढ़ंत कॉन्फ़िग/एनव कुंजी, अनावश्यक डिपेंडेंसीज़, और उपेक्षित मौजूदा हेल्पर्स।</p>
+    <h2 id="reviewers">13 समीक्षक</h2>
+    <p><code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code> · <code>spec</code>। <code>ai-antipatterns</code> समीक्षक प्रथम-श्रेणी है: मनगढ़ंत API/सिंबल/इम्पोर्ट, मनगढ़ंत कॉन्फ़िग/एनव कुंजी, अनावश्यक डिपेंडेंसीज़, और उपेक्षित मौजूदा हेल्पर्स।</p>
 
     <h2 id="faq">सामान्य प्रश्न</h2>
     <h3>क्या इसे Node.js चाहिए?</h3>

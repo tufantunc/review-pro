@@ -99,6 +99,21 @@ if [[ -f "$SCHEMA_DOC" ]]; then
   done
 fi
 
+# Body invariants: the reviewer bodies are one document duplicated per reviewer,
+# and the schema-parity keys above cover two tokens of it. These are the structural
+# lines whose silent absence changes behaviour. Two of them demonstrably do: a body
+# with no nested-subagent bar can fan out inside a parallel review, and one with no
+# stack-signals clause ignores pack files the orchestrator injects regardless.
+BODY_INVARIANTS=("(review-pro subagent)" "## Identity & mandate" "## Output schema (one block per finding)" "spawn nested subagents" "Stack signals")
+for body in "$ROOT"/core/agents/*-reviewer.md; do
+  [[ -f "$body" ]] || continue
+  for inv in "${BODY_INVARIANTS[@]}"; do
+    grep -qF "$inv" "$body" || add_error "$(basename "$body"): body invariant missing: '$inv'"
+  done
+  grep -qE '## [A-Za-z-]+ findings: none' "$body" \
+    || add_error "$(basename "$body"): no '## <Axis> findings: none' sentinel"
+done
+
 # Pointer resolution: rubrics reference `shared/<file>.md` relative to the skills
 # root's parent. Every referenced target must exist in core/shared/, and the CLI
 # must actually install that directory — otherwise the pointers dangle in a real
@@ -131,6 +146,19 @@ else
       n="$(basename "$d")"
       if ! printf '%s\n' "$declared_skills" | grep -qxF "$n"; then
         add_error "orphan skill '$n' (directory exists but not in manifest)"
+      fi
+    done
+    # orphan agents: file on disk but not declared. The skills check above runs in
+    # one direction only, so a reviewer could be half-registered (skill declared,
+    # agent not) and the validator would still print OK. reviewer-directive.md calls
+    # this array the source of truth for which agent loads which skill.
+    declared_agents="$(python3 -c "import json;d=json.load(open('$MANIFEST'));print('\n'.join(a['name'] for a in d.get('agents',[])))" 2>/dev/null)"
+    for af in "$AGENTS_DIR"/*.md; do
+      [[ -f "$af" ]] || continue
+      an="$(fm_get "$af" "name")"
+      [[ -n "$an" ]] || continue
+      if ! printf '%s\n' "$declared_agents" | grep -qxF "$an"; then
+        add_error "orphan agent '$an' (file exists but not in manifest agents array)"
       fi
     done
     shopt -u nullglob

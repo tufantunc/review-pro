@@ -29,6 +29,7 @@
     { "name": "craft-reviewer", "loads_skill": "craft" },
     { "name": "ai-antipatterns-reviewer", "loads_skill": "ai-antipatterns" },
     { "name": "dry-reviewer", "loads_skill": "dry" },
+    { "name": "spec-reviewer", "loads_skill": "spec" },
     { "name": "performance-reviewer", "loads_skill": "performance" },
     { "name": "backend-reviewer", "loads_skill": "backend" },
     { "name": "frontend-reviewer", "loads_skill": "frontend" },

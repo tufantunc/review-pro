@@ -19,7 +19,7 @@ Every specialist returns zero or more finding blocks in this exact shape so the 
 
 ## Category roots (use these as the `<domain>` prefix)
 
-`security`, `correctness`, `craft`, `ai-antipatterns`, `dry`, `performance`, `backend`, `frontend`, `a11y`, `db`, `api-contract`, `tests`.
+`security`, `correctness`, `craft`, `ai-antipatterns`, `dry`, `performance`, `backend`, `frontend`, `a11y`, `db`, `api-contract`, `tests`, `spec`.
 
 Rules:
 - `file` + `line` are mandatory for every finding.

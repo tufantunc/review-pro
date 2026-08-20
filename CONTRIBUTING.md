@@ -8,7 +8,7 @@ Most of it is plain markdown. You do not need to be a TypeScript developer to ma
 
 | Path | What it is |
 |---|---|
-| `core/skills/` | The 12 reviewer rubrics + the 3 orchestrator skills. **The product.** |
+| `core/skills/` | The 13 reviewer rubrics + the 3 orchestrator skills. **The product.** |
 | `core/agents/` | Subagent definitions that load a skill each |
 | `stacks/<pack>/` | Language/framework signal packs layered on top of a reviewer rubric |
 | `adapters/` | Per-platform transforms (e.g. Codex TOML) |
@@ -78,7 +78,7 @@ Scopes in use: `cli`, `reviewers`, `stacks`, `site`, `docs`, `ci`, `deps`.
 
 A new reviewer is a larger change — open an issue first. It requires a skill in `core/skills/`, an agent in `core/agents/`, entries in `manifest.json`, triage dispatch rules, synthesis domain-ownership rules, and a decision about which existing packs should cover it.
 
-The bar: the concern must not already be owned by one of the 12, and triage must be able to tell when it is relevant. Reviewers that fire on everything make the whole system noisier.
+The bar: the concern must not already be owned by one of the 13, and triage must be able to tell when it is relevant. Reviewers that fire on everything make the whole system noisier.
 
 ## Releasing
 

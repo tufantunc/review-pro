@@ -163,7 +163,7 @@
       <li><a href="#stack-packs">Packs de stack</a></li>
       <li><a href="#commands">Commandes</a></li>
       <li><a href="#run-a-review">Lancer une revue</a></li>
-      <li><a href="#reviewers">Les 12 relecteurs</a></li>
+      <li><a href="#reviewers">Les 13 relecteurs</a></li>
       <li><a href="#faq">FAQ</a></li>
     </ul>
   </aside>
@@ -171,7 +171,7 @@
   <article class="doc">
     <h2 id="overview">Vue d&#39;ensemble</h2>
     <p>review-pro est un système de revue de code IA par paliers : <strong>triage → relecteurs spécialistes pertinents → synthèse</strong>. Il examine le code écrit par des agents IA à l'aide d'agents IA — conçu pour capter les défaillances que le code généré par IA embarque réellement : APIs hallucinées, sur-ingénierie, conventions ignorées, dépendances superflues.</p>
-    <p>Cette CLI installe le cœur de review-pro (12 skills de relecture + sous-agents + l'orchestrateur <code>review-pro</code>) dans ton outil d'agents, et les packs de stack dans le <code>.review-pro/</code> de ton dépôt. Cibles prises en charge : <strong>opencode · Claude Code · Cursor · Codex</strong>.</p>
+    <p>Cette CLI installe le cœur de review-pro (13 skills de relecture + sous-agents + l'orchestrateur <code>review-pro</code>) dans ton outil d'agents, et les packs de stack dans le <code>.review-pro/</code> de ton dépôt. Cibles prises en charge : <strong>opencode · Claude Code · Cursor · Codex</strong>.</p>
 
     <h2 id="install">Installation</h2>
 
@@ -235,8 +235,8 @@ npx review-pro list           <span class="cmt"># catalog + installed + drift</s
     </ul>
     <p>L'agent exécute tout le pipeline nativement — <code>git diff</code>, lit les fichiers modifiés, parcourt <code>.review-pro/</code> pour les stacks actifs, répartit les sous-agents relecteurs pertinents avec leurs signaux de stack, et synthétise un verdict : <strong>BLOCK / REQUEST CHANGES / APPROVE</strong>. Aucune variable d'env, aucun script à lancer au moment de la revue.</p>
 
-    <h2 id="reviewers">Les 12 relecteurs</h2>
-    <p><code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code>. Le relecteur <code>ai-antipatterns</code> est de premier plan : APIs/symboles/imports hallucinés, clés de config/env inventées, dépendances superflues et helpers existants ignorés.</p>
+    <h2 id="reviewers">Les 13 relecteurs</h2>
+    <p><code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code> · <code>spec</code>. Le relecteur <code>ai-antipatterns</code> est de premier plan : APIs/symboles/imports hallucinés, clés de config/env inventées, dépendances superflues et helpers existants ignorés. Le relecteur <code>spec</code> mesure le diff par rapport à l'issue dont il provient : exigences manquantes ou à moitié faites, exigences mal implémentées et travail que personne n'a demandé. Rapporté comme son propre axe, jamais fusionné avec les constats de code.</p>
 
     <h2 id="faq">FAQ</h2>
     <h3>Faut-il Node.js ?</h3>

@@ -163,7 +163,7 @@
       <li><a href="#stack-packs">Stack-pakketten</a></li>
       <li><a href="#commands">Commando&#39;s</a></li>
       <li><a href="#run-a-review">Review uitvoeren</a></li>
-      <li><a href="#reviewers">De 12 reviewers</a></li>
+      <li><a href="#reviewers">De 13 reviewers</a></li>
       <li><a href="#faq">FAQ</a></li>
     </ul>
   </aside>
@@ -171,7 +171,7 @@
   <article class="doc">
     <h2 id="overview">Overzicht</h2>
     <p>review-pro is een gelaagd AI-code-reviewsysteem: <strong>triage → relevante specialistische reviewers → synthese</strong>. Het beoordeelt code die door AI-agents is geschreven met behulp van AI-agents — gebouwd om de foutpatronen te vangen die AI-gegenereerde code werkelijk meebrengt: gehallucineerde API's, over-engineering, genegeerde conventies, overbodige afhankelijkheden.</p>
-    <p>Deze CLI installeert de review-pro-kern (12 reviewer-skills + subagents + de <code>review-pro</code>-orchestrator) in je agent-tool, en de stack-pakketten in de <code>.review-pro/</code> van je repo. Ondersteunde doelen: <strong>opencode · Claude Code · Cursor · Codex</strong>.</p>
+    <p>Deze CLI installeert de review-pro-kern (13 reviewer-skills + subagents + de <code>review-pro</code>-orchestrator) in je agent-tool, en de stack-pakketten in de <code>.review-pro/</code> van je repo. Ondersteunde doelen: <strong>opencode · Claude Code · Cursor · Codex</strong>.</p>
 
     <h2 id="install">Installatie</h2>
 
@@ -235,8 +235,8 @@ npx review-pro list           <span class="cmt"># catalog + installed + drift</s
     </ul>
     <p>De agent draait de hele pipeline native — <code>git diff</code>, leest gewijzigde bestanden, Globs <code>.review-pro/</code> voor actieve stacks, stuurt de relevante reviewer-subagents erop af met hun stack-signalen, en synthetiseert één vonnis: <strong>BLOCK / REQUEST CHANGES / APPROVE</strong>. Geen env-vars, geen scripts om uit te voeren op review-tijdstip.</p>
 
-    <h2 id="reviewers">De 12 reviewers</h2>
-    <p><code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code>. De <code>ai-antipatterns</code>-reviewer is first-class: gehallucineerde API's/symbolen/imports, verzonnen config/env-keys, overbodige afhankelijkheden en genegeerde bestaande helpers.</p>
+    <h2 id="reviewers">De 13 reviewers</h2>
+    <p><code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code> · <code>spec</code>. De <code>ai-antipatterns</code>-reviewer is first-class: gehallucineerde API's/symbolen/imports, verzonnen config/env-keys, overbodige afhankelijkheden en genegeerde bestaande helpers. De <code>spec</code>-reviewer meet de diff aan de issue waaruit hij komt: ontbrekende of halfafgemaakte requirements, verkeerd geïmplementeerde requirements en werk waar niemand om vroeg. Wordt als eigen as gerapporteerd en nooit samengevoegd met de code-findings.</p>
 
     <h2 id="faq">FAQ</h2>
     <h3>Heeft het Node.js nodig?</h3>

@@ -67,7 +67,7 @@ for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
     req=""
     case "$name" in
       review-pro-triage)     req=$'## Steps\n## Signal map (non-exhaustive)\n## Dispatch plan format\n## Output discipline' ;;
-      review-pro-synthesize) req=$'## Steps\n## Out-of-diff evidence check\n## Conflict ownership\n## Output' ;;
+      review-pro-synthesize) req=$'## Steps\n## Out-of-diff evidence check\n## Spec axis\n## Conflict ownership\n## Output' ;;
     esac
     if [[ -n "$req" ]]; then
       while IFS= read -r h; do
@@ -99,6 +99,21 @@ if [[ -f "$SCHEMA_DOC" ]]; then
   done
 fi
 
+# Body invariants: the reviewer bodies are one document duplicated per reviewer,
+# and the schema-parity keys above cover two tokens of it. These are the structural
+# lines whose silent absence changes behaviour. Two of them demonstrably do: a body
+# with no nested-subagent bar can fan out inside a parallel review, and one with no
+# stack-signals clause ignores pack files the orchestrator injects regardless.
+BODY_INVARIANTS=("(review-pro subagent)" "## Identity & mandate" "## Skill discipline (critical)" "## Anti-derailment (critical)" "## Output schema (one block per finding)" "spawn nested subagents" "Stack signals")
+for body in "$ROOT"/core/agents/*-reviewer.md; do
+  [[ -f "$body" ]] || continue
+  for inv in "${BODY_INVARIANTS[@]}"; do
+    grep -qF "$inv" "$body" || add_error "$(basename "$body"): body invariant missing: '$inv'"
+  done
+  grep -qE '## [A-Za-z-]+ findings: none' "$body" \
+    || add_error "$(basename "$body"): no '## <Axis> findings: none' sentinel"
+done
+
 # Pointer resolution: rubrics reference `shared/<file>.md` relative to the skills
 # root's parent. Every referenced target must exist in core/shared/, and the CLI
 # must actually install that directory — otherwise the pointers dangle in a real
@@ -115,6 +130,60 @@ if [[ -f "$ROOT/cli/src/lib/plugin.ts" ]]; then
   grep -qE 'copyShared[^A-Za-z0-9_]*\(' "$ROOT/cli/src/lib/plugin.ts" \
     || add_error "cli/src/lib/plugin.ts: no copyShared — core/shared/ would not reach an install, dangling every 'shared/<file>.md' pointer"
 fi
+
+# Load-bearing pipeline rules. Each is a single line in a markdown file whose
+# silent deletion disables a feature without failing any other check. The [[ -f ]]
+# guards matter: most validator fixtures contain no orchestrator at all, and an
+# unguarded check would fire on every one of them.
+TRIAGE_MD="$SKILLS_DIR/review-pro-triage/SKILL.md"
+if [[ -f "$TRIAGE_MD" ]]; then
+  grep -qF 'spec_source' "$TRIAGE_MD" \
+    || add_error "review-pro-triage/SKILL.md: no 'spec_source' - the spec axis cannot be dispatched or reported without it"
+fi
+SYNTH_MD="$SKILLS_DIR/review-pro-synthesize/SKILL.md"
+if [[ -f "$SYNTH_MD" ]]; then
+  grep -qF 'code-axis findings only' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the out-of-diff tripwire is not restricted to the code axis - spec findings would satisfy it on every review and disable the check"
+fi
+# The scope-creep cap exists in the rubric and in the agent body, and the body is
+# the copy that reaches the running subagent. Guard both.
+for f in "$SKILLS_DIR/spec/SKILL.md" "$ROOT/core/agents/spec-reviewer.md"; do
+  [[ -f "$f" ]] || continue
+  grep -qF 'never exceeds Medium' "$f" \
+    || add_error "$(basename "$f"): the scope-creep Medium cap is missing - without it scope creep can block"
+  grep -qF 'no such hunk' "$f" \
+    || add_error "$(basename "$f"): the missing-finding line rule is gone - spec.missing findings would carry an invented line"
+  # Both copies, not just the body: review-pro/SKILL.md documents an inline path that
+  # applies the rubric instead of the agent body, so an abstain rule present in only
+  # one of them leaves that path reporting an unmeasured axis as clean.
+  grep -qF 'abstained (no spec text)' "$f" \
+    || add_error "$(basename "$f"): the abstain token is gone - an abstain would be indistinguishable from a clean review"
+done
+# The no-spec defence. Losing the abstain step is how a spec reviewer with an empty
+# prompt ends up adopting a document from the diff as the spec.
+if [[ -f "$TRIAGE_MD" ]]; then
+  grep -qF 'if and only if' "$TRIAGE_MD" \
+    || add_error "review-pro-triage/SKILL.md: the conditional-dispatch gate is gone - spec would be dispatched with no spec"
+fi
+if [[ -f "$ROOT/core/agents/spec-reviewer.md" ]]; then
+  grep -qF 'no `### Spec text` section' "$ROOT/core/agents/spec-reviewer.md" \
+    || add_error "spec-reviewer.md: the abstain step is gone - the reviewer would review something other than a spec"
+  # The preamble above is identical whether step 1 abstains or emits the ordinary
+  # none-sentinel, so it cannot detect a regression to the latter. Pin the token that
+  # only exists after the fix, in both the body and synthesis's branch for it.
+fi
+ORCH_MD="$SKILLS_DIR/review-pro/SKILL.md"
+if [[ -f "$ORCH_MD" ]]; then
+  grep -qF 'quoted requirement' "$ORCH_MD" \
+    || add_error "review-pro/SKILL.md: its dedup summary no longer names the spec key - the inline path would use the code key and collapse unattempted requirements"
+fi
+if [[ -f "$SYNTH_MD" ]]; then
+  grep -qF 'abstained (no spec text)' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: no branch for the abstain token - an unmeasured axis would be reported as 'no mismatch'"
+  grep -qF 'not on `(file, line)`' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the spec pool's dedup rule is gone - unattempted requirements would collapse into one finding"
+fi
+
 
 MANIFEST="$ROOT/manifest.json"
 AGENTS_DIR="$ROOT/core/agents"
@@ -133,6 +202,34 @@ else
         add_error "orphan skill '$n' (directory exists but not in manifest)"
       fi
     done
+    # declared but absent: the checks above all run disk -> manifest, so deleting a
+    # whole skill or agent was invisible while deleting one line inside it was caught.
+    # The [[ -f ]] guards on the load-bearing rules below depend on this direction
+    # existing, or they pass vacuously for a file that is simply gone.
+    while IFS= read -r dn; do
+      [[ -n "$dn" ]] || continue
+      [[ -f "$SKILLS_DIR/$dn/SKILL.md" ]] \
+        || add_error "declared skill '$dn' has no core/skills/$dn/SKILL.md"
+    done <<< "$declared_skills"
+
+    # orphan agents: file on disk but not declared. The skills check above runs in
+    # one direction only, so a reviewer could be half-registered (skill declared,
+    # agent not) and the validator would still print OK. reviewer-directive.md calls
+    # this array the source of truth for which agent loads which skill.
+    declared_agents="$(python3 -c "import json;d=json.load(open('$MANIFEST'));print('\n'.join(a['name'] for a in d.get('agents',[])))" 2>/dev/null)"
+    for af in "$AGENTS_DIR"/*.md; do
+      [[ -f "$af" ]] || continue
+      an="$(fm_get "$af" "name")"
+      [[ -n "$an" ]] || continue
+      if ! printf '%s\n' "$declared_agents" | grep -qxF "$an"; then
+        add_error "orphan agent '$an' (file exists but not in manifest agents array)"
+      fi
+    done
+    while IFS= read -r da; do
+      [[ -n "$da" ]] || continue
+      [[ -f "$AGENTS_DIR/$da.md" ]] \
+        || add_error "declared agent '$da' has no core/agents/$da.md"
+    done <<< "$declared_agents"
     shopt -u nullglob
     # agents reference existing skills
     for a in "$AGENTS_DIR"/*.md; do

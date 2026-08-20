@@ -8,7 +8,7 @@ Most of it is plain markdown. You do not need to be a TypeScript developer to ma
 
 | Path | What it is |
 |---|---|
-| `core/skills/` | The 12 reviewer rubrics + the 3 orchestrator skills. **The product.** |
+| `core/skills/` | The 13 reviewer rubrics + the 3 orchestrator skills. **The product.** |
 | `core/agents/` | Subagent definitions that load a skill each |
 | `stacks/<pack>/` | Language/framework signal packs layered on top of a reviewer rubric |
 | `adapters/` | Per-platform transforms (e.g. Codex TOML) |

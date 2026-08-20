@@ -196,6 +196,30 @@ lt = read("llms.txt") or read(os.path.join("docs", "llms.txt"))
 if lt is not None and f"of {n} reviewers" not in lt:
     bad.append(f"docs/llms.txt: expected 'of {n} reviewers'")
 
+# cli/README.md and cli/package.json are PUBLISHED to npm, so a stale count there
+# is on the registry page until the next release.
+cr = read(os.path.join("cli", "README.md"))
+if cr is not None:
+    if f"{n} specialist reviewer skills" not in cr:
+        bad.append(f"cli/README.md: expected '{n} specialist reviewer skills'")
+    if f"## {n} specialist reviewers" not in cr:
+        bad.append(f"cli/README.md: expected the heading '## {n} specialist reviewers'")
+    for nm in names:
+        if f"`{nm}`" not in cr:
+            bad.append(f"cli/README.md: reviewer '{nm}' missing from the enumeration")
+cp = read(os.path.join("cli", "package.json"))
+if cp is not None:
+    try:
+        desc = json.loads(cp).get("description", "")
+    except ValueError:
+        desc = ""
+    if f"{n} specialist reviewers" not in desc:
+        bad.append(f"cli/package.json: description does not state {n} specialist reviewers")
+
+ct = read("CONTRIBUTING.md")
+if ct is not None and f"The {n} reviewer rubrics" not in ct:
+    bad.append(f"CONTRIBUTING.md: expected 'The {n} reviewer rubrics'")
+
 for f in sorted(glob.glob(os.path.join(root, "docs-src/i18n/*.json"))):
     d = json.load(open(f, encoding="utf-8"))
     loc = os.path.basename(f)

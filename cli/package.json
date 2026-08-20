@@ -1,7 +1,7 @@
 {
   "name": "review-pro",
   "version": "0.6.0",
-  "description": "Repository-aware AI code review for coding agents. Installer CLI: puts the review-pro core (triage → 12 specialist reviewers → synthesis) into Claude Code, opencode, Cursor, Codex, plus per-repo stack packs.",
+  "description": "Repository-aware AI code review for coding agents. Installer CLI: puts the review-pro core (triage → 13 specialist reviewers → synthesis) into Claude Code, opencode, Cursor, Codex, plus per-repo stack packs.",
   "license": "MIT",
   "type": "module",
   "author": "tufantunc (https://github.com/tufantunc)",

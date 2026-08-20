@@ -15,7 +15,7 @@
 
 ## Install (one-time)
 
-Installs the review-pro core — 12 specialist reviewer skills + subagents + the `review-pro` orchestrator — into your agent tool's home, from one canonical source.
+Installs the review-pro core — 13 specialist reviewer skills + subagents + the `review-pro` orchestrator — into your agent tool's home, from one canonical source.
 
 ```bash
 npx review-pro init                           # opencode (default)
@@ -80,8 +80,8 @@ Stack packs (`.review-pro/`) live in your repo and are **not** touched — remov
 - Node ≥ 18 (for this CLI only; manual install needs no Node).
 - MIT — see [LICENSE](https://github.com/tufantunc/review-pro/blob/main/LICENSE).
 
-## 12 specialist reviewers
+## 13 specialist reviewers
 
-`security` · `correctness` · `craft` · `ai-antipatterns` · `dry` · `performance` · `backend` · `frontend` · `a11y` · `db` · `api-contract` · `tests`
+`security` · `correctness` · `craft` · `ai-antipatterns` · `dry` · `performance` · `backend` · `frontend` · `a11y` · `db` · `api-contract` · `tests` · `spec`
 
 The **`ai-antipatterns`** reviewer is first-class: hallucinated APIs/symbols/imports, invented config/env keys, needless dependencies, and ignored existing helpers — the failure modes that come from code being written by an agent rather than a person.

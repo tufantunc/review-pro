@@ -8,7 +8,12 @@ pass=0; fail=0
 # This script runs without `set -e`, so a positional gate exits with whatever ran
 # last, and appending a case below it silently makes every run exit 0. PR #24 did
 # exactly that and CI could not see a failing case until it was fixed.
-trap 'exit $(( fail > 0 ))' EXIT
+# Completeness as well as success. Without the finished flag a suite that dies
+# partway exits through the trap with fail still 0, which is the same blind spot
+# as the stranded gate in #24 reached by a different route, and it grows with
+# every case appended at the tail.
+finished=0
+trap 'exit $(( fail > 0 || finished == 0 ))' EXIT
 ok(){ echo "ok - $1"; pass=$((pass+1)); }
 bad(){ echo "not ok - $1"; fail=$((fail+1)); }
 
@@ -39,6 +44,34 @@ t
 EOF
 }
 
+write_good_agent_body(){
+  # $1 = path, $2 = agent name (default security-reviewer). Must satisfy every entry
+  # of BODY_INVARIANTS in validate.sh plus the findings-none sentinel, or cases built
+  # on it fail for reasons unrelated to what they test.
+  local an="${2:-security-reviewer}"
+  cat > "$1" <<EOFB
+---
+name: $an
+description: fixture body
+loads_skill: security
+skills: [security]
+---
+# Fixture Reviewer (review-pro subagent)
+## Identity & mandate
+fixture
+## Skill discipline (critical)
+Only the \`### Stack signals\` section supplements the core skill.
+## Anti-derailment (critical)
+fixture
+## Work
+1. review
+2. Do NOT spawn nested subagents.
+3. Otherwise output \`## Fixture findings: none\` and stop.
+## Output schema (one block per finding)
+fixture
+EOFB
+}
+
 write_orchestrator(){
   # $1 = path, $2 = orchestrator name (default review-pro-triage, so the existing
   # call sites need no change). Sections must match the per-orchestrator req list
@@ -46,7 +79,7 @@ write_orchestrator(){
   local name="${2:-review-pro-triage}"
   case "$name" in
     review-pro-triage)
-      cat > "$1" <<EOF
+      cat > "$1" <<'EOF'
 ---
 name: review-pro-triage
 description: "triage"
@@ -57,11 +90,12 @@ description: "triage"
 ## Dispatch plan format
 spec_source:
   kind: none
+Dispatch spec if and only if spec_source.kind is not none.
 ## Output discipline
 EOF
       ;;
     review-pro-synthesize)
-      cat > "$1" <<EOF
+      cat > "$1" <<'EOF'
 ---
 name: review-pro-synthesize
 description: "synthesis"
@@ -74,6 +108,10 @@ Count the code-axis findings only whose evidence_refs name an unchanged path.
 ## Conflict ownership
 ## Output
 EOF
+      ;;
+    *)
+      echo "write_orchestrator: unknown orchestrator '$name'" >&2
+      return 1
       ;;
   esac
 }
@@ -277,7 +315,7 @@ cat > "$T/manifest.json" <<'JSON'
 JSON
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "no 'spec_source'"; then bad "spec_source control: fired on an intact fixture"; else ok "spec_source control: silent on an intact fixture"; fi
-grep -v '^spec_source:$' "$T/core/skills/review-pro-triage/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-triage/SKILL.md"
+grep -v 'spec_source' "$T/core/skills/review-pro-triage/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-triage/SKILL.md"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "no 'spec_source'"; then ok "missing spec_source contract detected"; else bad "missing spec_source contract NOT detected"; fi
 rm -rf "$T"
@@ -330,5 +368,62 @@ out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "SKILL.md: the scope-creep Medium cap is missing"; then ok "missing scope-creep cap detected in the rubric"; else bad "missing scope-creep cap NOT detected in the rubric"; fi
 rm -rf "$T"
 
+# Case O: the agent-body invariant loop. Nothing asserted it, so the guard added to
+# stop a reviewer fanning out into nested subagents could itself be deleted silently.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_good_agent_body "$T/core/agents/security-reviewer.md"
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"}], "agents": [{"name":"security-reviewer","loads_skill":"security"}] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "body invariant missing"; then bad "body invariant control: fired on an intact body"; else ok "body invariant control: silent on an intact body"; fi
+grep -v 'spawn nested subagents' "$T/core/agents/security-reviewer.md" > "$T/tmp" && mv "$T/tmp" "$T/core/agents/security-reviewer.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "body invariant missing: 'spawn nested subagents'"; then ok "missing nested-subagent bar detected"; else bad "missing nested-subagent bar NOT detected"; fi
+rm -rf "$T"
+
+# Case P: the findings-none sentinel, which a body can lack while satisfying every
+# other invariant.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_good_agent_body "$T/core/agents/security-reviewer.md"
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"}], "agents": [{"name":"security-reviewer","loads_skill":"security"}] }
+JSON
+grep -v 'findings: none' "$T/core/agents/security-reviewer.md" > "$T/tmp" && mv "$T/tmp" "$T/core/agents/security-reviewer.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "sentinel"; then ok "missing findings-none sentinel detected"; else bad "missing findings-none sentinel NOT detected"; fi
+rm -rf "$T"
+
+# Case Q: the orphan-agent direction. Its orphan-skill twin has Case E; this had nothing.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_good_agent_body "$T/core/agents/orphan-reviewer.md" orphan-reviewer
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "orphan agent 'orphan-reviewer'"; then ok "orphan agent detected"; else bad "orphan agent NOT detected"; fi
+rm -rf "$T"
+
+# Case R: the manifest -> disk direction. Deleting one line inside a skill was caught;
+# deleting the whole skill was not.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"ghost","role":"reviewer"}], "agents": [{"name":"ghost-reviewer","loads_skill":"ghost"}] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "declared skill 'ghost' has no"; then ok "declared-but-absent skill detected"; else bad "declared-but-absent skill NOT detected"; fi
+if echo "$out" | grep -q "declared agent 'ghost-reviewer' has no"; then ok "declared-but-absent agent detected"; else bad "declared-but-absent agent NOT detected"; fi
+rm -rf "$T"
+
 echo "---"
 echo "pass=$pass fail=$fail"
+
+finished=1

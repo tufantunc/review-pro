@@ -21,7 +21,7 @@ You are the orchestrator's final stage. You receive the structured findings from
 
 Count the **code-axis findings only** whose `evidence_refs` name at least one path **not** in triage's `changed_files`: a caller, an existing guard, a canonical helper, a schema, an upstream source. A finding with no `evidence_refs` does not count toward the total.
 
-Spec-axis findings are excluded from this count and it is not a detail. A spec finding's evidence is the spec document or issue, which lies outside the diff by definition, so counting them would satisfy this check on every review where the spec axis ran and quietly disable it.
+Spec-axis findings are excluded from this count and it is not a detail. A spec finding's evidence is the spec document or issue, which is outside the diff in the `issue` and `pr-body` cases and may well be inside it for a `file` source (a design doc committed alongside its implementation). Either way the exclusion holds: counting spec findings would satisfy this check on most reviews where the axis ran and quietly disable it.
 
 If triage reported `diff_class: substantive` and that count is **zero**, append this caveat to the report, immediately under the verdict:
 
@@ -43,7 +43,7 @@ Spec findings arrive in the same stream as code findings and are kept apart from
 - **Partition before dedup.** Two pools, code and spec. Dedup runs within each pool and never across. A spec finding and a code finding on the same line are different claims: "this should not exist" is not "this has a bug", and merging them loses both.
 - **The verdict is the worse of the two axes, and its label names the driver:** `## Verdict: BLOCK (code)`, `REQUEST CHANGES (spec)`, `BLOCK (code + spec)`. The severity ladder is unchanged, so a `spec.scope-creep` finding capped at Medium requests changes and never blocks.
 - **Absence is always stated.** If `spec_source.kind` is `none`, write one line: `Spec: skipped, no spec found.` If the axis ran and found nothing, say so: `Spec: no mismatch against <ref>.` Silence is not an acceptable output for this axis in either case.
-- **Print `spec_source` verbatim** under the verdict, so the reader can see what the review was measured against.
+- **Print `spec_source` verbatim** directly under the verdict and above the out-of-diff caveat, so the reader can see what the review was measured against.
 - **Never re-rank a spec finding against a code finding.** Reporting them separately is what stops one axis from masking the other.
 
 ## Conflict ownership
@@ -66,7 +66,11 @@ Spec findings arrive in the same stream as code findings and are kept apart from
 A markdown report. Lead with the verdict and Critical/High. Do not restate raw specialist dumps — present the unified, deduped view.
 
 ```
-## Verdict: BLOCK | REQUEST CHANGES | APPROVE
+## Verdict: BLOCK (code) | REQUEST CHANGES (spec) | BLOCK (code + spec) | APPROVE
+
+Spec: measured against <spec_source.ref>   (or: skipped, no spec found)
+
+> the out-of-diff caveat, when it applies, goes here: after spec_source, before findings
 
 ### Critical
 - [Critical] src/api/orders.ts:42 — missing ownership check

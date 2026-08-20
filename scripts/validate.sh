@@ -104,7 +104,7 @@ fi
 # lines whose silent absence changes behaviour. Two of them demonstrably do: a body
 # with no nested-subagent bar can fan out inside a parallel review, and one with no
 # stack-signals clause ignores pack files the orchestrator injects regardless.
-BODY_INVARIANTS=("(review-pro subagent)" "## Identity & mandate" "## Output schema (one block per finding)" "spawn nested subagents" "Stack signals")
+BODY_INVARIANTS=("(review-pro subagent)" "## Identity & mandate" "## Skill discipline (critical)" "## Anti-derailment (critical)" "## Output schema (one block per finding)" "spawn nested subagents" "Stack signals")
 for body in "$ROOT"/core/agents/*-reviewer.md; do
   [[ -f "$body" ]] || continue
   for inv in "${BODY_INVARIANTS[@]}"; do
@@ -151,7 +151,19 @@ for f in "$SKILLS_DIR/spec/SKILL.md" "$ROOT/core/agents/spec-reviewer.md"; do
   [[ -f "$f" ]] || continue
   grep -qF 'never exceeds Medium' "$f" \
     || add_error "$(basename "$f"): the scope-creep Medium cap is missing - without it scope creep can block"
+  grep -qF 'no such hunk' "$f" \
+    || add_error "$(basename "$f"): the missing-finding line rule is gone - spec.missing findings would carry an invented line"
 done
+# The no-spec defence. Losing the abstain step is how a spec reviewer with an empty
+# prompt ends up adopting a document from the diff as the spec.
+if [[ -f "$TRIAGE_MD" ]]; then
+  grep -qF 'if and only if' "$TRIAGE_MD" \
+    || add_error "review-pro-triage/SKILL.md: the conditional-dispatch gate is gone - spec would be dispatched with no spec"
+fi
+if [[ -f "$ROOT/core/agents/spec-reviewer.md" ]]; then
+  grep -qF 'no `### Spec text` section' "$ROOT/core/agents/spec-reviewer.md" \
+    || add_error "spec-reviewer.md: the abstain step is gone - the reviewer would review something other than a spec"
+fi
 
 MANIFEST="$ROOT/manifest.json"
 AGENTS_DIR="$ROOT/core/agents"
@@ -170,6 +182,16 @@ else
         add_error "orphan skill '$n' (directory exists but not in manifest)"
       fi
     done
+    # declared but absent: the checks above all run disk -> manifest, so deleting a
+    # whole skill or agent was invisible while deleting one line inside it was caught.
+    # The [[ -f ]] guards on the load-bearing rules below depend on this direction
+    # existing, or they pass vacuously for a file that is simply gone.
+    while IFS= read -r dn; do
+      [[ -n "$dn" ]] || continue
+      [[ -f "$SKILLS_DIR/$dn/SKILL.md" ]] \
+        || add_error "declared skill '$dn' has no core/skills/$dn/SKILL.md"
+    done <<< "$declared_skills"
+
     # orphan agents: file on disk but not declared. The skills check above runs in
     # one direction only, so a reviewer could be half-registered (skill declared,
     # agent not) and the validator would still print OK. reviewer-directive.md calls
@@ -183,6 +205,11 @@ else
         add_error "orphan agent '$an' (file exists but not in manifest agents array)"
       fi
     done
+    while IFS= read -r da; do
+      [[ -n "$da" ]] || continue
+      [[ -f "$AGENTS_DIR/$da.md" ]] \
+        || add_error "declared agent '$da' has no core/agents/$da.md"
+    done <<< "$declared_agents"
     shopt -u nullglob
     # agents reference existing skills
     for a in "$AGENTS_DIR"/*.md; do

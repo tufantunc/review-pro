@@ -24,7 +24,7 @@ Refactors done in passing, added tests, comments, and formatting are **not** sco
 **Explicit non-flags.** Do not report: the spec being vague or badly written (review against what it says); something the spec implies but does not state; work the change explicitly defers ("follow-up in #500"), which is deferred rather than missing.
 
 ## Evidence & severity
-Every finding needs a **verbatim quote of the spec line** in `evidence`, plus `evidence_refs` naming the spec source the quote came from.
+Every finding needs a **verbatim quote of the spec line** in `evidence`, plus `evidence_refs` naming the spec source the quote came from. Always populate it, even when the spec document is itself part of the diff. Its shape follows the source: `<path>:<line>` for a file, and a bare reference (`#412`, a PR url) for an issue or PR body, which have no repository path.
 
 - **Critical:** the central ask is absent, or implemented so it does the opposite.
 - **High:** a stated requirement is missing or materially wrong.
@@ -34,7 +34,9 @@ Every finding needs a **verbatim quote of the spec line** in `evidence`, plus `e
 - **`scope-creep` never exceeds Medium.** Scope creep can request changes and can never block (see shared/severity.md).
 - Anti-overreporting: no finding without its spec quote.
 
-**Locating a `missing` finding.** An absence has no line. Point `file` at the changed file where the requirement would have landed, `line` at that hunk's first line (or `0` if there is none), and say in the title that this is an absence. If no changed file fits the requirement, drop it rather than invent a location: an issue or PR body has no repository path.
+**Locating a `missing` finding.** An absence has no line. Point `file` at the changed file where the requirement would have landed, `line` at that hunk's first line (or `0` when there is no such hunk), and say in the title that this is an absence.
+
+If **no** changed file fits, the requirement was not attempted at all, which is this axis's most severe finding and must never be dropped for want of a coordinate. Use the spec's own reference as `file` with `line: 0`. On this axis a `file` that is not a repository path is valid and expected; synthesis is told to accept it.
 
 ## No unresearched findings
 Quote the spec line before reporting against it. "The spec probably wanted X" is forbidden: find the sentence, or drop the finding.

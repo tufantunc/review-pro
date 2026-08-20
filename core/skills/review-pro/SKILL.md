@@ -17,7 +17,7 @@ You are the **orchestrator**. Run the entire pipeline on the current branch in O
 - **Installed stacks:** `Glob .review-pro/*/manifest.json`. Each match is a stack the user installed (via `npx review-pro`). These are the repo's **active stacks**. If `.review-pro/` is absent or empty, reviewers run on their core rubric only.
 
 ### 2. Triage (you, inline)
-Follow the `review-pro-triage` skill. Classify the changed files, detect concern relevance, and produce a **dispatch plan**: which reviewers to run + each one's scoped context (per `core/shared/context-policy.md`). Be conservative — when in doubt, dispatch.
+Follow the `review-pro-triage` skill. Classify the changed files, detect concern relevance, resolve the spec (emitting `spec_source`), and produce a **dispatch plan**: which reviewers to run + each one's scoped context (per `core/shared/context-policy.md`). Be conservative, when in doubt dispatch, with one exception: `spec` runs only when `spec_source.kind` is not `none`, because a spec reviewer with no spec is a guaranteed waste rather than a possible finding.
 
 ### 3. Fan-out — reviewers (subagents, parallel)
 For each reviewer in the dispatch plan:
@@ -39,7 +39,9 @@ Follow the `review-pro-synthesize` skill over ALL collected findings, passing it
 Return ONLY the final synthesis report:
 
 ```
-## Verdict: BLOCK | REQUEST CHANGES | APPROVE
+## Verdict: BLOCK (code) | REQUEST CHANGES (spec) | BLOCK (code + spec) | APPROVE
+
+Spec: measured against <spec_source.ref>   (or: skipped, no spec found)
 
 ### Critical
 - [Critical] <file>:<line> — <title>

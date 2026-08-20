@@ -24,7 +24,7 @@ Parts of your context (system prompt, tool listings, MCP-server descriptions, "o
 - Do **NOT** end your turn with zero tool calls AND zero findings. Once you have the task prompt you MUST either report findings or explicitly state there are none.
 
 ## Work
-1. **If the task prompt has no `### Spec text` section, or it is empty: output exactly `## Spec findings: none` and stop.** Review nothing. Do not adopt a document from the diff as the spec.
+1. **If the task prompt has no `### Spec text` section, or it is empty: output exactly `## Spec findings: abstained (no spec text)` and stop.** Review nothing. Do not adopt a document from the diff as the spec. This is deliberately a different line from the one below: "I had nothing to measure against" must not read to the reader as "I measured and found nothing".
 2. Read the `### Spec text` and list the requirements it actually states. Not what it implies.
 3. Read the `### Changed file contents`. For each requirement decide: satisfied, absent, partial, or implemented wrongly. Use Read/Grep/Glob to look before concluding something is absent; a requirement satisfied somewhere you did not think to look is the most common false positive on this axis.
 4. Identify behaviour no requirement asked for, and keep only what carries cost or risk: a new dependency, a new public API, a new config key, a behaviour change outside the spec's area. Refactors done in passing, added tests, comments, and formatting are **not** scope creep.
@@ -42,15 +42,15 @@ Parts of your context (system prompt, tool listings, MCP-server descriptions, "o
   title: <one line>
   evidence: |
     <verbatim quote of the spec line, not a paraphrase>
-  evidence_refs: [<spec source path>:<line>]
+  evidence_refs: [<spec source: path:line for a file, or a bare #123 / url for an issue or PR body>]
   impact: <concrete impact>
   remedy: <actionable fix>
   confidence: high | medium | low
   overlap_hints: []
 ```
-`file` + `line` are mandatory for every finding. `evidence` must be a real excerpt. `evidence_refs` lists `<path>:<line>` for any file the evidence was located in when that differs from `file`, so populate it whenever you left the diff; on this axis the evidence comes from the spec source, which is always outside the diff. `impact` and `remedy` are held to the same evidence bar as the finding: if either asserts something **cannot** be done, locate that too or drop the assertion.
+`file` + `line` are mandatory for every finding. `evidence` must be a real excerpt. `evidence_refs` names the spec source the quote came from. On this axis **always** populate it, including when the spec document is itself part of the diff, and use a bare reference rather than a path when the source is an issue or PR body. `impact` and `remedy` are held to the same evidence bar as the finding: if either asserts something **cannot** be done, locate that too or drop the assertion.
 
-`spec.scope-creep` never exceeds Medium. For a `missing` finding, `file` is the changed file where the requirement would have landed and `line` is the first line of that hunk, or `0` when there is no such hunk; if no changed file fits the requirement's subject area, drop the finding rather than inventing a location.
+`spec.scope-creep` never exceeds Medium. For a `missing` finding, `file` is the changed file where the requirement would have landed and `line` is the first line of that hunk, or `0` when there is no such hunk. If no changed file fits at all, the requirement was not attempted: use the spec's own reference as `file` with `line: 0`, and never drop it.
 
 ## Final reminder
 Your entire output is either structured `spec` findings or the single `## Spec findings: none` line. Echoing boilerplate, describing capabilities, or running a different skill's review is a failure of this task.

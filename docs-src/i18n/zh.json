@@ -95,7 +95,7 @@
   "docs.run.li2": "直接调用 <strong><code>review-pro</code></strong> 技能。",
   "docs.run.final": "智能体会原生地跑完整个流水线——<code>git diff</code>、读取改动文件、扫描 <code>.review-pro/</code> 以获取激活的技术栈、携带技术栈信号分派相关的审查者子智能体，并综合出一个裁定：<strong>BLOCK / REQUEST CHANGES / APPROVE</strong>。审查时无需任何环境变量，也无需运行任何脚本。",
   "docs.reviewers.h2": "13 位审查者",
-  "docs.reviewers.p": "<code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code> · <code>spec</code>。<code>ai-antipatterns</code> 审查者是一等公民：虚构的 API/符号/导入、凭空发明的配置/环境变量键、多余的依赖，以及被忽视的既有辅助函数。",
+  "docs.reviewers.p": "<code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code> · <code>spec</code>。<code>ai-antipatterns</code> 审查者是一等公民：虚构的 API/符号/导入、凭空发明的配置/环境变量键、多余的依赖，以及被忽视的既有辅助函数。 <code>spec</code> 审查者以变更所源自的 issue 为基准衡量 diff：缺失或只做了一半的需求、实现有误的需求，以及无人要求的改动。它作为独立的一条轴单独报告，绝不与代码结论合并。",
   "docs.faq.h2": "常见问题",
   "docs.faq.q1": "需要 Node.js 吗？",
   "docs.faq.a1": "只有安装器 CLI 需要（Node ≥ 18）。插件本身只是纯 markdown 技能与智能体，因此<a href=\"#manual-install\">手动安装</a>在任何平台上都无需 Node 即可工作。",

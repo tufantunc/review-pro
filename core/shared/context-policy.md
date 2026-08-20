@@ -13,7 +13,10 @@ Triage adds scoped extra context per reviewer so each subagent gets what it need
 | db | migration history; schema definitions |
 | api-contract | consumers of changed APIs (frontend calls, other services) |
 | tests | the production code under test |
+| spec | the resolved spec text (issue body, PR body, or file), passed as `### Spec text`; no repo-wide search |
 | performance | query definitions; hot-path / render files |
 | frontend / a11y | design-system tokens; shared UI primitives |
+
+The `spec` row is the only one whose extra context is a document rather than code, and in the `issue` and `pr-body` cases it comes from outside the repository entirely. That asymmetry is the point of the axis, and it is why its findings are excluded from the out-of-diff evidence check in Stage 3.
 
 Principle: scoped, not whole-repo. Only `dry`, `craft`, `ai-antipatterns`, and — for config-key traces only — `correctness` ever do repo-wide search, and only for symbols/patterns relevant to the diff.

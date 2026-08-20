@@ -27,12 +27,13 @@ For each reviewer in the dispatch plan:
    - `### Stack signals` — the concatenated pack files from step 1 (omit the section if none).
    - `### Changed file contents` — the changed files relevant to this reviewer (from your prep).
    - `### Related context` — scoped extras per context-policy (callers, consumers, schema, repo search). Omit if none.
+   - `### Spec text`, for the `spec` reviewer only: the resolved spec text from triage's `spec_source`. Omit this section for every other reviewer; none of them should be measuring intent. If `spec_source.kind` is `none`, do not dispatch this reviewer at all.
 3. **Collect** its structured finding blocks.
 
 If a reviewer subagent is unavailable on your platform, perform that review **inline**: apply the core skill (which you Read from the plugin) plus the stack signals to the scoped context, and emit findings in the shared schema.
 
 ### 4. Synthesis (you, inline)
-Follow the `review-pro-synthesize` skill over ALL collected findings, passing it the `diff_class` and `changed_files` you determined in triage: dedup by `(file, line±5, category-root, overlap_hints)`, weight overlaps, resolve conflicts by domain ownership, calibrate severity (anti-overreporting), and emit the verdict.
+Follow the `review-pro-synthesize` skill over ALL collected findings, passing it the `diff_class`, `changed_files`, and `spec_source` you determined in triage: dedup by `(file, line±5, category-root, overlap_hints)`, weight overlaps, resolve conflicts by domain ownership, calibrate severity (anti-overreporting), and emit the verdict.
 
 ## Output
 Return ONLY the final synthesis report:
@@ -50,6 +51,13 @@ Return ONLY the final synthesis report:
 ...
 ### Medium / Low / Nitpick
 ...
+
+## Spec (measured against <spec_source.ref>, or: skipped, no spec found)
+
+### Missing / Wrong / Scope creep
+- [<severity>] <file>:<line>, <title>
+  spec: "<the quoted requirement>"
+  remedy: ...
 ```
 
 Do not dump raw per-reviewer outputs. Lead with the verdict.
@@ -59,3 +67,4 @@ Do not dump raw per-reviewer outputs. Lead with the verdict.
 - **Stack signals come only from `.review-pro/`.** If it's empty, reviewers use core rubrics. Never invent stack signals.
 - If triage dispatches no reviewers (e.g. docs-only change), return `APPROVE` with a one-line note.
 - Calibrate honestly: downgrade anything you cannot fully trace; never invent severity.
+- **The spec axis is reported separately and never merged into the code findings.** If no spec was resolved, say so in one line rather than omitting the section.

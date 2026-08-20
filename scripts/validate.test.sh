@@ -4,6 +4,11 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VALIDATE="$HERE/validate.sh"
 pass=0; fail=0
+# Exit status comes from an EXIT trap, not from a gate at the bottom of the file.
+# This script runs without `set -e`, so a positional gate exits with whatever ran
+# last, and appending a case below it silently makes every run exit 0. PR #24 did
+# exactly that and CI could not see a failing case until it was fixed.
+trap 'exit $(( fail > 0 ))' EXIT
 ok(){ echo "ok - $1"; pass=$((pass+1)); }
 bad(){ echo "not ok - $1"; fail=$((fail+1)); }
 
@@ -208,8 +213,6 @@ EOF
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "skills: field must match loads_skill"; then ok "agent skills/loads_skill mismatch detected"; else bad "mismatch not detected"; fi
 rm -rf "$T"
-
-[[ "$fail" -eq 0 ]]
 
 # Case H: orchestrator missing a required section -> fail, mentions it
 T=$(mktemp -d)

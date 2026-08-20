@@ -163,6 +163,17 @@ fi
 if [[ -f "$ROOT/core/agents/spec-reviewer.md" ]]; then
   grep -qF 'no `### Spec text` section' "$ROOT/core/agents/spec-reviewer.md" \
     || add_error "spec-reviewer.md: the abstain step is gone - the reviewer would review something other than a spec"
+  # The preamble above is identical whether step 1 abstains or emits the ordinary
+  # none-sentinel, so it cannot detect a regression to the latter. Pin the token that
+  # only exists after the fix, in both the body and synthesis's branch for it.
+  grep -qF 'abstained (no spec text)' "$ROOT/core/agents/spec-reviewer.md" \
+    || add_error "spec-reviewer.md: the abstain token is gone - an abstain would be indistinguishable from a clean review"
+fi
+if [[ -f "$SYNTH_MD" ]]; then
+  grep -qF 'abstained (no spec text)' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: no branch for the abstain token - an unmeasured axis would be reported as 'no mismatch'"
+  grep -qF 'not on `(file, line)`' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the spec pool's dedup rule is gone - unattempted requirements would collapse into one finding"
 fi
 
 # Published reviewer count and roster. These are maintained strings in files no
@@ -251,8 +262,15 @@ if ct is not None:
             bad.append(f"CONTRIBUTING.md: states '{val}' where the reviewer count is {n}; a near-miss number here is almost always a stale count")
 
 for f in sorted(glob.glob(os.path.join(root, "docs-src/i18n/*.json"))):
-    d = json.load(open(f, encoding="utf-8"))
     loc = os.path.basename(f)
+    # A trailing comma in one of seven hand-maintained dictionaries is the exact
+    # fragility this guard exists for. Without this the raise discarded every finding
+    # collected so far and pointed the maintainer at a traceback instead.
+    try:
+        d = json.load(open(f, encoding="utf-8"))
+    except (ValueError, OSError) as exc:
+        bad.append(f"docs-src/i18n/{loc}: unreadable ({exc.__class__.__name__}), so its count cannot be checked")
+        continue
     p_ = d.get("docs.reviewers.p", "")
     for nm in names:
         if f"<code>{nm}</code>" not in p_:

@@ -41,8 +41,10 @@ Rules:
 Spec findings arrive in the same stream as code findings and are kept apart from them from here on.
 
 - **Partition before dedup.** Two pools, code and spec. Dedup runs within each pool and never across. A spec finding and a code finding on the same line are different claims: "this should not exist" is not "this has a bug", and merging them loses both.
-- **The verdict is the worse of the two axes, and its label names the driver:** `## Verdict: BLOCK (code)`, `REQUEST CHANGES (spec)`, `BLOCK (code + spec)`. The severity ladder is unchanged, so a `spec.scope-creep` finding capped at Medium requests changes and never blocks.
-- **Absence is always stated.** If `spec_source.kind` is `none`, write one line: `Spec: skipped, no spec found.` If the axis ran and found nothing, say so: `Spec: no mismatch against <ref>.` Silence is not an acceptable output for this axis in either case.
+- **The verdict is the worse of the two axes, and its label names the driver**, composed rather than chosen from a list: `<verdict> (<driving axis or axes>)`, where the axes are `code`, `spec`, or `code + spec`. Every combination is reachable, including `BLOCK (spec)`: a Critical or High `spec.missing` on a clean code axis blocks, because the ladder is unchanged. `spec.scope-creep` is capped at Medium, so it requests changes and never blocks.
+- **Absence is always stated, and there are three states, not two.** If `spec_source.kind` is `none`: `Spec: skipped, no spec found.` If the reviewer returned `## Spec findings: abstained (no spec text)`, meaning a spec resolved but carried no readable text: `Spec: not measured, <ref> resolved but carried no text.` Only when the axis actually ran and found nothing: `Spec: no mismatch against <ref>.` **Never render an abstain as "no mismatch"**: that reports a review nobody performed as a clean result.
+- **Dedup the spec pool on the quoted requirement, not on `(file, line)`.** Wholly unattempted requirements all carry the spec reference as `file` and `line: 0`, so the standard key collapses every one of them into a single finding, which is this axis's most severe class being silently merged. Two spec findings are the same finding only when they quote the same requirement.
+- **A spec finding's `file` may be a non-repository reference** (`#412`, a PR url) when the requirement was not attempted anywhere in the diff. That is valid on this axis and nowhere else. Never downgrade or drop such a finding for failing to resolve on disk; step 5's downgrade rule does not apply to it.
 - **Print `spec_source` verbatim** directly under the verdict and above the out-of-diff caveat, so the reader can see what the review was measured against.
 - **Never re-rank a spec finding against a code finding.** Reporting them separately is what stops one axis from masking the other.
 
@@ -66,9 +68,10 @@ Spec findings arrive in the same stream as code findings and are kept apart from
 A markdown report. Lead with the verdict and Critical/High. Do not restate raw specialist dumps — present the unified, deduped view.
 
 ```
-## Verdict: BLOCK (code) | REQUEST CHANGES (spec) | BLOCK (code + spec) | APPROVE
+## Verdict: <BLOCK | REQUEST CHANGES> (<code | spec | code + spec>) | APPROVE
 
-Spec: measured against <spec_source.ref>   (or: skipped, no spec found)
+Spec: measured against <spec_source.ref>
+(or: skipped, no spec found / not measured, <ref> resolved but carried no text)
 
 > the out-of-diff caveat, when it applies, goes here: after spec_source, before findings
 

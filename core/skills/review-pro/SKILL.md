@@ -39,9 +39,10 @@ Follow the `review-pro-synthesize` skill over ALL collected findings, passing it
 Return ONLY the final synthesis report:
 
 ```
-## Verdict: BLOCK (code) | REQUEST CHANGES (spec) | BLOCK (code + spec) | APPROVE
+## Verdict: <BLOCK | REQUEST CHANGES> (<code | spec | code + spec>) | APPROVE
 
-Spec: measured against <spec_source.ref>   (or: skipped, no spec found)
+Spec: measured against <spec_source.ref>
+(or: skipped, no spec found / not measured, <ref> resolved but carried no text)
 
 ### Critical
 - [Critical] <file>:<line> — <title>
@@ -54,7 +55,7 @@ Spec: measured against <spec_source.ref>   (or: skipped, no spec found)
 ### Medium / Low / Nitpick
 ...
 
-## Spec (measured against <spec_source.ref>, or: skipped, no spec found)
+## Spec (measured against <spec_source.ref>; or skipped, no spec found; or not measured, resolved but empty)
 
 ### Missing / Wrong / Scope creep
 - [<severity>] <file>:<line>, <title>

@@ -46,8 +46,11 @@ EOF
 
 write_good_agent_body(){
   # $1 = path, $2 = agent name (default security-reviewer). Must satisfy every entry
-  # of BODY_INVARIANTS in validate.sh plus the findings-none sentinel, or cases built
-  # on it fail for reasons unrelated to what they test.
+  # of BODY_INVARIANTS and of SCHEMA_KEYS in validate.sh, plus the findings-none
+  # sentinel, or cases built on it fail for reasons unrelated to what they test. The
+  # SCHEMA_KEYS half is unreachable today because no fixture creates
+  # core/shared/output-schema.md; it is here so the first case that does will not trip
+  # on fixture invalidity.
   local an="${2:-security-reviewer}"
   cat > "$1" <<EOFB
 ---
@@ -68,7 +71,8 @@ fixture
 2. Do NOT spawn nested subagents.
 3. Otherwise output \`## Fixture findings: none\` and stop.
 ## Output schema (one block per finding)
-fixture
+  evidence_refs: [src/x.ts:1]
+\`impact\` and \`remedy\` are held to the same evidence bar as the finding.
 EOFB
 }
 

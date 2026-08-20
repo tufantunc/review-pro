@@ -41,12 +41,29 @@ synthesis is needed to enforce that; the rubric's cap is sufficient.
 Resolution happens once, in triage, which already runs git and so is the natural
 place for `gh`. Order:
 
-1. **An explicit argument** from the user (a path, or an issue URL). An explicit
-   instruction always beats auto-discovery: if the user names a spec, triage must
+1. **An explicit argument** from the user: a path, or an issue URL. An explicit
+   instruction always beats auto-discovery, so if the user names a spec, triage must
    not go hunting for a different one.
+
+   The channel exists but is currently undocumented. Invoking the orchestrator skill
+   with arguments delivers them to it (verified: a `review-pro` invocation with an
+   argument string arrives as an `ARGUMENTS:` line), and nothing in `core/` mentions
+   it. Both the orchestrator's Prep step and triage's `## Inputs` list only the diff
+   and the changed-file list, so this link requires documenting that input before it
+   can be relied on.
 2. **The PR body and issue references in commit messages** (`#123`, `Closes #45`),
    fetched with `gh`.
-3. **A file** under `docs/`, `specs/`, or `.scratch/` matching the branch name.
+3. **A file** under `docs/`, `specs/`, or `.scratch/`. These are conventional
+   locations in other people's repositories rather than guarantees; none of the three
+   exists in this one, so this link is often a miss and must never be treated as a
+   fallback that always resolves.
+
+   The match rule has to be stated, because "matching the branch name" does not
+   survive contact with real filenames. Match the branch's last path segment as a
+   substring of the filename, ignoring a leading date prefix: branch
+   `feat/spec-axis` matches `docs/superpowers/specs/2026-08-20-spec-axis-design.md`.
+   Without the substring-and-date rule this link fails even on the branch that
+   introduces the feature.
 4. **Nothing.** The axis is skipped and the report says so.
 
 Every link fails silently to the next one. `gh` absent, not authenticated, the
@@ -91,8 +108,23 @@ mandatory spec quote is also the mitigation for the stale-spec limitation below.
 `file` and `line` on every finding, and an absence has no line. Rather than carve
 an exemption into a rule that is inlined in twelve agent bodies, `missing` findings
 point `file` at the changed file where the requirement would have landed and state
-plainly that this is an absence. Where no plausible candidate exists, `file` is the
-spec source itself.
+plainly that this is an absence.
+
+Two things this needs spelled out, both of which were missing from the first draft
+of this design and would have produced a fabricated location in the report:
+
+- **`line` needs its own rule**, or the reviewer invents a plausible number and the
+  orchestrator renders it as `<file>:<line>`, pointing at real code that is not the
+  problem. The rule: the first line of the changed hunk where the requirement would
+  have landed, and `line: 0` when there is no such hunk. Zero is not a real line, so
+  it reads as "nowhere in particular" rather than as a false coordinate.
+- **The fallback cannot be "the spec source itself".** Two of the four `kind` values,
+  `issue` and `pr-body`, have no repository path at all, and they are the common case.
+  `file: #412` satisfies the schema's letter, nothing else, and poisons the dedup key
+  `(file, line±5, category-root, overlap_hints)`. Instead: point `file` at the changed
+  file whose subject area the requirement belongs to, with `line: 0`. If the diff has
+  no such file, the finding is not reportable as `missing` on this diff, and dropping
+  it is correct.
 
 **Scope creep needs a bar or the axis becomes a noise source.** Only excess that
 carries cost or risk is flagged: a new dependency, a new public API, a new config
@@ -170,6 +202,33 @@ Verified rather than assumed:
   `core/agents/*-reviewer.md`), and the orphan-skill check that fails when a skill
   directory is missing from `manifest.json`.
 
+**Four things the first draft of this design missed entirely**, all found by
+reviewing the implementation with review-pro rather than by reading the design:
+
+- **`core/shared/output-schema.md` lists the category roots** and enumerates twelve
+  with no `spec`. The rubric points the reviewer at that file in the same sentence
+  where it names `spec.missing`, `spec.wrong`, `spec.scope-creep`, so a reviewer
+  following the pointer finds its own prefix absent. Synthesis dedups on the root.
+  Note the perverse effect of leaving it: the never-merge guarantee currently holds
+  only *because* no other reviewer can name `spec` in `overlap_hints`, which is true
+  only because the list omits it. Adding the root without the synthesis partition
+  removes an accidental protection, so the two must land together.
+- **`manifest.json` has an `agents` array** as well as a `skills` array, and
+  `core/shared/reviewer-directive.md` calls it the source of truth for which agent
+  loads which skill. A reviewer added to `skills` but not `agents` is half-registered,
+  and the validator's orphan check runs only in the skills direction, so nothing
+  catches it.
+- **The reviewer count is a maintained string.** `README.md` states it four times, and
+  `docs-src/i18n/en.json` and `nl.json` carry it too, which the site build renders into
+  `docs/`. Thirteen reviewers makes all of them wrong, including the published site.
+- **The roster entry must not ship before its producer.** Adding `spec` to
+  `manifest.json` places it inside triage's roster, where the standing "when in doubt,
+  dispatch" default applies. Until the conditional-dispatch rule and the `### Spec text`
+  prompt section exist, the reviewer is reachable with no spec, against a body whose
+  behavioural floor forbids returning nothing. The rubric and the agent body are
+  harmless to land early; the roster line is what makes the reviewer reachable, so it
+  belongs with the dispatch rule and not before it.
+
 Three checks must be added, in the shape of the existing `SCHEMA_KEYS` parity
 guard, each protecting a load-bearing rule from silent deletion:
 
@@ -177,8 +236,22 @@ guard, each protecting a load-bearing rule from silent deletion:
 2. The triage skill emits `spec_source`.
 3. The spec rubric carries the scope-creep Medium cap.
 
-Plus one negative test in `scripts/validate.test.sh`, in the shape of cases H and
-I: remove the rule, watch the validator go red. To be demonstrated, not asserted.
+Plus negative tests in `scripts/validate.test.sh`, in the shape of cases H and I:
+remove the rule, watch the validator go red. To be demonstrated, not asserted, and
+each one paired with a positive control asserting the check is silent on an intact
+fixture. Without that control a test passes when the fixture never carried the string
+in the first place, which is how the first draft of the plan produced two assertions
+that measured nothing.
+
+**And one structural check the design originally left out.** The agent bodies are a
+48-line invariant duplicated once per reviewer, and the parity guard covers exactly
+two tokens of it. The thirteenth copy drifted on five axes that nothing detects: the
+`# X Reviewer (review-pro subagent)` heading form, `## Identity & mandate`,
+`## Output schema (one block per finding)`, the `Do NOT spawn nested subagents` bar,
+and the `## <X> findings: none` sentinel. Extending the loop that already walks
+`core/agents/*-reviewer.md` with a grep per invariant turns five silent drifts into
+five build failures, for this reviewer and every future one. That is a better return
+than hand-correcting the thirteenth copy.
 
 ## Limitations
 

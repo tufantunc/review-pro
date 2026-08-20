@@ -159,14 +159,31 @@ must stay out of the out-of-diff tripwire below.
 
 ## Synthesis
 
-**Partition before dedup.** Two pools, code and spec. Dedup runs within each and
-never across. A spec finding and a code finding on the same line are different
+**Partition before dedup, and the spec pool uses a different key.** Two pools, code
+and spec. Dedup runs within each and never across.
+
+The spec pool dedups on the **quoted requirement**, not on `(file, line)`. Every
+wholly unattempted requirement carries the spec reference as `file` and `line: 0`, so
+the standard key gives them all one identical tuple and collapses N of them into one.
+That is the axis's most severe class being silently merged, and it was found only
+after two earlier attempts at this rule: the first dropped such findings entirely, the
+second kept one of N. A spec finding and a code finding on the same line are different
 claims: "this should not exist" is not "this has a bug", and merging them loses
 both.
 
-**The verdict is the worse of the two axes, and the label says which drove it:**
-`## Verdict: BLOCK (code)`, `REQUEST CHANGES (spec)`, `BLOCK (code + spec)`. One
-top line is retained; the axis that caused it becomes visible.
+**A spec finding's `file` may be a non-repository reference.** For a requirement the
+diff never attempted, `file` is the spec's own reference (`#412`, a PR url) with
+`line: 0`. This is valid on the spec axis and nowhere else, and both
+`core/shared/output-schema.md` and synthesis have to say so explicitly, because
+synthesis is otherwise instructed to downgrade anything it cannot trace. Asserting in
+the rubric that "synthesis is told to accept it" without writing it there is not the
+same as it being true.
+
+**The verdict label is composed, not chosen from a list:**
+`<verdict> (<driving axis or axes>)`. A closed enumeration was tried first and left out
+`BLOCK (spec)`, which is the label the axis's Critical rung requires: a wholly absent
+central requirement blocks on a clean code axis. Templates get copied literally, so an
+enumeration that omits a reachable state steers the model into the wrong one.
 
 **The out-of-diff tripwire counts code-axis findings only.** This is the sharpest
 interaction in the feature. The v0.6.0 tripwire counts findings whose
@@ -175,7 +192,15 @@ the diff *by definition*, since the spec document or issue is not part of the di
 Left unstated, this feature would satisfy the tripwire on every review and silently
 kill a check shipped two weeks earlier.
 
-**Absence is always stated, never silent.** `spec_source.kind: none` produces a
+**Absence has three states, not two.** The obvious pair is "no spec resolved" and "the
+axis ran and found nothing". The third is reachable and was missed twice: a spec
+resolves, so `kind` is not `none` and the reviewer is dispatched, but the resolved text
+is empty, for instance an issue with a title and no body. The reviewer must abstain with
+its own distinct token, and synthesis must have a branch for it, or an unmeasured axis is
+reported as a clean one. Giving the reviewer a distinct token without giving synthesis a
+branch moves the confusion one stage later rather than removing it.
+
+`spec_source.kind: none` produces a
 one-line note. So does a spec axis that ran and found nothing: "Spec: no mismatch
 against issue #412." A positive statement is worth more than silence, and this
 mirrors the rule that already governs a missing `diff_class`.

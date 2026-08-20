@@ -508,6 +508,51 @@ out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "dedup rule is gone"; then ok "missing spec dedup rule detected"; else bad "missing spec dedup rule NOT detected"; fi
 rm -rf "$T"
 
+# Case V: the spec-reviewer BODY half of the two-file spec loop. The rubric half has
+# Case N; the body is the copy that reaches the running subagent and had nothing.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/spec" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_good_reviewer "$T/core/skills/spec/SKILL.md"
+printf 'never exceeds Medium. `line` is `0` when there is no such hunk.\nabstained (no spec text)\n' >> "$T/core/skills/spec/SKILL.md"
+write_good_spec_body "$T/core/agents/spec-reviewer.md"
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"spec","role":"reviewer"}], "agents": [{"name":"spec-reviewer","loads_skill":"spec"}] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "missing-finding line rule\|abstain token"; then bad "spec body control: fired on an intact body"; else ok "spec body control: silent on an intact body"; fi
+grep -v 'no such hunk' "$T/core/agents/spec-reviewer.md" > "$T/tmp" && mv "$T/tmp" "$T/core/agents/spec-reviewer.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "spec-reviewer.md: the missing-finding line rule is gone"; then ok "missing line rule detected in the body"; else bad "missing line rule NOT detected in the body"; fi
+write_good_spec_body "$T/core/agents/spec-reviewer.md"
+grep -v 'abstained (no spec text)' "$T/core/agents/spec-reviewer.md" > "$T/tmp" && mv "$T/tmp" "$T/core/agents/spec-reviewer.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "spec-reviewer.md: the abstain token is gone"; then ok "missing abstain token detected in the body"; else bad "missing abstain token NOT detected in the body"; fi
+rm -rf "$T"
+
+# Case W: the orchestrator's dedup summary must name the spec key, or the inline path
+# uses the code key and collapses unattempted requirements.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+cat > "$T/core/skills/review-pro/SKILL.md" <<'EOFO'
+---
+name: review-pro
+description: "orchestrator"
+---
+# Review-Pro
+Dedup within each axis, spec findings on the quoted requirement.
+EOFO
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "dedup summary no longer names"; then bad "orchestrator dedup control: fired on an intact fixture"; else ok "orchestrator dedup control: silent on an intact fixture"; fi
+sed -i.bak 's/quoted requirement/usual key/' "$T/core/skills/review-pro/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "dedup summary no longer names"; then ok "missing orchestrator spec key detected"; else bad "missing orchestrator spec key NOT detected"; fi
+rm -rf "$T"
+
 echo "---"
 echo "pass=$pass fail=$fail"
 

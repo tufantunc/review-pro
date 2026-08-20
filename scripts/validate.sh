@@ -216,6 +216,20 @@ if cp is not None:
     if f"{n} specialist reviewers" not in desc:
         bad.append(f"cli/package.json: description does not state {n} specialist reviewers")
 
+    # The README's mermaid diagram names a few reviewers and abbreviates the rest as
+    # "...N more". Nothing in that string contains the count, so a grep for the old
+    # number cannot find it; it was stale for exactly that reason.
+    mm = re.search(r"\u2026(\d+) more", rd)
+    if mm:
+        named = sum(1 for nm in names if f'["{nm}"]' in rd)
+        if named + int(mm.group(1)) != n:
+            bad.append(
+                f"README.md: the architecture diagram names {named} reviewers and says "
+                f"'...{mm.group(1)} more', which totals {named + int(mm.group(1))}, not {n}"
+            )
+    else:
+        bad.append("README.md: the architecture diagram's '...N more' node is gone; the count can no longer be checked")
+
 ct = read("CONTRIBUTING.md")
 if ct is not None and f"The {n} reviewer rubrics" not in ct:
     bad.append(f"CONTRIBUTING.md: expected 'The {n} reviewer rubrics'")

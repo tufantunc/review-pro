@@ -57,7 +57,7 @@ flowchart TB
         R1["security"]
         R2["correctness"]
         R3["ai-antipatterns"]
-        R4["…9 more"]
+        R4["…10 more"]
     end
 
     subgraph S3["Stage 3 — synthesis"]

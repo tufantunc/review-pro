@@ -105,6 +105,55 @@ fixture
 EOFS
 }
 
+write_published_surface(){
+  # $1 = fixture root. Builds a faithful miniature of every file the
+  # published-count guard reads: thirteen reviewer skills, a manifest declaring
+  # them, and each published surface stating thirteen and listing all of them.
+  # Thirteen specifically, because the guard's numeral-word table knows that count
+  # and is designed to fail loudly on any other, which is itself the subject of a
+  # case below.
+  local T="$1" i names_md names_html decl
+  mkdir -p "$T/cli" "$T/docs" "$T/docs-src/i18n" "$T/core/agents"
+  names_md=""; names_html=""; decl=""
+  for i in $(seq -w 1 13); do
+    mkdir -p "$T/core/skills/r$i"
+    write_good_reviewer "$T/core/skills/r$i/SKILL.md"
+    names_md="$names_md \`r$i\`"
+    names_html="$names_html<code>r$i</code> "
+    decl="$decl{\"name\":\"r$i\",\"role\":\"reviewer\"},"
+  done
+  printf '{ "skills": [%s], "agents": [] }\n' "${decl%,}" > "$T/manifest.json"
+  cat > "$T/README.md" <<EOFR
+# fixture
+- **13 specialist reviewers** own one concern each:$names_md
+A tiered 13-reviewer system.
+    R1["r01"]
+    R2["…12 more"]
+EOFR
+  printf 'of 13 reviewers\n' > "$T/docs/llms.txt"
+  cat > "$T/cli/README.md" <<EOFC
+Installs 13 specialist reviewer skills.
+## 13 specialist reviewers
+$names_md
+EOFC
+  printf '{ "description": "13 specialist reviewers" }\n' > "$T/cli/package.json"
+  cat > "$T/CONTRIBUTING.md" <<EOFT
+The 13 reviewer rubrics live in core/skills/.
+The concern must not be owned by one of the 13, and triage must tell when it is relevant.
+EOFT
+  cat > "$T/docs-src/i18n/en.json" <<EOFI
+{
+  "cap.c1.title": "13 specialist reviewers",
+  "docs.toc.reviewers": "The 13 reviewers",
+  "docs.reviewers.h2": "The 13 reviewers",
+  "docs.overview.p2": "installs 13 reviewer skills",
+  "hero.title": "Thirteen specialists.",
+  "pipeline.s2.body": "Thirteen reviewers, one concern each.",
+  "docs.reviewers.p": "$names_html"
+}
+EOFI
+}
+
 write_orchestrator(){
   # $1 = path, $2 = orchestrator name (default review-pro-triage, so the existing
   # call sites need no change). Sections must match the per-orchestrator req list
@@ -551,6 +600,88 @@ if echo "$out" | grep -q "dedup summary no longer names"; then bad "orchestrator
 sed -i.bak 's/quoted requirement/usual key/' "$T/core/skills/review-pro/SKILL.md"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "dedup summary no longer names"; then ok "missing orchestrator spec key detected"; else bad "missing orchestrator spec key NOT detected"; fi
+rm -rf "$T"
+
+# Published-count guard. Each case controls on the intact miniature, breaks exactly
+# one surface, and asserts that surface's own message. The guard shipped with none of
+# this, and deleting the whole block left the suite green.
+pub_case(){
+  # $1 = label, $2 = shell snippet mutating "$T", $3 = expected substring
+  T=$(mktemp -d)
+  write_published_surface "$T"
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  if echo "$out" | grep -q "$3"; then bad "$1 control: fired on an intact surface"; else ok "$1 control: silent on an intact surface"; fi
+  ( cd "$T" && eval "$2" )
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  if echo "$out" | grep -q "$3"; then ok "$1 detected"; else bad "$1 NOT detected"; fi
+  rm -rf "$T"
+}
+
+pub_case "README count" \
+  "sed -i.bak 's/\*\*13 specialist reviewers\*\*/**12 specialist reviewers**/' README.md" \
+  "expected '\*\*13 specialist reviewers\*\*'"
+pub_case "README acknowledgements count" \
+  "sed -i.bak 's/13-reviewer system/12-reviewer system/' README.md" \
+  "expected '13-reviewer system'"
+pub_case "README roster" \
+  "sed -i.bak 's/\`r07\`//' README.md" \
+  "reviewer 'r07' is missing from the enumeration"
+pub_case "README mermaid arithmetic" \
+  "sed -i.bak 's/…12 more/…11 more/' README.md" \
+  "architecture diagram names"
+pub_case "README mermaid node removed" \
+  "grep -v 'more' README.md > t && mv t README.md" \
+  "node is gone"
+pub_case "llms.txt count" \
+  "sed -i.bak 's/of 13 reviewers/of 12 reviewers/' docs/llms.txt" \
+  "expected 'of 13 reviewers'"
+pub_case "npm README count" \
+  "sed -i.bak 's/13 specialist reviewer skills/12 specialist reviewer skills/' cli/README.md" \
+  "expected '13 specialist reviewer skills'"
+pub_case "npm README heading" \
+  "sed -i.bak 's/## 13 specialist reviewers/## 12 specialist reviewers/' cli/README.md" \
+  "expected the heading"
+pub_case "npm README roster" \
+  "sed -i.bak 's/\`r03\`//' cli/README.md" \
+  "cli/README.md: reviewer 'r03' missing"
+pub_case "npm description" \
+  "sed -i.bak 's/13 specialist reviewers/12 specialist reviewers/' cli/package.json" \
+  "description does not state 13"
+pub_case "CONTRIBUTING literal" \
+  "sed -i.bak 's/The 13 reviewer rubrics/The 12 reviewer rubrics/' CONTRIBUTING.md" \
+  "expected 'The 13 reviewer rubrics'"
+pub_case "CONTRIBUTING second sentence" \
+  "sed -i.bak 's/one of the 13/one of the 12/' CONTRIBUTING.md" \
+  "owned by one of the 13"
+pub_case "locale digit key" \
+  "sed -i.bak 's/\"13 specialist reviewers\"/\"12 specialist reviewers\"/' docs-src/i18n/en.json" \
+  "'cap.c1.title' does not state 13"
+pub_case "locale numeral word" \
+  "sed -i.bak 's/Thirteen specialists/Twelve specialists/' docs-src/i18n/en.json" \
+  "'hero.title' does not spell 13"
+pub_case "locale missing key" \
+  "python3 -c \"import json;p='docs-src/i18n/en.json';d=json.load(open(p));del d['pipeline.s2.body'];json.dump(d,open(p,'w'))\"" \
+  "key 'pipeline.s2.body' is missing"
+pub_case "locale roster" \
+  "sed -i.bak 's|<code>r05</code> ||' docs-src/i18n/en.json" \
+  "reviewer 'r05' missing from docs.reviewers.p"
+pub_case "locale unreadable" \
+  "printf '{ \"broken\": ' > docs-src/i18n/en.json" \
+  "unreadable (JSONDecodeError)"
+
+# An unknown count must fail loudly rather than skip, which is the numeral table's
+# whole contract.
+T=$(mktemp -d)
+write_published_surface "$T"
+python3 - "$T" <<'PYX'
+import json,sys,os
+p=os.path.join(sys.argv[1],"manifest.json"); d=json.load(open(p))
+d["skills"]=[s for s in d["skills"] if s["name"]!="r13"]
+json.dump(d,open(p,"w"))
+PYX
+rm -rf "$T/core/skills/r13"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "no numeral word known for 12"; then ok "unknown numeral word fails loudly"; else bad "unknown numeral word did NOT fail loudly"; fi
 rm -rf "$T"
 
 echo "---"

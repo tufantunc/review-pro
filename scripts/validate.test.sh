@@ -302,12 +302,32 @@ T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
 write_orchestrator "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
-grep -v '^## Spec axis$' "$T/core/skills/review-pro-synthesize/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-synthesize/SKILL.md"
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
 JSON
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "missing section '## Spec axis'"; then bad "Spec axis control: fired on an intact fixture"; else ok "Spec axis control: silent on an intact fixture"; fi
+grep -v '^## Spec axis$' "$T/core/skills/review-pro-synthesize/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-synthesize/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "missing section '## Spec axis'"; then ok "missing Spec axis section detected"; else bad "missing Spec axis section NOT detected"; fi
+rm -rf "$T"
+
+# Case N: the scope-creep Medium cap check. The cap is the single line that makes
+# scope creep unable to block, and validate.sh guards it in two files: the rubric
+# and the agent body, the latter being the copy that reaches the running subagent.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/spec" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_good_reviewer "$T/core/skills/spec/SKILL.md"
+printf 'never exceeds Medium\n' >> "$T/core/skills/spec/SKILL.md"
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"spec","role":"reviewer"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "scope-creep Medium cap is missing"; then bad "cap control: fired on an intact fixture"; else ok "cap control: silent on an intact fixture"; fi
+grep -v '^never exceeds Medium$' "$T/core/skills/spec/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/spec/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "SKILL.md: the scope-creep Medium cap is missing"; then ok "missing scope-creep cap detected in the rubric"; else bad "missing scope-creep cap NOT detected in the rubric"; fi
 rm -rf "$T"
 
 echo "---"

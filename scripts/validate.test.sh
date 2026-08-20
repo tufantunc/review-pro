@@ -282,5 +282,33 @@ out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "no 'spec_source'"; then ok "missing spec_source contract detected"; else bad "missing spec_source contract NOT detected"; fi
 rm -rf "$T"
 
+# Case L: synthesis must restrict the out-of-diff tripwire to the code axis.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_orchestrator "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "not restricted to the code axis"; then bad "code-axis control: fired on an intact fixture"; else ok "code-axis control: silent on an intact fixture"; fi
+sed -i.bak 's/code-axis findings only/all findings/' "$T/core/skills/review-pro-synthesize/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "not restricted to the code axis"; then ok "unrestricted tripwire detected"; else bad "unrestricted tripwire NOT detected"; fi
+rm -rf "$T"
+
+# Case M: the '## Spec axis' section itself must be required.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_orchestrator "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
+grep -v '^## Spec axis$' "$T/core/skills/review-pro-synthesize/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-synthesize/SKILL.md"
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "missing section '## Spec axis'"; then ok "missing Spec axis section detected"; else bad "missing Spec axis section NOT detected"; fi
+rm -rf "$T"
+
 echo "---"
 echo "pass=$pass fail=$fail"

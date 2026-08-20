@@ -67,7 +67,7 @@ for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
     req=""
     case "$name" in
       review-pro-triage)     req=$'## Steps\n## Signal map (non-exhaustive)\n## Dispatch plan format\n## Output discipline' ;;
-      review-pro-synthesize) req=$'## Steps\n## Out-of-diff evidence check\n## Conflict ownership\n## Output' ;;
+      review-pro-synthesize) req=$'## Steps\n## Out-of-diff evidence check\n## Spec axis\n## Conflict ownership\n## Output' ;;
     esac
     if [[ -n "$req" ]]; then
       while IFS= read -r h; do
@@ -139,6 +139,11 @@ TRIAGE_MD="$SKILLS_DIR/review-pro-triage/SKILL.md"
 if [[ -f "$TRIAGE_MD" ]]; then
   grep -qF 'spec_source' "$TRIAGE_MD" \
     || add_error "review-pro-triage/SKILL.md: no 'spec_source' - the spec axis cannot be dispatched or reported without it"
+fi
+SYNTH_MD="$SKILLS_DIR/review-pro-synthesize/SKILL.md"
+if [[ -f "$SYNTH_MD" ]]; then
+  grep -qF 'code-axis findings only' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the out-of-diff tripwire is not restricted to the code axis - spec findings would satisfy it on every review and disable the check"
 fi
 # The scope-creep cap exists in the rubric and in the agent body, and the body is
 # the copy that reaches the running subagent. Guard both.

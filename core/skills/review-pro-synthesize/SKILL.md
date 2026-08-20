@@ -6,7 +6,7 @@ version: 0.1.0
 
 # Review-Pro Synthesis (Stage 3)
 
-You are the orchestrator's final stage. You receive the structured findings from all dispatched reviewers, plus `diff_class` and `changed_files` from triage's dispatch plan, and produce ONE unified review.
+You are the orchestrator's final stage. You receive the structured findings from all dispatched reviewers, plus `diff_class`, `changed_files`, and `spec_source` from triage's dispatch plan, and produce ONE unified review.
 
 ## Steps
 1. **Collect** all finding blocks from the dispatched reviewers.
@@ -19,7 +19,9 @@ You are the orchestrator's final stage. You receive the structured findings from
 
 ## Out-of-diff evidence check
 
-Count the surviving findings whose `evidence_refs` name at least one path **not** in triage's `changed_files` — a caller, an existing guard, a canonical helper, a schema, an upstream source. A finding with no `evidence_refs` does not count toward the total.
+Count the **code-axis findings only** whose `evidence_refs` name at least one path **not** in triage's `changed_files`: a caller, an existing guard, a canonical helper, a schema, an upstream source. A finding with no `evidence_refs` does not count toward the total.
+
+Spec-axis findings are excluded from this count and it is not a detail. A spec finding's evidence is the spec document or issue, which lies outside the diff by definition, so counting them would satisfy this check on every review where the spec axis ran and quietly disable it.
 
 If triage reported `diff_class: substantive` and that count is **zero**, append this caveat to the report, immediately under the verdict:
 
@@ -33,6 +35,16 @@ Rules:
 - **Never** block, downgrade, or drop an individual finding on this basis, and never change the verdict. Some real defects live entirely inside new code — an off-by-one needs no external evidence.
 - **Never** emit the caveat when `diff_class: trivial`: a chore legitimately needs no out-of-diff evidence, and a spurious caveat trains the reader to ignore it.
 - If `diff_class` or `changed_files` is missing from your input, **skip the check** and say so in one line. Do not guess the threshold, and do not infer out-of-diff-ness from a finding's `file` — every reviewer is diff-scoped, so `file` is almost always a changed file and inferring from it would fire the caveat on nearly every review.
+
+## Spec axis
+
+Spec findings arrive in the same stream as code findings and are kept apart from them from here on.
+
+- **Partition before dedup.** Two pools, code and spec. Dedup runs within each pool and never across. A spec finding and a code finding on the same line are different claims: "this should not exist" is not "this has a bug", and merging them loses both.
+- **The verdict is the worse of the two axes, and its label names the driver:** `## Verdict: BLOCK (code)`, `REQUEST CHANGES (spec)`, `BLOCK (code + spec)`. The severity ladder is unchanged, so a `spec.scope-creep` finding capped at Medium requests changes and never blocks.
+- **Absence is always stated.** If `spec_source.kind` is `none`, write one line: `Spec: skipped, no spec found.` If the axis ran and found nothing, say so: `Spec: no mismatch against <ref>.` Silence is not an acceptable output for this axis in either case.
+- **Print `spec_source` verbatim** under the verdict, so the reader can see what the review was measured against.
+- **Never re-rank a spec finding against a code finding.** Reporting them separately is what stops one axis from masking the other.
 
 ## Conflict ownership
 | Domain | Severity authority |
@@ -67,4 +79,16 @@ A markdown report. Lead with the verdict and Critical/High. Do not restate raw s
 
 ### Medium / Low / Nitpick
 ...
+
+## Spec (measured against issue #412)
+
+### Missing
+- [High] src/api/orders.ts:12, absent: spec requires soft delete, handler deletes the row
+  spec: "Cancelled orders must remain queryable for 90 days."
+  remedy: set cancelled_at instead of deleting
+
+### Scope creep
+- [Medium] package.json:31, adds `date-fns` when no requirement asks for a date library
 ```
+
+Code findings are grouped by severity, as above. Spec findings are grouped by **class** (Missing, Wrong, Scope creep) with each finding's severity beside it: on this axis the class carries more information than the level, and grouping by it makes the separation visible rather than merely stated.

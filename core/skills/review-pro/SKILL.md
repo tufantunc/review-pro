@@ -13,6 +13,7 @@ You are the **orchestrator**. Run the entire pipeline on the current branch in O
 ### 1. Prep (native — you do this, not the user)
 - **Base branch:** `main`, falling back to `master` if `main` doesn't exist.
 - **Changed files:** run `git diff --name-only <base>...HEAD` in your shell. Read each changed file's full contents with Read. (git already excludes gitignored/generated paths from the diff.)
+- **Argument (optional):** if the invocation carried an argument, it is either a base branch or ref, or a spec to review against (a file path or an issue URL). Forward a spec argument to triage as the first link of its spec resolution.
 - **Installed stacks:** `Glob .review-pro/*/manifest.json`. Each match is a stack the user installed (via `npx review-pro`). These are the repo's **active stacks**. If `.review-pro/` is absent or empty, reviewers run on their core rubric only.
 
 ### 2. Triage (you, inline)

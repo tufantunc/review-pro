@@ -131,6 +131,23 @@ if [[ -f "$ROOT/cli/src/lib/plugin.ts" ]]; then
     || add_error "cli/src/lib/plugin.ts: no copyShared — core/shared/ would not reach an install, dangling every 'shared/<file>.md' pointer"
 fi
 
+# Load-bearing pipeline rules. Each is a single line in a markdown file whose
+# silent deletion disables a feature without failing any other check. The [[ -f ]]
+# guards matter: most validator fixtures contain no orchestrator at all, and an
+# unguarded check would fire on every one of them.
+TRIAGE_MD="$SKILLS_DIR/review-pro-triage/SKILL.md"
+if [[ -f "$TRIAGE_MD" ]]; then
+  grep -qF 'spec_source' "$TRIAGE_MD" \
+    || add_error "review-pro-triage/SKILL.md: no 'spec_source' - the spec axis cannot be dispatched or reported without it"
+fi
+# The scope-creep cap exists in the rubric and in the agent body, and the body is
+# the copy that reaches the running subagent. Guard both.
+for f in "$SKILLS_DIR/spec/SKILL.md" "$ROOT/core/agents/spec-reviewer.md"; do
+  [[ -f "$f" ]] || continue
+  grep -qF 'never exceeds Medium' "$f" \
+    || add_error "$(basename "$f"): the scope-creep Medium cap is missing - without it scope creep can block"
+done
+
 MANIFEST="$ROOT/manifest.json"
 AGENTS_DIR="$ROOT/core/agents"
 

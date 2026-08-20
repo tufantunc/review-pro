@@ -39,7 +39,14 @@ t
 EOF
 }
 
-write_orchestrator(){ cat > "$1" <<'EOF'
+write_orchestrator(){
+  # $1 = path, $2 = orchestrator name (default review-pro-triage, so the existing
+  # call sites need no change). Sections must match the per-orchestrator req list
+  # in validate.sh or every case using this fixture goes red.
+  local name="${2:-review-pro-triage}"
+  case "$name" in
+    review-pro-triage)
+      cat > "$1" <<EOF
 ---
 name: review-pro-triage
 description: "triage"
@@ -48,8 +55,27 @@ description: "triage"
 ## Steps
 ## Signal map (non-exhaustive)
 ## Dispatch plan format
+spec_source:
+  kind: none
 ## Output discipline
 EOF
+      ;;
+    review-pro-synthesize)
+      cat > "$1" <<EOF
+---
+name: review-pro-synthesize
+description: "synthesis"
+---
+# Synthesis
+## Steps
+## Out-of-diff evidence check
+Count the code-axis findings only whose evidence_refs name an unchanged path.
+## Spec axis
+## Conflict ownership
+## Output
+EOF
+      ;;
+  esac
 }
 
 # Case A: clean tree -> exit 0
@@ -238,6 +264,22 @@ cat > "$T/manifest.json" <<'EOF'
 EOF
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "missing section '## Tone'"; then ok "H2->H3 demotion detected"; else bad "H2->H3 demotion not detected"; fi
+rm -rf "$T"
+
+# Case K: triage's spec_source contract. Positive control first, so a passing
+# assertion cannot come from the fixture simply never having had the string.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "no 'spec_source'"; then bad "spec_source control: fired on an intact fixture"; else ok "spec_source control: silent on an intact fixture"; fi
+grep -v '^spec_source:$' "$T/core/skills/review-pro-triage/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-triage/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "no 'spec_source'"; then ok "missing spec_source contract detected"; else bad "missing spec_source contract NOT detected"; fi
 rm -rf "$T"
 
 echo "---"

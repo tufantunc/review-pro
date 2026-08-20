@@ -165,6 +165,55 @@ if [[ -f "$ROOT/core/agents/spec-reviewer.md" ]]; then
     || add_error "spec-reviewer.md: the abstain step is gone - the reviewer would review something other than a spec"
 fi
 
+# Published reviewer count and roster. These are maintained strings in files no
+# other check reads: README.md, docs/llms.txt (hand-written, not generated, so the
+# site drift check never sees it), and the seven locale dictionaries. The count went
+# stale once already because nothing enforced it.
+if command -v python3 >/dev/null 2>&1 && [[ -f "$ROOT/manifest.json" ]]; then
+  python3 - "$ROOT" <<'PYCHK' || errors=$((errors+1))
+import json, sys, glob, os, re
+root = sys.argv[1]
+m = json.load(open(os.path.join(root, "manifest.json")))
+names = sorted(s["name"] for s in m.get("skills", []) if s.get("role") == "reviewer")
+n = len(names)
+bad = []
+
+def read(p):
+    try: return open(os.path.join(root, p), encoding="utf-8").read()
+    except OSError: return None
+
+rd = read("README.md")
+if rd is not None:
+    if f"**{n} specialist reviewers**" not in rd:
+        bad.append(f"README.md: expected '**{n} specialist reviewers**' for the {n} reviewers in manifest.json")
+    if f"{n}-reviewer system" not in rd:
+        bad.append(f"README.md: expected '{n}-reviewer system' in Acknowledgements")
+    for nm in names:
+        if f"`{nm}`" not in rd:
+            bad.append(f"README.md: reviewer '{nm}' is missing from the enumeration")
+
+lt = read("llms.txt") or read(os.path.join("docs", "llms.txt"))
+if lt is not None and f"of {n} reviewers" not in lt:
+    bad.append(f"docs/llms.txt: expected 'of {n} reviewers'")
+
+for f in sorted(glob.glob(os.path.join(root, "docs-src/i18n/*.json"))):
+    d = json.load(open(f, encoding="utf-8"))
+    loc = os.path.basename(f)
+    p_ = d.get("docs.reviewers.p", "")
+    for nm in names:
+        if f"<code>{nm}</code>" not in p_:
+            bad.append(f"docs-src/i18n/{loc}: reviewer '{nm}' missing from docs.reviewers.p")
+    for k in ("cap.c1.title", "docs.toc.reviewers", "docs.reviewers.h2", "docs.overview.p2"):
+        v = d.get(k)
+        if v and str(n) not in v:
+            bad.append(f"docs-src/i18n/{loc}: '{k}' does not state {n}")
+
+for b in bad:
+    print("FAIL: " + b, file=sys.stderr)
+sys.exit(1 if bad else 0)
+PYCHK
+fi
+
 MANIFEST="$ROOT/manifest.json"
 AGENTS_DIR="$ROOT/core/agents"
 

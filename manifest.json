@@ -12,6 +12,7 @@
     { "name": "craft", "role": "reviewer" },
     { "name": "ai-antipatterns", "role": "reviewer" },
     { "name": "dry", "role": "reviewer" },
+    { "name": "spec", "role": "reviewer" },
     { "name": "performance", "role": "reviewer" },
     { "name": "backend", "role": "reviewer" },
     { "name": "frontend", "role": "reviewer" },

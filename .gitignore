@@ -2,3 +2,7 @@
 .opencode-copy/
 .tmp/
 *.log
+
+# Local SonarQube scanner config (not shared, points at a local server)
+sonar-project.properties
+.scannerwork/

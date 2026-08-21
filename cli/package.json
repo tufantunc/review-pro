@@ -1,6 +1,6 @@
 {
   "name": "review-pro",
-  "version": "0.7.0",
+  "version": "1.0.0",
   "description": "Repository-aware AI code review for coding agents. Installer CLI: puts the review-pro core (triage \u2192 13 specialist reviewers \u2192 synthesis) into Claude Code, opencode, Cursor, Codex, plus per-repo stack packs.",
   "license": "MIT",
   "type": "module",

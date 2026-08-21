@@ -19,8 +19,11 @@ export function listCatalogStacks(catalogDir: string = resolveCatalogDir()): str
     .map((d) => d.name);
 }
 
+/** `catalogDir` has no default: every caller passes one, and a default sitting
+ *  before a required parameter can never fire, so it read as available while
+ *  being unreachable. */
 export function readStackManifest(
-  catalogDir: string = resolveCatalogDir(),
+  catalogDir: string,
   stack: string,
 ): StackManifest | null {
   const f = path.join(catalogDir, stack, "manifest.json");

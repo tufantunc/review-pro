@@ -1,5 +1,5 @@
 import path from "node:path";
-import { listCatalogStacks, readStackManifest, resolveCatalogDir } from "../lib/catalog.js";
+import { readStackManifest, resolveCatalogDir } from "../lib/catalog.js";
 import { listInstalled, getInstalledManifest, installStack } from "../lib/repo.js";
 import { info } from "../lib/log.js";
 

@@ -1,4 +1,4 @@
-# Reviewer anti-derailment directive (shared, maintainer reference)
+# Reviewer anti-derailment directive (maintainer reference)
 
 > **Status:** This file is **maintainer documentation** of *why* every `*-reviewer`
 > agent body is written the way it is. It is **not** relied on for model behavior —

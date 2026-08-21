@@ -85,7 +85,7 @@ done
 shopt -u nullglob
 
 # Schema-rule parity: reviewer agent bodies embed the output schema inline (see
-# core/shared/reviewer-directive.md) rather than loading core/shared/, and the CLI
+# docs/internals/reviewer-directive.md) rather than loading core/shared/, and the CLI
 # does not install core/shared/ at all. So a rule added to output-schema.md reaches
 # reviewers only if the bodies carry it. Guard the seam.
 SCHEMA_DOC="$ROOT/core/shared/output-schema.md"
@@ -347,7 +347,7 @@ else
 
     # orphan agents: file on disk but not declared. The skills check above runs in
     # one direction only, so a reviewer could be half-registered (skill declared,
-    # agent not) and the validator would still print OK. reviewer-directive.md calls
+    # agent not) and the validator would still print OK. docs/internals/reviewer-directive.md calls
     # this array the source of truth for which agent loads which skill.
     declared_agents="$(python3 -c "import json;d=json.load(open('$MANIFEST'));print('\n'.join(a['name'] for a in d.get('agents',[])))" 2>/dev/null)"
     for af in "$AGENTS_DIR"/*.md; do
@@ -432,6 +432,74 @@ done < <(find "$ROOT" -name '*.md' -type f \
   -not -path '*/node_modules/*' -not -path '*/.git/*' \
   -not -path '*/cli/plugin/*' -not -path '*/cli/dist/*' 2>/dev/null)
 shopt -u nullglob
+
+# Plugin manifest versions. Four files carry one and none is bumped automatically, so
+# they drift silently and a directory listing shows the wrong number until someone
+# notices. cli/package.json is the source; the tag check in the publish workflow
+# already pins that one to the git tag.
+if command -v python3 >/dev/null 2>&1; then
+  python3 - "$ROOT" <<'PYVER' || errors=$((errors+1))
+import json, os, sys
+root = sys.argv[1]
+def load(rel):
+    p = os.path.join(root, rel)
+    return json.load(open(p, encoding="utf-8")) if os.path.exists(p) else None
+cli = load("cli/package.json")
+if cli is None:
+    sys.exit(0)
+want = cli["version"]
+bad = []
+mk = load(".claude-plugin/marketplace.json")
+if mk is not None:
+    if mk.get("version") != want:
+        bad.append(f".claude-plugin/marketplace.json: version {mk.get('version')} != cli {want}")
+    for i, pl in enumerate(mk.get("plugins", [])):
+        if pl.get("version") != want:
+            bad.append(f".claude-plugin/marketplace.json: plugins[{i}].version {pl.get('version')} != cli {want}")
+for rel in ("core/.claude-plugin/plugin.json", "core/.codex-plugin/plugin.json"):
+    d = load(rel)
+    if d is not None and d.get("version") != want:
+        bad.append(f"{rel}: version {d.get('version')} != cli {want}")
+for b in bad:
+    print("FAIL: " + b, file=sys.stderr)
+sys.exit(1 if bad else 0)
+PYVER
+fi
+
+# Category-root registry. Stage 3 dedups on the root, so the registry has to list
+# exactly one root per reviewer. It lived only in shared/output-schema.md, which an
+# installer that copies just skill directories never delivers, and the `spec` root was
+# once missing from it while thirteen reviewers were shipping.
+if command -v python3 >/dev/null 2>&1 && [[ -f "$MANIFEST" ]] && [[ -f "$SYNTH_MD" ]]; then
+  python3 - "$ROOT" <<'PYROOTS' || errors=$((errors+1))
+import json, os, re, sys
+root = sys.argv[1]
+names = sorted(s["name"] for s in json.load(open(os.path.join(root, "manifest.json")))["skills"]
+               if s.get("role") == "reviewer")
+bad = []
+for rel in ("core/skills/review-pro-synthesize/SKILL.md", "core/shared/output-schema.md"):
+    p = os.path.join(root, rel)
+    if not os.path.exists(p):
+        continue
+    text = open(p, encoding="utf-8").read()
+    m = re.search(r"^`security`.*$", text, re.M)
+    if not m:
+        bad.append(f"{rel}: no category-root list found (expected a line starting with `security`)")
+        continue
+    listed = sorted(re.findall(r"`([a-z][a-z0-9-]*)`", m.group(0)))
+    if listed != names:
+        missing = [n for n in names if n not in listed]
+        extra = [n for n in listed if n not in names]
+        detail = []
+        if missing: detail.append("missing " + ", ".join(missing))
+        if extra: detail.append("not a reviewer: " + ", ".join(extra))
+        bad.append(f"{rel}: category roots disagree with manifest.json ({'; '.join(detail)})")
+for b in bad:
+    print("FAIL: " + b, file=sys.stderr)
+sys.exit(1 if bad else 0)
+PYROOTS
+fi
+
 
 [[ "$errors" -eq 0 ]] && { echo "OK: all artifacts valid"; exit 0; }
 exit 1

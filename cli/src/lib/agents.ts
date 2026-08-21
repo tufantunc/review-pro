@@ -1,4 +1,3 @@
-import path from "node:path";
 
 export interface CanonicalAgent {
   name: string;

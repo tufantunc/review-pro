@@ -71,7 +71,19 @@ function loadFlags(srcDir, langs) {
     // Flags are decorative where inlined (a text label is always present);
     // strip the standalone role/label and hide from AT.
     svg = svg.replace(/<svg\b([^>]*)>/, (_, attrs) => {
-      const a = attrs.replace(/\s*role="img"/g, '').replace(/\s*aria-label="[^"]*"/g, '');
+      // Literal first, quantifier after. A leading `\s*` makes the engine retry at
+      // every position on a run of whitespace, which is quadratic; with the literal
+      // first, both of these are linear.
+      //
+      // The trailing trim is `trimEnd()` and not `/\s+$/` on purpose: that regex is
+      // the same quadratic shape this reorder exists to remove, measured at 500ms on
+      // a 32k-space input where trimEnd is 0.0ms. The trim is needed at all because
+      // reordering consumes the whitespace *after* a flagged attribute rather than
+      // before it, so an attribute at the end of the string would leave one behind.
+      const a = attrs
+        .replace(/role="img"\s*/g, '')
+        .replace(/aria-label="[^"]*"\s*/g, '')
+        .trimEnd();
       return `<svg aria-hidden="true" focusable="false"${a}>`;
     });
     flags[l] = svg;

@@ -5,7 +5,7 @@ is the part that makes the study something other than a marketing exercise: if t
 findings are real, the projects should have them; if they are not, the maintainers
 will say so in public, on the record, next to the claim.
 
-All four were filed on **2026-08-19**, ten days after the runs.
+All four were filed on **2026-08-19**, ten days after the runs. Outcomes below, recorded 2026-08-21.
 
 | Filed | Repo | Finding | Case |
 |---|---|---|---|
@@ -14,7 +14,34 @@ All four were filed on **2026-08-19**, ten days after the runs.
 | [#7707](https://github.com/dotnet/extensions/issues/7707) | dotnet/extensions | The removed `openai-dotnet#733` workaround defended two fields; upstream fixed one. Also corrects the PR's stated bump rationale | [2](FINDINGS-case2.md) |
 | [#19540](https://github.com/microsoft/aspire/issues/19540) | microsoft/aspire | `AspireRunReadyTimeout` is applied to `dotnet run` sites where `ASPIRE_CLI_START_TIMEOUT` is never set, inverting its documented relationship | [3](FINDINGS-case3.md) |
 
-Outcomes are not recorded above, because they are not ours to write. Follow the links.
+Outcomes are not ours to write, but they are ours to record once written. As of
+2026-08-21:
+
+| | Outcome |
+|---|---|
+| [#1474](https://github.com/dotnet/Nerdbank.GitVersioning/issues/1474) | **Fixed.** The maintainer opened and merged [#1475](https://github.com/dotnet/Nerdbank.GitVersioning/pull/1475) the same day, "Fix shallow clone ancestor lookup diagnostics", closing this with `Fixes #1474`. He took the first of the two directions the report offered: `Lookup` keeps its nullable contract and reports a missing-ancestor cause, which the managed context converts into the project's existing shallow-clone diagnostic. He also added regression tests for both the missing ancestor and shallow commit selection. |
+| [#1318](https://github.com/openai/openai-dotnet/issues/1318) | **Answered, not a defect.** `created_at` is a required property in the OpenAI REST API specification, so the service guarantees it is never null and the asymmetry with the nullable `bytes` is intentional. Throwing on a payload that violates the contract is the intended behaviour. This is the outcome the issue named as its own most likely resolution, and the maintainer answered on exactly those terms. |
+| [#7707](https://github.com/dotnet/extensions/issues/7707) | **Withdrawn by us.** Its premise was that dropping the `openai-dotnet` workaround left this library exposed on `created_at`. The answer above removes that premise, so we closed it rather than leave a refuted issue open in someone else's repository. Its second point, that the version bump's stated rationale was wrong, stands but needs no code change and did not justify an open issue by itself. |
+| [#19540](https://github.com/microsoft/aspire/issues/19540) | Open, awaiting an area label. |
+
+## What the outcomes say about the method
+
+One of four was a defect the maintainer chose to fix, within a day, taking the
+remedy direction the report suggested. One was answered as not-a-defect on the
+exact terms the report set out for itself. One we withdrew once that answer
+landed. One is still waiting.
+
+Read that as the honest yield: this is not four confirmed bugs. It is one fixed,
+one well-formed question with a definitive answer, and one report that the answer
+invalidated. The pilot's claim was about where defects live, not about how many
+of them a maintainer will agree to fix, and a 1-in-4 fix rate on hand-verified
+findings in mature .NET repositories is a result worth stating plainly rather
+than rounding up.
+
+The withdrawal matters more than the fix for judging the method. A study that
+publishes its own false positives has to withdraw the ones that survive to
+filing, too, and do it in the other project's repository where the cost is
+visible.
 
 ## Every finding was re-verified before filing
 

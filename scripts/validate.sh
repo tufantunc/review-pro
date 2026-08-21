@@ -85,7 +85,7 @@ done
 shopt -u nullglob
 
 # Schema-rule parity: reviewer agent bodies embed the output schema inline (see
-# docs/reviewer-directive.md) rather than loading core/shared/, and the CLI
+# docs/internals/reviewer-directive.md) rather than loading core/shared/, and the CLI
 # does not install core/shared/ at all. So a rule added to output-schema.md reaches
 # reviewers only if the bodies carry it. Guard the seam.
 SCHEMA_DOC="$ROOT/core/shared/output-schema.md"
@@ -347,7 +347,7 @@ else
 
     # orphan agents: file on disk but not declared. The skills check above runs in
     # one direction only, so a reviewer could be half-registered (skill declared,
-    # agent not) and the validator would still print OK. docs/reviewer-directive.md calls
+    # agent not) and the validator would still print OK. docs/internals/reviewer-directive.md calls
     # this array the source of truth for which agent loads which skill.
     declared_agents="$(python3 -c "import json;d=json.load(open('$MANIFEST'));print('\n'.join(a['name'] for a in d.get('agents',[])))" 2>/dev/null)"
     for af in "$AGENTS_DIR"/*.md; do

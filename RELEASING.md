@@ -45,13 +45,17 @@ Release notes come from `--generate-notes`, which groups merged PRs by title. Co
 
 ## Plugin manifests to bump alongside the version
 
-Three files carry a version and are **not** bumped automatically:
+Four files carry a version and are **not** bumped automatically:
 
 | File | Field |
 |---|---|
 | `cli/package.json` | `version` |
 | `.claude-plugin/marketplace.json` | `version` and `plugins[0].version` |
 | `core/.claude-plugin/plugin.json` | `version` |
+| `core/.codex-plugin/plugin.json` | `version` |
+
+`scripts/validate.sh` fails when these disagree, so a forgotten one is a red build
+rather than a wrong number in a directory listing.
 
 `.cursor-plugin/plugin.json` carries its own independent version. Validate the Claude Code manifests after editing:
 

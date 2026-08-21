@@ -1,4 +1,4 @@
-# Glossary (shared)
+# Glossary
 
 - **triage** — Stage 1: classify files, detect relevant reviewers + active stacks, scope context, emit a dispatch plan. Does not review code.
 - **fan-out** — Stage 2: only the triage-selected specialists run in parallel, each with its scoped context and composed rubric.

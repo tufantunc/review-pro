@@ -51,6 +51,19 @@ Spec findings arrive in the same stream as code findings and are kept apart from
 - **Print `spec_source` verbatim** directly under the verdict and above the out-of-diff caveat, so the reader can see what the review was measured against.
 - **Never re-rank a spec finding against a code finding.** Reporting them separately is what stops one axis from masking the other.
 
+## Category roots
+
+The dedup key's namespace, one root per reviewer. Stated here because Stage 3 is what
+dedups on it, and because an installer that copies only skill directories leaves
+`shared/output-schema.md` unreachable, taking the registry with it.
+
+`security`, `correctness`, `craft`, `ai-antipatterns`, `dry`, `performance`, `backend`, `frontend`, `a11y`, `db`, `api-contract`, `tests`, `spec`.
+
+A root that is not in this list is not a root. Normalising an unknown root into a
+listed one would merge findings the axes deliberately keep apart, so treat an
+unrecognised prefix as a reviewer contract violation and report it rather than
+guessing which neighbour it meant.
+
 ## Conflict ownership
 | Domain | Severity authority |
 |---|---|

@@ -30,7 +30,16 @@ For each reviewer in the dispatch plan:
    - `### Spec text`, for the `spec` reviewer only: the resolved spec text from triage's `spec_source`. Omit this section for every other reviewer; none of them should be measuring intent. If `spec_source.kind` is `none`, do not dispatch this reviewer at all.
 3. **Collect** its structured finding blocks.
 
-If a reviewer subagent is unavailable on your platform, perform that review **inline**: apply the core skill (which you Read from the plugin) plus the stack signals to the scoped context, and emit findings in the shared schema.
+If a reviewer subagent is unavailable on your platform, perform that review **inline**: apply the core skill (which you Read from the plugin) plus the stack signals to the scoped context, and emit findings in the schema below.
+
+**The finding schema, stated here because the inline path cannot reach it anywhere else.** The `*-reviewer` agent bodies carry these rules for the subagent path, and `shared/output-schema.md` carries them for installs that copy it, but an installer that ships only skill directories delivers neither. These rules are what the inline path emits against:
+
+- `file` + `line` are **mandatory** for every finding.
+- `evidence` must be a real excerpt, never a paraphrase.
+- `evidence_refs` lists `<path>:<line>` for every file the evidence was **located in** when that differs from `file`. `file`/`line` stays the finding's own location. Populate it whenever the review left the diff; synthesis counts it.
+- `impact` and `remedy` are held to the **same evidence bar** as the finding. If either asserts that something *cannot* be done, locate that too or drop the assertion. A correct finding with an unverified rationale sends the reader into unnecessary work.
+- `overlap_hints` lists other category roots that might flag the same spot; synthesis uses it to collapse duplicates.
+- On the **spec axis only**, `file` may be a non-repository reference (`#412`, a PR url) with `line: 0`, for a requirement the diff never attempted. Never downgrade such a finding for failing to resolve on disk.
 
 ### 4. Synthesis (you, inline)
 Follow the `review-pro-synthesize` skill over ALL collected findings, passing it the `diff_class`, `changed_files`, and `spec_source` you determined in triage: dedup within each axis (code findings on `(file, line±5, category-root, overlap_hints)`, spec findings on `(quoted requirement, file, line)` per that skill's Spec axis section), weight overlaps, resolve conflicts by domain ownership, calibrate severity (anti-overreporting), and emit the verdict.

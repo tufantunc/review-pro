@@ -90,6 +90,16 @@ shopt -u nullglob
 # reviewers only if the bodies carry it. Guard the seam.
 SCHEMA_DOC="$ROOT/core/shared/output-schema.md"
 SCHEMA_KEYS=("evidence_refs" "same evidence bar")
+# The orchestrator carries the same rules for its documented inline path, which is
+# the only path available on an installer that ships skill directories and no agent
+# bodies. Without this the rules were unreachable there while a PR claimed they were
+# safe "because the bodies inline them".
+INLINE_KEYS=("evidence_refs" "same evidence bar" "mandatory" "real excerpt" "non-repository reference")
+for key in "${INLINE_KEYS[@]}"; do
+  [[ -f "$SKILLS_DIR/review-pro/SKILL.md" ]] || continue
+  grep -qF "$key" "$SKILLS_DIR/review-pro/SKILL.md" \
+    || add_error "review-pro/SKILL.md: inline-path schema rules are missing '$key' - a skills-only install could not reach them"
+done
 if [[ -f "$SCHEMA_DOC" ]]; then
   for key in "${SCHEMA_KEYS[@]}"; do
     grep -qF "$key" "$SCHEMA_DOC" || add_error "core/shared/output-schema.md: expected schema rule mentioning '$key'"

@@ -28,6 +28,10 @@ For each reviewer in the dispatch plan:
    - `### Changed file contents` — the changed files relevant to this reviewer (from your prep).
    - `### Related context` — scoped extras per context-policy (callers, consumers, schema, repo search). Omit if none.
    - `### Spec text`, for the `spec` reviewer only: the resolved spec text from triage's `spec_source`. Omit this section for every other reviewer; none of them should be measuring intent. If `spec_source.kind` is `none`, do not dispatch this reviewer at all.
+   - `### External premises`, for the owning reviewer only: the entries from triage's
+     `external_premises` whose `owner` is this reviewer, verbatim. Omit the section for
+     every other reviewer. Verification channels and the requirement to record which
+     channel settled a premise live in `core/shared/context-policy.md`.
 3. **Collect** its structured finding blocks.
 
 If a reviewer subagent is unavailable on your platform, perform that review **inline**: apply the core skill (which you Read from the plugin) plus the stack signals to the scoped context, and emit findings in the shared schema.

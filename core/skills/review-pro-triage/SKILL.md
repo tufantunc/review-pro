@@ -31,8 +31,46 @@ You are the orchestrator's first stage. You do NOT review code yourself. You pre
 
    **Dispatch `spec` if and only if `spec_source.kind` is not `none`.** This is the one dispatch decision that does not come from the signal map, because spec relevance has nothing to do with which files changed. The "when in doubt, dispatch" default in step 4 does **not** apply here: dispatching a spec reviewer with no spec is a guaranteed waste, not a possible finding.
 
-7. **Scope context per dispatched reviewer** per `core/shared/context-policy.md`: every reviewer gets diff + changed files; add the reviewer-specific scoped extras.
-8. **Emit the dispatch plan** (YAML below) and hand off to Stage 2 (fan-out). Do not run the reviewers inline unless the platform adapter requires it.
+7. **Extract external premises.** Gather your own sources; do not hang this on step 6,
+   whose chain stops at the first hit and therefore never reads the PR body when the
+   user passed a spec by hand.
+
+   Sources, in the two channels a reviewer cannot see for itself:
+   - **Commit messages** on the branch (`git log <base>..HEAD`). No `gh` needed.
+   - **The PR body**, via `gh pr view`. Its absence is an ordinary condition.
+
+   Code comments in changed files are **not** yours: they are already in every
+   reviewer's baseline context, and scanning them here would route the same premise
+   twice.
+
+   A premise qualifies only when the rationale points at a **specific, addressable
+   external artifact**: an upstream issue or PR number, a changelog entry, a CVE, a
+   release note, an RFC. "Fixed upstream" with no number qualifies, because which fix
+   is determinable from the package version. A claim that is merely ungrounded in the
+   repo does **not** qualify; that threshold would turn every review into a web crawl.
+
+   Assign exactly one `owner`:
+
+   | The premise justifies | Owner |
+   |---|---|
+   | Adding, removing, or bumping a dependency | `ai-antipatterns` |
+   | A behaviour-equivalence claim across a dependency change | `correctness` |
+   | An API surface or version-floor claim | `api-contract` |
+   | Anything else | `ai-antipatterns` |
+
+   **Assigning a premise to a reviewer dispatches that reviewer**, whatever the signal
+   map in step 4 concluded. Otherwise a premise can be routed to a reviewer that never
+   runs, and nothing reports the gap.
+
+   **Triage does not verify the premise itself.** Extract, route, stop. A triage that
+   settles a premise breaks the one-owner rule and produces a verification no reader can
+   attribute to a reviewer.
+
+   At most **three** premises, chosen by what the diff most depends on. State any
+   dropped count in the plan: a silent cap reads to the next reader as complete
+   coverage. Emit nothing when there are none.
+8. **Scope context per dispatched reviewer** per `core/shared/context-policy.md`: every reviewer gets diff + changed files; add the reviewer-specific scoped extras.
+9. **Emit the dispatch plan** (YAML below) and hand off to Stage 2 (fan-out). Do not run the reviewers inline unless the platform adapter requires it.
 
 ## Signal map (non-exhaustive)
 - migration files / `CREATE|ALTER|DROP` / schema files → `db`
@@ -54,6 +92,13 @@ diff_class: trivial | substantive
 spec_source:
   kind: argument | pr-body | issue | file | none
   ref: <issue number, path, or url>   # omit when kind is none
+external_premises:                    # omit the key entirely when there are none
+  - claim: "<the rationale, quoted>"
+    cited: <upstream ref, changelog entry, CVE, or version>
+    source: commit-message | pr-body
+    pinned: <package old -> new>      # optional; when the diff pins the version
+    owner: ai-antipatterns | correctness | api-contract
+premises_dropped: <n>                 # omit when zero
 dispatch:
   <reviewer>:
     context:

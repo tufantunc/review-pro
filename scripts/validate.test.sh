@@ -172,7 +172,10 @@ description: "triage"
 ## Dispatch plan format
 spec_source:
   kind: none
+external_premises: []
 Dispatch spec if and only if a spec was resolved.
+Assigning a premise to a reviewer dispatches that reviewer.
+Triage does not verify the premise itself.
 ## Output discipline
 EOF
       ;;
@@ -716,6 +719,77 @@ if echo "$out" | grep -q "local-first channel is gone"; then bad "local-first co
 printf 'Record which channel settled the premise.\n' > "$T/core/shared/context-policy.md"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "local-first channel is gone"; then ok "removed local-first channel detected"; else bad "removed local-first channel not detected"; fi
+rm -rf "$T"
+
+# Case X: triage's external_premises contract. Positive control first, so a passing
+# assertion cannot come from the fixture simply never having had the string.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "no 'external_premises'"; then bad "external_premises control fired on an intact fixture"; else ok "external_premises control silent when present"; fi
+grep -v '^external_premises: \[\]$' "$T/core/skills/review-pro-triage/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-triage/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "no 'external_premises'"; then ok "removed external_premises detected"; else bad "removed external_premises not detected"; fi
+rm -rf "$T"
+
+# Case Y: the assign-dispatches rule, without which a premise is routed to a
+# reviewer the signal map never dispatches and nothing reports the gap.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "assign-dispatches rule is gone"; then bad "assign-dispatches control fired on an intact fixture"; else ok "assign-dispatches control silent when present"; fi
+grep -v '^Assigning a premise' "$T/core/skills/review-pro-triage/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-triage/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "assign-dispatches rule is gone"; then ok "removed assign-dispatches rule detected"; else bad "removed assign-dispatches rule not detected"; fi
+rm -rf "$T"
+
+# Case Z: the prohibition on triage verifying premises itself.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "no-verification prohibition is gone"; then bad "no-verification control fired on an intact fixture"; else ok "no-verification control silent when present"; fi
+grep -v 'does not verify the premise' "$T/core/skills/review-pro-triage/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-triage/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "no-verification prohibition is gone"; then ok "removed no-verification prohibition detected"; else bad "removed no-verification prohibition not detected"; fi
+rm -rf "$T"
+
+# Case AE: the orchestrator's prompt section. Without it triage routes premises the
+# orchestrator never passes on, so the whole chain runs and verifies nothing.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+cat > "$T/core/skills/review-pro/SKILL.md" <<'EOFO'
+---
+name: review-pro
+description: "orchestrator"
+---
+# Review-Pro
+Dedup within each axis, spec findings on the quoted requirement.
+### External premises
+EOFO
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "prompt section is gone"; then bad "orchestrator premise-section control fired on an intact fixture"; else ok "orchestrator premise-section control silent when present"; fi
+grep -v '^### External premises$' "$T/core/skills/review-pro/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "prompt section is gone"; then ok "removed orchestrator premise section detected"; else bad "removed orchestrator premise section not detected"; fi
 rm -rf "$T"
 
 echo "---"

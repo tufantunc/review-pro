@@ -139,6 +139,12 @@ TRIAGE_MD="$SKILLS_DIR/review-pro-triage/SKILL.md"
 if [[ -f "$TRIAGE_MD" ]]; then
   grep -qF 'spec_source' "$TRIAGE_MD" \
     || add_error "review-pro-triage/SKILL.md: no 'spec_source' - the spec axis cannot be dispatched or reported without it"
+  grep -qF 'external_premises' "$TRIAGE_MD" \
+    || add_error "review-pro-triage/SKILL.md: no 'external_premises' - external premises are never extracted or routed, so no reviewer is ever asked to verify one"
+  grep -qF 'Assigning a premise' "$TRIAGE_MD" \
+    || add_error "review-pro-triage/SKILL.md: the assign-dispatches rule is gone - a premise can be routed to a reviewer the signal map never dispatches, and nothing reports that it was"
+  grep -qF 'does not verify the premise' "$TRIAGE_MD" \
+    || add_error "review-pro-triage/SKILL.md: the no-verification prohibition is gone - triage settling premises itself breaks the one-owner rule and produces verifications nobody can attribute"
 fi
 SYNTH_MD="$SKILLS_DIR/review-pro-synthesize/SKILL.md"
 if [[ -f "$SYNTH_MD" ]]; then
@@ -176,6 +182,8 @@ ORCH_MD="$SKILLS_DIR/review-pro/SKILL.md"
 if [[ -f "$ORCH_MD" ]]; then
   grep -qF 'quoted requirement' "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: its dedup summary no longer names the spec key - the inline path would use the code key and collapse unattempted requirements"
+  grep -qF '### External premises' "$ORCH_MD" \
+    || add_error "review-pro/SKILL.md: the '### External premises' prompt section is gone - triage routes premises the orchestrator then never passes to the owning reviewer"
 fi
 if [[ -f "$SYNTH_MD" ]]; then
   grep -qF 'abstained (no spec text)' "$SYNTH_MD" \

@@ -690,7 +690,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/shared" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-printf 'Record which channel settled the premise.\n' > "$T/core/shared/context-policy.md"
+printf 'Record which channel settled the premise. Use the locally resolved dependency source first.\n' > "$T/core/shared/context-policy.md"
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"}], "agents": [] }
 JSON
@@ -699,6 +699,23 @@ if echo "$out" | grep -q "settling-channel record is gone"; then bad "settling-c
 printf 'Verify the premise outside the repo.\n' > "$T/core/shared/context-policy.md"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "settling-channel record is gone"; then ok "removed settling-channel record detected"; else bad "removed settling-channel record not detected"; fi
+rm -rf "$T"
+
+# Case AB2: the local-first channel in context-policy. Order matters here: a premise
+# the installed dependency already settles must not be answered from the network,
+# because a network answer is not reproducible.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/shared" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+printf 'Record which channel settled the premise. Use the locally resolved dependency source first.\n' > "$T/core/shared/context-policy.md"
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "local-first channel is gone"; then bad "local-first control fired on an intact fixture"; else ok "local-first control silent when present"; fi
+printf 'Record which channel settled the premise.\n' > "$T/core/shared/context-policy.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "local-first channel is gone"; then ok "removed local-first channel detected"; else bad "removed local-first channel not detected"; fi
 rm -rf "$T"
 
 echo "---"

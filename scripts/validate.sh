@@ -188,6 +188,8 @@ CTX_POLICY="$SHARED_DIR/context-policy.md"
 if [[ -f "$CTX_POLICY" ]]; then
   grep -qF 'which channel settled' "$CTX_POLICY" \
     || add_error "shared/context-policy.md: the settling-channel record is gone - a network answer becomes indistinguishable from a local one and reviews stop being reproducible"
+  grep -qF 'locally resolved dependency source' "$CTX_POLICY" \
+    || add_error "shared/context-policy.md: the local-first channel is gone - reviewers would reach for the network on a premise the installed dependency already settles, and the answer stops being reproducible"
 fi
 
 # Published reviewer count and roster. These are maintained strings in files no

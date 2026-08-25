@@ -839,21 +839,28 @@ if echo "$out" | grep -q "external-premise ledger is gone"; then ok "removed led
 rm -rf "$T"
 
 # Case AF: the settled_by field in the six-file premise loop. Without it, synthesis's
-# Settled by column has nothing to map from and the ledger reports empty.
-T=$(mktemp -d)
-mkdir -p "$T/core/skills/security" "$T/core/skills/ai-antipatterns" "$T/core/agents"
-write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_good_reviewer "$T/core/skills/ai-antipatterns/SKILL.md"
-printf '## Premise verification\nsettled_by: network\nnever silently trust an unsettled premise.\n' >> "$T/core/skills/ai-antipatterns/SKILL.md"
-cat > "$T/manifest.json" <<'JSON'
+# Settled by column has nothing to map from and the ledger reports empty. Both copies,
+# same reason as AC/AD: the body is what reaches the subagent.
+for pair in "core/skills/ai-antipatterns/SKILL.md" "core/agents/ai-antipatterns-reviewer.md"; do
+  T=$(mktemp -d)
+  mkdir -p "$T/core/skills/security" "$T/core/skills/ai-antipatterns" "$T/core/agents"
+  write_good_reviewer "$T/core/skills/security/SKILL.md"
+  if [[ "$pair" == core/skills/* ]]; then
+    write_good_reviewer "$T/$pair"
+  else
+    write_good_agent_body "$T/$pair" ai-antipatterns-reviewer
+  fi
+  printf '## Premise verification\nsettled_by: network\nnever silently trust an unsettled premise.\n' >> "$T/$pair"
+  cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"ai-antipatterns","role":"reviewer"}], "agents": [] }
 JSON
-out=$(bash "$VALIDATE" "$T" 2>&1 || true)
-if echo "$out" | grep -q "no 'settled_by' field"; then bad "settled_by control: fired on an intact fixture"; else ok "settled_by control: silent on an intact fixture"; fi
-grep -v 'settled_by' "$T/core/skills/ai-antipatterns/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/ai-antipatterns/SKILL.md"
-out=$(bash "$VALIDATE" "$T" 2>&1 || true)
-if echo "$out" | grep -q "no 'settled_by' field"; then ok "missing settled_by detected"; else bad "missing settled_by NOT detected"; fi
-rm -rf "$T"
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  if echo "$out" | grep -q "no 'settled_by' field"; then bad "$pair: settled_by control: fired on an intact fixture"; else ok "$pair: settled_by control: silent on an intact fixture"; fi
+  grep -v 'settled_by' "$T/$pair" > "$T/tmp" && mv "$T/tmp" "$T/$pair"
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  if echo "$out" | grep -q "no 'settled_by' field"; then ok "$pair: missing settled_by detected"; else bad "$pair: missing settled_by NOT detected"; fi
+  rm -rf "$T"
+done
 
 echo "---"
 echo "pass=$pass fail=$fail"

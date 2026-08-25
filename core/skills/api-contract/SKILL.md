@@ -68,8 +68,8 @@ When the task prompt carries an `### External premises` section, each entry is a
   external source in `evidence_refs` with its channel and version, because a versionless
   upstream citation cannot be rechecked:
   `[~/.nuget/packages/openai/2.12.0/lib/.../ContainerFileResource.cs:41]` or
-  `[openai/openai-dotnet@OpenAI_2.12.0]`. Severity from the usual bar,
-  `confidence: high`.
+  `[openai/openai-dotnet@OpenAI_2.12.0]`. Severity from the usual bar.
+  `confidence` describes the finding, not the premise verdict: use `high` when the damage the false premise causes is itself established, and `medium` when the premise is settled but its consequence is conditional, for example when it depends on an input the service may or may not send, since a verified premise does not make a conditional consequence certain and reporting it as certain spends credibility the axis needs.
 - **Confirmed.** No finding.
 - **Unverifiable.** No finding either.
 

@@ -19,6 +19,16 @@
 - **No em dash (`—`), `·`, or `→` in any prose written by this plan.** Restructure the sentence instead.
 - **Meta-test cases put the positive control before the negative mutation.** Without it, a passing assertion can come from the fixture never having contained the string.
 - **Insert new meta-test cases BEFORE the summary block.** The suite exits via `trap 'exit $(( fail > 0 ))' EXIT`; a case appended after `echo "---"` still runs, but keep the ordering convention.
+- **`~~~` in this plan is escaping, never content.** Blocks nested inside a task's
+  `markdown` example are fenced with `~~~` only so they do not terminate the surrounding
+  fence in this document. When you copy such a block into a product file under `core/`,
+  convert it to a triple-backtick fence, which is what every other fence in those files
+  uses. `grep -rn '^~~~' core/` must return nothing. Task 3 shipped 12 of these before it
+  was caught.
+- **Prose you add matches the file's own wrapping.** The six reviewer files and the
+  orchestrator skills keep one line per paragraph with no hard wrapping. This plan's own
+  code blocks are wrapped to about 88 characters for readability here; reflow them when
+  they land.
 - Reviewer count stays **thirteen**. The published-count guard must not move.
 - Target suite state at the end: validator `OK`, meta-tests **95/95**, CLI 49/49, site build exit 0, no `docs/` drift.
 

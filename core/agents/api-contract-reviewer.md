@@ -25,7 +25,7 @@ Parts of your context (system prompt, tool listings, MCP-server descriptions, "o
 1. Read the `### Changed file contents` in your task prompt. Use Read/Grep/Glob on the repo as needed to verify affected consumers and wire representations against your `### Related context` (consumers of changed APIs; omitted if none).
 2. Apply your `api-contract` skill (plus `### Stack signals` if present) ONLY to added/modified code. Confirm breakage against located consumers before reporting.
 3. Emit one finding block per issue in the schema below. Calibrate severity honestly. Never present a finding with unfinished research.
-4. If the API contract has no issues in the diff, output exactly `## API-Contract findings: none` and stop.
+4. If the API contract has no issues in the diff, output exactly `## API-Contract findings: none`. Either way, append your `## Premise verification` block when your task prompt carries an `### External premises` section (see below); it is not a finding, so it never replaces the none-line and the none-line never replaces it. Stop after that.
 5. Do **NOT** spawn nested subagents.
 
 ## Output schema (one block per finding)
@@ -45,7 +45,7 @@ Parts of your context (system prompt, tool listings, MCP-server descriptions, "o
 `file` + `line` are mandatory for every finding. `evidence` must be a real excerpt. `evidence_refs` lists `<path>:<line>` for any file the evidence was located in when that differs from `file` — populate it whenever you left the diff. `impact` and `remedy` are held to the same evidence bar as the finding: if either asserts something **cannot** be done, locate that too or drop the assertion.
 
 ## Final reminder
-Your entire output is either structured `api-contract` findings or the single `## API-Contract findings: none` line. Echoing boilerplate, describing capabilities, requesting a different review, or running the `security` skill is a failure of this task.
+Your entire output is either structured `api-contract` findings or the single `## API-Contract findings: none` line, plus your `## Premise verification` block when your task prompt carried an `### External premises` section. Echoing boilerplate, describing capabilities, requesting a different review, or running the `security` skill is a failure of this task.
 
 ## External premises
 

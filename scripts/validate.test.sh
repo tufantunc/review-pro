@@ -711,13 +711,13 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/shared" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-printf 'Record which channel settled the premise. Use the locally resolved dependency source first.\n' > "$T/core/shared/context-policy.md"
+printf 'Record which channel settled the premise.\n1. **The locally resolved dependency source.** first.\n2. **The network.** second.\n' > "$T/core/shared/context-policy.md"
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"}], "agents": [] }
 JSON
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "local-first channel is gone"; then bad "local-first control fired on an intact fixture"; else ok "local-first control silent when present"; fi
-printf 'Record which channel settled the premise.\n' > "$T/core/shared/context-policy.md"
+printf 'Record which channel settled the premise.\n1. **The network.** first.\n2. **The locally resolved dependency source.** second.\n' > "$T/core/shared/context-policy.md"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "local-first channel is gone"; then ok "removed local-first channel detected"; else bad "removed local-first channel not detected"; fi
 rm -rf "$T"
@@ -806,7 +806,7 @@ for pair in "core/skills/ai-antipatterns/SKILL.md" "core/agents/ai-antipatterns-
   else
     write_good_agent_body "$T/$pair" ai-antipatterns-reviewer
   fi
-  printf '## Premise verification\nnever silently trust an unsettled premise.\n' >> "$T/$pair"
+  printf '## Premise verification\nsettled_by: network\nnever silently trust an unsettled premise.\n' >> "$T/$pair"
   cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"ai-antipatterns","role":"reviewer"}], "agents": [] }
 JSON
@@ -836,6 +836,23 @@ if echo "$out" | grep -q "external-premise ledger is gone"; then bad "ledger con
 grep -v '^### External premises$' "$T/core/skills/review-pro-synthesize/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-synthesize/SKILL.md"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "external-premise ledger is gone"; then ok "removed ledger detected"; else bad "removed ledger not detected"; fi
+rm -rf "$T"
+
+# Case AF: the settled_by field in the six-file premise loop. Without it, synthesis's
+# Settled by column has nothing to map from and the ledger reports empty.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/ai-antipatterns" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_good_reviewer "$T/core/skills/ai-antipatterns/SKILL.md"
+printf '## Premise verification\nsettled_by: network\nnever silently trust an unsettled premise.\n' >> "$T/core/skills/ai-antipatterns/SKILL.md"
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"ai-antipatterns","role":"reviewer"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "no 'settled_by' field"; then bad "settled_by control: fired on an intact fixture"; else ok "settled_by control: silent on an intact fixture"; fi
+grep -v 'settled_by' "$T/core/skills/ai-antipatterns/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/ai-antipatterns/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "no 'settled_by' field"; then ok "missing settled_by detected"; else bad "missing settled_by NOT detected"; fi
 rm -rf "$T"
 
 echo "---"

@@ -32,12 +32,12 @@ For each reviewer in the dispatch plan:
      `external_premises` whose `owner` is this reviewer, verbatim. Omit the section for
      every other reviewer. Verification channels and the requirement to record which
      channel settled a premise live in `core/shared/context-policy.md`.
-3. **Collect** its structured finding blocks.
+3. **Collect** its structured finding blocks, plus its `## Premise verification` block when one comes back. That block is not a finding: never dedup it against the finding blocks and never rank it alongside them.
 
 If a reviewer subagent is unavailable on your platform, perform that review **inline**: apply the core skill (which you Read from the plugin) plus the stack signals to the scoped context, and emit findings in the shared schema.
 
 ### 4. Synthesis (you, inline)
-Follow the `review-pro-synthesize` skill over ALL collected findings, passing it the `diff_class`, `changed_files`, and `spec_source` you determined in triage: dedup within each axis (code findings on `(file, line±5, category-root, overlap_hints)`, spec findings on `(quoted requirement, file, line)` per that skill's Spec axis section), weight overlaps, resolve conflicts by domain ownership, calibrate severity (anti-overreporting), and emit the verdict.
+Follow the `review-pro-synthesize` skill over ALL collected findings, passing it the `diff_class`, `changed_files`, `spec_source`, `external_premises`, and `premises_dropped` you determined in triage: dedup within each axis (code findings on `(file, line±5, category-root, overlap_hints)`, spec findings on `(quoted requirement, file, line)` per that skill's Spec axis section), weight overlaps, resolve conflicts by domain ownership, calibrate severity (anti-overreporting), and emit the verdict.
 
 ## Output
 Return ONLY the final synthesis report:

@@ -198,7 +198,7 @@ CTX_POLICY="$SHARED_DIR/context-policy.md"
 if [[ -f "$CTX_POLICY" ]]; then
   grep -qF 'which channel settled' "$CTX_POLICY" \
     || add_error "shared/context-policy.md: the settling-channel record is gone - a network answer becomes indistinguishable from a local one and reviews stop being reproducible"
-  grep -qF 'locally resolved dependency source' "$CTX_POLICY" \
+  grep -qF '1. **The locally resolved dependency source' "$CTX_POLICY" \
     || add_error "shared/context-policy.md: the local-first channel is gone - reviewers would reach for the network on a premise the installed dependency already settles, and the answer stops being reproducible"
 fi
 
@@ -212,6 +212,8 @@ for f in "$SKILLS_DIR/ai-antipatterns/SKILL.md" "$SKILLS_DIR/correctness/SKILL.m
     || add_error "${f#$ROOT/}: the premise-verification block is gone - a premise routed to this reviewer could vanish without the report showing it"
   grep -qF 'never silently trust' "$f" \
     || add_error "${f#$ROOT/}: the unsettled-premise confidence rule is gone - a finding resting on an unverified premise would report at full confidence"
+  grep -qF 'settled_by' "$f" \
+    || add_error "${f#$ROOT/}: no 'settled_by' field - synthesis's Settled by column would have nothing to map from and the ledger would report empty"
 done
 
 # Published reviewer count and roster. These are maintained strings in files no

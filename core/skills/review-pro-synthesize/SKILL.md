@@ -6,7 +6,7 @@ version: 0.1.0
 
 # Review-Pro Synthesis (Stage 3)
 
-You are the orchestrator's final stage. You receive the structured findings from all dispatched reviewers, plus `diff_class`, `changed_files`, and `spec_source` from triage's dispatch plan, and produce ONE unified review.
+You are the orchestrator's final stage. You receive the structured findings from all dispatched reviewers, plus `diff_class`, `changed_files`, `spec_source`, `external_premises`, and `premises_dropped` from triage's dispatch plan, and produce ONE unified review.
 
 ## Steps
 1. **Collect** all finding blocks from the dispatched reviewers.

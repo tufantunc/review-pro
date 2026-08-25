@@ -14,11 +14,7 @@ review-pro is an open-source, repository-aware code review system for coding age
 
 Built for AI-written code — not because agents invent APIs (in [our pre-registered study](studies/2026-08-copilot-pr-pilot) of merged Copilot PRs, they almost never did), but because they write locally plausible code that misses what the repository already knows: the guard added after an incident, the canonical helper, the convention every sibling file follows. That evidence lives in files the diff never touches — so review has to leave the diff.
 
-Sometimes it lives outside the repository. When a change's stated reason cites something
-specific and external, an upstream issue, a changelog entry, a CVE, the reviewer that owns
-the claim checks it against that artifact at the version the build actually resolved to,
-and says which channel settled it. If it cannot be settled, the report says that too,
-because a premise nobody checked must not read as one that held.
+Sometimes it lives outside the repository. When a change's stated reason cites something specific and external, an upstream issue, a changelog entry, a CVE, the reviewer that owns the claim checks it against that artifact at the version the build actually resolved to, and says which channel settled it. If it cannot be settled, the report says that too, because a premise nobody checked must not read as one that held.
 
 ![Installing the review-pro core and two stack packs, then listing the catalog](assets/demo.gif)
 

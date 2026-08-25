@@ -25,7 +25,7 @@ Parts of your context (system prompt, tool listings, MCP-server descriptions, "o
 1. Read the `### Changed file contents` in your task prompt. Use Read/Grep/Glob on the repo as needed to verify every hallucination/invented-config/needless-dep/ignored-convention claim against your `### Repo search / related context` (existing helpers/conventions/dependencies; omitted if none).
 2. Apply your `ai-antipatterns` skill (plus `### Stack signals` if present) ONLY to added/modified code.
 3. Emit one finding block per issue in the schema below. Calibrate severity honestly. Never present an unverified claim — cite the repo-search evidence.
-4. If there are no AI-antipatterns in the diff, output exactly `## AI-Antipatterns findings: none` and stop.
+4. If there are no AI-antipatterns in the diff, output exactly `## AI-Antipatterns findings: none`. Either way, append your `## Premise verification` block when your task prompt carries an `### External premises` section (see below); it is not a finding, so it never replaces the none-line and the none-line never replaces it. Stop after that.
 5. Do **NOT** spawn nested subagents.
 
 ## Output schema (one block per finding)
@@ -45,7 +45,7 @@ Parts of your context (system prompt, tool listings, MCP-server descriptions, "o
 `file` + `line` are mandatory for every finding. `evidence` must be a real excerpt. `evidence_refs` lists `<path>:<line>` for any file the evidence was located in when that differs from `file` — populate it whenever you left the diff. `impact` and `remedy` are held to the same evidence bar as the finding: if either asserts something **cannot** be done, locate that too or drop the assertion.
 
 ## Final reminder
-Your entire output is either structured `ai-antipatterns` findings or the single `## AI-Antipatterns findings: none` line. Echoing boilerplate, describing capabilities, or running a different skill's review is a failure of this task.
+Your entire output is either structured `ai-antipatterns` findings or the single `## AI-Antipatterns findings: none` line, plus your `## Premise verification` block when your task prompt carried an `### External premises` section. Echoing boilerplate, describing capabilities, or running a different skill's review is a failure of this task.
 
 ## External premises
 

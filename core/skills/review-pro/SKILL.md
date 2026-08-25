@@ -17,7 +17,7 @@ You are the **orchestrator**. Run the entire pipeline on the current branch in O
 - **Installed stacks:** `Glob .review-pro/*/manifest.json`. Each match is a stack the user installed (via `npx review-pro`). These are the repo's **active stacks**. If `.review-pro/` is absent or empty, reviewers run on their core rubric only.
 
 ### 2. Triage (you, inline)
-Follow the `review-pro-triage` skill. Classify the changed files, detect concern relevance, resolve the spec (emitting `spec_source`), and produce a **dispatch plan**: which reviewers to run + each one's scoped context (per `core/shared/context-policy.md`). Be conservative, when in doubt dispatch, with one exception: `spec` runs only when `spec_source.kind` is not `none`, because a spec reviewer with no spec is a guaranteed waste rather than a possible finding.
+Follow the `review-pro-triage` skill. Classify the changed files, detect concern relevance, resolve the spec (emitting `spec_source`), and produce a **dispatch plan**: which reviewers to run + each one's scoped context (per `core/shared/context-policy.md`). Be conservative, when in doubt dispatch, with two exceptions: `spec` runs only when `spec_source.kind` is not `none`, because a spec reviewer with no spec is a guaranteed waste rather than a possible finding; and a reviewer that triage assigned an external premise to runs whether or not the signal map picked it, because a premise routed to a reviewer that never runs is verified by nobody.
 
 ### 3. Fan-out — reviewers (subagents, parallel)
 For each reviewer in the dispatch plan:
@@ -28,12 +28,16 @@ For each reviewer in the dispatch plan:
    - `### Changed file contents` — the changed files relevant to this reviewer (from your prep).
    - `### Related context` — scoped extras per context-policy (callers, consumers, schema, repo search). Omit if none.
    - `### Spec text`, for the `spec` reviewer only: the resolved spec text from triage's `spec_source`. Omit this section for every other reviewer; none of them should be measuring intent. If `spec_source.kind` is `none`, do not dispatch this reviewer at all.
-3. **Collect** its structured finding blocks.
+   - `### External premises`, for the owning reviewer only: the entries from triage's
+     `external_premises` whose `owner` is this reviewer, verbatim. Omit the section for
+     every other reviewer. Verification channels and the requirement to record which
+     channel settled a premise live in `core/shared/context-policy.md`.
+3. **Collect** its structured finding blocks, plus its `## Premise verification` block when one comes back. That block is not a finding: never dedup it against the finding blocks and never rank it alongside them.
 
 If a reviewer subagent is unavailable on your platform, perform that review **inline**: apply the core skill (which you Read from the plugin) plus the stack signals to the scoped context, and emit findings in the shared schema.
 
 ### 4. Synthesis (you, inline)
-Follow the `review-pro-synthesize` skill over ALL collected findings, passing it the `diff_class`, `changed_files`, and `spec_source` you determined in triage: dedup within each axis (code findings on `(file, line±5, category-root, overlap_hints)`, spec findings on `(quoted requirement, file, line)` per that skill's Spec axis section), weight overlaps, resolve conflicts by domain ownership, calibrate severity (anti-overreporting), and emit the verdict.
+Follow the `review-pro-synthesize` skill over ALL collected findings, passing it the `diff_class`, `changed_files`, `spec_source`, `external_premises`, and `premises_dropped` you determined in triage: dedup within each axis (code findings on `(file, line±5, category-root, overlap_hints)`, spec findings on `(quoted requirement, file, line)` per that skill's Spec axis section), weight overlaps, resolve conflicts by domain ownership, calibrate severity (anti-overreporting), and emit the verdict.
 
 ## Output
 Return ONLY the final synthesis report:

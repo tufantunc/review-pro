@@ -172,7 +172,10 @@ description: "triage"
 ## Dispatch plan format
 spec_source:
   kind: none
+external_premises: []
 Dispatch spec if and only if a spec was resolved.
+Assigning a premise to a reviewer dispatches that reviewer.
+Triage does not verify the premise itself.
 ## Output discipline
 EOF
       ;;
@@ -189,6 +192,7 @@ Count the code-axis findings only whose evidence_refs name an unchanged path.
 ## Spec axis
 Report it as abstained (no spec text) when the axis could not measure.
 Dedup the spec pool on the quoted requirement, not on `(file, line)` alone.
+### External premises
 ## Conflict ownership
 ## Output
 EOF
@@ -683,6 +687,180 @@ rm -rf "$T/core/skills/r13"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "no numeral word known for 12"; then ok "unknown numeral word fails loudly"; else bad "unknown numeral word did NOT fail loudly"; fi
 rm -rf "$T"
+
+# Case AB: the settling-channel record in context-policy. Its absence makes a
+# network answer indistinguishable from a local one, so reviews stop being
+# reproducible without any check failing.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/shared" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+printf 'Record which channel settled the premise. Use the locally resolved dependency source first.\n' > "$T/core/shared/context-policy.md"
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "settling-channel record is gone"; then bad "settling-channel control fired on an intact fixture"; else ok "settling-channel control silent when present"; fi
+printf 'Verify the premise outside the repo.\n' > "$T/core/shared/context-policy.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "settling-channel record is gone"; then ok "removed settling-channel record detected"; else bad "removed settling-channel record not detected"; fi
+rm -rf "$T"
+
+# Case AB2: the local-first channel in context-policy. Order matters here: a premise
+# the installed dependency already settles must not be answered from the network,
+# because a network answer is not reproducible.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/shared" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+printf 'Record which channel settled the premise.\n1. **The locally resolved dependency source.** first.\n2. **The network.** second.\n' > "$T/core/shared/context-policy.md"
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "local-first channel is gone"; then bad "local-first control fired on an intact fixture"; else ok "local-first control silent when present"; fi
+printf 'Record which channel settled the premise.\n1. **The network.** first.\n2. **The locally resolved dependency source.** second.\n' > "$T/core/shared/context-policy.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "local-first channel is gone"; then ok "removed local-first channel detected"; else bad "removed local-first channel not detected"; fi
+rm -rf "$T"
+
+# Case X: triage's external_premises contract. Positive control first, so a passing
+# assertion cannot come from the fixture simply never having had the string.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "no 'external_premises'"; then bad "external_premises control fired on an intact fixture"; else ok "external_premises control silent when present"; fi
+grep -v '^external_premises: \[\]$' "$T/core/skills/review-pro-triage/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-triage/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "no 'external_premises'"; then ok "removed external_premises detected"; else bad "removed external_premises not detected"; fi
+rm -rf "$T"
+
+# Case Y: the assign-dispatches rule, without which a premise is routed to a
+# reviewer the signal map never dispatches and nothing reports the gap.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "assign-dispatches rule is gone"; then bad "assign-dispatches control fired on an intact fixture"; else ok "assign-dispatches control silent when present"; fi
+grep -v '^Assigning a premise' "$T/core/skills/review-pro-triage/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-triage/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "assign-dispatches rule is gone"; then ok "removed assign-dispatches rule detected"; else bad "removed assign-dispatches rule not detected"; fi
+rm -rf "$T"
+
+# Case Z: the prohibition on triage verifying premises itself.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "no-verification prohibition is gone"; then bad "no-verification control fired on an intact fixture"; else ok "no-verification control silent when present"; fi
+grep -v 'does not verify the premise' "$T/core/skills/review-pro-triage/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-triage/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "no-verification prohibition is gone"; then ok "removed no-verification prohibition detected"; else bad "removed no-verification prohibition not detected"; fi
+rm -rf "$T"
+
+# Case AE: the orchestrator's prompt section. Without it triage routes premises the
+# orchestrator never passes on, so the whole chain runs and verifies nothing.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+cat > "$T/core/skills/review-pro/SKILL.md" <<'EOFO'
+---
+name: review-pro
+description: "orchestrator"
+---
+# Review-Pro
+Dedup within each axis, spec findings on the quoted requirement.
+### External premises
+EOFO
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "prompt section is gone"; then bad "orchestrator premise-section control fired on an intact fixture"; else ok "orchestrator premise-section control silent when present"; fi
+grep -v '^### External premises$' "$T/core/skills/review-pro/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "prompt section is gone"; then ok "removed orchestrator premise section detected"; else bad "removed orchestrator premise section not detected"; fi
+rm -rf "$T"
+
+# Case AC/AD: the two owner-side rules, checked in the rubric AND the agent body.
+# Both copies, because the body is what reaches the subagent and the rubric is what
+# review-pro/SKILL.md's inline path applies; a rule in only one silently disables
+# the feature on the other path.
+for pair in "core/skills/ai-antipatterns/SKILL.md" "core/agents/ai-antipatterns-reviewer.md"; do
+  T=$(mktemp -d)
+  mkdir -p "$T/core/skills/security" "$T/core/skills/ai-antipatterns" "$T/core/agents"
+  write_good_reviewer "$T/core/skills/security/SKILL.md"
+  if [[ "$pair" == core/skills/* ]]; then
+    write_good_reviewer "$T/$pair"
+  else
+    write_good_agent_body "$T/$pair" ai-antipatterns-reviewer
+  fi
+  printf '## Premise verification\nsettled_by: network\nnever silently trust an unsettled premise.\n' >> "$T/$pair"
+  cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"ai-antipatterns","role":"reviewer"}], "agents": [] }
+JSON
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  if echo "$out" | grep -q "premise-verification block is gone"; then bad "$pair: premise-verification control fired on an intact fixture"; else ok "$pair: premise-verification control silent when present"; fi
+  if echo "$out" | grep -q "unsettled-premise confidence rule is gone"; then bad "$pair: confidence-rule control fired on an intact fixture"; else ok "$pair: confidence-rule control silent when present"; fi
+  grep -v '## Premise verification' "$T/$pair" > "$T/tmp" && mv "$T/tmp" "$T/$pair"
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  if echo "$out" | grep -q "premise-verification block is gone"; then ok "$pair: removed premise-verification block detected"; else bad "$pair: removed premise-verification block not detected"; fi
+  grep -v 'never silently trust' "$T/$pair" > "$T/tmp" && mv "$T/tmp" "$T/$pair"
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  if echo "$out" | grep -q "unsettled-premise confidence rule is gone"; then ok "$pair: removed confidence rule detected"; else bad "$pair: removed confidence rule not detected"; fi
+  rm -rf "$T"
+done
+
+# Case AA: the synthesis ledger, without which a reviewer's "could not verify"
+# statement never reaches the report the reader actually reads.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_orchestrator "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "external-premise ledger is gone"; then bad "ledger control fired on an intact fixture"; else ok "ledger control silent when present"; fi
+grep -v '^### External premises$' "$T/core/skills/review-pro-synthesize/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-synthesize/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "external-premise ledger is gone"; then ok "removed ledger detected"; else bad "removed ledger not detected"; fi
+rm -rf "$T"
+
+# Case AF: the settled_by field in the six-file premise loop. Without it, synthesis's
+# Settled by column has nothing to map from and the ledger reports empty. Both copies,
+# same reason as AC/AD: the body is what reaches the subagent.
+for pair in "core/skills/ai-antipatterns/SKILL.md" "core/agents/ai-antipatterns-reviewer.md"; do
+  T=$(mktemp -d)
+  mkdir -p "$T/core/skills/security" "$T/core/skills/ai-antipatterns" "$T/core/agents"
+  write_good_reviewer "$T/core/skills/security/SKILL.md"
+  if [[ "$pair" == core/skills/* ]]; then
+    write_good_reviewer "$T/$pair"
+  else
+    write_good_agent_body "$T/$pair" ai-antipatterns-reviewer
+  fi
+  printf '## Premise verification\nsettled_by: network\nnever silently trust an unsettled premise.\n' >> "$T/$pair"
+  cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"ai-antipatterns","role":"reviewer"}], "agents": [] }
+JSON
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  if echo "$out" | grep -q "no 'settled_by' field"; then bad "$pair: settled_by control: fired on an intact fixture"; else ok "$pair: settled_by control: silent on an intact fixture"; fi
+  grep -v 'settled_by' "$T/$pair" > "$T/tmp" && mv "$T/tmp" "$T/$pair"
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  if echo "$out" | grep -q "no 'settled_by' field"; then ok "$pair: missing settled_by detected"; else bad "$pair: missing settled_by NOT detected"; fi
+  rm -rf "$T"
+done
 
 echo "---"
 echo "pass=$pass fail=$fail"

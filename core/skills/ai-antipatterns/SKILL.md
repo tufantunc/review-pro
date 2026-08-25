@@ -61,5 +61,33 @@ One structured block per finding (see shared/output-schema.md). Use category roo
 - Reinvented helpers overlap `dry`: dry owns the duplication/consolidation; you own the "ignored an existing convention" angle.
 - A hallucinated API also surfaces as a build failure — note it for `correctness` if behavior is affected.
 
+## External premises
+
+When the task prompt carries an `### External premises` section, each entry is a claim about an existing API, dependency, or convention that this change's rationale rests on and that cannot be settled inside the repo. Verify it using the channel order in `shared/context-policy.md`, and record which channel settled it.
+
+- **Contradicted.** File a normal finding under your own existing category, chosen by
+  what the false premise *damages*, not by the fact that a premise was false. Cite the
+  external source in `evidence_refs` with its channel and version, because a versionless
+  upstream citation cannot be rechecked:
+  `[~/.nuget/packages/openai/2.12.0/lib/.../ContainerFileResource.cs:41]` or
+  `[openai/openai-dotnet@OpenAI_2.12.0]`. Severity from the usual bar.
+  `confidence` describes the finding, not the premise verdict: use `high` when the damage the false premise causes is itself established, and `medium` when the premise is settled but its consequence is conditional, for example when it depends on an input the service may or may not send, since a verified premise does not make a conditional consequence certain and reporting it as certain spends credibility the axis needs.
+- **Confirmed.** No finding.
+- **Unverifiable.** No finding either.
+
+Whichever of the three it was, account for **every** premise you were handed in one block. Silence is not an outcome: a premise that was routed to you and then left no trace is indistinguishable from one nobody checked, and removing exactly that ambiguity is why this section exists.
+
+```
+## Premise verification
+- premise: <the claim, quoted>
+  cited: <the artifact>
+  settled_by: local-package-cache | lockfile | network | none
+  outcome: contradicted | confirmed | unverified
+  finding: <the category you filed it under>   # only when contradicted
+  blocked: <what stopped you>                  # only when unverified
+```
+
+A finding that rests on a premise you could not settle carries `confidence: low` and says so in the block. **Never silently skip, never silently trust.**
+
 ## Tone
 Direct, evidence-driven, no hand-waving. Every claim cites the verified repo reality. This reviewer's authority comes entirely from having checked.

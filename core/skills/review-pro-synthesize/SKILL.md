@@ -6,7 +6,7 @@ version: 0.1.0
 
 # Review-Pro Synthesis (Stage 3)
 
-You are the orchestrator's final stage. You receive the structured findings from all dispatched reviewers, plus `diff_class`, `changed_files`, and `spec_source` from triage's dispatch plan, and produce ONE unified review.
+You are the orchestrator's final stage. You receive the structured findings from all dispatched reviewers, plus `diff_class`, `changed_files`, `spec_source`, `external_premises`, and `premises_dropped` from triage's dispatch plan, and produce ONE unified review.
 
 ## Steps
 1. **Collect** all finding blocks from the dispatched reviewers.
@@ -51,6 +51,25 @@ Spec findings arrive in the same stream as code findings and are kept apart from
 - **Print `spec_source` verbatim** directly under the verdict and above the out-of-diff caveat, so the reader can see what the review was measured against.
 - **Never re-rank a spec finding against a code finding.** Reporting them separately is what stops one axis from masking the other.
 
+## External premises
+
+Triage's `external_premises` names claims the diff's rationale rests on that could not be settled inside the repo. Each one comes back from its owning reviewer as a row in that reviewer's `## Premise verification` block, whatever the outcome was. Print one table, and omit the whole section when triage emitted no premises. It goes in the `## Output` template after the spec line and the out-of-diff caveat, and before the severity-grouped findings: it is review-level context like those two, not a finding, so it belongs with them and above the findings it sits over.
+
+```
+### External premises
+| Premise | Cited | Settled by | Outcome |
+```
+
+When triage reported `premises_dropped` with a value above zero, add one line directly beneath the table, outside it, naming the count: for example `2 premises dropped by triage's cap; never routed, never checked.` This is not a table row. A dropped premise carries no `settled_by` or `outcome`, because no reviewer ever saw it, and folding it into the table would manufacture a verification that never happened.
+
+Map the columns straight off the block: `Settled by` from `settled_by`, `Outcome` from `outcome`, and for `unverified` append the reason from `blocked`, for `contradicted` the category from `finding`.
+
+List confirmed premises rather than dropping them. If a confirmed premise leaves no trace, a reader cannot tell "checked and it held" from "never checked", and removing that ambiguity is the whole purpose of the axis.
+
+If triage reported a premise that appears in no reviewer's block, print the row anyway. A reviewer block is not the source here, because none exists, so take `Premise` from triage's own `claim` and `Cited` from triage's own `cited`. Leave `Settled by` empty, because nothing settled it, and set `Outcome` to `not reported`, appended with the owner triage assigned, the same way `blocked` and `finding` are appended above. A premise that was routed and then vanished is a reviewer contract violation, and it is the failure mode this feature exists to prevent, so it must not be the quietest line in the report.
+
+The out-of-diff evidence check needs no exception here. Its definition already counts an upstream source as out-of-diff evidence, and these are code-axis findings, so a premise finding satisfies the tripwire because the review genuinely left the diff.
+
 ## Category roots
 
 The dedup key's namespace, one root per reviewer. Stated here because Stage 3 is what
@@ -90,6 +109,8 @@ Spec: measured against <spec_source.ref>
 (or: skipped, no spec found / not measured, <ref> resolved but carried no text)
 
 > the out-of-diff caveat, when it applies, goes here: after spec_source, before findings
+
+> the External premises table, when triage emitted premises, goes here: after the caveat, before findings
 
 ### Critical
 - [Critical] src/api/orders.ts:42 — missing ownership check

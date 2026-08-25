@@ -6,3 +6,7 @@
 # Local SonarQube scanner config (not shared, points at a local server)
 sonar-project.properties
 .scannerwork/
+
+# Subagent-driven-development scratch: ledgers, briefs, review packages.
+# Per-plan and disposable; the git history is the durable record.
+.superpowers/

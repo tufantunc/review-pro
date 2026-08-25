@@ -197,3 +197,5 @@ MIT. See `LICENSE`.
 review-pro started from an idea inspired by [cursor/plugins — thermos](https://github.com/cursor/plugins/tree/main/thermos), a two-reviewer Cursor plugin. It is an independent project — not a fork or a drop-in alternative: a tiered 13-reviewer system with stack packs and a cross-platform installer CLI.
 
 The **Spec axis**, which reviews a diff against the issue it came from rather than against the code alone, is borrowed from the `code-review` skill in [mattpocock/skills](https://github.com/mattpocock/skills). That skill runs two axes, Standards and Spec, and deliberately refuses to merge them. The second axis was the piece review-pro was missing, and the argument for keeping the axes separate is theirs.
+
+Three calibration rules trace to the `code-review-and-quality` skill in [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills), itself distilled from Google's engineering practices: the approval standard (approve what clearly improves the repo, even imperfect), reviewing the lockfile diff as part of any dependency bump, and requiring a remedy to name a concrete restructuring move rather than restate the problem.

@@ -192,6 +192,7 @@ Count the code-axis findings only whose evidence_refs name an unchanged path.
 ## Spec axis
 Report it as abstained (no spec text) when the axis could not measure.
 Dedup the spec pool on the quoted requirement, not on `(file, line)` alone.
+"not how the reviewer would have written it" is not a finding.
 ### External premises
 ## Conflict ownership
 ## Output
@@ -861,6 +862,23 @@ JSON
   if echo "$out" | grep -q "no 'settled_by' field"; then ok "$pair: missing settled_by detected"; else bad "$pair: missing settled_by NOT detected"; fi
   rm -rf "$T"
 done
+
+
+# Case AG: the approval standard in synthesis. Its deletion does not fail any other
+# check, and without it verdicts drift from measuring code health to enforcing taste.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_orchestrator "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "approval standard is gone"; then bad "approval-standard control fired on an intact fixture"; else ok "approval-standard control silent when present"; fi
+grep -v 'not how the reviewer would have written it' "$T/core/skills/review-pro-synthesize/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-synthesize/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "approval standard is gone"; then ok "removed approval standard detected"; else bad "removed approval standard not detected"; fi
+rm -rf "$T"
 
 echo "---"
 echo "pass=$pass fail=$fail"

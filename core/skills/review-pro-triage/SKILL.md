@@ -29,7 +29,7 @@ You are the orchestrator's first stage. You do NOT review code yourself. You pre
 
    Emit `spec_source` recording what you found, not merely whether you found something. Stage 3 prints it verbatim, because a reader who cannot see what the review was measured against cannot judge a spec finding.
 
-   **Dispatch `spec` if and only if `spec_source.kind` is not `none`.** This is the one dispatch decision that does not come from the signal map, because spec relevance has nothing to do with which files changed. The "when in doubt, dispatch" default in step 4 does **not** apply here: dispatching a spec reviewer with no spec is a guaranteed waste, not a possible finding.
+   **Dispatch `spec` if and only if `spec_source.kind` is not `none`.** This is one of two dispatch decisions that do not come from the signal map, because spec relevance has nothing to do with which files changed. The other is premise routing in step 7, and the two pull opposite ways: this one withholds a dispatch the signal map might otherwise want, that one compels a dispatch the signal map declined. The "when in doubt, dispatch" default in step 4 does **not** apply here: dispatching a spec reviewer with no spec is a guaranteed waste, not a possible finding.
 
 7. **Extract external premises.** Gather your own sources; do not hang this on step 6,
    whose chain stops at the first hit and therefore never reads the PR body when the

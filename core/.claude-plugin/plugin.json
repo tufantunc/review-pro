@@ -1,6 +1,6 @@
 {
   "name": "review-pro",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Tiered AI code-review: triage -> relevant specialist reviewers -> synthesis. Built to catch what AI-written code actually ships with — hallucinated APIs, over-engineering, ignored conventions, needless dependencies. Invoke the `review-pro` skill on a branch or PR.",
   "author": {
     "name": "tufantunc",

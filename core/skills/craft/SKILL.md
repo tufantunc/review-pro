@@ -32,6 +32,7 @@ Every finding needs `file:line` + excerpt + why it is a structural regression + 
 - **Nitpick:** naming/formatting.
 - Anti-overreporting: do not flood with Low/Nitpick when structural issues exist.
 - **Ambition:** push hard for the simpler idea, not the cleaner version of the same messy idea. Prefer deleting complexity over rearranging it. "Maybe rename this" is unacceptable when a structural simplification is available.
+- **Remedy names the move.** A remedy that only restates the problem ("this is complex") leaves the author guessing. Reach for a named restructuring: replace a chain of conditionals with a typed model or an explicit dispatcher; collapse duplicate branches into one flow; separate orchestration from business logic; move feature-specific logic into the module that owns the concept; reuse the canonical helper instead of a near-duplicate; make a type boundary explicit so downstream branching disappears; delete a pass-through wrapper; extract a helper or split an oversized file. Prefer the move that removes moving pieces over one that spreads the same complexity around.
 
 ## No unresearched findings
 Before claiming "a canonical helper already exists", verify it in your scoped context. Before claiming a refactor preserves behavior, confirm against the diff and related code.

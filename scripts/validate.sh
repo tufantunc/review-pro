@@ -192,6 +192,8 @@ if [[ -f "$SYNTH_MD" ]]; then
     || add_error "review-pro-synthesize/SKILL.md: the spec pool's dedup rule is gone - unattempted requirements would collapse into one finding"
   grep -qF 'External premises' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the external-premise ledger is gone - a reviewer's 'could not verify' statement dies before the report the reader actually reads"
+  grep -qF 'not how the reviewer would have written it' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the approval standard is gone - verdicts drift from measuring code health to enforcing taste, and imperfect improvements start getting blocked"
 fi
 
 CTX_POLICY="$SHARED_DIR/context-policy.md"

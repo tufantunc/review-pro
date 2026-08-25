@@ -99,6 +99,8 @@ guessing which neighbour it meant.
 - **REQUEST CHANGES:** any Medium or above.
 - **APPROVE:** only Low/Nitpick, or no findings.
 
+The verdict measures code health, not conformance to taste. A change that clearly improves the repo earns APPROVE even when it is imperfect, and "not how the reviewer would have written it" is not a finding on any axis. Withhold approval only on the scale above, never because a style preference no rubric names went unmet: a review that blocks improvements trains authors to stop improving.
+
 ## Output
 A markdown report. Lead with the verdict and Critical/High. Do not restate raw specialist dumps — present the unified, deduped view.
 

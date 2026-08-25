@@ -192,6 +192,7 @@ Count the code-axis findings only whose evidence_refs name an unchanged path.
 ## Spec axis
 Report it as abstained (no spec text) when the axis could not measure.
 Dedup the spec pool on the quoted requirement, not on `(file, line)` alone.
+### External premises
 ## Conflict ownership
 ## Output
 EOF
@@ -820,6 +821,22 @@ JSON
   if echo "$out" | grep -q "unsettled-premise confidence rule is gone"; then ok "$pair: removed confidence rule detected"; else bad "$pair: removed confidence rule not detected"; fi
   rm -rf "$T"
 done
+
+# Case AA: the synthesis ledger, without which a reviewer's "could not verify"
+# statement never reaches the report the reader actually reads.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_orchestrator "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "external-premise ledger is gone"; then bad "ledger control fired on an intact fixture"; else ok "ledger control silent when present"; fi
+grep -v '^### External premises$' "$T/core/skills/review-pro-synthesize/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-synthesize/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "external-premise ledger is gone"; then ok "removed ledger detected"; else bad "removed ledger not detected"; fi
+rm -rf "$T"
 
 echo "---"
 echo "pass=$pass fail=$fail"

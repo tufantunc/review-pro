@@ -190,6 +190,8 @@ if [[ -f "$SYNTH_MD" ]]; then
     || add_error "review-pro-synthesize/SKILL.md: no branch for the abstain token - an unmeasured axis would be reported as 'no mismatch'"
   grep -qF 'not on `(file, line)`' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the spec pool's dedup rule is gone - unattempted requirements would collapse into one finding"
+  grep -qF 'External premises' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the external-premise ledger is gone - a reviewer's 'could not verify' statement dies before the report the reader actually reads"
 fi
 
 CTX_POLICY="$SHARED_DIR/context-policy.md"

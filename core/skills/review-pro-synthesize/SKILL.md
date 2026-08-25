@@ -51,6 +51,23 @@ Spec findings arrive in the same stream as code findings and are kept apart from
 - **Print `spec_source` verbatim** directly under the verdict and above the out-of-diff caveat, so the reader can see what the review was measured against.
 - **Never re-rank a spec finding against a code finding.** Reporting them separately is what stops one axis from masking the other.
 
+## External premises
+
+Triage's `external_premises` names claims the diff's rationale rests on that could not be settled inside the repo. Each one comes back from its owning reviewer as a row in that reviewer's `## Premise verification` block, whatever the outcome was. Print one table, and omit the whole section when triage emitted no premises:
+
+```
+### External premises
+| Premise | Cited | Settled by | Outcome |
+```
+
+Map the columns straight off the block: `Settled by` from `settled_by`, `Outcome` from `outcome`, and for `unverified` append the reason from `blocked`, for `contradicted` the category from `finding`.
+
+List confirmed premises rather than dropping them. If a confirmed premise leaves no trace, a reader cannot tell "checked and it held" from "never checked", and removing that ambiguity is the whole purpose of the axis.
+
+If triage reported a premise that appears in no reviewer's block, print the row with outcome `not reported` and name the owner triage assigned. A premise that was routed and then vanished is a reviewer contract violation, and it is the failure mode this feature exists to prevent, so it must not be the quietest line in the report.
+
+The out-of-diff evidence check needs no exception here. Its definition already counts an upstream source as out-of-diff evidence, and these are code-axis findings, so a premise finding satisfies the tripwire because the review genuinely left the diff.
+
 ## Category roots
 
 The dedup key's namespace, one root per reviewer. Stated here because Stage 3 is what

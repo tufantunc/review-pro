@@ -184,6 +184,11 @@ if [[ -f "$SYNTH_MD" ]]; then
     || add_error "review-pro-synthesize/SKILL.md: the spec pool's dedup rule is gone - unattempted requirements would collapse into one finding"
 fi
 
+CTX_POLICY="$SHARED_DIR/context-policy.md"
+if [[ -f "$CTX_POLICY" ]]; then
+  grep -qF 'which channel settled' "$CTX_POLICY" \
+    || add_error "shared/context-policy.md: the settling-channel record is gone - a network answer becomes indistinguishable from a local one and reviews stop being reproducible"
+fi
 
 # Published reviewer count and roster. These are maintained strings in files no
 # other check reads: README.md, docs/llms.txt (hand-written, not generated, so the

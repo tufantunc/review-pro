@@ -684,6 +684,23 @@ out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "no numeral word known for 12"; then ok "unknown numeral word fails loudly"; else bad "unknown numeral word did NOT fail loudly"; fi
 rm -rf "$T"
 
+# Case AB: the settling-channel record in context-policy. Its absence makes a
+# network answer indistinguishable from a local one, so reviews stop being
+# reproducible without any check failing.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/shared" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+printf 'Record which channel settled the premise.\n' > "$T/core/shared/context-policy.md"
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "settling-channel record is gone"; then bad "settling-channel control fired on an intact fixture"; else ok "settling-channel control silent when present"; fi
+printf 'Verify the premise outside the repo.\n' > "$T/core/shared/context-policy.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "settling-channel record is gone"; then ok "removed settling-channel record detected"; else bad "removed settling-channel record not detected"; fi
+rm -rf "$T"
+
 echo "---"
 echo "pass=$pass fail=$fail"
 

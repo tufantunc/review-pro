@@ -249,6 +249,7 @@ failing any other check.
 | triage | `external_premises` | triage cannot route; the feature is entirely dead |
 | triage | the assign-dispatches rule | premises are orphaned and silently unverified |
 | triage | the no-verification prohibition | triage self-checks; the one-owner rule collapses |
+| `review-pro` (orchestrator) | the `### External premises` prompt section | triage routes premises the orchestrator never passes on; the chain runs and verifies nothing |
 | 3 rubrics + 3 bodies | `Unverified external premises` | unverifiable becomes indistinguishable from verified |
 | 3 rubrics + 3 bodies | the `confidence: low` rule | findings on unsettled premises report at full confidence |
 | synthesize | the ledger section | the reviewer's statement dies before the report |
@@ -261,10 +262,25 @@ on the other path.
 
 ### Meta-tests
 
-Seven guards, each with a positive control before the negative mutation, per the
+Eight guards, each with a positive control before the negative mutation, per the
 discipline established in Case K: without the positive control, a passing assertion can
-come from the fixture never having contained the string. Roughly 14 assertions, taking
-the suite from 73 to about 87.
+come from the fixture never having contained the string. Twenty assertions, taking the
+suite from 73 to 93.
+
+The orchestrator row was missed on the first pass through this table and found while
+proving the guards in a sandbox. It is the reason the count is eight: the design said
+the orchestrator adds the prompt section, and nothing would have failed if that line
+were deleted, which is the exact bar this table is written against.
+
+### One fixture, not eleven
+
+Adding a load-bearing grep on the triage or synthesize skill makes the meta-test
+fixtures in `write_orchestrator` invalid. The blast radius is one case, not eleven:
+almost every case asserts that a *specific* error message appears, and extra errors do
+not disturb that. Only Case A asserts a clean pass. The fixture still has to be updated
+for both orchestrator branches, and the guards on the three owning rubrics and their
+bodies need no fixture at all, because they name specific paths behind `[[ -f ]]` and no
+fixture creates those files.
 
 ### Files touched
 

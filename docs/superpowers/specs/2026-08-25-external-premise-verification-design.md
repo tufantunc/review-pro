@@ -42,8 +42,14 @@ Three outcomes for any external premise, each with exactly one home:
 1. **Contradicted.** A normal finding, under the owning reviewer's existing category
    root. No new root.
 2. **Confirmed.** No finding. One line in a synthesis ledger.
-3. **Unverifiable.** Not a finding. A dedicated block in the reviewer's output, and a
-   row in the ledger.
+3. **Unverifiable.** Not a finding. A row in the ledger, carrying the reason.
+
+All three are accounted for in one `## Premise verification` block per reviewer, one row
+per premise it was handed. Silence is not a fourth outcome: a premise routed to a
+reviewer that then leaves no trace is indistinguishable from one nobody checked, which
+is the ambiguity this whole axis exists to remove. The first draft of this design gave
+the block to the unverifiable case alone, and synthesis then had nothing to build a
+`confirmed` row from and no way to detect a premise that vanished after routing.
 
 Nothing is added to the finding schema. `confidence: high | medium | low` already
 exists in all thirteen rubrics, and the third outcome reuses it.
@@ -187,17 +193,25 @@ evidence_refs: [openai/openai-dotnet@OpenAI_2.12.0]
 Severity comes from the existing bar. `confidence: high`, because the question was
 settled.
 
-### Unverifiable premise
+### Every premise, in one block
 
-Not a finding. Its own block, modelled on the `spec` axis's abstain sentinel:
+One `## Premise verification` block per reviewer, one row per premise it was handed,
+whatever the outcome. Named distinctly from the `### External premises` input section on
+purpose: an output block sharing its input's heading makes any guard on either of them
+satisfiable by the other.
 
 ```
-## Unverified external premises
+## Premise verification
 - premise: dependency bump justified by "upstream SDK bug fixed in the new version"
   cited: openai-dotnet#733
-  attempted: local package cache, lockfile
+  settled_by: none
+  outcome: unverified
   blocked: openai 2.12.0 absent from ~/.nuget/packages; no network access
 ```
+
+`settled_by` is one of `local-package-cache`, `lockfile`, `network`, `none`. `outcome`
+is `contradicted`, `confirmed`, or `unverified`. A contradicted row adds `finding` naming
+the category it was filed under; an unverified row adds `blocked`.
 
 And the hard rule: **a finding that rests on a premise you could not settle carries
 `confidence: low`, and the block states why. Never silently skip, never silently
@@ -250,7 +264,7 @@ failing any other check.
 | triage | the assign-dispatches rule | premises are orphaned and silently unverified |
 | triage | the no-verification prohibition | triage self-checks; the one-owner rule collapses |
 | `review-pro` (orchestrator) | the `### External premises` prompt section | triage routes premises the orchestrator never passes on; the chain runs and verifies nothing |
-| 3 rubrics + 3 bodies | `Unverified external premises` | unverifiable becomes indistinguishable from verified |
+| 3 rubrics + 3 bodies | `## Premise verification` | a premise routed to a reviewer can vanish without the report showing it |
 | 3 rubrics + 3 bodies | the `confidence: low` rule | findings on unsettled premises report at full confidence |
 | synthesize | the ledger section | the reviewer's statement dies before the report |
 | context-policy | channel order and which channel settled it | a network answer displaces the local source; reviews stop being reproducible |

@@ -372,7 +372,7 @@ git commit -m "feat: extract and route external premises in triage (#13)"
 
 **Interfaces:**
 - Consumes: `### External premises` from Task 2, and the channel order from Task 1.
-- Produces: the exact strings `Unverified external premises` and `never silently trust`, in all six files. Task 4's synthesis ledger consumes the block's field names: `premise`, `cited`, `attempted`, `blocked`.
+- Produces: the exact strings `## Premise verification` and `never silently trust`, in all six files. Task 4's ledger consumes the block's field names: `premise`, `cited`, `settled_by`, `outcome`, `finding`, `blocked`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -392,16 +392,16 @@ for pair in "core/skills/ai-antipatterns/SKILL.md" "core/agents/ai-antipatterns-
   else
     write_good_agent_body "$T/$pair" ai-antipatterns-reviewer
   fi
-  printf '## Unverified external premises\nnever silently trust an unsettled premise.\n' >> "$T/$pair"
+  printf '## Premise verification\nnever silently trust an unsettled premise.\n' >> "$T/$pair"
   cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"ai-antipatterns","role":"reviewer"}], "agents": [] }
 JSON
   out=$(bash "$VALIDATE" "$T" 2>&1 || true)
-  if echo "$out" | grep -q "unverified-premise block is gone"; then bad "$pair: unverified-premise control fired on an intact fixture"; else ok "$pair: unverified-premise control silent when present"; fi
+  if echo "$out" | grep -q "premise-verification block is gone"; then bad "$pair: premise-verification control fired on an intact fixture"; else ok "$pair: premise-verification control silent when present"; fi
   if echo "$out" | grep -q "unsettled-premise confidence rule is gone"; then bad "$pair: confidence-rule control fired on an intact fixture"; else ok "$pair: confidence-rule control silent when present"; fi
-  grep -v 'Unverified external premises' "$T/$pair" > "$T/tmp" && mv "$T/tmp" "$T/$pair"
+  grep -v '## Premise verification' "$T/$pair" > "$T/tmp" && mv "$T/tmp" "$T/$pair"
   out=$(bash "$VALIDATE" "$T" 2>&1 || true)
-  if echo "$out" | grep -q "unverified-premise block is gone"; then ok "$pair: removed unverified-premise block detected"; else bad "$pair: removed unverified-premise block not detected"; fi
+  if echo "$out" | grep -q "premise-verification block is gone"; then ok "$pair: removed premise-verification block detected"; else bad "$pair: removed premise-verification block not detected"; fi
   grep -v 'never silently trust' "$T/$pair" > "$T/tmp" && mv "$T/tmp" "$T/$pair"
   out=$(bash "$VALIDATE" "$T" 2>&1 || true)
   if echo "$out" | grep -q "unsettled-premise confidence rule is gone"; then ok "$pair: removed confidence rule detected"; else bad "$pair: removed confidence rule not detected"; fi
@@ -425,8 +425,8 @@ for f in "$SKILLS_DIR/ai-antipatterns/SKILL.md" "$SKILLS_DIR/correctness/SKILL.m
          "$SKILLS_DIR/api-contract/SKILL.md" "$ROOT/core/agents/ai-antipatterns-reviewer.md" \
          "$ROOT/core/agents/correctness-reviewer.md" "$ROOT/core/agents/api-contract-reviewer.md"; do
   [[ -f "$f" ]] || continue
-  grep -qF 'Unverified external premises' "$f" \
-    || add_error "$(basename "$f"): the unverified-premise block is gone - an unverifiable premise becomes indistinguishable from a verified one"
+  grep -qF '## Premise verification' "$f" \
+    || add_error "$(basename "$f"): the premise-verification block is gone - a premise routed to this reviewer could vanish without the report showing it"
   grep -qF 'never silently trust' "$f" \
     || add_error "$(basename "$f"): the unsettled-premise confidence rule is gone - a finding resting on an unverified premise would report at full confidence"
 done
@@ -461,14 +461,21 @@ the channel order in `shared/context-policy.md`, and record which channel settle
   `[openai/openai-dotnet@OpenAI_2.12.0]`. Severity from the usual bar,
   `confidence: high`.
 - **Confirmed.** No finding.
-- **Unverifiable.** No finding either. Emit a block instead:
+- **Unverifiable.** No finding either.
+
+Whichever of the three it was, account for **every** premise you were handed in one
+block. Silence is not an outcome: a premise that was routed to you and then left no
+trace is indistinguishable from one nobody checked, and removing exactly that ambiguity
+is why this section exists.
 
 ~~~
-## Unverified external premises
+## Premise verification
 - premise: <the claim, quoted>
   cited: <the artifact>
-  attempted: <channels tried, in order>
-  blocked: <what stopped you>
+  settled_by: local-package-cache | lockfile | network | none
+  outcome: contradicted | confirmed | unverified
+  finding: <the category you filed it under>   # only when contradicted
+  blocked: <what stopped you>                  # only when unverified
 ~~~
 
 A finding that rests on a premise you could not settle carries `confidence: low` and
@@ -494,14 +501,19 @@ network, then nothing. Prefer the first even when the network looks easier, and 
   what the false premise *damages*, not by the fact that a premise was false. Cite the
   external source in `evidence_refs` with its channel and version. `confidence: high`.
 - **Confirmed.** No finding.
-- **Unverifiable.** No finding either. Emit a block instead:
+- **Unverifiable.** No finding either.
+
+Whichever of the three it was, account for **every** premise you were handed in one
+block. Silence is not an outcome.
 
 ~~~
-## Unverified external premises
+## Premise verification
 - premise: <the claim, quoted>
   cited: <the artifact>
-  attempted: <channels tried, in order>
-  blocked: <what stopped you>
+  settled_by: local-package-cache | lockfile | network | none
+  outcome: contradicted | confirmed | unverified
+  finding: <the category you filed it under>   # only when contradicted
+  blocked: <what stopped you>                  # only when unverified
 ~~~
 
 A finding that rests on a premise you could not settle carries `confidence: low` and
@@ -535,7 +547,7 @@ git commit -m "feat: give three reviewers the external-premise contract (#13)"
 - Test: `scripts/validate.test.sh` (including `write_orchestrator`'s synthesize branch)
 
 **Interfaces:**
-- Consumes: the block field names from Task 3 (`premise`, `cited`, `attempted`, `blocked`) and `external_premises` from Task 2.
+- Consumes: the block field names from Task 3 (`premise`, `cited`, `settled_by`, `outcome`, `finding`, `blocked`) and `external_premises` from Task 2.
 - Produces: the report section `### External premises`. Nothing consumes it; it is the delivery point.
 
 - [ ] **Step 1: Update the synthesize fixture**
@@ -598,25 +610,25 @@ In `core/skills/review-pro-synthesize/SKILL.md`, after the `## Spec axis` sectio
 ## External premises
 
 Triage's `external_premises` names claims the diff's rationale rests on that could not
-be settled inside the repo. Each one arrives back from its owning reviewer as a finding,
-as silence, or as an `## Unverified external premises` block. Print one table, and omit
-the whole section when triage emitted no premises:
+be settled inside the repo. Each one comes back from its owning reviewer as a row in that
+reviewer's `## Premise verification` block, whatever the outcome was. Print one table,
+and omit the whole section when triage emitted no premises:
 
 ~~~
 ### External premises
 | Premise | Cited | Settled by | Outcome |
 ~~~
 
-`Settled by` is the channel the reviewer recorded: local package cache, lockfile,
-network, or none. `Outcome` is `contradicted` naming the finding, `confirmed`, or
-`unverified` with the reason from the block's `blocked` field.
+Map the columns straight off the block: `Settled by` from `settled_by`, `Outcome` from
+`outcome`, and for `unverified` append the reason from `blocked`, for `contradicted` the
+category from `finding`.
 
 List confirmed premises rather than dropping them. If a confirmed premise leaves no
 trace, a reader cannot tell "checked and it held" from "never checked", and removing
 that ambiguity is the whole purpose of the axis.
 
-If triage reported a premise whose owner returned neither a finding nor a block, print
-the row with outcome `not reported` and name the reviewer. A premise that was routed and
+If triage reported a premise that appears in no reviewer's block, print the row with
+outcome `not reported` and name the owner triage assigned. A premise that was routed and
 then vanished is a reviewer contract violation, and it is the failure mode this feature
 exists to prevent, so it must not be the quietest line in the report.
 

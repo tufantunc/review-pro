@@ -200,6 +200,18 @@ if [[ -f "$CTX_POLICY" ]]; then
     || add_error "shared/context-policy.md: the local-first channel is gone - reviewers would reach for the network on a premise the installed dependency already settles, and the answer stops being reproducible"
 fi
 
+# Both copies, for the same reason as the spec axis: the agent body is what reaches
+# the running subagent, and the rubric is what review-pro/SKILL.md's inline path applies.
+for f in "$SKILLS_DIR/ai-antipatterns/SKILL.md" "$SKILLS_DIR/correctness/SKILL.md" \
+         "$SKILLS_DIR/api-contract/SKILL.md" "$ROOT/core/agents/ai-antipatterns-reviewer.md" \
+         "$ROOT/core/agents/correctness-reviewer.md" "$ROOT/core/agents/api-contract-reviewer.md"; do
+  [[ -f "$f" ]] || continue
+  grep -qF '## Premise verification' "$f" \
+    || add_error "$(basename "$f"): the premise-verification block is gone - a premise routed to this reviewer could vanish without the report showing it"
+  grep -qF 'never silently trust' "$f" \
+    || add_error "$(basename "$f"): the unsettled-premise confidence rule is gone - a finding resting on an unverified premise would report at full confidence"
+done
+
 # Published reviewer count and roster. These are maintained strings in files no
 # other check reads: README.md, docs/llms.txt (hand-written, not generated, so the
 # site drift check never sees it), and the seven locale dictionaries. The count went

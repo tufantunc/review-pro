@@ -792,6 +792,35 @@ out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "prompt section is gone"; then ok "removed orchestrator premise section detected"; else bad "removed orchestrator premise section not detected"; fi
 rm -rf "$T"
 
+# Case AC/AD: the two owner-side rules, checked in the rubric AND the agent body.
+# Both copies, because the body is what reaches the subagent and the rubric is what
+# review-pro/SKILL.md's inline path applies; a rule in only one silently disables
+# the feature on the other path.
+for pair in "core/skills/ai-antipatterns/SKILL.md" "core/agents/ai-antipatterns-reviewer.md"; do
+  T=$(mktemp -d)
+  mkdir -p "$T/core/skills/security" "$T/core/skills/ai-antipatterns" "$T/core/agents"
+  write_good_reviewer "$T/core/skills/security/SKILL.md"
+  if [[ "$pair" == core/skills/* ]]; then
+    write_good_reviewer "$T/$pair"
+  else
+    write_good_agent_body "$T/$pair" ai-antipatterns-reviewer
+  fi
+  printf '## Premise verification\nnever silently trust an unsettled premise.\n' >> "$T/$pair"
+  cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"ai-antipatterns","role":"reviewer"}], "agents": [] }
+JSON
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  if echo "$out" | grep -q "premise-verification block is gone"; then bad "$pair: premise-verification control fired on an intact fixture"; else ok "$pair: premise-verification control silent when present"; fi
+  if echo "$out" | grep -q "unsettled-premise confidence rule is gone"; then bad "$pair: confidence-rule control fired on an intact fixture"; else ok "$pair: confidence-rule control silent when present"; fi
+  grep -v '## Premise verification' "$T/$pair" > "$T/tmp" && mv "$T/tmp" "$T/$pair"
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  if echo "$out" | grep -q "premise-verification block is gone"; then ok "$pair: removed premise-verification block detected"; else bad "$pair: removed premise-verification block not detected"; fi
+  grep -v 'never silently trust' "$T/$pair" > "$T/tmp" && mv "$T/tmp" "$T/$pair"
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  if echo "$out" | grep -q "unsettled-premise confidence rule is gone"; then ok "$pair: removed confidence rule detected"; else bad "$pair: removed confidence rule not detected"; fi
+  rm -rf "$T"
+done
+
 echo "---"
 echo "pass=$pass fail=$fail"
 

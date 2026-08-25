@@ -1,6 +1,6 @@
 {
   "name": "review-pro",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Tiered AI code-review: triage picks the relevant specialists, they review in parallel with evidence located in the repository, and synthesis returns one verdict. Use when reviewing a branch, a pull request, or an agent's implementation before merge.",
   "skills": "./skills/"
 }

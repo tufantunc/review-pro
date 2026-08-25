@@ -20,7 +20,7 @@
 - **Meta-test cases put the positive control before the negative mutation.** Without it, a passing assertion can come from the fixture never having contained the string.
 - **Insert new meta-test cases BEFORE the summary block.** The suite exits via `trap 'exit $(( fail > 0 ))' EXIT`; a case appended after `echo "---"` still runs, but keep the ordering convention.
 - Reviewer count stays **thirteen**. The published-count guard must not move.
-- Target suite state at the end: validator `OK`, meta-tests **93/93**, CLI 49/49, site build exit 0, no `docs/` drift.
+- Target suite state at the end: validator `OK`, meta-tests **95/95**, CLI 49/49, site build exit 0, no `docs/` drift.
 
 ---
 
@@ -82,7 +82,7 @@ fi
 - [ ] **Step 4: Run the test to verify it passes and the real repo now fails**
 
 Run: `bash scripts/validate.test.sh 2>&1 | tail -2`
-Expected: `pass=75 fail=0`
+Expected: `pass=77 fail=0`
 
 Run: `bash scripts/validate.sh`
 Expected: FAIL, one error, `shared/context-policy.md: the settling-channel record is gone`. This is the red state for Step 5.
@@ -118,7 +118,14 @@ either.
 - [ ] **Step 6: Run everything**
 
 Run: `bash scripts/validate.sh && bash scripts/validate.test.sh 2>&1 | tail -1`
-Expected: `OK: all artifacts valid` then `pass=75 fail=0`
+Expected: `OK: all artifacts valid` then `pass=77 fail=0`
+
+Step 2's `pass=74 fail=1` is the count with Case AB alone. Task 1 also carries Case AB2,
+added in review: the `which channel settled` grep guards the record-the-channel sentence
+but not the channel order itself, which a reviewer demonstrated by deleting the ordered
+list while leaving that sentence intact and watching the validator stay silent. AB2
+guards `locally resolved dependency source` so deleting the local-first channel fires.
+Every count from here on includes both cases.
 
 - [ ] **Step 7: Commit**
 
@@ -250,7 +257,7 @@ rm -rf "$T"
 - [ ] **Step 3: Run the tests to verify they fail**
 
 Run: `bash scripts/validate.test.sh 2>&1 | tail -2`
-Expected: `pass=79 fail=4`. Four failures, one per case, all of the form `not ok - removed <thing> detected`.
+Expected: `pass=81 fail=4`. Four failures, one per case, all of the form `not ok - removed <thing> detected`.
 
 - [ ] **Step 4: Add the four guards**
 
@@ -275,7 +282,7 @@ And inside the **existing** `if [[ -f "$ORCH_MD" ]]` block at line 176, alongsid
 - [ ] **Step 5: Run tests, confirm green, confirm the real repo is red**
 
 Run: `bash scripts/validate.test.sh 2>&1 | tail -1`
-Expected: `pass=83 fail=0`
+Expected: `pass=85 fail=0`
 
 Run: `bash scripts/validate.sh`
 Expected: FAIL with exactly four errors, the four just added.
@@ -351,7 +358,7 @@ In `core/skills/review-pro/SKILL.md`, in the step-2 prompt-section list, after t
 - [ ] **Step 8: Run everything**
 
 Run: `bash scripts/validate.sh && bash scripts/validate.test.sh 2>&1 | tail -1`
-Expected: `OK: all artifacts valid` then `pass=83 fail=0`
+Expected: `OK: all artifacts valid` then `pass=85 fail=0`
 
 - [ ] **Step 9: Commit**
 
@@ -412,7 +419,7 @@ done
 - [ ] **Step 2: Run the tests to verify they fail**
 
 Run: `bash scripts/validate.test.sh 2>&1 | tail -2`
-Expected: `pass=87 fail=4`. Four failures, the four `removed ... detected` lines across the two pair iterations.
+Expected: `pass=89 fail=4`. Four failures, the four `removed ... detected` lines across the two pair iterations.
 
 - [ ] **Step 3: Add the two guards**
 
@@ -437,7 +444,7 @@ The `[[ -f "$f" ]] || continue` is load-bearing: no existing fixture creates the
 - [ ] **Step 4: Run tests, confirm green, confirm the real repo is red**
 
 Run: `bash scripts/validate.test.sh 2>&1 | tail -1`
-Expected: `pass=91 fail=0`
+Expected: `pass=93 fail=0`
 
 Run: `bash scripts/validate.sh 2>&1 | grep -c "premise"`
 Expected: `12`. Two guards times six files, all red until Step 5.
@@ -528,7 +535,7 @@ The closing paragraph is the anti-derailment counterpart these bodies already ca
 - [ ] **Step 7: Run everything**
 
 Run: `bash scripts/validate.sh && bash scripts/validate.test.sh 2>&1 | tail -1`
-Expected: `OK: all artifacts valid` then `pass=91 fail=0`
+Expected: `OK: all artifacts valid` then `pass=93 fail=0`
 
 - [ ] **Step 8: Commit**
 
@@ -583,7 +590,7 @@ rm -rf "$T"
 - [ ] **Step 3: Run the test to verify it fails**
 
 Run: `bash scripts/validate.test.sh 2>&1 | tail -2`
-Expected: `pass=92 fail=1`, failing on `removed ledger detected`.
+Expected: `pass=94 fail=1`, failing on `removed ledger detected`.
 
 - [ ] **Step 4: Add the guard**
 
@@ -597,7 +604,7 @@ Inside the existing `if [[ -f "$SYNTH_MD" ]]` block:
 - [ ] **Step 5: Run tests, confirm green, confirm the real repo is red**
 
 Run: `bash scripts/validate.test.sh 2>&1 | tail -1`
-Expected: `pass=93 fail=0`
+Expected: `pass=95 fail=0`
 
 Run: `bash scripts/validate.sh`
 Expected: FAIL, one error, the ledger guard.
@@ -640,7 +647,7 @@ finding satisfies the tripwire because the review genuinely left the diff.
 - [ ] **Step 7: Run everything**
 
 Run: `bash scripts/validate.sh && bash scripts/validate.test.sh 2>&1 | tail -1`
-Expected: `OK: all artifacts valid` then `pass=93 fail=0`
+Expected: `OK: all artifacts valid` then `pass=95 fail=0`
 
 - [ ] **Step 8: Commit**
 
@@ -734,7 +741,7 @@ cd cli && npm test && npx tsc --noEmit && npm run build
 node scripts/build-site.js && git status --porcelain docs/
 ```
 
-Expected: validator `OK`, meta-tests `pass=93 fail=0`, CLI `49 passed`, `tsc` clean, `docs/` showing no drift.
+Expected: validator `OK`, meta-tests `pass=95 fail=0`, CLI `49 passed`, `tsc` clean, `docs/` showing no drift.
 
 - [ ] **Step 4: Review this branch with review-pro itself before opening the PR**
 
@@ -756,6 +763,6 @@ git push -u origin feat/external-premise-verification
 
 **One spec item is deliberately not implemented as written.** The spec's guard table has eight rows and its prose said "seven guards" on the first pass; the orchestrator row was added after a sandbox run showed nothing failed when that line was deleted. The spec has been corrected. If a future reader finds the two disagreeing, the table is right.
 
-**Verified rather than asserted.** Every command and code block in Tasks 1 through 4 was executed against a copy of this repo before being written here. The measured results: the eight guards produce 17 errors on an unmodified `core/`; neutralizing any one guard turns exactly its own case or cases red (one each for the five single-file guards, two each for the two owner-side guards spanning a rubric and a body); the fixture update is required for exactly one case (Case A), not the eleven a first reading of `write_orchestrator`'s call sites suggests; and the suite lands at `pass=93 fail=0`.
+**Verified rather than asserted.** Every command and code block in Tasks 1 through 4 was executed against a copy of this repo before being written here. The measured results: the eight guards produce 17 errors on an unmodified `core/`; neutralizing any one guard turns exactly its own case or cases red (one each for the five single-file guards, two each for the two owner-side guards spanning a rubric and a body); the fixture update is required for exactly one case (Case A), not the eleven a first reading of `write_orchestrator`'s call sites suggests; and the suite lands at `pass=95 fail=0`.
 
 **The step-by-step assertion counts in Tasks 1 through 4 assume the tasks run in order.** Out of order, the intermediate `pass=NN` numbers shift while the final 93 does not.

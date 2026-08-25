@@ -267,7 +267,8 @@ failing any other check.
 | 3 rubrics + 3 bodies | `## Premise verification` | a premise routed to a reviewer can vanish without the report showing it |
 | 3 rubrics + 3 bodies | the `confidence: low` rule | findings on unsettled premises report at full confidence |
 | synthesize | the ledger section | the reviewer's statement dies before the report |
-| context-policy | channel order and which channel settled it | a network answer displaces the local source; reviews stop being reproducible |
+| context-policy | `which channel settled` | a network answer becomes indistinguishable from a local one; reviews stop being reproducible |
+| context-policy | `locally resolved dependency source` | the local-first channel goes, and reviewers reach for the network on premises the installed dependency already settles |
 
 Rubric **and** body, both, per the rule the spec axis taught: the body is the copy that
 reaches the running subagent, and the rubric is the copy the inline path documented in
@@ -276,10 +277,15 @@ on the other path.
 
 ### Meta-tests
 
-Eight guards, each with a positive control before the negative mutation, per the
+Nine guards, each with a positive control before the negative mutation, per the
 discipline established in Case K: without the positive control, a passing assertion can
-come from the fixture never having contained the string. Twenty assertions, taking the
-suite from 73 to 93.
+come from the fixture never having contained the string. Twenty-two assertions, taking
+the suite from 73 to 95.
+
+The context-policy row became two during Task 1's review. One string cannot guard both
+halves of that rule: a reviewer deleted the ordered channel list while leaving "record
+which channel settled" in place, and the validator stayed silent. The order and the
+record-keeping are separate rules and need separate anchors.
 
 The orchestrator row was missed on the first pass through this table and found while
 proving the guards in a sandbox. It is the reason the count is eight: the design said

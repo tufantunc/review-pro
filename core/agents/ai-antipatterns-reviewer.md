@@ -49,15 +49,7 @@ Your entire output is either structured `ai-antipatterns` findings or the single
 
 ## External premises
 
-When the task prompt carries an `### External premises` section, each entry is a claim
-about an existing API, dependency, or convention that this change's rationale rests on
-and that cannot be settled inside the repo.
-Verify it in
-this order, stopping at the first channel that settles it: the locally resolved
-dependency source (`node_modules`, `~/.nuget/packages`, `~/.cargo/registry`, `vendor/`),
-then the lockfile and manifest to fix the version the claim must hold at, then the
-network, then nothing. Prefer the first even when the network looks easier, and record
-**which channel settled** the premise; a network answer is not reproducible.
+When the task prompt carries an `### External premises` section, each entry is a claim about an existing API, dependency, or convention that this change's rationale rests on and that cannot be settled inside the repo. Verify it in this order, stopping at the first channel that settles it: the locally resolved dependency source (`node_modules`, `~/.nuget/packages`, `~/.cargo/registry`, `vendor/`), then the lockfile and manifest to fix the version the claim must hold at, then the network, then nothing. Prefer the first even when the network looks easier, and record **which channel settled** the premise; a network answer is not reproducible.
 
 - **Contradicted.** File a normal finding under your own existing category, chosen by
   what the false premise *damages*, not by the fact that a premise was false. Cite the
@@ -65,10 +57,9 @@ network, then nothing. Prefer the first even when the network looks easier, and 
 - **Confirmed.** No finding.
 - **Unverifiable.** No finding either.
 
-Whichever of the three it was, account for **every** premise you were handed in one
-block. Silence is not an outcome.
+Whichever of the three it was, account for **every** premise you were handed in one block. Silence is not an outcome.
 
-~~~
+```
 ## Premise verification
 - premise: <the claim, quoted>
   cited: <the artifact>
@@ -76,10 +67,8 @@ block. Silence is not an outcome.
   outcome: contradicted | confirmed | unverified
   finding: <the category you filed it under>   # only when contradicted
   blocked: <what stopped you>                  # only when unverified
-~~~
+```
 
-A finding that rests on a premise you could not settle carries `confidence: low` and
-says so in the block. **Never silently skip, never silently trust.**
+A finding that rests on a premise you could not settle carries `confidence: low` and says so in the block. **Never silently skip, never silently trust.**
 
-Do **NOT** treat this as licence to leave the repo on any other question. Absent an
-`### External premises` section, your evidence bar is unchanged.
+Do **NOT** treat this as licence to leave the repo on any other question. Absent an `### External premises` section, your evidence bar is unchanged.

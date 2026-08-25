@@ -63,11 +63,7 @@ One structured block per finding (see shared/output-schema.md). Use category roo
 
 ## External premises
 
-When the task prompt carries an `### External premises` section, each entry is a claim
-about an existing API, dependency, or convention that this change's rationale rests on
-and that cannot be settled inside the repo.
-Verify it using the channel order in `shared/context-policy.md`, and record which
-channel settled it.
+When the task prompt carries an `### External premises` section, each entry is a claim about an existing API, dependency, or convention that this change's rationale rests on and that cannot be settled inside the repo. Verify it using the channel order in `shared/context-policy.md`, and record which channel settled it.
 
 - **Contradicted.** File a normal finding under your own existing category, chosen by
   what the false premise *damages*, not by the fact that a premise was false. Cite the
@@ -79,12 +75,9 @@ channel settled it.
 - **Confirmed.** No finding.
 - **Unverifiable.** No finding either.
 
-Whichever of the three it was, account for **every** premise you were handed in one
-block. Silence is not an outcome: a premise that was routed to you and then left no
-trace is indistinguishable from one nobody checked, and removing exactly that ambiguity
-is why this section exists.
+Whichever of the three it was, account for **every** premise you were handed in one block. Silence is not an outcome: a premise that was routed to you and then left no trace is indistinguishable from one nobody checked, and removing exactly that ambiguity is why this section exists.
 
-~~~
+```
 ## Premise verification
 - premise: <the claim, quoted>
   cited: <the artifact>
@@ -92,10 +85,9 @@ is why this section exists.
   outcome: contradicted | confirmed | unverified
   finding: <the category you filed it under>   # only when contradicted
   blocked: <what stopped you>                  # only when unverified
-~~~
+```
 
-A finding that rests on a premise you could not settle carries `confidence: low` and
-says so in the block. **Never silently skip, never silently trust.**
+A finding that rests on a premise you could not settle carries `confidence: low` and says so in the block. **Never silently skip, never silently trust.**
 
 ## Tone
 Direct, evidence-driven, no hand-waving. Every claim cites the verified repo reality. This reviewer's authority comes entirely from having checked.

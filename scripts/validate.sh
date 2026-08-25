@@ -207,9 +207,9 @@ for f in "$SKILLS_DIR/ai-antipatterns/SKILL.md" "$SKILLS_DIR/correctness/SKILL.m
          "$ROOT/core/agents/correctness-reviewer.md" "$ROOT/core/agents/api-contract-reviewer.md"; do
   [[ -f "$f" ]] || continue
   grep -qF '## Premise verification' "$f" \
-    || add_error "$(basename "$f"): the premise-verification block is gone - a premise routed to this reviewer could vanish without the report showing it"
+    || add_error "${f#$ROOT/}: the premise-verification block is gone - a premise routed to this reviewer could vanish without the report showing it"
   grep -qF 'never silently trust' "$f" \
-    || add_error "$(basename "$f"): the unsettled-premise confidence rule is gone - a finding resting on an unverified premise would report at full confidence"
+    || add_error "${f#$ROOT/}: the unsettled-premise confidence rule is gone - a finding resting on an unverified premise would report at full confidence"
 done
 
 # Published reviewer count and roster. These are maintained strings in files no

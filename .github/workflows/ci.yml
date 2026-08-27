@@ -41,3 +41,18 @@ jobs:
           node --test scripts/build-site.test.js
           node scripts/build-site.js
           git diff --exit-code docs
+
+      # The same scan the release gate runs, non-blocking here because a PR is not a
+      # publish: its job is to prove on every PR that the gate's tooling works and to
+      # surface findings early, not to force dependency work into unrelated PRs. The
+      # blocking copy lives in publish.yml.
+      - name: Supply-chain scan (report only)
+        working-directory: cli
+        run: npm sbom --sbom-format cyclonedx --package-lock-only --omit=dev > sbom-ci.cdx.json
+
+      - uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
+        with:
+          sbom: cli/sbom-ci.cdx.json
+          fail-build: false
+          severity-cutoff: critical
+          only-fixed: true

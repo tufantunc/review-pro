@@ -49,6 +49,42 @@ jobs:
           fi
           echo "Tag and package version agree: $pkg"
 
+      # The supply-chain gate, before anything irreversible. The SBOM comes from the
+      # lockfile (--package-lock-only), not an installed tree: the lockfile describes
+      # what the package declares for every platform, and no dependency lifecycle
+      # script executes. --omit=dev because nothing under devDependencies reaches the
+      # published tarball. Grype then scans that SBOM with a fresh database and BLOCKS
+      # the release on a fixable Critical. Stated precisely because the bar matters:
+      # this gate is "fixable Critical", nothing more; it does not separately evaluate
+      # CISA KEV. An unfixable Critical does not block, because there is no upgrade to
+      # make, and blocking on it would only train us to bypass the gate.
+      - name: Generate the SBOM for the gate
+        working-directory: cli
+        run: |
+          set -euo pipefail
+          npm sbom --sbom-format cyclonedx --package-lock-only --omit=dev > sbom-gate.cdx.json
+          node -e "const c=require('./sbom-gate.cdx.json');console.log('CycloneDX',c.specVersion,c.components.length,'components')"
+
+      - name: Scan the SBOM, block on fixable Critical
+        uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
+        id: grype
+        with:
+          sbom: cli/sbom-gate.cdx.json
+          fail-build: true
+          severity-cutoff: critical
+          only-fixed: true
+          output-format: json
+
+      # The complete results stay inspectable even when the gate passes, so "the scan
+      # was green" is a claim anyone can check against the actual matches.
+      - name: Keep the scan results as evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: grype-results
+          path: ${{ steps.grype.outputs.json }}
+          retention-days: 30
+
       - name: Publish
         working-directory: cli
         run: npm publish --access public --provenance
@@ -63,3 +99,99 @@ jobs:
             --title "$GITHUB_REF_NAME" \
             --generate-notes \
             --verify-tag
+
+  # An SBOM for what actually shipped, bound to the tarball consumers download.
+  # A separate job, not steps on publish: npm versions are immutable, so anything
+  # that can fail after `npm publish` returns must be re-runnable ("Re-run failed
+  # jobs" on this run) without going near the publish path again. The subject is
+  # the tarball fetched back from npm and verified against the registry's own
+  # dist.integrity, never a local re-pack: a re-pack is probably byte-identical,
+  # and an attestation bound to "probably" is worth less than none.
+  sbom:
+    name: attest an SBOM for the published package
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write     # sign the attestations
+      attestations: write # record them against the repository
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+
+      - name: Generate SBOMs from the lockfile
+        working-directory: cli
+        run: |
+          set -euo pipefail
+          npm sbom --sbom-format cyclonedx --package-lock-only --omit=dev > ../sbom.cdx.json
+          npm sbom --sbom-format spdx --package-lock-only --omit=dev > ../sbom.spdx.json
+          node -e "const c=require('../sbom.cdx.json');console.log('CycloneDX',c.specVersion,c.components.length,'components')"
+          node -e "const s=require('../sbom.spdx.json');console.log('SPDX',s.spdxVersion,s.packages.length,'packages')"
+
+      # -L matters more than it looks: without it a 3xx is success to -f, which only
+      # checks >= 400, and curl writes zero bytes straight into the attestation's
+      # subject. The registry serves a fresh version to the CDN asynchronously, so
+      # this URL can 404 for a while after publish returns; retry-all-errors covers it.
+      - name: Download and verify the published tarball
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          name="$(node -p 'require("./cli/package.json").name')"
+
+          curl -fsSL --retry 30 --retry-delay 10 --retry-all-errors \
+            -o package.tgz "https://registry.npmjs.org/$name/-/$name-$version.tgz"
+
+          expected="$(curl -fsSL --retry 5 --retry-delay 5 --retry-all-errors \
+            "https://registry.npmjs.org/$name/$version" \
+            | node -p 'JSON.parse(require("fs").readFileSync(0,"utf8")).dist.integrity')"
+
+          # The comparison lives in a tested script (scripts/verify-npm-integrity.test.sh);
+          # only the fetching stays inline, because retries and CDN timing are I/O
+          # configuration while an inverted comparison is a silent bug.
+          bash scripts/verify-npm-integrity.sh package.tgz "$expected"
+
+      # actions/attest, not actions/attest-sbom: the latter is deprecated and merely
+      # forwards these exact inputs to this action.
+      - name: Attest the CycloneDX SBOM
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: package.tgz
+          sbom-path: sbom.cdx.json
+
+      - name: Attest the SPDX SBOM
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: package.tgz
+          sbom-path: sbom.spdx.json
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sbom
+          path: |
+            sbom.cdx.json
+            sbom.spdx.json
+          retention-days: 7
+
+  # The readable half, split off so contents: write never sits in the same job as
+  # id-token: write. The attestation above is the verifiable artifact; these files
+  # are for anyone answering "does this pull in <package>?" without a toolchain.
+  sbom-assets:
+    name: attach the SBOMs to the release
+    needs: sbom
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: sbom
+
+      - name: Upload
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber \
+            sbom.cdx.json sbom.spdx.json

@@ -147,13 +147,11 @@ jobs:
           expected="$(curl -fsSL --retry 5 --retry-delay 5 --retry-all-errors \
             "https://registry.npmjs.org/$name/$version" \
             | node -p 'JSON.parse(require("fs").readFileSync(0,"utf8")).dist.integrity')"
-          actual="sha512-$(openssl dgst -sha512 -binary package.tgz | base64 | tr -d '\n')"
 
-          if [ "$expected" != "$actual" ]; then
-            echo "::error::tarball digest does not match the registry's dist.integrity for $name@$version" >&2
-            exit 1
-          fi
-          echo "$name@$version verified: $actual ($(wc -c < package.tgz) bytes)"
+          # The comparison lives in a tested script (scripts/verify-npm-integrity.test.sh);
+          # only the fetching stays inline, because retries and CDN timing are I/O
+          # configuration while an inverted comparison is a silent bug.
+          bash scripts/verify-npm-integrity.sh package.tgz "$expected"
 
       # actions/attest, not actions/attest-sbom: the latter is deprecated and merely
       # forwards these exact inputs to this action.

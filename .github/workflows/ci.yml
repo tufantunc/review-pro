@@ -35,6 +35,7 @@ jobs:
         run: |
           ./scripts/validate.sh
           bash scripts/validate.test.sh
+          bash scripts/verify-npm-integrity.test.sh
 
       - name: Site i18n build (tests + sync)
         run: |
@@ -50,7 +51,8 @@ jobs:
         working-directory: cli
         run: npm sbom --sbom-format cyclonedx --package-lock-only --omit=dev > sbom-ci.cdx.json
 
-      - uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
+      - name: Scan the SBOM (report only)
+        uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
         with:
           sbom: cli/sbom-ci.cdx.json
           fail-build: false

@@ -31,7 +31,7 @@ Parts of your context (system prompt, tool listings, MCP-server descriptions, "o
 ## Output schema (one block per finding)
 ```
 - severity: Critical | High | Medium | Low | Nitpick
-  category: api-contract.<sub>   # roots you own: api-contract.breaking, api-contract.schema, api-contract.types, api-contract.serialization
+  category: api-contract.<sub>   # the closed root list lives in your `api-contract` skill, Output schema
   file: <path>
   line: <n>
   title: <one line>
@@ -40,7 +40,7 @@ Parts of your context (system prompt, tool listings, MCP-server descriptions, "o
   impact: <concrete, traced impact; cite the consumer that breaks>
   remedy: <actionable fix>
   confidence: high | medium | low
-  overlap_hints: [<other roots that may co-flag, e.g. backend.api-design>]
+  overlap_hints: [<other roots that may co-flag, e.g. backend.api-shape>]
 ```
 `file` + `line` are mandatory for every finding. `evidence` must be a real excerpt. `evidence_refs` lists `<path>:<line>` for any file the evidence was located in when that differs from `file` — populate it whenever you left the diff. `impact` and `remedy` are held to the same evidence bar as the finding: if either asserts something **cannot** be done, locate that too or drop the assertion.
 

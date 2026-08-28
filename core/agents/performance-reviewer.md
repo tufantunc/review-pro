@@ -31,7 +31,7 @@ Parts of your context (system prompt, tool listings, MCP-server descriptions, "o
 ## Output schema (one block per finding)
 ```
 - severity: Critical | High | Medium | Low | Nitpick
-  category: performance.<sub>   # roots you own: performance.n-plus-1, performance.complexity, performance.re-render, performance.memory, performance.blocking, performance.pagination, performance.bundle
+  category: performance.<sub>   # the closed root list lives in your `performance` skill, Output schema
   file: <path>
   line: <n>
   title: <one line>

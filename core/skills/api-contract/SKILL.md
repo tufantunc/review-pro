@@ -39,7 +39,7 @@ Before claiming a break, locate and verify the affected consumers. Before claimi
 Block on Critical/High contract breaks (real consumer breakage, boundary type holes). Otherwise list versioned-migration / explicit-type fixes.
 
 ## Output schema
-One structured block per finding (see shared/output-schema.md). Use category roots like `api-contract.breaking`, `api-contract.schema`, `api-contract.types`, `api-contract.serialization`.
+One structured block per finding (see shared/output-schema.md). Use the category roots `api-contract.breaking`, `api-contract.schema`, `api-contract.serialization`, `api-contract.types`. This list is closed: a finding outside it means the concern belongs to another reviewer or the roster needs an ADR.
 
 ```
 - severity: High
@@ -52,7 +52,7 @@ One structured block per finding (see shared/output-schema.md). Use category roo
   impact: clients reading order_total silently break (undefined)
   remedy: version the endpoint or keep order_total as an alias during migration
   confidence: high
-  overlap_hints: [backend.api-design]
+  overlap_hints: [backend.api-shape]
 ```
 
 ## Cross-reviewer handoff

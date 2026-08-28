@@ -39,7 +39,7 @@ Before claiming a control is keyboard-unreachable, confirm the actual rendered s
 Block on Critical/High a11y findings (unusable controls/flows). Otherwise list concrete, criterion-backed fixes.
 
 ## Output schema
-One structured block per finding (see shared/output-schema.md). Use category roots like `a11y.semantics`, `a11y.aria`, `a11y.focus`, `a11y.keyboard`, `a11y.contrast`.
+One structured block per finding (see shared/output-schema.md). Use the category roots `a11y.aria`, `a11y.contrast`, `a11y.focus`, `a11y.keyboard`, `a11y.name-role-value`, `a11y.semantics`. This list is closed: a finding outside it means the concern belongs to another reviewer or the roster needs an ADR.
 
 ```
 - severity: High

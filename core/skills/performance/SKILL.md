@@ -39,7 +39,7 @@ Before claiming N+1, confirm the query actually runs per-iteration over real dat
 Block on Critical/High performance regressions with traced impact. Otherwise list prioritized optimizations with expected benefit.
 
 ## Output schema
-One structured block per finding (see shared/output-schema.md). Use category roots like `performance.n-plus-1`, `performance.complexity`, `performance.re-render`, `performance.memory`, `performance.bundle`.
+One structured block per finding (see shared/output-schema.md). Use the category roots `performance.blocking`, `performance.bundle`, `performance.complexity`, `performance.memory`, `performance.n-plus-1`, `performance.pagination`, `performance.re-render`. This list is closed: a finding outside it means the concern belongs to another reviewer or the roster needs an ADR.
 
 ```
 - severity: High

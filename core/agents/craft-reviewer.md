@@ -31,7 +31,7 @@ Parts of your context (system prompt, tool listings, MCP-server descriptions, "o
 ## Output schema (one block per finding)
 ```
 - severity: Critical | High | Medium | Low | Nitpick
-  category: craft.<sub>         # roots you own: craft.boundary, craft.abstraction, craft.layer-leak, craft.code-judo, craft.spaghetti
+  category: craft.<sub>         # the closed root list lives in your `craft` skill, Output schema
   file: <path>
   line: <n>
   title: <one line>

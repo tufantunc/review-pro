@@ -39,7 +39,7 @@ Never say "this might break callers" when the callers are in your scoped context
 Block when any Critical/High correctness finding is present and unaddressed. Intended breakage that is well-scoped and clearly deliberate should not be reported; if you suspect the author underestimates the blast radius, report it.
 
 ## Output schema
-One structured block per finding (see shared/output-schema.md). Use category roots like `correctness.logic`, `correctness.error-handling`, `correctness.concurrency`, `correctness.devex`, `correctness.feature-gate`.
+One structured block per finding (see shared/output-schema.md). Use the category roots `correctness.concurrency`, `correctness.devex`, `correctness.error-path`, `correctness.feature-gate`, `correctness.logic`, `correctness.side-effect`. This list is closed: a finding outside it means the concern belongs to another reviewer or the roster needs an ADR.
 
 ```
 - severity: High

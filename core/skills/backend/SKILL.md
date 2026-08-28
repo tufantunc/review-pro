@@ -39,11 +39,11 @@ Before claiming "this can leave partial state", trace the multi-step flow in you
 Block on Critical/High backend flaws (data integrity, swallowed critical errors, missing validation on mutating public endpoints). Otherwise list concrete design fixes.
 
 ## Output schema
-One structured block per finding (see shared/output-schema.md). Use category roots like `backend.error-handling`, `backend.validation`, `backend.atomicity`, `backend.idempotency`, `backend.api-design`.
+One structured block per finding (see shared/output-schema.md). Use the category roots `backend.api-shape`, `backend.boundary`, `backend.error-handling`, `backend.idempotency`, `backend.rate-limit`, `backend.transaction`, `backend.validation`. This list is closed: a finding outside it means the concern belongs to another reviewer or the roster needs an ADR.
 
 ```
 - severity: High
-  category: backend.atomicity
+  category: backend.transaction
   file: src/services/transfer.ts
   line: 18
   title: debit and credit not in a transaction
@@ -52,7 +52,7 @@ One structured block per finding (see shared/output-schema.md). Use category roo
   impact: a failure between the two leaves money lost
   remedy: wrap both in a single transaction with rollback
   confidence: high
-  overlap_hints: [db.query, correctness.error-handling]
+  overlap_hints: [db.query, correctness.error-path]
 ```
 
 ## Cross-reviewer handoff

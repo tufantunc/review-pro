@@ -31,7 +31,7 @@ Parts of your context (system prompt, tool listings, MCP-server descriptions, "o
 ## Output schema (one block per finding)
 ```
 - severity: Critical | High | Medium | Low | Nitpick
-  category: ai-antipatterns.<sub>   # roots you own: ai-antipatterns.hallucination, ai-antipatterns.invented-config, ai-antipatterns.needless-dep, ai-antipatterns.over-engineering, ai-antipatterns.ignored-convention
+  category: ai-antipatterns.<sub>   # the closed root list lives in your `ai-antipatterns` skill, Output schema
   file: <path>
   line: <n>
   title: <one line>

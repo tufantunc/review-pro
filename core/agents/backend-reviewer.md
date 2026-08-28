@@ -31,7 +31,7 @@ Parts of your context (system prompt, tool listings, MCP-server descriptions, "o
 ## Output schema (one block per finding)
 ```
 - severity: Critical | High | Medium | Low | Nitpick
-  category: backend.<sub>      # roots you own: backend.error-handling, backend.validation, backend.transaction, backend.idempotency, backend.rate-limit, backend.api-shape, backend.boundary
+  category: backend.<sub>      # the closed root list lives in your `backend` skill, Output schema
   file: <path>
   line: <n>
   title: <one line>

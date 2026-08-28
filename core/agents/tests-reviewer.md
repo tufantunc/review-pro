@@ -31,7 +31,7 @@ Parts of your context (system prompt, tool listings, MCP-server descriptions, "o
 ## Output schema (one block per finding)
 ```
 - severity: Critical | High | Medium | Low | Nitpick
-  category: tests.<sub>         # roots you own: tests.assertion, tests.coverage, tests.flakiness, tests.test-data, tests.impl-detail, tests.skipped
+  category: tests.<sub>         # the closed root list lives in your `tests` skill, Output schema
   file: <path>
   line: <n>
   title: <one line>

@@ -112,6 +112,22 @@ Illustrative of the output format — not the result of a specific run. Severity
 
 </details>
 
+## Privacy and network behavior
+
+review-pro collects nothing. No telemetry, no analytics, no usage data; there is no tracking code in the CLI, in the installed markdown, or on the documentation site, whose fonts are self-hosted. The project's maintainer learns nothing when you run a review.
+
+Installing via `npx` is an ordinary package request to the npm registry. After that the CLI itself never touches the network: `update`, `doctor`, `list`, and the stack-pack commands all read the catalog bundled inside the package.
+
+The honest part: review-pro is prompts, and the review is executed by **your** coding agent. Your diff and repository content therefore travel exactly the path they already travel when you use that agent, to whatever model provider it is configured for. review-pro adds nothing to that path, and it does not pretend the path is not there.
+
+During a review, your agent may reach the network in exactly three named places:
+
+- **Spec resolution**: triage may run `gh pr view` / `gh issue view` through your own authenticated GitHub CLI to find what the change was supposed to do. No `gh`, no GitHub remote, or no PR are all ordinary conditions; everything falls through silently to local sources.
+- **External premise verification**: when a change's rationale cites an upstream artifact, the owning reviewer checks it, preferring the dependency source already on disk, then the lockfile, and only then the network. The report records which channel settled each premise, so you can always see whether a review left the machine.
+- **Stack pack installs**: `npx review-pro add <stack>` copies files from the already-downloaded package into your repo; the network use is npm's, not ours.
+
+Everything else is local: the diff is read with git, findings are grounded in repository files, and reviews run fully offline apart from the three cases above, which degrade to explicit "could not verify" statements rather than failures.
+
 ## Install (one-time)
 
 **Claude Code** — as a plugin, no Node.js required:

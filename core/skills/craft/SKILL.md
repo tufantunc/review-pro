@@ -41,7 +41,7 @@ Before claiming "a canonical helper already exists", verify it in your scoped co
 Do not approve if: a clear structural regression; an obvious missed code-judo simplification; unjustified file-size explosion past 1k; or ad-hoc branching that tangles an existing flow. "It works" is not sufficient.
 
 ## Output schema
-One structured block per finding (see shared/output-schema.md). Use category roots like `craft.spaghetti`, `craft.size`, `craft.boundary`, `craft.abstraction`.
+One structured block per finding (see shared/output-schema.md). Use the category roots `craft.abstraction`, `craft.boundary`, `craft.code-judo`, `craft.layer-leak`, `craft.size`, `craft.spaghetti`. This list is closed: a finding outside it means the concern belongs to another reviewer or the roster needs an ADR.
 
 ```
 - severity: High

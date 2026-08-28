@@ -41,7 +41,7 @@ The whole point of this reviewer is verification. Before claiming a hallucinatio
 Block when the code references APIs/config/deps that provably don't exist (Critical/High). Push back on over-engineering and ignored conventions with concrete, located alternatives.
 
 ## Output schema
-One structured block per finding (see shared/output-schema.md). Use category roots like `ai-antipatterns.hallucination`, `ai-antipatterns.invented-config`, `ai-antipatterns.needless-dep`, `ai-antipatterns.over-engineering`, `ai-antipatterns.ignored-convention`.
+One structured block per finding (see shared/output-schema.md). Use the category roots `ai-antipatterns.hallucination`, `ai-antipatterns.ignored-convention`, `ai-antipatterns.invented-config`, `ai-antipatterns.needless-dep`, `ai-antipatterns.over-engineering`. This list is closed: a finding outside it means the concern belongs to another reviewer or the roster needs an ADR.
 
 ```
 - severity: Critical

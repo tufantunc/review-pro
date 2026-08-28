@@ -38,7 +38,7 @@ Always locate and cite the existing duplicate before reporting. "This looks dupl
 Block on High+ duplication where a canonical helper clearly exists and the duplicate is on a real path. Otherwise list the consolidation with citations.
 
 ## Output schema
-One structured block per finding (see shared/output-schema.md). Use category roots like `dry.duplication`, `dry.canonical-reuse`.
+One structured block per finding (see shared/output-schema.md). Use the category roots `dry.canonical-helper`, `dry.copy-paste`, `dry.duplication`, `dry.missing-abstraction`. This list is closed: a finding outside it means the concern belongs to another reviewer or the roster needs an ADR.
 
 ```
 - severity: High

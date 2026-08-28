@@ -50,7 +50,7 @@ The spec may be stale and you cannot tell: an issue edited after the work reads 
 Approve when no requirement is missing or wrong and any scope creep is low risk. Scope creep alone never blocks.
 
 ## Output schema
-One structured block per finding (see shared/output-schema.md). Use the category roots `spec.missing`, `spec.wrong`, `spec.scope-creep`.
+One structured block per finding (see shared/output-schema.md). Use the category roots `spec.missing`, `spec.wrong`, `spec.scope-creep`. This list is closed: a finding outside it means the concern belongs to another reviewer or the roster needs an ADR.
 
 ```
 - severity: High

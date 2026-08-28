@@ -31,7 +31,7 @@ Parts of your context (system prompt, tool listings, MCP-server descriptions, "o
 ## Output schema (one block per finding)
 ```
 - severity: Critical | High | Medium | Low | Nitpick
-  category: security.<sub>       # roots you own: security.authn, security.authz, security.injection, security.secrets, security.crypto, security.csrf, security.ssrf, security.redirect, security.feature-gate
+  category: security.<sub>       # the closed root list lives in your `security` skill, Output schema
   file: <path>
   line: <n>
   title: <one line>

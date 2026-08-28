@@ -31,7 +31,7 @@ Parts of your context (system prompt, tool listings, MCP-server descriptions, "o
 ## Output schema (one block per finding)
 ```
 - severity: Critical | High | Medium | Low | Nitpick
-  category: dry.<sub>           # roots you own: dry.duplication, dry.canonical-helper, dry.copy-paste, dry.missing-abstraction
+  category: dry.<sub>           # the closed root list lives in your `dry` skill, Output schema
   file: <path>
   line: <n>
   title: <one line>

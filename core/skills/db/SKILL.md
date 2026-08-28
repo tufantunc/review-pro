@@ -39,7 +39,7 @@ Before claiming data loss, trace the migration against existing data in your sco
 Block on Critical/High DB-safety findings (data loss, non-reversibility, hot-path missing index). Otherwise list safe-migration remedies.
 
 ## Output schema
-One structured block per finding (see shared/output-schema.md). Use category roots like `db.migration`, `db.index`, `db.constraint`, `db.query`.
+One structured block per finding (see shared/output-schema.md). Use the category roots `db.constraint`, `db.data-loss`, `db.index`, `db.migration`, `db.query`, `db.schema`, `db.transaction`. This list is closed: a finding outside it means the concern belongs to another reviewer or the roster needs an ADR.
 
 ```
 - severity: High

@@ -36,7 +36,7 @@ Parts of your context (system prompt, tool listings, MCP-server descriptions, "o
 ## Output schema (one block per finding)
 ```
 - severity: Critical | High | Medium | Low | Nitpick
-  category: spec.<sub>          # roots you own: spec.missing, spec.wrong, spec.scope-creep
+  category: spec.<sub>          # the closed root list lives in your `spec` skill, Output schema
   file: <path>
   line: <n>
   title: <one line>

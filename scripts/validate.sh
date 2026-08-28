@@ -206,6 +206,22 @@ fi
 
 # Both copies, for the same reason as the spec axis: the agent body is what reaches
 # the running subagent, and the rubric is what review-pro/SKILL.md's inline path applies.
+# ADR-0006: the closed subcategory list lives in the rubric only. A body that
+# re-enumerates categories can disagree with its rubric, which is what issue #44
+# measured across 12 of 13 pairs. Every `<root>.<sub>` a body still names must exist
+# in that root's own rubric, so a re-added enumeration cannot contradict it.
+for body in "$ROOT"/core/agents/*-reviewer.md; do
+  [[ -f "$body" ]] || continue
+  root="$(basename "$body" -reviewer.md)"
+  rubric="$SKILLS_DIR/$root/SKILL.md"
+  [[ -f "$rubric" ]] || continue
+  while IFS= read -r cat; do
+    [[ -n "$cat" ]] || continue
+    grep -qF "$cat" "$rubric" \
+      || add_error "core/agents/$(basename "$body"): names '$cat', which its own $root rubric does not list - the body and the rubric disagree on the closed subcategory list (see ADR-0006)"
+  done < <(grep -oE "$root\.[a-z0-9-]+" "$body" | sort -u)
+done
+
 for f in "$SKILLS_DIR/ai-antipatterns/SKILL.md" "$SKILLS_DIR/correctness/SKILL.md" \
          "$SKILLS_DIR/api-contract/SKILL.md" "$ROOT/core/agents/ai-antipatterns-reviewer.md" \
          "$ROOT/core/agents/correctness-reviewer.md" "$ROOT/core/agents/api-contract-reviewer.md"; do

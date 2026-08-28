@@ -880,6 +880,27 @@ out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "approval standard is gone"; then ok "removed approval standard detected"; else bad "removed approval standard not detected"; fi
 rm -rf "$T"
 
+
+# Case AH: ADR-0006's subset rule. A body that re-enumerates subcategories can
+# disagree with its own rubric, which is what issue #44 measured across 12 of 13
+# pairs. The positive control gives the body a category the rubric DOES list, so a
+# silent pass cannot come from the fixture simply naming no categories at all.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_good_agent_body "$T/core/agents/security-reviewer.md" security-reviewer
+printf 'Use the category roots `security.authz`, `security.injection`.\n' >> "$T/core/skills/security/SKILL.md"
+printf '  category: security.authz\n' >> "$T/core/agents/security-reviewer.md"
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"}], "agents": [{"name":"security-reviewer"}] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "ADR-0006"; then bad "subset control fired while the body's category was listed in its rubric"; else ok "subset control silent when the body agrees with its rubric"; fi
+sed -i.bak 's/  category: security\.authz/  category: security.nonexistent/' "$T/core/agents/security-reviewer.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "names 'security.nonexistent'"; then ok "body naming a category its rubric omits detected"; else bad "body naming a category its rubric omits NOT detected"; fi
+rm -rf "$T"
+
 echo "---"
 echo "pass=$pass fail=$fail"
 

@@ -40,7 +40,7 @@ Before claiming "branch X is uncovered", confirm branch X exists in the producti
 Block on Critical/High test-quality issues (untested critical behavior, wrong-reason/flaky critical tests). Otherwise list concrete assertion/coverage improvements.
 
 ## Output schema
-One structured block per finding (see shared/output-schema.md). Use category roots like `tests.assertions`, `tests.coverage`, `tests.flakiness`, `tests.realism`.
+One structured block per finding (see shared/output-schema.md). Use the category roots `tests.assertion`, `tests.coverage`, `tests.flakiness`, `tests.impl-detail`, `tests.skipped`, `tests.test-data`. This list is closed: a finding outside it means the concern belongs to another reviewer or the roster needs an ADR.
 
 ```
 - severity: High

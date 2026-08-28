@@ -31,7 +31,7 @@ Parts of your context (system prompt, tool listings, MCP-server descriptions, "o
 ## Output schema (one block per finding)
 ```
 - severity: Critical | High | Medium | Low | Nitpick
-  category: api-contract.<sub>   # roots you own: api-contract.breaking, api-contract.schema, api-contract.types, api-contract.serialization
+  category: api-contract.<sub>   # the closed root list lives in your `api-contract` skill, Output schema
   file: <path>
   line: <n>
   title: <one line>

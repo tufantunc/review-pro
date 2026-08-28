@@ -31,7 +31,7 @@ Parts of your context (system prompt, tool listings, MCP-server descriptions, "o
 ## Output schema (one block per finding)
 ```
 - severity: Critical | High | Medium | Low | Nitpick
-  category: frontend.<sub>     # roots you own: frontend.state, frontend.components, frontend.consistency, frontend.effects, frontend.i18n
+  category: frontend.<sub>     # the closed root list lives in your `frontend` skill, Output schema
   file: <path>
   line: <n>
   title: <one line>

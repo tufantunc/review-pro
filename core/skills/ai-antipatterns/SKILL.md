@@ -54,7 +54,7 @@ One structured block per finding (see shared/output-schema.md). Use the category
   impact: build/runtime failure — no such export in src/utils
   remedy: use the existing memoize() helper in src/utils/memo.ts
   confidence: high
-  overlap_hints: [dry.canonical-reuse, craft.abstraction]
+  overlap_hints: [dry.canonical-helper, craft.abstraction]
 ```
 
 ## Cross-reviewer handoff

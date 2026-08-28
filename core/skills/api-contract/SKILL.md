@@ -52,7 +52,7 @@ One structured block per finding (see shared/output-schema.md). Use the category
   impact: clients reading order_total silently break (undefined)
   remedy: version the endpoint or keep order_total as an alias during migration
   confidence: high
-  overlap_hints: [backend.api-design]
+  overlap_hints: [backend.api-shape]
 ```
 
 ## Cross-reviewer handoff

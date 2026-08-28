@@ -43,7 +43,7 @@ One structured block per finding (see shared/output-schema.md). Use the category
 
 ```
 - severity: High
-  category: backend.atomicity
+  category: backend.transaction
   file: src/services/transfer.ts
   line: 18
   title: debit and credit not in a transaction
@@ -52,7 +52,7 @@ One structured block per finding (see shared/output-schema.md). Use the category
   impact: a failure between the two leaves money lost
   remedy: wrap both in a single transaction with rollback
   confidence: high
-  overlap_hints: [db.query, correctness.error-handling]
+  overlap_hints: [db.query, correctness.error-path]
 ```
 
 ## Cross-reviewer handoff

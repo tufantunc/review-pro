@@ -52,7 +52,7 @@ One structured block per finding (see shared/output-schema.md). Use the category
   impact: permanent data loss; cannot be reversed once applied
   remedy: back up bios first, deploy in stages; provide a reversible down migration
   confidence: high
-  overlap_hints: [backend.atomicity]
+  overlap_hints: [backend.transaction]
 ```
 
 ## Cross-reviewer handoff

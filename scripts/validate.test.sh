@@ -901,6 +901,57 @@ out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "names 'security.nonexistent'"; then ok "body naming a category its rubric omits detected"; else bad "body naming a category its rubric omits NOT detected"; fi
 rm -rf "$T"
 
+
+# Case AI: ADR-0006's guard resolves a body's rubric through `loads_skill`, not the
+# filename stem, and says so out loud when that skill has no rubric. The two agree
+# for every shipped reviewer, so only a fixture where they diverge can prove the
+# guard reads the declared skill rather than the filename.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_good_agent_body "$T/core/agents/security-reviewer.md" security-reviewer
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"}], "agents": [{"name":"security-reviewer","loads_skill":"security"}] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "cannot be checked against a rubric"; then bad "no-rubric control fired while the declared skill had a rubric"; else ok "no-rubric control silent when the declared skill has a rubric"; fi
+# Same filename, different declared skill: the filename still maps to a rubric that
+# exists, so a filename-derived guard would pass here and this case would prove nothing.
+sed -i.bak 's/^loads_skill: security$/loads_skill: phantom/' "$T/core/agents/security-reviewer.md"
+sed -i.bak2 's/^skills: \[security\]$/skills: [phantom]/' "$T/core/agents/security-reviewer.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "declares loads_skill 'phantom', which has no core/skills/phantom/SKILL.md"; then ok "body whose declared skill has no rubric reported, not skipped"; else bad "body whose declared skill has no rubric was silently skipped"; fi
+rm -rf "$T"
+
+
+# Case AJ: ADR-0006 binds the files that TEACH the schema, not only the bodies. A
+# rubric is auto-loaded into its subagent verbatim, so a worked example naming a
+# category the same file just declared closed is the likeliest way a dead name gets
+# re-emitted; `overlap_hints` names ANOTHER reviewer's roots and so has to be checked
+# against that reviewer's list, not the file it sits in. Both halves get a case.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/backend" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_good_reviewer "$T/core/skills/backend/SKILL.md"
+printf 'Use the category roots `security.authz`, `security.injection`. This list is closed: a finding outside it means the concern belongs to another reviewer.\n' >> "$T/core/skills/security/SKILL.md"
+printf 'Use the category roots `backend.validation`, `backend.transaction`. This list is closed: a finding outside it means the concern belongs to another reviewer.\n' >> "$T/core/skills/backend/SKILL.md"
+printf '  category: security.authz\n  overlap_hints: [backend.validation]\n' >> "$T/core/skills/security/SKILL.md"
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"backend","role":"reviewer"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "closed category list"; then bad "category audit fired while the example and the hint were both listed"; else ok "category audit silent when the example and the cross-reviewer hint are both listed"; fi
+# Half one: the file's own worked example names a category its own list omits.
+sed -i.bak 's/^  category: security\.authz$/  category: security.deserialization/' "$T/core/skills/security/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "'security.deserialization' is not in the security rubric"; then ok "a rubric's own example naming an unlisted category detected"; else bad "a rubric's own example naming an unlisted category NOT detected"; fi
+sed -i.bak2 's/^  category: security\.deserialization$/  category: security.authz/' "$T/core/skills/security/SKILL.md"
+# Half two: the hint points at ANOTHER reviewer's list, so only a cross-file check finds it.
+sed -i.bak3 's/overlap_hints: \[backend\.validation\]/overlap_hints: [backend.atomicity]/' "$T/core/skills/security/SKILL.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "'backend.atomicity' is not in the backend rubric"; then ok "an overlap_hint outside the referenced reviewer's list detected"; else bad "an overlap_hint outside the referenced reviewer's list NOT detected"; fi
+rm -rf "$T"
+
 echo "---"
 echo "pass=$pass fail=$fail"
 

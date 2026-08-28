@@ -210,11 +210,57 @@ fi
 # re-enumerates categories can disagree with its rubric, which is what issue #44
 # measured across 12 of 13 pairs. Every `<root>.<sub>` a body still names must exist
 # in that root's own rubric, so a re-added enumeration cannot contradict it.
+# ADR-0006, second half: the closed list has to bind the files that TEACH the schema,
+# not only the bodies. A rubric is auto-loaded into its subagent verbatim, so a worked
+# example naming a category the same file just declared closed is the likeliest way a
+# dead name gets re-emitted. The same applies to `overlap_hints`, which name ANOTHER
+# reviewer's roots and so cannot be checked against the file they appear in.
+#
+# Scoped to `category:` and `overlap_hints:` lines on purpose. A repo-wide scan for
+# `<word>.<word>` also matches SQL table names in code examples (`db.users` in the
+# performance rubric), and a guard with false positives gets disabled rather than fixed.
+if command -v python3 >/dev/null 2>&1; then
+  python3 - "$ROOT" <<'PYCAT' || errors=$((errors+1))
+import glob, os, re, sys
+root = sys.argv[1]
+closed = {}
+for f in glob.glob(os.path.join(root, 'core/skills/*/SKILL.md')):
+    name = os.path.basename(os.path.dirname(f))
+    m = re.search(r'Use the category roots ([^\n]*?)\. This list is closed', open(f, encoding='utf-8').read())
+    if m:
+        closed[name] = set(re.findall(r'`([a-z0-9-]+\.[a-z0-9-]+)`', m.group(1)))
+bad = []
+for f in glob.glob(os.path.join(root, 'core/**/*.md'), recursive=True):
+    rel = os.path.relpath(f, root)
+    for i, line in enumerate(open(f, encoding='utf-8'), 1):
+        if not re.match(r'\s*(category|overlap_hints):', line):
+            continue
+        for tok in re.findall(r'\b([a-z0-9-]+\.[a-z0-9-]+)\b', line):
+            r_, sub = tok.split('.', 1)
+            if r_ in closed and closed[r_] and tok not in closed[r_]:
+                bad.append(f"{rel}:{i}: '{tok}' is not in the {r_} rubric's closed category list (see ADR-0006)")
+for b in bad:
+    print(f"FAIL: {b}")
+sys.exit(1 if bad else 0)
+PYCAT
+fi
+
 for body in "$ROOT"/core/agents/*-reviewer.md; do
   [[ -f "$body" ]] || continue
-  root="$(basename "$body" -reviewer.md)"
+  # `loads_skill` and not the filename stem. The two agree for all thirteen reviewers
+  # today, which is exactly why deriving the mapping a second way would go unnoticed:
+  # a body whose declared skill stopped matching its filename would resolve to a
+  # missing rubric and skip this check in silence. `loads_skill` is the mapping the
+  # CLI installs by and the rest of this file already resolves through.
+  root="$(fm_get "$body" "loads_skill")"
+  if [[ -z "$root" ]]; then
+    continue # the missing-loads_skill error is raised by the frontmatter checks below
+  fi
   rubric="$SKILLS_DIR/$root/SKILL.md"
-  [[ -f "$rubric" ]] || continue
+  if [[ ! -f "$rubric" ]]; then
+    add_error "core/agents/$(basename "$body"): declares loads_skill '$root', which has no core/skills/$root/SKILL.md, so its subcategories cannot be checked against a rubric (see ADR-0006)"
+    continue
+  fi
   while IFS= read -r cat; do
     [[ -n "$cat" ]] || continue
     grep -qF "$cat" "$rubric" \

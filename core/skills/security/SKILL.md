@@ -52,7 +52,7 @@ One structured block per finding (see shared/output-schema.md). Use the category
   impact: any authenticated user can update another user's order
   remedy: authorize(ctx.userId === order.userId) before update
   confidence: high
-  overlap_hints: [backend.authz, correctness.logic]
+  overlap_hints: [backend.validation, correctness.logic]
 ```
 
 ## Cross-reviewer handoff

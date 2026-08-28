@@ -53,3 +53,26 @@ This is a volunteer-maintained project, not a commercial product with an on-call
 - All GitHub Actions pinned to full commit SHAs, kept current by Dependabot.
 - CodeQL (`security-extended`) and OpenSSF Scorecard run on every push and weekly.
 - Two runtime dependencies: `commander` and `@inquirer/prompts`.
+- A release gate: before `npm publish` runs, a CycloneDX SBOM is generated from the lockfile and scanned with Grype against a fresh database. A fixable Critical blocks the release. Stated precisely: the bar is "fixable Critical", it does not separately evaluate CISA KEV, and the full scan results are kept as a workflow artifact so a green gate is a checkable claim.
+- CycloneDX and SPDX SBOMs attested for every release after v1.2.0, bound to the tarball fetched back from npm and verified against the registry's own `dist.integrity`, then attached to the GitHub Release as readable assets.
+
+## Verifying a release
+
+The npm provenance and the SBOM attestations are separate claims over the same tarball digest: provenance identifies the builder, the SBOM predicate describes the dependency inventory.
+
+```bash
+version=X.Y.Z
+curl -fsSLo review-pro.tgz "https://registry.npmjs.org/review-pro/-/review-pro-$version.tgz"
+
+# npm provenance
+gh attestation verify review-pro.tgz --repo tufantunc/review-pro \
+  --predicate-type https://slsa.dev/provenance/v1
+
+# SBOM attestations (releases after v1.2.0)
+gh attestation verify review-pro.tgz --repo tufantunc/review-pro \
+  --predicate-type https://cyclonedx.org/bom
+gh attestation verify review-pro.tgz --repo tufantunc/review-pro \
+  --predicate-type https://spdx.dev/Document
+```
+
+The readable SBOM files are attached to each GitHub Release (`sbom.cdx.json`, `sbom.spdx.json`) for anyone answering "does this pull in X?" without a toolchain.

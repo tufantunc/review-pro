@@ -39,7 +39,7 @@ Before claiming "a design-system primitive already exists", verify it in scoped 
 Block on Critical/High frontend flaws. Push for design-system consistency and correct state/effect structure.
 
 ## Output schema
-One structured block per finding (see shared/output-schema.md). Use category roots like `frontend.state`, `frontend.components`, `frontend.consistency`, `frontend.effects`, `frontend.i18n`.
+One structured block per finding (see shared/output-schema.md). Use the category roots `frontend.components`, `frontend.consistency`, `frontend.effects`, `frontend.i18n`, `frontend.state`. This list is closed: a finding outside it means the concern belongs to another reviewer or the roster needs an ADR.
 
 ```
 - severity: Medium

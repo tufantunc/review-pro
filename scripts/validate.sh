@@ -528,24 +528,56 @@ done < <(find "$ROOT" -name '*.md' -type f \
   -not -path '*/cli/plugin/*' -not -path '*/cli/dist/*' 2>/dev/null)
 shopt -u nullglob
 
-# Plugin manifest versions. Four files carry one and none is bumped automatically, so
-# they drift silently and a directory listing shows the wrong number until someone
-# notices. cli/package.json is the source; the tag check in the publish workflow
-# already pins that one to the git tag.
+# Version-carrying files. Five of them hold the same number and none is bumped
+# automatically, so they drift silently: a directory listing shows the wrong version
+# until someone notices, and cli/package-lock.json sat five releases behind at 0.7.0
+# while package.json said 1.2.0. cli/package.json is the source; the tag check in the
+# publish workflow already pins that one to the git tag.
+#
+# The lockfile is checked here rather than regenerated at release time on purpose. This
+# runs on every push, so the drift surfaces in the pull request that caused it, and a
+# release is the worst moment to rewrite a lockfile nobody has reviewed.
+#
+# The remedy names `npm version` and not `npm install --package-lock-only`, which was
+# the obvious suggestion and is wrong on macOS: measured on this repo it strips the ten
+# `libc` fields (glibc/musl) that the Linux-generated lockfile carries for optional
+# native bindings, so following the advice would trade one wrong lockfile for another.
+# `npm version` writes all three version fields and leaves the dependency tree alone;
+# `--allow-same-version` is what lets it run when package.json is already correct and
+# only the lockfile is behind. Bumping a release the same way keeps them from drifting
+# at all, which is how this reached 0.7.0 against 1.2.0 in the first place.
 if command -v python3 >/dev/null 2>&1; then
   python3 - "$ROOT" <<'PYVER' || errors=$((errors+1))
 import json, os, sys
 root = sys.argv[1]
+# Unreadable is a finding, not a crash. The same lesson as the i18n loader above: the
+# raise fires before `bad` is printed, so one malformed file discarded every finding
+# already collected and handed the maintainer a traceback instead. That was tolerable
+# while this block read five small hand-maintained files; cli/package-lock.json is
+# rewritten by every Dependabot bump, which makes a conflict-marked or truncated file a
+# realistic input rather than a hypothetical one. `unreadable` is returned as a sentinel
+# so a genuinely absent file stays skipped, which is the existing behaviour for all five.
+UNREADABLE = object()
 def load(rel):
     p = os.path.join(root, rel)
-    return json.load(open(p, encoding="utf-8")) if os.path.exists(p) else None
+    if not os.path.exists(p):
+        return None
+    try:
+        return json.load(open(p, encoding="utf-8"))
+    except (ValueError, OSError) as exc:
+        bad.append(f"{rel}: unreadable ({exc.__class__.__name__}), so its version cannot be checked")
+        return UNREADABLE
+bad = []
 cli = load("cli/package.json")
+if cli is UNREADABLE:
+    for b in bad:
+        print("FAIL: " + b, file=sys.stderr)
+    sys.exit(1)
 if cli is None:
     sys.exit(0)
 want = cli["version"]
-bad = []
 mk = load(".claude-plugin/marketplace.json")
-if mk is not None:
+if mk is not None and mk is not UNREADABLE:
     if mk.get("version") != want:
         bad.append(f".claude-plugin/marketplace.json: version {mk.get('version')} != cli {want}")
     for i, pl in enumerate(mk.get("plugins", [])):
@@ -553,8 +585,16 @@ if mk is not None:
             bad.append(f".claude-plugin/marketplace.json: plugins[{i}].version {pl.get('version')} != cli {want}")
 for rel in ("core/.claude-plugin/plugin.json", "core/.codex-plugin/plugin.json"):
     d = load(rel)
-    if d is not None and d.get("version") != want:
+    if d is not None and d is not UNREADABLE and d.get("version") != want:
         bad.append(f"{rel}: version {d.get('version')} != cli {want}")
+# Two places in one file, and both were stale: npm writes the version at the top level
+# and again under packages[""]. Checking one would pass a half-regenerated lockfile.
+lock = load("cli/package-lock.json")
+if lock is not None and lock is not UNREADABLE:
+    for label, got in (("version", lock.get("version")),
+                       ('packages[""].version', (lock.get("packages", {}).get("") or {}).get("version"))):
+        if got != want:
+            bad.append(f"cli/package-lock.json: {label} {got} != cli {want} - in cli/ run `npm version {want} --allow-same-version --no-git-tag-version`")
 for b in bad:
     print("FAIL: " + b, file=sys.stderr)
 sys.exit(1 if bad else 0)

@@ -952,6 +952,68 @@ out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "'backend.atomicity' is not in the backend rubric"; then ok "an overlap_hint outside the referenced reviewer's list detected"; else bad "an overlap_hint outside the referenced reviewer's list NOT detected"; fi
 rm -rf "$T"
 
+
+# Case AK: the version-alignment block. It compares five files against cli/package.json
+# and had no meta-test at all, which is how cli/package-lock.json reached 0.7.0 while
+# package.json said 1.2.0 across five releases. Every comparison the block makes gets
+# its own mutation, because a check nothing mutates can be deleted outright and the
+# suite will not notice: that is the exact hole being closed here, and the first draft
+# of this case reproduced it by exercising only one of the four manifest comparisons.
+# The lockfile carries the version in TWO places and each is mutated separately, since
+# asserting only the top level would pass a half-regenerated lockfile. The last step
+# covers the `or {}` null guard, whose removal is otherwise invisible: without it a
+# lockfile with no `packages` key crashes the run instead of reporting.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/agents" "$T/cli" "$T/.claude-plugin" "$T/core/.claude-plugin" "$T/core/.codex-plugin"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"}], "agents": [] }
+JSON
+printf '{ "version": "9.9.9" }\n' > "$T/cli/package.json"
+printf '{ "version": "9.9.9", "packages": { "": { "version": "9.9.9" } } }\n' > "$T/cli/package-lock.json"
+printf '{ "version": "9.9.9", "plugins": [{ "version": "9.9.9" }] }\n' > "$T/.claude-plugin/marketplace.json"
+printf '{ "version": "9.9.9" }\n' > "$T/core/.claude-plugin/plugin.json"
+printf '{ "version": "9.9.9" }\n' > "$T/core/.codex-plugin/plugin.json"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "!= cli 9.9.9"; then bad "version-alignment control fired while all five files agreed"; else ok "version-alignment control silent when all five files agree"; fi
+printf '{ "version": "0.7.0", "packages": { "": { "version": "9.9.9" } } }\n' > "$T/cli/package-lock.json"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "package-lock.json: version 0.7.0 != cli 9.9.9"; then ok "stale lockfile top-level version detected"; else bad "stale lockfile top-level version NOT detected"; fi
+printf '{ "version": "9.9.9", "packages": { "": { "version": "0.7.0" } } }\n' > "$T/cli/package-lock.json"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q 'package-lock.json: packages\[""\].version 0.7.0 != cli 9.9.9'; then ok "stale lockfile packages entry detected, not masked by a fresh top-level version"; else bad "stale lockfile packages entry NOT detected"; fi
+printf '{ "version": "9.9.9", "packages": { "": { "version": "9.9.9" } } }\n' > "$T/cli/package-lock.json"
+printf '{ "version": "9.9.9", "plugins": [{ "version": "0.7.0" }] }\n' > "$T/.claude-plugin/marketplace.json"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "plugins\[0\].version 0.7.0 != cli 9.9.9"; then ok "drifted marketplace plugins[0] version detected"; else bad "drifted marketplace plugins[0] version NOT detected"; fi
+printf '{ "version": "0.7.0", "plugins": [{ "version": "9.9.9" }] }\n' > "$T/.claude-plugin/marketplace.json"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "marketplace.json: version 0.7.0 != cli 9.9.9"; then ok "drifted marketplace top-level version detected, not masked by a fresh plugins entry"; else bad "drifted marketplace top-level version NOT detected"; fi
+printf '{ "version": "9.9.9", "plugins": [{ "version": "9.9.9" }] }\n' > "$T/.claude-plugin/marketplace.json"
+printf '{ "version": "0.7.0" }\n' > "$T/core/.claude-plugin/plugin.json"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "core/.claude-plugin/plugin.json: version 0.7.0 != cli 9.9.9"; then ok "drifted claude plugin manifest detected"; else bad "drifted claude plugin manifest NOT detected"; fi
+printf '{ "version": "9.9.9" }\n' > "$T/core/.claude-plugin/plugin.json"
+printf '{ "version": "0.7.0" }\n' > "$T/core/.codex-plugin/plugin.json"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "core/.codex-plugin/plugin.json: version 0.7.0 != cli 9.9.9"; then ok "drifted codex plugin manifest detected"; else bad "drifted codex plugin manifest NOT detected"; fi
+printf '{ "version": "9.9.9" }\n' > "$T/core/.codex-plugin/plugin.json"
+# The `or {}` guard: a lockfile with no `packages` key must report, never crash. Assert
+# on the absence of a traceback as well, because a crash also fails the grep above and
+# the two outcomes must not be confused.
+printf '{ "version": "9.9.9" }\n' > "$T/cli/package-lock.json"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "Traceback"; then bad "lockfile with no packages key crashed the validator"; else ok "lockfile with no packages key did not crash the validator"; fi
+if echo "$out" | grep -q 'packages\[""\].version None != cli 9.9.9'; then ok "missing packages root entry reported as a finding"; else bad "missing packages root entry NOT reported"; fi
+# Unreadable is a finding too, and it must not discard findings already collected.
+printf '{ "version": "9.9.9", "packages": { "": { "version": "9.9.9" } } }\n' > "$T/cli/package-lock.json"
+printf '{ "version": "0.7.0" }\n' > "$T/core/.codex-plugin/plugin.json"
+printf '{ "version": "9.9.9", \n' > "$T/cli/package-lock.json"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "package-lock.json: unreadable"; then ok "malformed lockfile reported as unreadable"; else bad "malformed lockfile NOT reported as unreadable"; fi
+if echo "$out" | grep -q "codex-plugin/plugin.json: version 0.7.0 != cli 9.9.9"; then ok "a finding collected before the malformed file survives it"; else bad "a malformed file discarded findings collected before it"; fi
+rm -rf "$T"
+
 echo "---"
 echo "pass=$pass fail=$fail"
 

@@ -191,6 +191,22 @@ function listAgentNames(src: string): string[] {
     .map((f) => f.slice(0, -3));
 }
 
+function removeSkills(names: string[], dst: string): void {
+  for (const s of names) fs.rmSync(path.join(dst, s), { recursive: true, force: true });
+}
+
+/** Mirror of installCodexAgents: unwritable orchestrator agents are skipped
+ *  the same way, so only files this repo ever wrote are removed. */
+function removeCodexAgents(src: string, dst: string): void {
+  if (!fs.existsSync(src)) return;
+  for (const a of fs.readdirSync(src)) {
+    if (!a.endsWith(".md")) continue;
+    const agent = parseAgentMd(fs.readFileSync(path.join(src, a), "utf8"));
+    if (ORCHESTRATOR_SKILLS.has(agent.loads_skill)) continue;
+    fs.rmSync(path.join(dst, `${agent.name}.toml`), { force: true });
+  }
+}
+
 export function uninstallCore(
   target: Target,
   pluginDir: string = resolvePluginDir(),
@@ -205,7 +221,7 @@ export function uninstallCore(
   switch (target) {
     case "opencode":
     case "claude-code": {
-      for (const s of skillNames) fs.rmSync(path.join(home, "skills", s), { recursive: true, force: true });
+      removeSkills(skillNames, path.join(home, "skills"));
       removeShared(sharedSrc, path.join(home, "shared"));
       for (const a of listAgentNames(agentsSrc)) fs.rmSync(path.join(home, "agents", `${a}.md`), { force: true });
       return;
@@ -215,16 +231,9 @@ export function uninstallCore(
     }
     case "codex": {
       const sHome = skillsHome || path.join(os.homedir(), ".agents", "skills");
-      for (const s of skillNames) fs.rmSync(path.join(sHome, s), { recursive: true, force: true });
+      removeSkills(skillNames, sHome);
       removeShared(sharedSrc, path.join(path.dirname(sHome), "shared"));
-      if (fs.existsSync(agentsSrc)) {
-        for (const a of fs.readdirSync(agentsSrc)) {
-          if (!a.endsWith(".md")) continue;
-          const agent = parseAgentMd(fs.readFileSync(path.join(agentsSrc, a), "utf8"));
-          if (ORCHESTRATOR_SKILLS.has(agent.loads_skill)) continue;
-          fs.rmSync(path.join(home, "agents", `${agent.name}.toml`), { force: true });
-        }
-      }
+      removeCodexAgents(agentsSrc, path.join(home, "agents"));
       return;
     }
   }

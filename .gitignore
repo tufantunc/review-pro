@@ -7,6 +7,9 @@
 sonar-project.properties
 .scannerwork/
 
+# Generated coverage output (lcov.info is consumed by local SonarQube runs)
+cli/coverage/
+
 # Subagent-driven-development scratch: ledgers, briefs, review packages.
 # Per-plan and disposable; the git history is the durable record.
 .superpowers/

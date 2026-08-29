@@ -1,9 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
-import { checkbox, confirm } from "@inquirer/prompts";
-import { installCore, detectInstalled, resolveTargets, TARGETS, type Target } from "../lib/plugin.js";
+import { confirm } from "@inquirer/prompts";
+import { installCore, type Target } from "../lib/plugin.js";
 import { runInteractive } from "./interactive.js";
-import { info, warn, fail } from "../lib/log.js";
+import { resolveCommandTargets } from "./targets.js";
+import { info, warn } from "../lib/log.js";
 
 const PROJECT_MARKERS = [
   ".git", "package.json", "go.mod", "Cargo.toml", "pyproject.toml",
@@ -16,20 +17,13 @@ export async function init(opts: {
   stacks?: boolean;
   target?: string;
 }): Promise<void> {
-  let targets: Target[];
-  if (opts.target) {
-    targets = resolveTargets(opts.target);
-  } else if (process.stdin.isTTY) {
-    targets = await selectPlatforms();
-  } else {
-    fail("interactive platform selection needs a TTY. Use --target <platform|all|auto>.");
-    process.exit(2);
-  }
-  if (targets.length === 0) {
-    fail(`no targets. Use --target <${TARGETS.join("|")}|all|auto>`);
-    process.exit(1);
-  }
+  const targets = await resolveCommandTargets(opts.target, "Select platforms to install review-pro into:");
+  installCores(targets);
+  if (opts.stacks !== false) await installStacks(opts);
+  printRestart();
+}
 
+function installCores(targets: Target[]): void {
   for (const t of targets) {
     if (t === "cursor") {
       info("");
@@ -41,45 +35,36 @@ export async function init(opts: {
       info(`installed review-pro core for ${t}`);
     }
   }
+}
 
-  if (opts.stacks !== false) {
-    const repoRoot = path.resolve(opts.where || process.cwd());
-    if (!looksLikeProjectRoot(repoRoot)) {
-      warn("This doesn't look like a project root (no .git or project manifest found).");
-      warn("Stack packs install into ./.review-pro/. Run from your project root, or use --where <path>.");
-      if (process.stdin.isTTY) {
-        const skip = await confirm({ message: "Skip stack installation?", default: true });
-        if (skip) {
-          info("skipped stacks");
-          printRestart();
-          return;
-        }
-      } else {
-        info("skipped stacks (not a project root)");
-        printRestart();
-        return;
-      }
-    }
-    await runInteractive({ where: opts.where });
+async function installStacks(opts: { where?: string }): Promise<void> {
+  const repoRoot = path.resolve(opts.where || process.cwd());
+  if (!looksLikeProjectRoot(repoRoot)) {
+    warn("This doesn't look like a project root (no .git or project manifest found).");
+    warn("Stack packs install into ./.review-pro/. Run from your project root, or use --where <path>.");
+    if (await skipStacks()) return;
   }
+  await runInteractive({ where: opts.where });
+}
 
-  printRestart();
+/** Prints the skip notice and returns true when stack installation should be
+ *  skipped: asks on a TTY, skips outright without one. The restart hint is
+ *  the caller's — every init() exit path ends with it exactly once. */
+async function skipStacks(): Promise<boolean> {
+  if (!process.stdin.isTTY) {
+    info("skipped stacks (not a project root)");
+    return true;
+  }
+  if (await confirm({ message: "Skip stack installation?", default: true })) {
+    info("skipped stacks");
+    return true;
+  }
+  return false;
 }
 
 function printRestart(): void {
   info("restart your agent tool so the new skills/agents are discovered.");
   info('then trigger a review: "review this branch with review-pro" or invoke the review-pro skill.');
-}
-
-async function selectPlatforms(): Promise<Target[]> {
-  const detected = detectInstalled();
-  const choices = TARGETS.map((t) => ({
-    name: detected.includes(t) ? `${t} (detected)` : t,
-    value: t,
-    checked: detected.includes(t),
-  }));
-  const selected = await checkbox({ message: "Select platforms to install review-pro into:", choices });
-  return selected as Target[];
 }
 
 function looksLikeProjectRoot(dir: string): boolean {

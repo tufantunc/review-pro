@@ -58,4 +58,10 @@ describe("doctor", () => {
     const d = diagnose(repo, catalog, ["security"]);
     expect(d.some((x) => x.kind === "missing-pack" && x.stack === "node")).toBe(true);
   });
+
+  it("passes silently over stray packs for known reviewers the manifest does not declare", () => {
+    installStack(repo, catalog, "node");
+    fs.writeFileSync(path.join(repo, ".review-pro", "node", "db.md"), "# pack");
+    expect(diagnose(repo, catalog, ["security", "db"])).toEqual([]);
+  });
 });

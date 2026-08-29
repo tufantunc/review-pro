@@ -3,6 +3,15 @@ import { listCatalogStacks, readStackManifest, resolveCatalogDir } from "../lib/
 import { listInstalled, getInstalledManifest } from "../lib/repo.js";
 import { info } from "../lib/log.js";
 
+// The mark compares versions lexically, matching the original ternary chain;
+// it is a relative hint for humans, not a semver-aware verdict.
+export function versionMark(installed: string | undefined, catalog: string): string {
+  if (installed == null) return "—";
+  if (installed === catalog) return "=";
+  if (installed < catalog) return "<";
+  return ">";
+}
+
 export function list(opts: { where?: string }): void {
   const repoRoot = path.resolve(opts.where || process.cwd());
   const catalogDir = resolveCatalogDir();
@@ -10,7 +19,7 @@ export function list(opts: { where?: string }): void {
   for (const stack of listCatalogStacks(catalogDir)) {
     const cv = readStackManifest(catalogDir, stack)?.version ?? "?";
     const iv = installed.get(stack)?.version;
-    const mark = iv == null ? "—" : iv === cv ? "=" : iv < cv ? "<" : ">";
+    const mark = versionMark(iv, cv);
     info(`${stack.padEnd(20)} catalog=${cv}  installed=${iv ?? "—"}  ${mark}`);
   }
   for (const stack of listInstalled(repoRoot)) {

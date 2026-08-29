@@ -1,7 +1,7 @@
 {
   "name": "review-pro",
   "version": "1.2.0",
-  "description": "Repository-aware AI code review for coding agents. Installer CLI: puts the review-pro core (triage \u2192 13 specialist reviewers \u2192 synthesis) into Claude Code, opencode, Cursor, Codex, plus per-repo stack packs.",
+  "description": "Repository-aware AI code review for coding agents. Installer CLI: puts the review-pro core (triage → 13 specialist reviewers → synthesis) into Claude Code, opencode, Cursor, Codex, plus per-repo stack packs.",
   "license": "MIT",
   "type": "module",
   "author": "tufantunc (https://github.com/tufantunc)",
@@ -49,6 +49,7 @@
   "scripts": {
     "build": "tsup && node build-assets.mjs",
     "test": "vitest run",
+    "coverage": "vitest run --coverage",
     "prepublishOnly": "npm run build && npm test"
   },
   "dependencies": {
@@ -57,6 +58,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
+    "@vitest/coverage-v8": "^4.1.11",
     "tsup": "^8.3.0",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"

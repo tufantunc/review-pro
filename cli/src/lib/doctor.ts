@@ -64,9 +64,11 @@ export function diagnose(repoRoot: string, catalogDir: string, knownReviewers: s
     const m = getInstalledManifest(repoRoot, stack);
     if (!m) continue;
     const packs = listPackFiles(path.join(reviewProDir(repoRoot), stack));
-    out.push(...checkDrift(stack, m, catalogVersions));
-    out.push(...checkDeclaredPacks(stack, packs, m, knownReviewers));
-    out.push(...checkStrayPacks(stack, packs, m, knownReviewers));
+    out.push(
+      ...checkDrift(stack, m, catalogVersions),
+      ...checkDeclaredPacks(stack, packs, m, knownReviewers),
+      ...checkStrayPacks(stack, packs, m, knownReviewers),
+    );
   }
   return out;
 }

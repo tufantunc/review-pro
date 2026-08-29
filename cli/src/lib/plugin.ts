@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseAgentMd, mdToCodexToml } from "./agents.js";
+import { parseAgentMd, mdToCodexToml, type CanonicalAgent } from "./agents.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -133,13 +133,24 @@ function copyAgentsMd(src: string, dst: string): void {
   }
 }
 
-function installCodexAgents(src: string, dst: string): void {
-  if (!fs.existsSync(src)) return;
-  fs.mkdirSync(dst, { recursive: true });
+/** Codex agents in their installable form, minus the orchestrator-only ones:
+ *  install never writes their .toml, so uninstall must never remove it either. */
+function listCodexAgents(src: string): CanonicalAgent[] {
+  if (!fs.existsSync(src)) return [];
+  const agents: CanonicalAgent[] = [];
   for (const a of fs.readdirSync(src)) {
     if (!a.endsWith(".md")) continue;
     const agent = parseAgentMd(fs.readFileSync(path.join(src, a), "utf8"));
     if (ORCHESTRATOR_SKILLS.has(agent.loads_skill)) continue;
+    agents.push(agent);
+  }
+  return agents;
+}
+
+function installCodexAgents(src: string, dst: string): void {
+  if (!fs.existsSync(src)) return;
+  fs.mkdirSync(dst, { recursive: true });
+  for (const agent of listCodexAgents(src)) {
     fs.writeFileSync(path.join(dst, `${agent.name}.toml`), mdToCodexToml(agent));
   }
 }
@@ -184,25 +195,22 @@ function listSkillNames(src: string): string[] {
     .map((d) => d.name);
 }
 
-function listAgentNames(src: string): string[] {
-  if (!fs.existsSync(src)) return [];
-  return fs.readdirSync(src)
-    .filter((f) => f.endsWith(".md"))
-    .map((f) => f.slice(0, -3));
+/** Remove only the skills we ship; a missing source dir removes nothing. */
+function removeSkills(src: string, dst: string): void {
+  for (const s of listSkillNames(src)) fs.rmSync(path.join(dst, s), { recursive: true, force: true });
 }
 
-function removeSkills(names: string[], dst: string): void {
-  for (const s of names) fs.rmSync(path.join(dst, s), { recursive: true, force: true });
-}
-
-/** Mirror of installCodexAgents: unwritable orchestrator agents are skipped
- *  the same way, so only files this repo ever wrote are removed. */
-function removeCodexAgents(src: string, dst: string): void {
+/** Mirror of copyAgentsMd: same .md filter over the same source dir. */
+function removeAgentsMd(src: string, dst: string): void {
   if (!fs.existsSync(src)) return;
   for (const a of fs.readdirSync(src)) {
     if (!a.endsWith(".md")) continue;
-    const agent = parseAgentMd(fs.readFileSync(path.join(src, a), "utf8"));
-    if (ORCHESTRATOR_SKILLS.has(agent.loads_skill)) continue;
+    fs.rmSync(path.join(dst, a), { force: true });
+  }
+}
+
+function removeCodexAgents(src: string, dst: string): void {
+  for (const agent of listCodexAgents(src)) {
     fs.rmSync(path.join(dst, `${agent.name}.toml`), { force: true });
   }
 }
@@ -216,14 +224,13 @@ export function uninstallCore(
   const skillsSrc = path.join(pluginDir, "skills");
   const agentsSrc = path.join(pluginDir, "agents");
   const sharedSrc = path.join(pluginDir, "shared");
-  const skillNames = listSkillNames(skillsSrc);
 
   switch (target) {
     case "opencode":
     case "claude-code": {
-      removeSkills(skillNames, path.join(home, "skills"));
+      removeSkills(skillsSrc, path.join(home, "skills"));
       removeShared(sharedSrc, path.join(home, "shared"));
-      for (const a of listAgentNames(agentsSrc)) fs.rmSync(path.join(home, "agents", `${a}.md`), { force: true });
+      removeAgentsMd(agentsSrc, path.join(home, "agents"));
       return;
     }
     case "cursor": {
@@ -231,7 +238,7 @@ export function uninstallCore(
     }
     case "codex": {
       const sHome = skillsHome || path.join(os.homedir(), ".agents", "skills");
-      removeSkills(skillNames, sHome);
+      removeSkills(skillsSrc, sHome);
       removeShared(sharedSrc, path.join(path.dirname(sHome), "shared"));
       removeCodexAgents(agentsSrc, path.join(home, "agents"));
       return;

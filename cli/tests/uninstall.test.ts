@@ -88,6 +88,7 @@ describe("uninstallCore per target", () => {
   });
 
   it("codex removes skills + reviewer .toml", () => {
+    fs.writeFileSync(path.join(pluginSrc, "agents", "notes.txt"), "not an agent");
     installCore("codex", pluginSrc, H("codex"), path.join(H("codex"), "skills"));
     uninstallCore("codex", pluginSrc, H("codex"), path.join(H("codex"), "skills"));
     expect(fs.existsSync(path.join(H("codex"), "skills", "security"))).toBe(false);
@@ -100,8 +101,12 @@ describe("uninstallCore per target", () => {
       "---\nname: review-pro-triage-subagent\ndescription: \"x\"\nloads_skill: review-pro-triage\nskills: [review-pro-triage]\n---\n# body\n",
     );
     installCore("codex", pluginSrc, H("codex2"), path.join(H("codex2"), "skills"));
+    // A user-authored file colliding with the orchestrator agent's name must
+    // survive: install never wrote that .toml, so uninstall must not touch it.
+    const decoy = path.join(H("codex2"), "agents", "review-pro-triage-subagent.toml");
+    fs.writeFileSync(decoy, "# user's own");
     expect(() => uninstallCore("codex", pluginSrc, H("codex2"), path.join(H("codex2"), "skills"))).not.toThrow();
-    expect(fs.existsSync(path.join(H("codex2"), "agents", "review-pro-triage-subagent.toml"))).toBe(false);
+    expect(fs.existsSync(decoy)).toBe(true);
   });
 
   it("is idempotent - second call throws nothing", () => {

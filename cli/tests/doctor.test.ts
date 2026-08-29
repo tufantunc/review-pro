@@ -64,4 +64,12 @@ describe("doctor", () => {
     fs.writeFileSync(path.join(repo, ".review-pro", "node", "db.md"), "# pack");
     expect(diagnose(repo, catalog, ["security", "db"])).toEqual([]);
   });
+
+  it("flags stray packs targeting unknown reviewers", () => {
+    installStack(repo, catalog, "node");
+    fs.writeFileSync(path.join(repo, ".review-pro", "node", "mystery.md"), "# pack");
+    expect(diagnose(repo, catalog, ["security"])).toEqual([
+      { kind: "unknown-reviewer", stack: "node", detail: "node: pack 'mystery.md' targets unknown reviewer" },
+    ]);
+  });
 });

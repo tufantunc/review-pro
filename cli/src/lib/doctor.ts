@@ -27,11 +27,17 @@ function checkDrift(stack: string, installed: StackManifest, catalogVersions: Ma
   return [];
 }
 
-function checkDeclaredPacks(stack: string, dir: string, m: StackManifest, knownReviewers: string[]): Diagnosis[] {
+/** `.md` pack filenames in a stack dir, computed once so both pack checks
+ *  share one view of the directory instead of statting and listing it apart. */
+function listPackFiles(dir: string): Set<string> {
+  if (!fs.existsSync(dir)) return new Set();
+  return new Set(fs.readdirSync(dir).filter((f) => f.endsWith(".md")));
+}
+
+function checkDeclaredPacks(stack: string, packs: Set<string>, m: StackManifest, knownReviewers: string[]): Diagnosis[] {
   const out: Diagnosis[] = [];
   for (const r of m.reviewers) {
-    const pack = path.join(dir, `${r}.md`);
-    if (!fs.existsSync(pack))
+    if (!packs.has(`${r}.md`))
       out.push({ kind: "missing-pack", stack, detail: `${stack}: manifest declares '${r}' but ${r}.md missing` });
     else if (!knownReviewers.includes(r))
       out.push({ kind: "unknown-reviewer", stack, detail: `${stack}: pack '${r}.md' targets unknown reviewer` });
@@ -39,10 +45,9 @@ function checkDeclaredPacks(stack: string, dir: string, m: StackManifest, knownR
   return out;
 }
 
-function checkStrayPacks(stack: string, dir: string, m: StackManifest, knownReviewers: string[]): Diagnosis[] {
+function checkStrayPacks(stack: string, packs: Set<string>, m: StackManifest, knownReviewers: string[]): Diagnosis[] {
   const out: Diagnosis[] = [];
-  for (const f of fs.existsSync(dir) ? fs.readdirSync(dir) : []) {
-    if (!f.endsWith(".md")) continue;
+  for (const f of packs) {
     const r = f.slice(0, -3);
     // A pack for a known reviewer the manifest does not declare is allowed to
     // sit in the stack dir; only packs targeting unknown reviewers are flagged.
@@ -58,10 +63,10 @@ export function diagnose(repoRoot: string, catalogDir: string, knownReviewers: s
   for (const stack of listInstalled(repoRoot)) {
     const m = getInstalledManifest(repoRoot, stack);
     if (!m) continue;
-    const dir = path.join(reviewProDir(repoRoot), stack);
+    const packs = listPackFiles(path.join(reviewProDir(repoRoot), stack));
     out.push(...checkDrift(stack, m, catalogVersions));
-    out.push(...checkDeclaredPacks(stack, dir, m, knownReviewers));
-    out.push(...checkStrayPacks(stack, dir, m, knownReviewers));
+    out.push(...checkDeclaredPacks(stack, packs, m, knownReviewers));
+    out.push(...checkStrayPacks(stack, packs, m, knownReviewers));
   }
   return out;
 }

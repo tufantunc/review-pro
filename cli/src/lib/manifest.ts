@@ -16,3 +16,12 @@ export function parseManifest(raw: unknown): StackManifest {
     throw new Error("manifest: 'reviewers' must be a string array");
   return { name: r.name, version: r.version, reviewers: r.reviewers };
 }
+
+/** The mark compares versions lexically, matching the original ternary chain
+ *  in `list`; it is a relative hint for humans, not a semver-aware verdict. */
+export function versionMark(installed: string | undefined, catalog: string): string {
+  if (installed == null) return "—";
+  if (installed === catalog) return "=";
+  if (installed < catalog) return "<";
+  return ">";
+}

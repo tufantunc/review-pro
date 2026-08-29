@@ -16,6 +16,28 @@ export async function init(opts: {
   stacks?: boolean;
   target?: string;
 }): Promise<void> {
+  const targets = await resolveInitTargets(opts);
+  installCores(targets);
+
+  if (opts.stacks !== false) {
+    const repoRoot = path.resolve(opts.where || process.cwd());
+    if (!looksLikeProjectRoot(repoRoot)) {
+      warn("This doesn't look like a project root (no .git or project manifest found).");
+      warn("Stack packs install into ./.review-pro/. Run from your project root, or use --where <path>.");
+      if (await shouldSkipStacks()) return;
+    }
+    await runInteractive({ where: opts.where });
+  }
+
+  printRestart();
+}
+
+function printRestart(): void {
+  info("restart your agent tool so the new skills/agents are discovered.");
+  info('then trigger a review: "review this branch with review-pro" or invoke the review-pro skill.');
+}
+
+async function resolveInitTargets(opts: { target?: string }): Promise<Target[]> {
   let targets: Target[];
   if (opts.target) {
     targets = resolveTargets(opts.target);
@@ -29,7 +51,10 @@ export async function init(opts: {
     fail(`no targets. Use --target <${TARGETS.join("|")}|all|auto>`);
     process.exit(1);
   }
+  return targets;
+}
 
+function installCores(targets: Target[]): void {
   for (const t of targets) {
     if (t === "cursor") {
       info("");
@@ -41,34 +66,22 @@ export async function init(opts: {
       info(`installed review-pro core for ${t}`);
     }
   }
-
-  if (opts.stacks !== false) {
-    const repoRoot = path.resolve(opts.where || process.cwd());
-    if (!looksLikeProjectRoot(repoRoot)) {
-      warn("This doesn't look like a project root (no .git or project manifest found).");
-      warn("Stack packs install into ./.review-pro/. Run from your project root, or use --where <path>.");
-      if (process.stdin.isTTY) {
-        const skip = await confirm({ message: "Skip stack installation?", default: true });
-        if (skip) {
-          info("skipped stacks");
-          printRestart();
-          return;
-        }
-      } else {
-        info("skipped stacks (not a project root)");
-        printRestart();
-        return;
-      }
-    }
-    await runInteractive({ where: opts.where });
-  }
-
-  printRestart();
 }
 
-function printRestart(): void {
-  info("restart your agent tool so the new skills/agents are discovered.");
-  info('then trigger a review: "review this branch with review-pro" or invoke the review-pro skill.');
+/** Asks on a TTY whether to skip stack installation; without one, skips
+ *  outright. True means skip (restart hint already printed). */
+async function shouldSkipStacks(): Promise<boolean> {
+  if (!process.stdin.isTTY) {
+    info("skipped stacks (not a project root)");
+    printRestart();
+    return true;
+  }
+  if (await confirm({ message: "Skip stack installation?", default: true })) {
+    info("skipped stacks");
+    printRestart();
+    return true;
+  }
+  return false;
 }
 
 async function selectPlatforms(): Promise<Target[]> {

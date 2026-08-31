@@ -942,9 +942,9 @@ JSON
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "closed category list"; then bad "category audit fired while the example and the hint were both listed"; else ok "category audit silent when the example and the cross-reviewer hint are both listed"; fi
 # Half one: the file's own worked example names a category its own list omits.
-sed -i.bak 's/^  category: security\.authz$/  category: security.deserialization/' "$T/core/skills/security/SKILL.md"
+sed -i.bak 's/^  category: security\.authz$/  category: security.notacategory/' "$T/core/skills/security/SKILL.md"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
-if echo "$out" | grep -q "'security.deserialization' is not in the security rubric"; then ok "a rubric's own example naming an unlisted category detected"; else bad "a rubric's own example naming an unlisted category NOT detected"; fi
+if echo "$out" | grep -q "'security.notacategory' is not in the security rubric"; then ok "a rubric's own example naming an unlisted category detected"; else bad "a rubric's own example naming an unlisted category NOT detected"; fi
 sed -i.bak2 's/^  category: security\.deserialization$/  category: security.authz/' "$T/core/skills/security/SKILL.md"
 # Half two: the hint points at ANOTHER reviewer's list, so only a cross-file check finds it.
 sed -i.bak3 's/overlap_hints: \[backend\.validation\]/overlap_hints: [backend.atomicity]/' "$T/core/skills/security/SKILL.md"

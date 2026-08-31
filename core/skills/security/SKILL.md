@@ -39,7 +39,7 @@ Never present an issue with unfinished research. If the backend, client, or sche
 Block when any Critical/High security finding is present and unaddressed. Otherwise list concrete remediations. Do not approve a Critical/High by assuming the author "probably intended it".
 
 ## Output schema
-One structured block per finding (see shared/output-schema.md). Use the category roots `security.authn`, `security.authz`, `security.crypto`, `security.csrf`, `security.feature-gate`, `security.injection`, `security.redirect`, `security.secrets`, `security.ssrf`. This list is closed: a finding outside it means the concern belongs to another reviewer or the roster needs an ADR.
+One structured block per finding (see shared/output-schema.md). Use the category roots `security.authn`, `security.authz`, `security.crypto`, `security.csrf`, `security.deserialization`, `security.feature-gate`, `security.injection`, `security.redirect`, `security.secrets`, `security.ssrf`. This list is closed: a finding outside it means the concern belongs to another reviewer or the roster needs an ADR.
 
 ```
 - severity: High

@@ -93,3 +93,5 @@ Do **not** open a public issue. See [`SECURITY.md`](SECURITY.md).
 By contributing you agree your contributions are licensed under the [MIT License](LICENSE).
 
 Decisions that were expensive to make are recorded in [docs/internals/adr/](docs/internals/adr/); read the relevant ADR before proposing to reverse one, and add an ADR when your change makes such a decision.
+
+Cutting a release: [docs/internals/releasing.md](docs/internals/releasing.md).

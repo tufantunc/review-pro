@@ -538,14 +538,19 @@ shopt -u nullglob
 # runs on every push, so the drift surfaces in the pull request that caused it, and a
 # release is the worst moment to rewrite a lockfile nobody has reviewed.
 #
-# The remedy names `npm version` and not `npm install --package-lock-only`, which was
-# the obvious suggestion and is wrong on macOS: measured on this repo it strips the ten
-# `libc` fields (glibc/musl) that the Linux-generated lockfile carries for optional
-# native bindings, so following the advice would trade one wrong lockfile for another.
-# `npm version` writes all three version fields and leaves the dependency tree alone;
+# The remedy names `npm version` because setting a version is the whole of the job:
 # `--allow-same-version` is what lets it run when package.json is already correct and
-# only the lockfile is behind. Bumping a release the same way keeps them from drifting
-# at all, which is how this reached 0.7.0 against 1.2.0 in the first place.
+# only the lockfile is behind, and it cannot re-resolve the tree even in principle.
+# `npm install --package-lock-only` also fixes it, and measured on a pristine checkout
+# it produced a byte-identical result (same 223 package entries, one changed entry, and
+# both work offline), so the preference is about the narrower guarantee rather than any
+# observed difference. An earlier version of this comment claimed that command strips
+# `libc` fields from the lockfile; that was wrong. This lockfile carries no `libc`
+# fields at all, and the measurement behind the claim came from a scratch copy in a
+# state this repository has never committed.
+#
+# Bumping a release with `npm version` keeps the two from drifting at all, which is how
+# this reached 0.7.0 against 1.2.0 in the first place.
 if command -v python3 >/dev/null 2>&1; then
   python3 - "$ROOT" <<'PYVER' || errors=$((errors+1))
 import json, os, sys

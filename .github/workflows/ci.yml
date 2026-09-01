@@ -54,6 +54,12 @@ jobs:
       - name: Scan the SBOM (report only)
         uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
         with:
+          # Pinned, not inherited. The action bundles a default grype version and bumping
+          # the action changes the scanner: v7.4.0 carried grype v0.110.0 and v7.4.2
+          # carries v0.118.0, eight minors of detection and scoring rules, inside what
+          # reads as a routine action bump. The engine that decides whether a release
+          # is blocked belongs in this file where a change to it is reviewable.
+          grype-version: v0.118.0
           sbom: cli/sbom-ci.cdx.json
           fail-build: false
           severity-cutoff: critical

@@ -82,7 +82,7 @@ The bar: the concern must not already be owned by one of the 13, and triage must
 
 ## Releasing
 
-Maintainers only — see [`RELEASING.md`](RELEASING.md).
+Maintainers only, see [`docs/internals/releasing.md`](docs/internals/releasing.md).
 
 ## Reporting security issues
 
@@ -93,5 +93,3 @@ Do **not** open a public issue. See [`SECURITY.md`](SECURITY.md).
 By contributing you agree your contributions are licensed under the [MIT License](LICENSE).
 
 Decisions that were expensive to make are recorded in [docs/internals/adr/](docs/internals/adr/); read the relevant ADR before proposing to reverse one, and add an ADR when your change makes such a decision.
-
-Cutting a release: [docs/internals/releasing.md](docs/internals/releasing.md).

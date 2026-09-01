@@ -13,7 +13,7 @@ Do not re-check these by hand. If one is wrong the run fails and tells you.
 | The tag matches `cli/package.json` | `publish.yml`, "Verify tag matches cli/package.json version" |
 | All five version fields agree | `scripts/validate.sh`, the version-alignment block |
 | The published reviewer count and roster | `scripts/validate.sh`, the published-count guard |
-| No fixable Critical vulnerability ships | `publish.yml`, the Grype gate, which blocks the publish |
+| No fixable Critical vulnerability ships | `publish.yml`, the Grype gate, which blocks the publish. The scanner version is pinned there with `grype-version`, so a scan-action bump cannot change it silently |
 | The SBOM is generated, signed, and attached | `publish.yml`, the `sbom` and `sbom-assets` jobs |
 
 ## The steps
@@ -39,6 +39,12 @@ The validator will fail if any of the five disagree, so this is checked, not tru
 ### 2. Decide what the version means
 
 Since 1.0.0 the reviewer roster, the finding schema, the category roots, and the triage and synthesis contracts are stable. Breaking any of them needs a major and an ADR. See [ADR-0005](adr/0005-version-one-point-oh-timing.md).
+
+| Change | Bump |
+|---|---|
+| Bug fix, docs, a signal or severity refinement inside a pack | patch |
+| A new stack pack, a new CLI command or flag, a new reviewer, a new category | minor |
+| Renaming or removing a pack, a reviewer, or a category root; any CLI or schema break | major |
 
 ### 3. Update the surfaces no check reads
 
@@ -118,3 +124,18 @@ Read these as a shape, not a target. They are here so an unexpected drop is visi
 - meta-tests: 119 assertions at the time of writing, only ever growing
 - CLI tests: 72 at the time of writing
 - site: 14 pages across 7 languages, no drift
+
+## One-time setup
+
+Needed once, not per release.
+
+1. **npm token.** On npmjs.com, Access Tokens, create a Granular Access Token with publish permission scoped to this package, or a classic Automation token.
+2. **GitHub secret.** Repo Settings, Secrets and variables, Actions, new repository secret named `NPM_TOKEN`.
+
+## When a publish fails on provenance
+
+Provenance is on: the publish job holds `id-token: write` and publishes with `--provenance`, so every release carries a signed attestation tying the tarball to this repo and workflow. If a publish fails with an OIDC or provenance error, check that the job still has `id-token: write`, and that `repository.url` in `cli/package.json` still matches this repo, because provenance verification compares them.
+
+## The site
+
+GitHub Pages serves `docs/`, which `scripts/build-site.js` generates from `docs-src/`. It deploys on push to `main`, not on a tag, so a site fix does not need a release. That is also why step 4 insists on no `docs/` drift: an ungenerated change would ship on the next push to main rather than with the version that introduced it.

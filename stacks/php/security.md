@@ -18,4 +18,4 @@ extends: core/skills/security/SKILL.md
 ## Stack-specific severity guidance
 - `eval`/`unserialize`/string-built SQL/`include` on input: Critical/High.
 - Unescaped echo of `$_GET/$_POST`: High (XSS).
-- `display_errors` in prod config: Low when it exposes stack traces and paths; High when the output can carry secrets (credentials in an exception message, an environment dump).
+- `display_errors` in prod config: High when the output can carry secrets, and by default it can: an uncaught exception prints its trace with call arguments (a PDO constructor's password, an auth helper's token) unless `zend.exception_ignore_args` is on. Low only when you confirm the output carries no arguments, environment, or secrets.

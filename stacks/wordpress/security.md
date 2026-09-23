@@ -16,6 +16,6 @@ extends: core/skills/security/SKILL.md
 - Verify nonces + capabilities on every mutating handler; always `esc_*` output; always `$wpdb->prepare`; register sanitize callbacks; `wp_safe_redirect`.
 
 ## Stack-specific severity guidance
-- Missing nonce + capability on a mutating/admin action: Critical when reachable without logging in (`wp_ajax_nopriv_`, `admin_post_nopriv_`, a REST route with an open `permission_callback`) or by any registered user on a site with open registration, High when it needs a role the attacker must be granted.
+- Missing nonce + capability on a mutating/admin action: Critical when reachable without logging in, for example through `wp_ajax_nopriv_` or `admin_post_nopriv_`, an `admin_init` handler (it fires for anonymous requests to admin-ajax.php and admin-post.php), an `init` or `wp_loaded` handler acting on `$_POST`/`$_GET`, or a REST route with an open `permission_callback`, or when any registered user can reach it on a site with open registration; High when it needs a role the attacker must be granted.
 - Unescaped output / `$wpdb` interpolation: Critical/High.
 - Obfuscation (`eval`/`base64_decode(gzinflate(...))`): High when it decodes to code a request can reach, which is a backdoor; otherwise Low, a flag for review, since obfuscation on its own names no actor or boundary.

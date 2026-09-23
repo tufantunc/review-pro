@@ -20,7 +20,6 @@ extends: core/skills/security/SKILL.md
 - Over-broad permission declaration: Low, least privilege with no boundary crossed on its own. Missing privacy manifest: Low here; it blocks App Store submission, which is a release problem rather than a vulnerability.
 
 ## Not a finding
-- A publishable client key in the bundle (Firebase web `apiKey`, Stripe `pk_` key, Supabase anon key, a platform-restricted Maps key). These are meant to ship; report one only when the server-side rule that limits it is missing or open.
 - `server.url` pointing at `localhost` or a LAN address when it is set only under a development flag that release builds do not carry. Confirm the flag is absent from the release configuration before dismissing it.
 - `usesCleartextTraffic` or an ATS exception limited to `localhost` or `10.0.2.2` in a debug-only build configuration.
 - Non-secret preferences (theme, locale, onboarding state) in `@capacitor/preferences`. Only credentials and keys need Keychain or Keystore.

@@ -492,6 +492,9 @@ fi
 # Stack pack integrity: each pack manifest is valid JSON; every listed reviewer
 # has a core skill and a matching pack file.
 STACKS_DIR="$ROOT/stacks"
+# The format stacks/CONTRIBUTING.md documents for every pack file. A security pack
+# file also carries '## Not a finding', checked inside the loop.
+PACK_SECTIONS=("## Stack-specific signals" "## Stack-specific remedies" "## Stack-specific severity guidance")
 if [[ -d "$STACKS_DIR" ]] && command -v python3 >/dev/null 2>&1; then
   shopt -s nullglob
   for pm in "$STACKS_DIR"/*/manifest.json; do
@@ -512,12 +515,16 @@ if [[ -d "$STACKS_DIR" ]] && command -v python3 >/dev/null 2>&1; then
       fi
       if [[ ! -f "$pack_dir/$r.md" ]]; then
         add_error "stacks/$pack_name: manifest lists '$r' but $r.md is missing"
+        continue
+      fi
+      # -x anchors to a whole line: a heading demoted to '### ...' must fail.
+      for h in "${PACK_SECTIONS[@]}"; do
+        grep -qxF "$h" "$pack_dir/$r.md" || add_error "stacks/$pack_name/$r.md: missing section '$h'"
+      done
+      if [[ "$r" == "security" ]] && ! grep -qxF '## Not a finding' "$pack_dir/$r.md"; then
+        add_error "stacks/$pack_name/security.md: no '## Not a finding' section - its signals list no safe forms, so each one fires on every piece of code that merely resembles it"
       fi
     done <<< "$reviewers"
-    # -x anchors to a whole line: demoting the heading to '### Not a finding' must fail.
-    if [[ -f "$pack_dir/security.md" ]] && ! grep -qxF '## Not a finding' "$pack_dir/security.md"; then
-      add_error "stacks/$pack_name/security.md: no '## Not a finding' section - its signals list no safe forms, so each one fires on every piece of code that merely resembles it"
-    fi
   done
   shopt -u nullglob
 fi

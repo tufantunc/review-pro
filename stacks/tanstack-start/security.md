@@ -23,6 +23,5 @@ extends: core/skills/security/SKILL.md
 
 ## Not a finding
 - A `createServerFn` that returns only data every visitor may see. The authz requirement applies to private reads and to writes.
-- A `VITE_`-prefixed variable holding a publishable value by design: an analytics ID, a Stripe `pk_` key, a Firebase web config.
 - `Cache-Control: public` on a server function that never reads a session, cookie, or identity.
 - `throw redirect({ to: '/fixed/path' })`, or a destination checked against an allowlist of internal routes.

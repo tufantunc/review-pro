@@ -23,5 +23,5 @@ extends: core/skills/security/SKILL.md
 - `$wpdb->prepare()` with `%s`, `%d`, and `%i` placeholders. The finding is SQL text concatenated before it reaches `prepare`, or a `prepare` call with no placeholders at all.
 - A handler that only reads and returns public data, without a nonce. CSRF needs a state change; a nonce is required on writes, not on public reads.
 - `'permission_callback' => '__return_true'` on a REST route that serves only public data. WordPress requires the callback to be explicit, and this is the documented form for public routes.
-- Output wrapped in `esc_html`, `esc_attr`, `esc_url`, or `wp_kses_post` at the point it is echoed.
+- Output escaped for its context at the point it is echoed: `esc_html` in element text, `esc_attr` in a quoted attribute that is not a URL, `esc_url` in `href` and `src`, `wp_json_encode` inside inline script, and `wp_kses_post` for HTML meant to keep safe tags. The wrong escaper for the context is the finding: `esc_attr` on an `href` lets a `javascript:` URL through.
 - `wp_safe_redirect` to a host the site allows, or `wp_redirect` to a constant URL.

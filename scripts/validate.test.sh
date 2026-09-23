@@ -1039,32 +1039,51 @@ for rule in "missing-layer rule|^## A missing layer is not a missing control$" \
   n=$(echo "$out" | grep -c "security/SKILL.md: the ")
   if echo "$out" | grep -qF "the $msg is gone" && [[ "$n" -eq 1 ]]; then ok "missing security $msg detected, alone"; else bad "missing security $msg NOT detected in isolation ($n calibration errors)"; fi
 done
-# -x anchoring: a demoted heading is not the rule.
-write_good_reviewer "$SEC"
-sed 's/^## A missing layer is not a missing control$/### A missing layer is not a missing control/' "$SEC" > "$T/tmp" && mv "$T/tmp" "$SEC"
-out=$(bash "$VALIDATE" "$T" 2>&1 || true)
-if echo "$out" | grep -qF "the missing-layer rule is gone"; then ok "demoted missing-layer heading detected"; else bad "demoted missing-layer heading NOT detected"; fi
+# -x anchoring: a demoted heading is not the rule. Both anchored guards, not one.
+for rule in "missing-layer rule|## A missing layer is not a missing control" \
+            "not-a-vulnerability list|## Not a vulnerability"; do
+  msg="${rule%%|*}"; h="${rule#*|}"
+  write_good_reviewer "$SEC"
+  sed "s/^$h\$/#$h/" "$SEC" > "$T/tmp" && mv "$T/tmp" "$SEC"
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  n=$(echo "$out" | grep -c "security/SKILL.md: the ")
+  if echo "$out" | grep -qF "the $msg is gone" && [[ "$n" -eq 1 ]]; then ok "demoted $msg heading detected, alone"; else bad "demoted $msg heading NOT detected in isolation ($n calibration errors)"; fi
+done
 rm -rf "$T"
 
-# Case AM: every security pack lists the safe forms of its own signals. Scoped to packs
-# that ship a security.md: flutter and react-native have none, and must stay silent.
+# Case AM: pack file format. Every pack file carries the three documented sections, and a
+# security pack file also lists the safe forms of its own signals. Both checks are keyed
+# on the reviewers a manifest lists, so a pack with no security reviewer (flutter,
+# react-native) is never asked for '## Not a finding'.
 T=$(mktemp -d)
-mkdir -p "$T/core/skills/security" "$T/stacks/demo" "$T/stacks/other"
+mkdir -p "$T/core/skills/security" "$T/core/skills/correctness" "$T/stacks/demo" "$T/stacks/base"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
 printf '{ "name": "demo", "version": "0.1.0", "reviewers": ["security"] }\n' > "$T/stacks/demo/manifest.json"
-printf '{ "name": "other", "version": "0.1.0", "reviewers": [] }\n' > "$T/stacks/other/manifest.json"
-write_pack(){ printf '# Stack pack: demo, security\n\n## Stack-specific signals\n- s\n\n## Not a finding\n- n\n' > "$T/stacks/demo/security.md"; }
-write_pack
+printf '{ "name": "base", "version": "0.1.0", "reviewers": ["correctness"] }\n' > "$T/stacks/base/manifest.json"
+write_pack(){ printf '# Stack pack: %s\n\n## Stack-specific signals\n- s\n\n## Stack-specific remedies\n- r\n\n## Stack-specific severity guidance\n- g\n%b' "$2" "$3" > "$1"; }
+write_pack "$T/stacks/demo/security.md" "demo, security" '\n## Not a finding\n- n\n'
+write_pack "$T/stacks/base/correctness.md" "base, correctness" ''
+pack_errs(){ echo "$1" | grep -cE "stacks/(demo|base)/"; }
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
-if echo "$out" | grep -q "security.md: no '## Not a finding'"; then bad "not-a-finding control: fired on an intact pack"; else ok "not-a-finding control: silent on an intact pack and on a pack with no security.md"; fi
-grep -v '^## Not a finding$' "$T/stacks/demo/security.md" > "$T/tmp" && mv "$T/tmp" "$T/stacks/demo/security.md"
+if [[ "$(pack_errs "$out")" -eq 0 ]]; then ok "pack format control: silent on intact packs, including one with no security reviewer"; else bad "pack format control: $(pack_errs "$out") pack errors on intact packs"; fi
+# Missing and demoted '## Not a finding', each alone.
+for mut in 'drop|/^## Not a finding$/d' 'demote|s/^## Not a finding$/### Not a finding/'; do
+  label="${mut%%|*}"; expr="${mut#*|}"
+  write_pack "$T/stacks/demo/security.md" "demo, security" '\n## Not a finding\n- n\n'
+  sed "$expr" "$T/stacks/demo/security.md" > "$T/tmp" && mv "$T/tmp" "$T/stacks/demo/security.md"
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  if echo "$out" | grep -qF "stacks/demo/security.md: no '## Not a finding' section" && [[ "$(pack_errs "$out")" -eq 1 ]]; then ok "security pack Not a finding ($label) detected, alone"; else bad "security pack Not a finding ($label) NOT detected in isolation ($(pack_errs "$out") pack errors)"; fi
+done
+write_pack "$T/stacks/demo/security.md" "demo, security" '\n## Not a finding\n- n\n'
+# A base section missing from a non-security pack file: reported, and it must not also
+# be asked for '## Not a finding'.
+sed '/^## Stack-specific remedies$/d' "$T/stacks/base/correctness.md" > "$T/tmp" && mv "$T/tmp" "$T/stacks/base/correctness.md"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
-if echo "$out" | grep -qF "stacks/demo/security.md: no '## Not a finding' section"; then ok "security pack without Not a finding detected"; else bad "security pack without Not a finding NOT detected"; fi
-if echo "$out" | grep -qF "stacks/other/"; then bad "not-a-finding guard fired on a pack with no security.md"; else ok "not-a-finding guard silent on a pack with no security.md"; fi
-write_pack
-sed 's/^## Not a finding$/### Not a finding/' "$T/stacks/demo/security.md" > "$T/tmp" && mv "$T/tmp" "$T/stacks/demo/security.md"
+if echo "$out" | grep -qF "stacks/base/correctness.md: missing section '## Stack-specific remedies'" && [[ "$(pack_errs "$out")" -eq 1 ]]; then ok "pack file missing a base section detected, alone"; else bad "pack file missing a base section NOT detected in isolation ($(pack_errs "$out") pack errors)"; fi
+write_pack "$T/stacks/base/correctness.md" "base, correctness" ''
+sed 's/^## Stack-specific signals$/### Stack-specific signals/' "$T/stacks/demo/security.md" > "$T/tmp" && mv "$T/tmp" "$T/stacks/demo/security.md"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
-if echo "$out" | grep -qF "stacks/demo/security.md: no '## Not a finding' section"; then ok "demoted Not a finding heading detected"; else bad "demoted Not a finding heading NOT detected"; fi
+if echo "$out" | grep -qF "stacks/demo/security.md: missing section '## Stack-specific signals'" && [[ "$(pack_errs "$out")" -eq 1 ]]; then ok "demoted base section heading detected, alone"; else bad "demoted base section heading NOT detected in isolation ($(pack_errs "$out") pack errors)"; fi
 rm -rf "$T"
 
 echo "---"

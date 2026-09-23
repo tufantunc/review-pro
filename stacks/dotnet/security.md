@@ -22,6 +22,5 @@ extends: core/skills/security/SKILL.md
 ## Not a finding
 - `FromSqlInterpolated($"... {id}")` and EF Core 7+ `FromSql($"... {id}")`: the interpolated literal becomes a `FormattableString` and every hole becomes a parameter. The unsafe forms are `FromSqlRaw` fed a string that was already concatenated or interpolated, and `SqlCommand` text built the same way.
 - `XmlSerializer` built with a fixed `typeof(T)`, and `System.Text.Json` without polymorphic type handling. Neither lets the payload choose the type, which is what makes deserialization dangerous.
-- Razor `@value`: output is HTML-encoded by default. Only `@Html.Raw`, `HtmlString`, and `MarkupString` bypass the encoder.
+- Razor `@value` in HTML text or a quoted attribute: output is HTML-encoded by default. Only `@Html.Raw`, `HtmlString`, and `MarkupString` bypass the encoder. Encoding does not stop a user value in `href` or `src` from being a `javascript:` URL, and does not protect one inside a `<script>` block, which needs `JavaScriptEncoder`.
 - `[AllowAnonymous]` on endpoints meant to be public: sign-in, health checks, public content. It is a finding when it lands on a mutating or private endpoint, or overrides a controller-level `[Authorize]` for an action that should inherit it.
-- `System.Random` for non-security work: jitter, sampling, shuffling display order.

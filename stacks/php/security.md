@@ -22,6 +22,6 @@ extends: core/skills/security/SKILL.md
 ## Not a finding
 - PDO or mysqli prepared statements with placeholders and bound values. The finding is SQL text built before `prepare()`, since a placeholder cannot protect a string that was already concatenated.
 - `include`/`require` of a constant path, including `__DIR__ . '/partials/header.php'`.
-- `exec`/`system`/`shell_exec` where every interpolated value passes through `escapeshellarg()`. Option injection remains when a value can start with `-`.
-- Output passed through `htmlspecialchars($x, ENT_QUOTES)` or a template engine's default escaping (Twig, Blade `{{ }}`). Blade `{!! !!}` and Twig `|raw` bypass it.
+- `exec`/`system`/`shell_exec` where every interpolated value passes through `escapeshellarg()`. Option injection still applies, per the rubric's injection rule.
+- Output passed through `htmlspecialchars($x, ENT_QUOTES)` or a template engine's default escaping (Twig, Blade `{{ }}`), in HTML text or a quoted attribute. Blade `{!! !!}` and Twig `|raw` bypass it. None of them makes a user value safe in `href` or `src`, which still needs a scheme allowlist, or inside a `<script>` block, which needs `json_encode` with the `JSON_HEX_*` flags.
 - `display_errors` enabled only in a development configuration that production does not load.

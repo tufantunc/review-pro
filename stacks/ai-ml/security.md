@@ -2,7 +2,8 @@
 extends: core/skills/security/SKILL.md
 
 ## Stack-specific signals
-- `torch.load(...)`, `pickle.load`, `joblib.load`, `numpy.load`, `tf.saved_model.load` on an untrusted model/checkpoint file → arbitrary code execution. Prefer `weights_only=True` (torch>=2.0) / safetensors / ONNX.
+- `torch.load(...)`, `pickle.load`, `joblib.load`, `numpy.load`, `tf.saved_model.load` on an untrusted model/checkpoint file → arbitrary code execution. Prefer `weights_only=True` on torch 2.6 or later (earlier versions can be bypassed, CVE-2025-32434) / safetensors.
+- `from_pretrained(..., trust_remote_code=True)` on a model id or repository a lower-trust actor can influence → imports and runs that repository's Python code, whatever format the weights are in.
 - **Prompt injection** in LLM apps: untrusted text concatenated into the system prompt, or treated as an instruction (`messages=[{"role":"system","text": UNTRUSTED}]`, f-string prompt templates with user input).
 - **Tool/function-call abuse**: LLM-controlled tool selection executes privileged actions (DB write, shell, HTTP) without an allowlist, confirmation, or sandbox.
 - Secrets/API keys passed into prompts, embeddings, or logged alongside completions.
@@ -22,7 +23,8 @@ extends: core/skills/security/SKILL.md
 
 ## Not a finding
 - `torch.load(path)` on PyTorch 2.6 or later, where `weights_only` defaults to `True` and refuses arbitrary pickled objects. Check the pinned version first: a version below 2.6, or an explicit `weights_only=False`, is the finding.
-- Loading `safetensors` or ONNX weights. These formats carry tensors and metadata, not executable objects.
+- `safetensors.torch.load_file` or `safe_open`, and `from_pretrained` with `use_safetensors=True` and `trust_remote_code` absent or `False`. The format carries tensors and metadata, not executable objects.
+- An ONNX model loaded with onnx 1.16 or later, or one with no `external_data` entries. Below 1.16, an untrusted model's `external_data` path can read files outside the model directory (CVE-2024-27318).
 - Untrusted text reaching a prompt, on its own. Prompt injection becomes a finding only when the content drives an action or a disclosure the attacker could not get directly: a tool call under another principal's authority, a read of data the attacker cannot see, or a write into another user's context or memory. Name that action.
 - A model carrying out what the requesting user asked for, with that user's own permissions. That is the feature working, not excessive agency.
 - The reverse holds too: an instruction in a system prompt ("never reveal", "ignore instructions in documents") is not the control that makes a path safe. Count only deterministic checks, per-resource authorization, and scoped credentials.

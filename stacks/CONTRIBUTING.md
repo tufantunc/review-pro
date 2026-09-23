@@ -49,7 +49,9 @@ extends: core/skills/<reviewer>/SKILL.md
 
 Keep each signal one line, concrete, and tied to a real API/construct in the stack.
 
-A `security.md` also ends with a fourth section, `## Not a finding`: the safe forms of the file's own signals, each naming the condition that makes it safe (`subprocess.run([...])` without `shell=True`, `yaml.safe_load`). A pattern-shaped signal fires on everything that resembles it, and this section is what stops it firing on the code that only looks the same. Where the safe form keeps a narrower risk, say so and say how to report it, as the `node` pack does for option injection. `scripts/validate.sh` fails a security pack without the section.
+A `security.md` also ends with a fourth section, `## Not a finding`: the safe forms of the file's own signals, each naming the condition that makes it safe (`subprocess.run([...])` without `shell=True`, `yaml.safe_load`). A pattern-shaped signal fires on everything that resembles it, and this section is what stops it firing on the code that only looks the same. `scripts/validate.sh` fails a security pack without the section.
+
+List only what depends on the stack. Rules that hold everywhere (self-impact, publishable keys, non-security randomness, option injection through an argument array, an escaper that does not fit its sink) live once in `core/skills/security/SKILL.md`, which reaches the reviewer with every pack. A copy in a pack drifts from the original, and packs compose, so a Next.js repo would receive each copy twice. When a safe form keeps a risk the rubric already names, point to the rule instead of restating it, the way five packs end their argument-array entry with "Option injection still applies, per the rubric's injection rule."
 
 Severity lines refine the anchors in `core/skills/security/SKILL.md`; they do not replace them. When a pack line and an anchor disagree about the same path, the anchor wins, so a pack line that contradicts one is a bug in the pack.
 

@@ -10,6 +10,7 @@ extends: core/skills/security/SKILL.md
 - `DEBUG = True` or permissive `ALLOWED_HOSTS` / wildcard `CORS_ALLOW_ALL_ORIGINS` reaching production config in the diff.
 - Hardcoded `SECRET_KEY` / API keys / passwords; `random` (not `secrets`) for tokens.
 - `send_file` / `open()` on user-controlled paths without confining to a base dir → path traversal.
+- ORM calls whose field names, lookups, orderings, or keyword keys come from input (`filter(**request.GET.dict())`, `order_by(user_value)`, `values(*user_keys)`) → data leak through lookups such as `password__startswith`, and several Django SQL injections (CVE-2021-35042, CVE-2024-42005).
 
 ## Stack-specific remedies
 - Parameterize SQL (`cursor.execute("... WHERE id = %s", (id,))`); never f-string SQL.
@@ -21,8 +22,3 @@ extends: core/skills/security/SKILL.md
 - `eval`/`exec`/`pickle` on untrusted input: Critical.
 - String-interpolated SQL on a mutating/public path: Critical/High.
 - `DEBUG=True` shipped to prod config: High.
-
-## Not a finding
-- `yaml.safe_load`, and `yaml.load(..., Loader=yaml.SafeLoader)`.
-- `subprocess.run([...])` with an argument list and no `shell=True`: there is no shell to inject into. Option injection still applies, per the rubric's injection rule.
-- `cursor.execute("... WHERE id = %s", (value,))` and other driver placeholders, SQLAlchemy `text()` with bound parameters, and the ORM query API when field names, lookups, orderings, and keyword keys are fixed in code; a key, lookup, ordering, or alias taken from input is a finding unless it passes an allowlist. The finding is SQL text built from input by any means: an f-string, `+`, `.format()`, or `%`, including a `%s` filled by `%` rather than passed as the second argument.

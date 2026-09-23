@@ -10,6 +10,7 @@ extends: core/skills/security/SKILL.md
 - `Object.assign` / spread into objects in a way that allows `__proto__`/`constructor.prototype` pollution.
 - Response/header injection from unescaped CRLF in `setHeader` values.
 - Insecure deserialization via `node-serialize` / `cson` / similar.
+- `execFile` or `spawn` whose program comes from input, or whose `env` is built from input (`NODE_OPTIONS`, `LD_PRELOAD`) → code execution even with an argument array and no shell.
 
 ## Stack-specific remedies
 - Never pass dynamic strings to `exec`/`eval`; use arg-array APIs and allowlists.
@@ -21,8 +22,3 @@ extends: core/skills/security/SKILL.md
 - Command injection via `child_process.exec` on lower-trust input: Critical when reachable without authentication, High when it needs an account.
 - Path traversal letting a user read/write outside their dir: Critical/High.
 - ReDoS on a public endpoint: High.
-
-## Not a finding
-- `exec` or `execSync` with a string literal, or with values built only from constants and the program's own configuration, with no segment taken from a request, an upload, or a stored record.
-- `execFile` or `spawn` with an argument array and no `shell: true`: there is no shell to inject into. Option injection still applies, per the rubric's injection rule.
-- `require` or dynamic `import` of a path chosen from a fixed internal map rather than taken from input.

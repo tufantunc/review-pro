@@ -9,6 +9,7 @@ extends: core/skills/security/SKILL.md
 - `math/rand` used for tokens/secrets/sessions instead of `crypto/rand`.
 - `crypto/md5` / `crypto/sha1` / `crypto/des` for passwords/security → weak crypto; use `golang.org/x/crypto/bcrypt` / `argon2`.
 - `TLSConfig{InsecureSkipVerify: true}` disabling cert validation.
+- A lower-trust value converted to one of `html/template`'s typed-content types (`template.HTML`, `HTMLAttr`, `JS`, `JSStr`, `CSS`, `URL`, `Srcset`) → the conversion skips contextual escaping → XSS.
 
 ## Stack-specific remedies
 - Parameterize SQL (`$1`, `?`); use `html/template` for HTML; arg-array `exec.Command`.
@@ -17,8 +18,3 @@ extends: core/skills/security/SKILL.md
 ## Stack-specific severity guidance
 - String-built SQL / `sh -c` with input / `InsecureSkipVerify`: Critical/High.
 - `math/rand` for a security token: High.
-
-## Not a finding
-- `exec.Command("git", "log", userArg)`: arguments go to the program directly, with no shell to inject into. Option injection still applies, per the rubric's injection rule.
-- `InsecureSkipVerify: true` in a `_test.go` file against an `httptest.NewTLSServer`.
-- `filepath.Join` where every segment is a constant or comes from the program's own configuration, not from a request.

@@ -10,6 +10,8 @@ extends: core/skills/security/SKILL.md
 - Unbounded/recursive agent loops (agent can call itself or spawn agents with no depth/cost cap) → runaway cost/DoS.
 - Returning raw model errors / full stack traces / internal prompts to users.
 - Fine-tuning on untrusted data without sanitization; loading datasets that execute on parse (e.g. malicious `pickle` inside a "dataset").
+- `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD` set anywhere in the runtime environment (a Dockerfile, a CI job) → every `torch.load` that does not pass `weights_only` explicitly falls back to full pickle loading; so does passing `pickle_module=`.
+- `onnx.load` of an untrusted model with its external data on onnx below 1.21.0 → `../` paths, symlinks, or hardlinks in `external_data` read files outside the model directory (CVE-2024-27318, CVE-2026-27489, CVE-2026-34446, CVE-2026-34447). Whether a model has external data is the attacker's choice.
 
 ## Stack-specific remedies
 - Load model weights with `weights_only=True`/safetensors; never `pickle`/`torch.load` untrusted files.
@@ -20,11 +22,3 @@ extends: core/skills/security/SKILL.md
 - `pickle.load` on untrusted weights, or `torch.load` below 2.6 or with `weights_only=False`: Critical. Prompt injection that makes a tool act beyond what the attacker could invoke directly: Critical when the tool reaches code execution or the whole data store, High otherwise.
 - Secret leaked into a prompt/log: High.
 - Unbounded agent loop with cost/DoS potential: High.
-
-## Not a finding
-- `torch.load(path)` on PyTorch 2.6 or later, where `weights_only` defaults to `True` and refuses arbitrary pickled objects. Check the pinned version first: a version below 2.6, or an explicit `weights_only=False`, is the finding.
-- `safetensors.torch.load_file` or `safe_open`, and `from_pretrained` with `use_safetensors=True` and `trust_remote_code` absent or `False`. The format carries tensors and metadata, not executable objects.
-- `onnx.load(path, load_external_data=False)`, or a model from a pinned, trusted source. An untrusted model loaded with its external data can read files outside its directory through `../` paths, symlinks, or hardlinks; onnx closed these in stages up to 1.21.0 (CVE-2024-27318, CVE-2026-27489, CVE-2026-34446, CVE-2026-34447). Whether a model has external data is the attacker's choice, so it is not a safety condition. onnxruntime resolves external data on its own, and this entry does not clear it.
-- Untrusted text reaching a prompt, on its own. Prompt injection becomes a finding only when the content drives an action or a disclosure the attacker could not get directly: a tool call under another principal's authority, a read of data the attacker cannot see, or a write into another user's context or memory. Name that action.
-- A model carrying out what the requesting user asked for, with that user's own permissions. That is the feature working, not excessive agency.
-- The reverse holds too: an instruction in a system prompt ("never reveal", "ignore instructions in documents") is not the control that makes a path safe. Count only deterministic checks, per-resource authorization, and scoped credentials.

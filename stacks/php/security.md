@@ -10,6 +10,7 @@ extends: core/skills/security/SKILL.md
 - `echo $_GET['x']` / `print` of untrusted data without `htmlspecialchars(.., ENT_QUOTES)` → XSS.
 - File upload (`move_uploaded_file`) trusting `$_FILES['type']`/name; `md5`/`sha1` for passwords (use `password_hash`/`password_verify`).
 - `display_errors = On` / `ini_set('display_errors', 1)` reaching production → leaks stack/secrets.
+- PDO with emulated prepares (the default for MySQL) and the connection charset switched by `SET NAMES gbk`/`big5`/`sjis` instead of the DSN → multibyte sequences can defeat the emulated escaping.
 
 ## Stack-specific remedies
 - Prepared statements; `htmlspecialchars(..., ENT_QUOTES, 'UTF-8')` on output; `password_hash`; `move_uploaded_file` + verify; disable `display_errors` in prod.
@@ -18,8 +19,3 @@ extends: core/skills/security/SKILL.md
 - `eval`/`unserialize`/string-built SQL/`include` on input: Critical/High.
 - Unescaped echo of `$_GET/$_POST`: High (XSS).
 - `display_errors` in prod config: Medium/High.
-
-## Not a finding
-- PDO or mysqli prepared statements with placeholders and bound values, with the connection charset set in the DSN (or emulated prepares turned off) rather than by `SET NAMES`, whose multibyte charsets can defeat emulated escaping. The finding is SQL text built before `prepare()`, since a placeholder cannot protect a string that was already concatenated.
-- `include`/`require` of a constant path, including `__DIR__ . '/partials/header.php'`.
-- `display_errors` enabled only in a development configuration that production does not load.

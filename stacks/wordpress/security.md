@@ -10,6 +10,7 @@ extends: core/skills/security/SKILL.md
 - `eval` / `base64_decode` / `gzinflate(str_rot13(...))` obfuscation (common in malicious/low-quality themes).
 - Untrusted `$_GET`/`$_POST`/`$_REQUEST` read directly into output/SQL/`include` without `map_meta_cap`/sanitization.
 - `wp_redirect($_GET['url'])` / `wp_safe_redirect` missing → open redirect; enqueuing user-controlled URLs.
+- Output escaped for the wrong context: `esc_attr` on an `href` lets a `javascript:` URL through, `esc_js` is built only for a value inside a single-quoted JS string in a double-quoted `on*` attribute, and `wp_json_encode` inside a `<script>` needs `JSON_HEX_TAG`.
 
 ## Stack-specific remedies
 - Verify nonces + capabilities on every mutating handler; always `esc_*` output; always `$wpdb->prepare`; register sanitize callbacks; `wp_safe_redirect`.
@@ -18,9 +19,3 @@ extends: core/skills/security/SKILL.md
 - Missing nonce + capability on a mutating/admin action: Critical.
 - Unescaped output / `$wpdb` interpolation: Critical/High.
 - Obfuscation (`eval`/`base64_decode(gzinflate(...))`): High.
-
-## Not a finding
-- `$wpdb->prepare()` with `%s`, `%d`, and `%i` placeholders. The finding is SQL text concatenated before it reaches `prepare`, or a `prepare` call with no placeholders at all.
-- A handler that only reads and returns public data, without a nonce. CSRF needs a state change; a nonce is required on writes, not on public reads.
-- `'permission_callback' => '__return_true'` on a REST route that serves only public data. WordPress requires the callback to be explicit, and this is the documented form for public routes.
-- `wp_safe_redirect` to a host the site allows, or `wp_redirect` to a constant URL.

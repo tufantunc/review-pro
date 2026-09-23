@@ -8,6 +8,8 @@ extends: core/skills/security/SKILL.md
 - `target="_blank"` links without `rel="noopener noreferrer"` (reverse tabnabbing).
 - `eval(...)` / `new Function(...)` / `setTimeout(string)` on dynamic data.
 - Unescaped interpolation into `href`/`src` allowing `javascript:` URLs.
+- Input from the URL (query, path, or hash), `window.name`, `postMessage`, or storage another origin can write, reaching `dangerouslySetInnerHTML` or `innerHTML` → reflected or DOM XSS, not self-XSS.
+- `DOMPurify` run on the server with happy-dom or an outdated jsdom, or its output changed after `sanitize` → the sanitizer's maintainers do not support that DOM, and a modified output is no longer the sanitized one.
 
 ## Stack-specific remedies
 - Sanitize HTML with DOMPurify before `dangerouslySetInnerHTML`; prefer text interpolation.
@@ -18,7 +20,3 @@ extends: core/skills/security/SKILL.md
 ## Stack-specific severity guidance
 - XSS via `dangerouslySetInnerHTML` + input another user controls: High (script runs in that user's session); Critical when it runs in an administrator's session or yields account takeover.
 - Client-exposed secret via `NEXT_PUBLIC_*`: High (leak is permanent in the bundle).
-
-## Not a finding
-- A value a user renders only into their own session. Self-XSS is not a finding unless another user's input can reach the same sink. Input from any source the current user did not type in this session is input someone else controls, for example the URL (query, path, or hash), `document.referrer`, `window.name`, `postMessage`, a shared link, or storage and cookies another origin or subdomain can write. That is reflected or DOM XSS, not self-XSS.
-- `target="_blank"` without `rel="noopener"`: current browsers apply `noopener` to `_blank` links by default. It is a finding only when the link sets `rel="opener"` or the project must support browsers from before 2021.

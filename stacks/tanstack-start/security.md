@@ -20,8 +20,3 @@ extends: core/skills/security/SKILL.md
 - Unauthenticated private-data server fn / missing CSRF with custom `src/start.ts` / secret in client bundle: Critical/High.
 - `Cache-Control: public` on authenticated response / module-scope `process.env` read: High.
 - `strict: false` at a trust boundary / open redirect: Medium/High.
-
-## Not a finding
-- A `createServerFn` that returns only data every visitor may see. The authz requirement applies to private reads and to writes.
-- `Cache-Control: public` on a server function that never reads a session, cookie, or identity.
-- `throw redirect({ to: '/fixed/path' })`, or a destination checked against an allowlist of internal routes.

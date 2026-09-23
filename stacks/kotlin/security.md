@@ -16,8 +16,3 @@ extends: core/skills/security/SKILL.md
 ## Stack-specific severity guidance
 - String-interpolated SQL / exported component without authz: Critical/High.
 - Secret baked into the APK / `addJavascriptInterface`: High.
-
-## Not a finding
-- Room `@Query("... WHERE id = :id")`, `rawQuery(sql, selectionArgs)` with `?` placeholders, JDBC `PreparedStatement` parameters, and the Exposed DSL: these bind values instead of splicing them into SQL. This holds only when the SQL text itself is a literal: a `$name` or `${...}` template inside the text passed to `rawQuery` is the finding, whatever else is bound.
-- `android:exported="true"` on the launcher activity (the one with the `MAIN`/`LAUNCHER` intent filter), which must be exported to start at all. The finding is an exported component that performs a privileged action or returns private data without a permission check.
-- `usesCleartextTraffic`, or a network security config allowing cleartext, scoped to a debug build type or to `localhost`/`10.0.2.2`.

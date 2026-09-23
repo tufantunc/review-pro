@@ -49,13 +49,9 @@ extends: core/skills/<reviewer>/SKILL.md
 
 Keep each signal one line, concrete, and tied to a real API/construct in the stack.
 
-A `security.md` also ends with a fourth section, `## Not a finding`: the safe forms of the file's own signals, each naming the condition that makes it safe (`subprocess.run([...])` without `shell=True`, `yaml.safe_load`). A pattern-shaped signal fires on everything that resembles it, and this section is what stops it firing on the code that only looks the same. `scripts/validate.sh` fails a security pack without the section.
+A security pack names what to flag; it does not list forms that are safe. A list of safe forms looks like the cure for pattern-shaped signals firing on look-alike code, and one was tried: six review passes each found an entry that excused exploitable code, and the count never fell. See [ADR-0008](../docs/internals/adr/0008-security-content-names-what-to-flag.md) before adding one back.
 
-List only what depends on the stack. Rules that hold everywhere (self-impact, publishable keys, non-security randomness, option injection through an argument array, an escaper that does not fit its sink) live once in `core/skills/security/SKILL.md`, which reaches the reviewer with every pack. A copy in a pack drifts from the original, and packs compose, so a Next.js repo would receive each copy twice. An entry is one of two kinds, and either way the narrowest case you are sure of. A shape entry is safe by the form of the call, whatever the data: `yaml.safe_load`, literal SQL with bound parameters, an argument array with no shell once it names the option-injection risk that remains. A context entry is cleared by a condition the reviewer confirms in the repository, such as a release configuration, a data source that serves only public data, or a constant, and never by the content of the data. The rubric states both, so a reviewer knows which kind of check an entry asks for. Never list output escaping or a sanitizer. The first version of these sections did, and four review passes each found another context the escaping entries cleared by mistake: an unquoted attribute, an event handler, a client-side template root, a JSON value placed inside quotes, a sanitizer on a DOM its own maintainers call unsafe. A fifth pass found the same failure in the rubric's own guidance wherever it said an escaper was safe somewhere, so the rubric now lists only known mismatches and makes no claim that any placement is safe. A clearance that is wrong fails toward shipping a vulnerability, and a context-dependent one is wrong somewhere, so those cases are left to the rubric's rule on fitting the escaper to the sink, which tells the reviewer how to judge them rather than excusing them.
-
-Three other shapes clear real vulnerabilities: a list that reads as complete ("Only X, Y, and Z bypass the encoder") clears whatever it forgets; a condition the attacker controls (a property of their own upload) is not a safety condition; and a version floor decays when a later advisory moves it, so cite the advisories it rests on.
-
-When a safe form keeps a risk the rubric already names, point to the rule instead of restating it, the way five packs end their argument-array entry with "Option injection still applies, per the rubric's injection rule."
+List only what depends on the stack. Rules that hold everywhere (self-impact, publishable keys, non-security randomness, option injection through an argument array, an escaper that does not fit its sink) live once in `core/skills/security/SKILL.md`, which reaches the reviewer with every pack. A copy in a pack drifts from the original, and packs compose, so a Next.js repo would receive each copy twice.
 
 Severity lines refine the anchors in `core/skills/security/SKILL.md`; they do not replace them. When a pack line and an anchor disagree about the same path, the anchor wins, so a pack line that contradicts one is a bug in the pack.
 
@@ -63,7 +59,7 @@ Severity lines refine the anchors in `core/skills/security/SKILL.md`; they do no
 
 - [ ] `manifest.json` has `name`, `version`, `reviewers`.
 - [ ] Every listed reviewer has a `<reviewer>.md` file.
-- [ ] Each file has the three sections (signals / remedies / severity), and a `security.md` also has `## Not a finding`.
+- [ ] Each file has the three sections (signals / remedies / severity). `scripts/validate.sh` checks this for every file a manifest lists.
 - [ ] Signals are stack-specific (not core-rubric rehash).
 - [ ] `./scripts/validate.sh` passes.
 - [ ] (Optional) smoke the composition: from a repo with `.review-pro/<pack>/`, run the review and confirm the new signals surface in findings.

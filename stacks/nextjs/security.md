@@ -15,8 +15,3 @@ extends: core/skills/security/SKILL.md
 ## Stack-specific severity guidance
 - Unauthenticated Server Action / middleware bypass on a mutating action: Critical/High.
 - Secret via `NEXT_PUBLIC_*` / leaked cached per-user data: High.
-
-## Not a finding
-- A Server Action that checks the session and the caller's permission on the resource before acting. Look for that check at the top of the action, or in a helper it calls, before flagging the action as public.
-- `redirect()` to a constant path, or to a value checked against an allowlist of internal paths.
-- A statically generated or cached route that renders only data every visitor may see.

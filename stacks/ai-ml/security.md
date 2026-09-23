@@ -16,6 +16,13 @@ extends: core/skills/security/SKILL.md
 - Allowlist + confirm privileged tool calls; bound agent depth/cost; sanitize logs.
 
 ## Stack-specific severity guidance
-- `torch.load`/`pickle.load` on untrusted weights, or prompt injection that reaches a privileged tool: Critical.
+- `pickle.load` on untrusted weights, or `torch.load` below 2.6 or with `weights_only=False`: Critical. Prompt injection that makes a tool act beyond what the attacker could invoke directly: Critical when the tool reaches code execution or the whole data store, High otherwise.
 - Secret leaked into a prompt/log: High.
 - Unbounded agent loop with cost/DoS potential: High.
+
+## Not a finding
+- `torch.load(path)` on PyTorch 2.6 or later, where `weights_only` defaults to `True` and refuses arbitrary pickled objects. Check the pinned version first: a version below 2.6, or an explicit `weights_only=False`, is the finding.
+- Loading `safetensors` or ONNX weights. These formats carry tensors and metadata, not executable objects.
+- Untrusted text reaching a prompt, on its own. Prompt injection becomes a finding only when the content drives an action or a disclosure the attacker could not get directly: a tool call under another principal's authority, a read of data the attacker cannot see, or a write into another user's context or memory. Name that action.
+- A model carrying out what the requesting user asked for, with that user's own permissions. That is the feature working, not excessive agency.
+- The reverse holds too: an instruction in a system prompt ("never reveal", "ignore instructions in documents") is not the control that makes a path safe. Count only deterministic checks, per-resource authorization, and scoped credentials.

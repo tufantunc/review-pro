@@ -17,3 +17,9 @@ extends: core/skills/security/SKILL.md
 ## Stack-specific severity guidance
 - `unsafe` on untrusted input / `transmute` / string-built SQL: Critical/High.
 - `OsRng` skipped for a token, `danger_accept_invalid_certs`: High.
+
+## Not a finding
+- `sqlx::query!` and `query_as!` with `$1`/`?` placeholders, `.bind(value)`, and Diesel's query builder: values are bound, not spliced.
+- `Command::new("git").arg(user_value)`: arguments go to the program directly, with no shell. Option injection remains when the value can start with `-`.
+- `serde_json::from_str` or `bincode` into plain data types. Serde builds only the types the target names, so the payload cannot choose a type to instantiate. This pack's signal is a custom `Deserialize` with side effects, not deserialization in general.
+- An `unsafe` block whose `// SAFETY:` comment states an invariant you checked and found to hold at every call site.

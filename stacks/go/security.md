@@ -17,3 +17,10 @@ extends: core/skills/security/SKILL.md
 ## Stack-specific severity guidance
 - String-built SQL / `sh -c` with input / `InsecureSkipVerify`: Critical/High.
 - `math/rand` for a security token: High.
+
+## Not a finding
+- `html/template` rendering user data: it escapes by context. The escape hatches are values converted to `template.HTML`, `template.JS`, `template.URL`, or `template.HTMLAttr`; flag those when the value is user-controlled.
+- `exec.Command("git", "log", userArg)`: arguments go to the program directly, with no shell to inject into. Option injection remains when the value can start with `-`; report that as injection, naming the flag an attacker could pass.
+- `InsecureSkipVerify: true` in a `_test.go` file against an `httptest.NewTLSServer`.
+- `math/rand` for jitter, sampling, load balancing, or shuffling. It is a finding only for tokens, keys, nonces, or anything an attacker must not predict.
+- `filepath.Join` where every segment is a constant or comes from the program's own configuration, not from a request.

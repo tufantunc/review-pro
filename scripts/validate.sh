@@ -196,6 +196,18 @@ if [[ -f "$SYNTH_MD" ]]; then
     || add_error "review-pro-synthesize/SKILL.md: the approval standard is gone - verdicts drift from measuring code health to enforcing taste, and imperfect improvements start getting blocked"
 fi
 
+# Security calibration. Each rule is one line whose deletion leaves every other check
+# passing while the reviewer drifts back to rating how alarming a pattern looks.
+SEC_MD="$SKILLS_DIR/security/SKILL.md"
+if [[ -f "$SEC_MD" ]]; then
+  grep -qxF '## A missing layer is not a missing control' "$SEC_MD" \
+    || add_error "security/SKILL.md: the missing-layer rule is gone - an absent second defense gets reported as a vulnerability without anyone looking for the control the path already passes"
+  grep -qxF '## Not a vulnerability' "$SEC_MD" \
+    || add_error "security/SKILL.md: the not-a-vulnerability list is gone - checklist deviations, self-impact, and publishable keys return as findings"
+  grep -qF 'fully defeat a control' "$SEC_MD" \
+    || add_error "security/SKILL.md: the High/Medium question is gone - severity follows how alarming a pattern looks instead of what the traced path achieves"
+fi
+
 CTX_POLICY="$SHARED_DIR/context-policy.md"
 if [[ -f "$CTX_POLICY" ]]; then
   grep -qF 'which channel settled' "$CTX_POLICY" \
@@ -502,6 +514,10 @@ if [[ -d "$STACKS_DIR" ]] && command -v python3 >/dev/null 2>&1; then
         add_error "stacks/$pack_name: manifest lists '$r' but $r.md is missing"
       fi
     done <<< "$reviewers"
+    # -x anchors to a whole line: demoting the heading to '### Not a finding' must fail.
+    if [[ -f "$pack_dir/security.md" ]] && ! grep -qxF '## Not a finding' "$pack_dir/security.md"; then
+      add_error "stacks/$pack_name/security.md: no '## Not a finding' section - its signals list no safe forms, so each one fires on every piece of code that merely resembles it"
+    fi
   done
   shopt -u nullglob
 fi

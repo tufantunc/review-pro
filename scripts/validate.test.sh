@@ -30,7 +30,11 @@ s
 ## What this reviewer flags
 f
 ## Evidence & severity
-e
+e: ask whether the result would fully defeat a control
+## A missing layer is not a missing control
+m
+## Not a vulnerability
+v
 ## No unresearched findings
 n
 ## Approval bar
@@ -1012,6 +1016,55 @@ printf '{ "version": "9.9.9", \n' > "$T/cli/package-lock.json"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "package-lock.json: unreadable"; then ok "malformed lockfile reported as unreadable"; else bad "malformed lockfile NOT reported as unreadable"; fi
 if echo "$out" | grep -q "codex-plugin/plugin.json: version 0.7.0 != cli 9.9.9"; then ok "a finding collected before the malformed file survives it"; else bad "a malformed file discarded findings collected before it"; fi
+rm -rf "$T"
+
+# Case AL: the security calibration rules. Each is one line whose deletion leaves every
+# other check passing while severity drifts back to how alarming a pattern looks. Every
+# mutation starts from a fresh fixture instead of reverting the last one, and asserts
+# that exactly one calibration error fires: a revert that silently matches nothing is
+# how Case AJ once carried a mutation into the next assertion (ADR-0007).
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security"
+SEC="$T/core/skills/security/SKILL.md"
+write_good_reviewer "$SEC"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "security/SKILL.md: the "; then bad "security calibration control: fired on an intact fixture"; else ok "security calibration control: silent on an intact fixture"; fi
+for rule in "missing-layer rule|^## A missing layer is not a missing control$" \
+            "not-a-vulnerability list|^## Not a vulnerability$" \
+            "High/Medium question|fully defeat a control"; do
+  msg="${rule%%|*}"; pat="${rule#*|}"
+  write_good_reviewer "$SEC"
+  grep -v -E "$pat" "$SEC" > "$T/tmp" && mv "$T/tmp" "$SEC"
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  n=$(echo "$out" | grep -c "security/SKILL.md: the ")
+  if echo "$out" | grep -qF "the $msg is gone" && [[ "$n" -eq 1 ]]; then ok "missing security $msg detected, alone"; else bad "missing security $msg NOT detected in isolation ($n calibration errors)"; fi
+done
+# -x anchoring: a demoted heading is not the rule.
+write_good_reviewer "$SEC"
+sed 's/^## A missing layer is not a missing control$/### A missing layer is not a missing control/' "$SEC" > "$T/tmp" && mv "$T/tmp" "$SEC"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -qF "the missing-layer rule is gone"; then ok "demoted missing-layer heading detected"; else bad "demoted missing-layer heading NOT detected"; fi
+rm -rf "$T"
+
+# Case AM: every security pack lists the safe forms of its own signals. Scoped to packs
+# that ship a security.md: flutter and react-native have none, and must stay silent.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/stacks/demo" "$T/stacks/other"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+printf '{ "name": "demo", "version": "0.1.0", "reviewers": ["security"] }\n' > "$T/stacks/demo/manifest.json"
+printf '{ "name": "other", "version": "0.1.0", "reviewers": [] }\n' > "$T/stacks/other/manifest.json"
+write_pack(){ printf '# Stack pack: demo, security\n\n## Stack-specific signals\n- s\n\n## Not a finding\n- n\n' > "$T/stacks/demo/security.md"; }
+write_pack
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "security.md: no '## Not a finding'"; then bad "not-a-finding control: fired on an intact pack"; else ok "not-a-finding control: silent on an intact pack and on a pack with no security.md"; fi
+grep -v '^## Not a finding$' "$T/stacks/demo/security.md" > "$T/tmp" && mv "$T/tmp" "$T/stacks/demo/security.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -qF "stacks/demo/security.md: no '## Not a finding' section"; then ok "security pack without Not a finding detected"; else bad "security pack without Not a finding NOT detected"; fi
+if echo "$out" | grep -qF "stacks/other/"; then bad "not-a-finding guard fired on a pack with no security.md"; else ok "not-a-finding guard silent on a pack with no security.md"; fi
+write_pack
+sed 's/^## Not a finding$/### Not a finding/' "$T/stacks/demo/security.md" > "$T/tmp" && mv "$T/tmp" "$T/stacks/demo/security.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -qF "stacks/demo/security.md: no '## Not a finding' section"; then ok "demoted Not a finding heading detected"; else bad "demoted Not a finding heading NOT detected"; fi
 rm -rf "$T"
 
 echo "---"

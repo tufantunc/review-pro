@@ -16,5 +16,12 @@ extends: core/skills/security/SKILL.md
 - Use `rel="noopener noreferrer"` (modern browsers default this, but be explicit in libraries).
 
 ## Stack-specific severity guidance
-- XSS via `dangerouslySetInnerHTML` + user input: Critical (direct script execution in user session).
+- XSS via `dangerouslySetInnerHTML` + input another user controls: High (script runs in that user's session); Critical when it runs in an administrator's session or yields account takeover.
 - Client-exposed secret via `NEXT_PUBLIC_*`: High (leak is permanent in the bundle).
+
+## Not a finding
+- `{value}` text interpolation in JSX: React escapes it. XSS needs `dangerouslySetInnerHTML`, a `javascript:` URL in `href` or `src`, or a DOM API such as `innerHTML` reached through a ref.
+- `dangerouslySetInnerHTML` fed a constant, or the output of `DOMPurify.sanitize` with its default configuration.
+- A value a user renders only into their own session. Self-XSS is not a finding unless another user's input can reach the same sink.
+- `target="_blank"` without `rel="noopener"`: current browsers apply `noopener` to `_blank` links by default. It is a finding only when the link sets `rel="opener"` or the project must support browsers from before 2021.
+- A `VITE_` or `NEXT_PUBLIC_` variable holding a publishable value by design: an analytics ID, a Stripe `pk_` key, a Firebase web config.

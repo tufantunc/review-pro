@@ -18,3 +18,10 @@ extends: core/skills/security/SKILL.md
 - `eval`/`unserialize`/string-built SQL/`include` on input: Critical/High.
 - Unescaped echo of `$_GET/$_POST`: High (XSS).
 - `display_errors` in prod config: Medium/High.
+
+## Not a finding
+- PDO or mysqli prepared statements with placeholders and bound values. The finding is SQL text built before `prepare()`, since a placeholder cannot protect a string that was already concatenated.
+- `include`/`require` of a constant path, including `__DIR__ . '/partials/header.php'`.
+- `exec`/`system`/`shell_exec` where every interpolated value passes through `escapeshellarg()`. Option injection remains when a value can start with `-`.
+- Output passed through `htmlspecialchars($x, ENT_QUOTES)` or a template engine's default escaping (Twig, Blade `{{ }}`). Blade `{!! !!}` and Twig `|raw` bypass it.
+- `display_errors` enabled only in a development configuration that production does not load.

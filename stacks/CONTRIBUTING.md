@@ -49,11 +49,15 @@ extends: core/skills/<reviewer>/SKILL.md
 
 Keep each signal one line, concrete, and tied to a real API/construct in the stack.
 
+A `security.md` also ends with a fourth section, `## Not a finding`: the safe forms of the file's own signals, each naming the condition that makes it safe (`subprocess.run([...])` without `shell=True`, `yaml.safe_load`). A pattern-shaped signal fires on everything that resembles it, and this section is what stops it firing on the code that only looks the same. Where the safe form keeps a narrower risk, say so and say how to report it, as the `node` pack does for option injection. `scripts/validate.sh` fails a security pack without the section.
+
+Severity lines refine the anchors in `core/skills/security/SKILL.md`; they do not replace them. When a pack line and an anchor disagree about the same path, the anchor wins, so a pack line that contradicts one is a bug in the pack.
+
 ## Authoring checklist
 
 - [ ] `manifest.json` has `name`, `version`, `reviewers`.
 - [ ] Every listed reviewer has a `<reviewer>.md` file.
-- [ ] Each file has the three sections (signals / remedies / severity).
+- [ ] Each file has the three sections (signals / remedies / severity), and a `security.md` also has `## Not a finding`.
 - [ ] Signals are stack-specific (not core-rubric rehash).
 - [ ] `./scripts/validate.sh` passes.
 - [ ] (Optional) smoke the composition: from a repo with `.review-pro/<pack>/`, run the review and confirm the new signals surface in findings.
@@ -63,3 +67,4 @@ Keep each signal one line, concrete, and tied to a real API/construct in the sta
 1. `npm run build` (in `cli/`) bundles `stacks/` → `cli/catalog/`.
 2. `npx review-pro` (interactive) or `add <pack>` copies `stacks/<pack>/` into the user's repo `.review-pro/<pack>/`.
 3. At review time the orchestrator reads `.review-pro/<pack>/<reviewer>.md` and passes them to reviewers as `### Stack signals`.
+4. `npx review-pro update` re-copies a pack only when its `manifest.json` `version` differs from the installed copy. **Any change to a pack file must bump that pack's `version`**, or existing installs keep the old content and `update` reports them as already latest. Nothing checks this yet.

@@ -21,3 +21,10 @@ extends: core/skills/security/SKILL.md
 - `eval`/`exec`/`pickle` on untrusted input: Critical.
 - String-interpolated SQL on a mutating/public path: Critical/High.
 - `DEBUG=True` shipped to prod config: High.
+
+## Not a finding
+- `yaml.safe_load`, and `yaml.load(..., Loader=yaml.SafeLoader)`.
+- `subprocess.run([...])` with an argument list and no `shell=True`: there is no shell to inject into. Option injection remains when a value can start with `-`.
+- `cursor.execute("... WHERE id = %s", (value,))` and other driver placeholders, SQLAlchemy `text()` with bound parameters, and the ORM query API. The finding is an f-string or `+` inside the SQL text itself.
+- `mark_safe` on a literal, or on the result of `format_html`, which escapes its arguments.
+- `random` for non-security work: sampling, jitter, shuffling. It is a finding for tokens, keys, and reset codes, where `secrets` is required.

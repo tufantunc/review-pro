@@ -18,4 +18,4 @@ extends: core/skills/security/SKILL.md
 ## Stack-specific severity guidance
 - `eval`/`unserialize`/string-built SQL/`include` on input: Critical/High.
 - Unescaped echo of `$_GET/$_POST`: High (XSS).
-- `display_errors` in prod config: Medium/High.
+- `display_errors` in prod config: Low when it exposes stack traces and paths; High when the output can carry secrets (credentials in an exception message, an environment dump).

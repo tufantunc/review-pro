@@ -29,11 +29,13 @@ Every finding needs `file:line` + a code excerpt + a concrete attack/impact path
 A security `impact` names six things: the lower-trust actor, the input or action that actor controls, the control that should stop it, the boundary the path crosses, the principal or resource affected, and the result. A finding that cannot fill all six is not ready to report. "Could be exploited" fills none of them.
 
 Severity follows what the traced path achieves, not how alarming the pattern looks:
-- **Critical:** an unauthenticated actor reaches code execution, reads or writes the whole data store, or takes over arbitrary accounts.
+- **Critical:** an unauthenticated actor (an account anyone can register counts as none) reaches code execution, reads or writes the whole data store, or takes over arbitrary accounts.
 - **High:** an actor fully defeats an explicit control and the result has real consequences: authentication bypass, reading or writing another user's or tenant's data, stored script that runs in other users' sessions, or code execution that needs an account.
 - **Medium:** a real boundary violation with a limited blast radius, uncommon preconditions, or effects confined to a narrow set of resources.
 - **Low:** disclosure of non-secret internals, an effect that costs the attacker much for little gain, or a missing second layer (see below).
 - **Nitpick:** minor.
+
+Rate the effect the traced path shows, not the effect the pattern suggests: a crash is not code execution, ordinary work is not denial of service, and a read is not a write. Report the smaller effect at its own anchor; do not drop it.
 
 Between High and Medium, ask one question: does the traced result fully defeat a control for an action that matters, or only weaken it? Weakening is Medium at most. If you cannot state the concrete damage, the severity is lower than it feels.
 
@@ -45,7 +47,8 @@ A stack pack's severity line refines these anchors for its stack. When a pack li
 Before reporting that a defense is absent, find the strongest control the path already passes through: middleware, a framework default, a guard in a caller, a schema, a sanitizer the value meets before the sink. If a control on the path already stops the attack, the absent second layer is at most Low, and the finding cites that control in `evidence_refs`. A missing layer rates above Low only when you show the path that avoids the existing control.
 
 A control counts only when it fits the sink, and output escaping is where this most often goes wrong. Before accepting an escaper or a sanitizer as the control, establish that it was built for the exact place its output lands. These are known mismatches, a detection aid and not a list of safe placements:
-- HTML entity encoding in an unquoted attribute (whitespace breaks out), a URL attribute (`href`, `src`, `action`, `formaction`, `data`), an event handler (`on*`), `style`, `srcdoc`, or a `<script>` or `<style>` element. The browser decodes the entities before the URL parser, the script engine, or the HTML parser sees the value.
+- HTML entity encoding in an unquoted attribute (whitespace breaks out), a URL attribute (`href`, `src`, `action`, `formaction`, `data`), an event handler (`on*`), `style`, or `srcdoc`. The browser decodes the entities before the URL parser, the script engine, or the HTML parser sees the value.
+- HTML entity encoding inside a `<script>` or `<style>` element. These are raw-text elements where entities are not decoded at all, so the encoding protects nothing: it leaves `\`, unquoted values, and the JS or CSS grammar open.
 - Any server-side escaping, in text or in attributes, inside a region a client-side framework compiles as a template (Vue in-DOM templates, AngularJS): it leaves `{{ ... }}` and directive expressions alone, and the framework runs them.
 - A JSON encoder whose output is wrapped in quotes, or that leaves `<` unescaped inside a `<script>` element, where `</script>` or `<!--` ends the element before the JS parser runs.
 - A JS string escaper outside a quoted JS string, or inside an `on*` attribute without attribute encoding on top of it; and several escaped values in one handler, which can combine into a breakout none of them makes alone.
@@ -57,10 +60,9 @@ A control that is a library doing its job (a sanitizer, a parser, a loader, a de
 
 ## Not a vulnerability
 - A deviation from a checklist or a best practice that names no actor, no boundary, and no affected resource.
-- A larger effect than the path shows: a crash reported as code execution, ordinary work reported as denial of service, a read reported as a write.
 - A principal acting with their own authority on their own resources. Self-impact is not privilege gain: a user injecting into a command built from their own command-line arguments attacks only themselves, unless another program passes lower-trust input into that argument, or the command runs with authority the caller lacks (a setuid binary, a sudo rule, a privileged helper service), which makes it privilege escalation.
 - An obviously fake placeholder (`changeme`, `xxx`, `test-secret`) in a test, fixture, or example that no shipped code path reads. A real-looking credential is a finding wherever it is committed, because history keeps it after deletion.
-- A value designed to be public: a publishable or client key whose power is limited by server-side rules (a Firebase web `apiKey`, a Stripe `pk_` key, a Supabase anon key, a Maps key limited by API restrictions to the APIs it uses and by a quota or billing cap; referrer and app-identity restrictions are headers any non-browser caller can forge, so they alone limit nothing), including one shipped to the client through a build-exposed variable such as `NEXT_PUBLIC_*` or `VITE_*`. Report it only when the server-side rule that is supposed to limit it is itself missing or open, and cite where. A key that grants what the server should gate is a finding wherever it ships.
+- A value designed to be public: a publishable or client key whose power is limited by server-side rules (a Stripe `pk_` key, a Supabase anon key, or a Google `AIza` key such as a Firebase web `apiKey` or a Maps key when API restrictions limit it to the APIs it uses and a quota or billing cap limits its cost; referrer and app-identity restrictions are headers any non-browser caller can forge, so they alone limit nothing, and Firebase Security Rules limit only the Firebase data stores), including one shipped to the client through a build-exposed variable such as `NEXT_PUBLIC_*` or `VITE_*`. Report it only when the server-side rule that is supposed to limit it is itself missing or open, and cite where. A key that grants what the server should gate is a finding wherever it ships.
 - A non-cryptographic random generator used where predicting it gains an attacker nothing: jitter, sampling, load balancing, shuffling display order. It is a finding for tokens, keys, nonces, reset codes, or any value an attacker must not predict: session IDs, salts, IVs, one-time codes, capability URLs.
 
 ## No unresearched findings
@@ -80,7 +82,7 @@ One structured block per finding (see shared/output-schema.md). Use the category
   title: missing ownership check on order update
   evidence: |
     app.put('/orders/:id', (req, res) => updateOrder(req.params.id, req.body))
-  impact: any authenticated user can update another user's order
+  impact: any authenticated user sends PUT /orders/:id with another customer's order id; no ownership check stands between one customer's orders and another's, so they overwrite that customer's order
   remedy: authorize(ctx.userId === order.userId) before update
   confidence: high
   overlap_hints: [backend.validation, correctness.logic]

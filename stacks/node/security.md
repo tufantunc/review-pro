@@ -19,6 +19,6 @@ extends: core/skills/security/SKILL.md
 - Avoid prototype-pollutable merges; use `Object.create(null)` / maps where keys are external.
 
 ## Stack-specific severity guidance
-- Command injection via `child_process.exec` on lower-trust input: Critical when reachable without authentication, High when it needs an account.
+- Command injection via `child_process.exec` on lower-trust input: Critical when reachable without authentication or through an account anyone can register, High when it needs an account the attacker must be granted.
 - Path traversal letting a user read/write outside their dir: Critical/High.
 - ReDoS on a public endpoint: High.

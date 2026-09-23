@@ -19,6 +19,6 @@ extends: core/skills/security/SKILL.md
 - Allowlist + confirm privileged tool calls; bound agent depth/cost; sanitize logs.
 
 ## Stack-specific severity guidance
-- `pickle.load` on untrusted weights, or `torch.load` below 2.6 or with `weights_only=False`: Critical. Prompt injection that makes a tool act beyond what the attacker could invoke directly: Critical when the tool reaches code execution or the whole data store, High otherwise.
+- `pickle.load` on untrusted weights, or `torch.load` below 2.6 or with `weights_only=False`: Critical when an unauthenticated actor can supply the file, High when supplying it needs an account the attacker must be granted. Prompt injection that makes a tool act with data or authority the attacker lacks (the victim's context, a privileged credential): Critical when the tool reaches code execution or the whole data store, High otherwise, including exfiltration of the victim's data through a fetch or a rendered image.
 - Secret leaked into a prompt/log: High.
 - Unbounded agent loop with cost/DoS potential: High.

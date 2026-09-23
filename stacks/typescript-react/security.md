@@ -9,7 +9,7 @@ extends: core/skills/security/SKILL.md
 - `eval(...)` / `new Function(...)` / `setTimeout(string)` on dynamic data.
 - Unescaped interpolation into `href`/`src` allowing `javascript:` URLs.
 - Input from the URL (query, path, or hash), `window.name`, `postMessage`, or storage another origin can write, reaching `dangerouslySetInnerHTML` or `innerHTML` → reflected or DOM XSS, not self-XSS.
-- `DOMPurify` run on the server with happy-dom or an outdated jsdom, or its output changed after `sanitize` → the sanitizer's maintainers do not support that DOM, and a modified output is no longer the sanitized one.
+- `DOMPurify` run on the server with happy-dom or an outdated jsdom.
 
 ## Stack-specific remedies
 - Sanitize HTML with DOMPurify before `dangerouslySetInnerHTML`; prefer text interpolation.

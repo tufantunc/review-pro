@@ -304,6 +304,8 @@ cat > "$T/stacks/mystack/manifest.json" <<'EOF'
 EOF
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "manifest lists 'security' but security.md is missing"; then ok "missing pack file detected"; else bad "missing pack file not detected"; fi
+# A file that does not exist has no sections to check; reporting three of them would bury the cause.
+if echo "$out" | grep -qE "stacks/mystack/security.md: missing section|No such file"; then bad "missing pack file also reported as missing sections"; else ok "missing pack file reported once, not as missing sections"; fi
 rm -rf "$T"
 
 # Case G: stack pack lists a reviewer with no core skill -> fail
@@ -1029,26 +1031,22 @@ SEC="$T/core/skills/security/SKILL.md"
 write_good_reviewer "$SEC"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "security/SKILL.md: the "; then bad "security calibration control: fired on an intact fixture"; else ok "security calibration control: silent on an intact fixture"; fi
-for rule in "missing-layer rule|^## A missing layer is not a missing control$" \
-            "not-a-vulnerability list|^## Not a vulnerability$" \
-            "High/Medium question|fully defeat a control"; do
-  msg="${rule%%|*}"; pat="${rule#*|}"
+# sec_mutation <msg> <label> <command...>: fresh fixture, apply the command to it, and
+# require exactly one calibration error, the one named by <msg>.
+sec_mutation(){
+  local msg="$1" label="$2"; shift 2
   write_good_reviewer "$SEC"
-  grep -v -E "$pat" "$SEC" > "$T/tmp" && mv "$T/tmp" "$SEC"
+  "$@" "$SEC" > "$T/tmp"; mv "$T/tmp" "$SEC"
   out=$(bash "$VALIDATE" "$T" 2>&1 || true)
-  n=$(echo "$out" | grep -c "security/SKILL.md: the ")
-  if echo "$out" | grep -qF "the $msg is gone" && [[ "$n" -eq 1 ]]; then ok "missing security $msg detected, alone"; else bad "missing security $msg NOT detected in isolation ($n calibration errors)"; fi
-done
-# -x anchoring: a demoted heading is not the rule. Both anchored guards, not one.
-for rule in "missing-layer rule|## A missing layer is not a missing control" \
-            "not-a-vulnerability list|## Not a vulnerability"; do
-  msg="${rule%%|*}"; h="${rule#*|}"
-  write_good_reviewer "$SEC"
-  sed "s/^$h\$/#$h/" "$SEC" > "$T/tmp" && mv "$T/tmp" "$SEC"
-  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
-  n=$(echo "$out" | grep -c "security/SKILL.md: the ")
-  if echo "$out" | grep -qF "the $msg is gone" && [[ "$n" -eq 1 ]]; then ok "demoted $msg heading detected, alone"; else bad "demoted $msg heading NOT detected in isolation ($n calibration errors)"; fi
-done
+  local n; n=$(echo "$out" | grep -c "security/SKILL.md: the ")
+  if echo "$out" | grep -qF "the $msg is gone" && [[ "$n" -eq 1 ]]; then ok "$label $msg detected, alone"; else bad "$label $msg NOT detected in isolation ($n calibration errors)"; fi
+}
+sec_mutation "missing-layer rule"       "missing" grep -vxF "## A missing layer is not a missing control"
+sec_mutation "not-a-vulnerability list" "missing" grep -vxF "## Not a vulnerability"
+sec_mutation "High/Medium question"     "missing" grep -vF "fully defeat a control"
+# -x anchoring: a demoted heading is not the rule.
+sec_mutation "missing-layer rule"       "demoted" sed 's/^## A missing layer is not a missing control$/#&/'
+sec_mutation "not-a-vulnerability list" "demoted" sed 's/^## Not a vulnerability$/#&/'
 rm -rf "$T"
 
 # Case AM: pack file format. Every pack file a manifest lists carries the three sections
@@ -1062,12 +1060,16 @@ printf '{ "name": "base", "version": "0.1.0", "reviewers": ["correctness"] }\n' 
 write_pack(){ printf '# Stack pack: %s\n\n## Stack-specific signals\n- s\n\n## Stack-specific remedies\n- r\n\n## Stack-specific severity guidance\n- g\n' "$2" > "$1"; }
 write_pack "$T/stacks/demo/security.md" "demo, security"
 write_pack "$T/stacks/base/correctness.md" "base, correctness"
-pack_errs(){ echo "$1" | grep -cE "stacks/(demo|base)/"; }
+pack_errs(){ echo "$1" | grep -cE "stacks/(demo|base)[/:]"; }
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if [[ "$(pack_errs "$out")" -eq 0 ]]; then ok "pack format control: silent on intact security and non-security pack files"; else bad "pack format control: $(pack_errs "$out") pack errors on intact packs"; fi
-sed '/^## Stack-specific remedies$/d' "$T/stacks/base/correctness.md" > "$T/tmp" && mv "$T/tmp" "$T/stacks/base/correctness.md"
-out=$(bash "$VALIDATE" "$T" 2>&1 || true)
-if echo "$out" | grep -qF "stacks/base/correctness.md: missing section '## Stack-specific remedies'" && [[ "$(pack_errs "$out")" -eq 1 ]]; then ok "pack file missing a base section detected, alone"; else bad "pack file missing a base section NOT detected in isolation ($(pack_errs "$out") pack errors)"; fi
+# Each documented section, removed alone from a non-security pack file.
+for h in "## Stack-specific signals" "## Stack-specific remedies" "## Stack-specific severity guidance"; do
+  write_pack "$T/stacks/base/correctness.md" "base, correctness"
+  grep -vxF "$h" "$T/stacks/base/correctness.md" > "$T/tmp"; mv "$T/tmp" "$T/stacks/base/correctness.md"
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  if echo "$out" | grep -qF "stacks/base/correctness.md: missing section '$h'" && [[ "$(pack_errs "$out")" -eq 1 ]]; then ok "pack file missing '$h' detected, alone"; else bad "pack file missing '$h' NOT detected in isolation ($(pack_errs "$out") pack errors)"; fi
+done
 write_pack "$T/stacks/base/correctness.md" "base, correctness"
 sed 's/^## Stack-specific signals$/### Stack-specific signals/' "$T/stacks/demo/security.md" > "$T/tmp" && mv "$T/tmp" "$T/stacks/demo/security.md"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)

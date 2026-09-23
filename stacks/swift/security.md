@@ -7,7 +7,7 @@ extends: core/skills/security/SKILL.md
 - Hardcoded API keys / certs in the app bundle (extractable from the IPA).
 - `NSSecureCoding`/`NSKeyedUnarchiver` on untrusted data, or `@objc` exposed to JS/bridges → unsafe deserialization.
 - Vapor endpoint missing authz / CSRF protection on state-changing routes; permissive CORS with credentials.
-- `RandomNumberGenerator` default / `arc4random` misused for tokens (prefer `SystemRandomNumberGenerator`); weak hashing (`MD5`/`SHA1`) for passwords (use CryptoKit `PBE`/argon2).
+- A custom or seeded `RandomNumberGenerator` (a reproducible-test generator, say) used for tokens; weak hashing (`MD5`/`SHA1`) for passwords (use Vapor's `Bcrypt` on the server, PBKDF2 via CommonCrypto `CCKeyDerivationPBKDF` on device, or argon2).
 - SQL string interpolation in GRDB/Vapor Fluent raw queries → SQL injection.
 
 ## Stack-specific remedies

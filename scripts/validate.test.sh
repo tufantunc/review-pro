@@ -30,7 +30,11 @@ s
 ## What this reviewer flags
 f
 ## Evidence & severity
-e
+e: ask whether the result would fully defeat a control
+## A missing layer is not a missing control
+m
+## Not a vulnerability
+v
 ## No unresearched findings
 n
 ## Approval bar
@@ -300,6 +304,8 @@ cat > "$T/stacks/mystack/manifest.json" <<'EOF'
 EOF
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "manifest lists 'security' but security.md is missing"; then ok "missing pack file detected"; else bad "missing pack file not detected"; fi
+# A file that does not exist has no sections to check; reporting three of them would bury the cause.
+if echo "$out" | grep -qE "stacks/mystack/security.md: missing section|No such file"; then bad "missing pack file also reported as missing sections"; else ok "missing pack file reported once, not as missing sections"; fi
 rm -rf "$T"
 
 # Case G: stack pack lists a reviewer with no core skill -> fail
@@ -1012,6 +1018,62 @@ printf '{ "version": "9.9.9", \n' > "$T/cli/package-lock.json"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "package-lock.json: unreadable"; then ok "malformed lockfile reported as unreadable"; else bad "malformed lockfile NOT reported as unreadable"; fi
 if echo "$out" | grep -q "codex-plugin/plugin.json: version 0.7.0 != cli 9.9.9"; then ok "a finding collected before the malformed file survives it"; else bad "a malformed file discarded findings collected before it"; fi
+rm -rf "$T"
+
+# Case AL: the security calibration rules. Each is one line whose deletion leaves every
+# other check passing while severity drifts back to how alarming a pattern looks. Every
+# mutation starts from a fresh fixture instead of reverting the last one, and asserts
+# that exactly one calibration error fires: a revert that silently matches nothing is
+# how Case AJ once carried a mutation into the next assertion (ADR-0007).
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security"
+SEC="$T/core/skills/security/SKILL.md"
+write_good_reviewer "$SEC"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "security/SKILL.md: the "; then bad "security calibration control: fired on an intact fixture"; else ok "security calibration control: silent on an intact fixture"; fi
+# sec_mutation <msg> <label> <command...>: fresh fixture, apply the command to it, and
+# require exactly one calibration error, the one named by <msg>.
+sec_mutation(){
+  local msg="$1" label="$2"; shift 2
+  write_good_reviewer "$SEC"
+  "$@" "$SEC" > "$T/tmp"; mv "$T/tmp" "$SEC"
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  local n; n=$(echo "$out" | grep -c "security/SKILL.md: the ")
+  if echo "$out" | grep -qF "the $msg is gone" && [[ "$n" -eq 1 ]]; then ok "$label $msg detected, alone"; else bad "$label $msg NOT detected in isolation ($n calibration errors)"; fi
+}
+sec_mutation "missing-layer rule"       "missing" grep -vxF "## A missing layer is not a missing control"
+sec_mutation "not-a-vulnerability list" "missing" grep -vxF "## Not a vulnerability"
+sec_mutation "High/Medium question"     "missing" grep -vF "fully defeat a control"
+# -x anchoring: a demoted heading is not the rule.
+sec_mutation "missing-layer rule"       "demoted" sed 's/^## A missing layer is not a missing control$/#&/'
+sec_mutation "not-a-vulnerability list" "demoted" sed 's/^## Not a vulnerability$/#&/'
+rm -rf "$T"
+
+# Case AM: pack file format. Every pack file a manifest lists carries the three sections
+# stacks/CONTRIBUTING.md documents. Keyed on the manifest's reviewers, so it checks a
+# non-security file exactly as it checks a security one.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/correctness" "$T/stacks/demo" "$T/stacks/base"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+printf '{ "name": "demo", "version": "0.1.0", "reviewers": ["security"] }\n' > "$T/stacks/demo/manifest.json"
+printf '{ "name": "base", "version": "0.1.0", "reviewers": ["correctness"] }\n' > "$T/stacks/base/manifest.json"
+write_pack(){ printf '# Stack pack: %s\n\n## Stack-specific signals\n- s\n\n## Stack-specific remedies\n- r\n\n## Stack-specific severity guidance\n- g\n' "$2" > "$1"; }
+write_pack "$T/stacks/demo/security.md" "demo, security"
+write_pack "$T/stacks/base/correctness.md" "base, correctness"
+pack_errs(){ echo "$1" | grep -cE "stacks/(demo|base)[/:]"; }
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if [[ "$(pack_errs "$out")" -eq 0 ]]; then ok "pack format control: silent on intact security and non-security pack files"; else bad "pack format control: $(pack_errs "$out") pack errors on intact packs"; fi
+# Each documented section, removed alone from a non-security pack file.
+for h in "## Stack-specific signals" "## Stack-specific remedies" "## Stack-specific severity guidance"; do
+  write_pack "$T/stacks/base/correctness.md" "base, correctness"
+  grep -vxF "$h" "$T/stacks/base/correctness.md" > "$T/tmp"; mv "$T/tmp" "$T/stacks/base/correctness.md"
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  if echo "$out" | grep -qF "stacks/base/correctness.md: missing section '$h'" && [[ "$(pack_errs "$out")" -eq 1 ]]; then ok "pack file missing '$h' detected, alone"; else bad "pack file missing '$h' NOT detected in isolation ($(pack_errs "$out") pack errors)"; fi
+done
+write_pack "$T/stacks/base/correctness.md" "base, correctness"
+sed 's/^## Stack-specific signals$/### Stack-specific signals/' "$T/stacks/demo/security.md" > "$T/tmp" && mv "$T/tmp" "$T/stacks/demo/security.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -qF "stacks/demo/security.md: missing section '## Stack-specific signals'" && [[ "$(pack_errs "$out")" -eq 1 ]]; then ok "demoted base section heading detected, alone"; else bad "demoted base section heading NOT detected in isolation ($(pack_errs "$out") pack errors)"; fi
 rm -rf "$T"
 
 echo "---"

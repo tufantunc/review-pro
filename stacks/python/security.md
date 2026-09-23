@@ -10,6 +10,7 @@ extends: core/skills/security/SKILL.md
 - `DEBUG = True` or permissive `ALLOWED_HOSTS` / wildcard `CORS_ALLOW_ALL_ORIGINS` reaching production config in the diff.
 - Hardcoded `SECRET_KEY` / API keys / passwords; `random` (not `secrets`) for tokens.
 - `send_file` / `open()` on user-controlled paths without confining to a base dir → path traversal.
+- ORM calls whose field names, lookups, orderings, or keyword keys come from input (`filter(**request.GET.dict())`, `order_by(user_value)`, `values(*user_keys)`) → data leak through lookups such as `password__startswith`, and several Django SQL injections (CVE-2021-35042, CVE-2024-42005).
 
 ## Stack-specific remedies
 - Parameterize SQL (`cursor.execute("... WHERE id = %s", (id,))`); never f-string SQL.

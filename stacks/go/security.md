@@ -19,7 +19,6 @@ extends: core/skills/security/SKILL.md
 - `math/rand` for a security token: High.
 
 ## Not a finding
-- `html/template` rendering user data: it escapes by context. Every typed-content conversion skips that escaping: `template.HTML`, `HTMLAttr`, `JS`, `JSStr`, `CSS`, `URL`, and `Srcset`. Flag the conversion when the value is user-controlled.
 - `exec.Command("git", "log", userArg)`: arguments go to the program directly, with no shell to inject into. Option injection still applies, per the rubric's injection rule.
 - `InsecureSkipVerify: true` in a `_test.go` file against an `httptest.NewTLSServer`.
 - `filepath.Join` where every segment is a constant or comes from the program's own configuration, not from a request.

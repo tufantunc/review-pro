@@ -21,6 +21,5 @@ extends: core/skills/security/SKILL.md
 
 ## Not a finding
 - `{value}` text interpolation in JSX: React escapes it. That covers text only; React does not escape, for example, `dangerouslySetInnerHTML`, `srcDoc`, a `javascript:` URL in a URL prop, props spread from input, or a DOM API such as `innerHTML` reached through a ref.
-- `dangerouslySetInnerHTML` fed a constant, or the output of `DOMPurify.sanitize` with its default configuration, reaching the sink unchanged, on a dompurify version with no open advisory for that configuration. DOMPurify has shipped a steady run of default-configuration bypasses (CVE-2024-47875 among them), so check the pinned version against its advisories.
 - A value a user renders only into their own session. Self-XSS is not a finding unless another user's input can reach the same sink. Input from any source the current user did not type in this session is input someone else controls, for example the URL (query, path, or hash), `document.referrer`, `window.name`, `postMessage`, a shared link, or storage and cookies another origin or subdomain can write. That is reflected or DOM XSS, not self-XSS.
 - `target="_blank"` without `rel="noopener"`: current browsers apply `noopener` to `_blank` links by default. It is a finding only when the link sets `rel="opener"` or the project must support browsers from before 2021.

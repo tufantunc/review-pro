@@ -19,7 +19,7 @@ extends: core/skills/security/SKILL.md
 - `OsRng` skipped for a token, `danger_accept_invalid_certs`: High.
 
 ## Not a finding
-- `sqlx::query!` and `query_as!` with `$1`/`?` placeholders, `sqlx::query("literal").bind(value)`, and Diesel's query builder: values are bound, not spliced. This holds only when the SQL text itself is a literal: a `format!` inside the text passed to `sqlx::query` is the finding, whatever else is bound.
+- `sqlx::query!` and `query_as!` with `$1`/`?` placeholders, `sqlx::query("literal").bind(value)`, and Diesel's query builder: values are bound, not spliced. This holds only when the SQL text itself is a literal: a `format!` inside the text passed to `sqlx::query` is the finding, whatever else is bound. On sqlx 0.9, `sqlx::query` takes a dynamic string only through `AssertSqlSafe(...)`, so that wrapper, or `raw_sql`, around text holding lower-trust input is the finding.
 - `Command::new("git").arg(user_value)`: arguments go to the program directly, with no shell. Option injection still applies, per the rubric's injection rule.
 - `serde_json::from_str` or `bincode` into plain data types. Serde builds only the types the target names, so the payload cannot choose a type to instantiate. This pack's signal is a custom `Deserialize` with side effects, not deserialization in general.
 - An `unsafe` block whose `// SAFETY:` comment states an invariant you checked and found to hold at every call site.

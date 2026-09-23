@@ -20,6 +20,6 @@ extends: core/skills/security/SKILL.md
 - `display_errors` in prod config: Medium/High.
 
 ## Not a finding
-- PDO or mysqli prepared statements with placeholders and bound values. The finding is SQL text built before `prepare()`, since a placeholder cannot protect a string that was already concatenated.
+- PDO or mysqli prepared statements with placeholders and bound values, with the connection charset set in the DSN (or emulated prepares turned off) rather than by `SET NAMES`, whose multibyte charsets can defeat emulated escaping. The finding is SQL text built before `prepare()`, since a placeholder cannot protect a string that was already concatenated.
 - `include`/`require` of a constant path, including `__DIR__ . '/partials/header.php'`.
 - `display_errors` enabled only in a development configuration that production does not load.

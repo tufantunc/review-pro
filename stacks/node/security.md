@@ -23,7 +23,6 @@ extends: core/skills/security/SKILL.md
 - ReDoS on a public endpoint: High.
 
 ## Not a finding
-- `exec` or `execSync` with a string literal, or with values the program itself chose (a constant, an enum, a path it computed). Injection needs a value a lower-trust actor controls.
+- `exec` or `execSync` with a string literal, or with values built only from constants and the program's own configuration, with no segment taken from a request, an upload, or a stored record.
 - `execFile` or `spawn` with an argument array and no `shell: true`: there is no shell to inject into. Option injection still applies, per the rubric's injection rule.
-- `new RegExp` built from a literal, or from input passed through a regex-escaping function first.
 - `require` or dynamic `import` of a path chosen from a fixed internal map rather than taken from input.

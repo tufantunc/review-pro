@@ -25,5 +25,5 @@ extends: core/skills/security/SKILL.md
 ## Not a finding
 - `yaml.safe_load`, and `yaml.load(..., Loader=yaml.SafeLoader)`.
 - `subprocess.run([...])` with an argument list and no `shell=True`: there is no shell to inject into. Option injection still applies, per the rubric's injection rule.
-- `cursor.execute("... WHERE id = %s", (value,))` and other driver placeholders, SQLAlchemy `text()` with bound parameters, and the ORM query API. The finding is an f-string or `+` inside the SQL text itself.
+- `cursor.execute("... WHERE id = %s", (value,))` and other driver placeholders, SQLAlchemy `text()` with bound parameters, and the ORM query API. The finding is SQL text built from input by any means: an f-string, `+`, `.format()`, or `%`, including a `%s` filled by `%` rather than passed as the second argument.
 - `mark_safe` on a literal, or on the result of `format_html`, which escapes its arguments.

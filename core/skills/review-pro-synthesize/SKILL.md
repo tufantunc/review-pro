@@ -95,6 +95,8 @@ The orchestrator's Verification step selects the findings to verify and owns the
 | treated as | Medium | High / Critical |
 |---|---|---|
 | stands | unchanged, marked `verified` | unchanged, marked `verified` |
+
+A `stands` whose `unchecked` is not `none` is marked `verified, unchecked: <what>`, never plainly `verified`: the verifier could not check that claim, often because its source was out of reach, and the reader must see which part was left unchecked.
 | partly refuted | severity unchanged; show what falls and its citation under the finding | same |
 | refuted | leaves the verdict; moves to `### Refuted in verification` | keeps blocking; marked `disputed`, with the citation |
 | not verified | unchanged, marked `not verified (<reason>)` | same |

@@ -231,6 +231,8 @@ if [[ -f "$SYNTH_MD" ]]; then
     || add_error "review-pro-synthesize/SKILL.md: the refuted section is gone - a refuted Medium would leave the report instead of staying visible"
   grep -qF 'A refutation without a citation' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the citation rule is gone - an uncited refutation could take a Medium out of the verdict"
+  grep -qF 'verified, unchecked:' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the unchecked marker is gone - a claim the verifier could not check would read as plainly verified"
   grep -qF 'needs at least one claim marked `false`' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the citation definition is gone - the rule would stand with nothing saying what a citation is"
   grep -qF 'keeps the severity it had when it was selected' "$SYNTH_MD" \
@@ -246,6 +248,13 @@ if [[ -f "$SYNTH_MD" ]]; then
   elif [[ -n "$rc" && "$rc" -gt "$vr" ]]; then
     add_error "review-pro-synthesize/SKILL.md: verification runs before conflict resolution - a finding the owner raises to Medium afterwards is never selected"
   fi
+fi
+# The shared verdict table is what the README points readers to and what every install
+# carries as the shared contract; it drifted from synthesis once (v1.4.0 release review).
+SEVERITY_MD="$ROOT/core/shared/severity.md"
+if [[ -f "$SEVERITY_MD" ]]; then
+  { grep -qF 'verification did not refute' "$SEVERITY_MD" && grep -qF '`disputed`' "$SEVERITY_MD"; } \
+    || add_error "core/shared/severity.md: the shared verdict table predates verification - the README and every install point to a rule synthesis no longer applies"
 fi
 # The verifier's contract. Each line is what keeps a refutation from being doubt, memory,
 # or the author's say-so; losing any one fails toward removing true findings.
@@ -683,7 +692,7 @@ if mk is not None and mk is not UNREADABLE:
     for i, pl in enumerate(mk.get("plugins", [])):
         if pl.get("version") != want:
             bad.append(f".claude-plugin/marketplace.json: plugins[{i}].version {pl.get('version')} != cli {want}")
-for rel in ("core/.claude-plugin/plugin.json", "core/.codex-plugin/plugin.json"):
+for rel in ("core/.claude-plugin/plugin.json", "core/.codex-plugin/plugin.json", ".cursor-plugin/plugin.json"):
     d = load(rel)
     if d is not None and d is not UNREADABLE and d.get("version") != want:
         bad.append(f"{rel}: version {d.get('version')} != cli {want}")

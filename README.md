@@ -42,7 +42,7 @@ Most "review this" prompts hand one agent the whole diff and ask for everything.
 - **Triage** classifies the diff, dispatches only the **relevant specialists**, and scopes each one's context — a reviewer gets exactly what it needs (callers, repo search, schema, consumers), not the whole repo.
 - **13 specialist reviewers** each own a single concern — `security`, `correctness`, `craft`, `ai-antipatterns`, `dry`, `performance`, `backend`, `frontend`, `a11y`, `db`, `api-contract`, `tests`, `spec` — and run in parallel, returning structured, evidence-backed findings.
 - **Synthesis** dedups overlaps, resolves cross-reviewer conflicts by domain ownership, calibrates severity (anti-overreporting), and emits one verdict: **BLOCK / REQUEST CHANGES / APPROVE**.
-- **Verification** sends each Medium or higher finding, after dedup, to a fresh agent told to refute it from source. A refutation must cite the line that contradicts the finding. A refuted Medium leaves the verdict but stays in the report; a refuted High or Critical keeps blocking and is marked disputed ([ADR-0009](docs/internals/adr/0009-verify-findings-by-refutation.md)).
+- **Verification** sends up to 8 Medium or higher code findings, after dedup, to a fresh agent each, told to refute it from source. A refutation must cite the line that contradicts the finding. A refuted Medium leaves the verdict but stays in the report; a refuted High or Critical keeps blocking and is marked disputed ([ADR-0009](docs/internals/adr/0009-verify-findings-by-refutation.md)).
 
 The **ai-antipatterns** reviewer owns agent-specific failure modes — hallucinated APIs/symbols, invented config keys, needless dependencies, ignored existing helpers. Our [pilot study](studies/2026-08-copilot-pr-pilot) on merged Copilot PRs found the hallucination categories barely fire in practice; **ignored conventions carried every finding that mattered**. The rubrics are calibrated from that kind of evidence — and from [reported false positives](https://github.com/tufantunc/review-pro/issues/new/choose).
 
@@ -91,25 +91,30 @@ Synthesis emits one deduped report — not thirteen separate reviewer dumps. Eac
 <summary>Example report shape</summary>
 
 ```
-## Verdict: BLOCK
+## Verdict: BLOCK (code)
+
+Spec: skipped, no spec found.
+
+Verification: 3 checked (2 stand, 0 partly refuted, 1 refuted), 0 not checked. Spec findings are not verified.
 
 ### Critical
-- [Critical] src/api/orders.ts:42 — missing ownership check
+- [Critical] src/api/orders.ts:42, missing ownership check
   impact: any authenticated user can update another user's order
   remedy: authorize(ctx.userId === order.userId)
   flagged by: security, backend
+  verification: verified
 
 ### High
-- [High] src/hooks/useCart.ts:88 — useEffect refetches on every render
+- [High] src/hooks/useCart.ts:88, useEffect refetches on every render
   impact: one request per render; the cart endpoint is unpaginated
   remedy: memoize the dependency array; the `items` object is rebuilt inline
   flagged by: performance, frontend
+  verification: verified, unchecked: whether the upstream cart API caches repeat requests
 
-### Medium
-- [Medium] src/lib/retry.ts:1 — reimplements the existing `withRetry` helper
-  impact: two retry policies drift apart
-  remedy: use src/shared/withRetry.ts (already handles jitter)
-  flagged by: dry, ai-antipatterns
+### Refuted in verification
+- [Medium] src/lib/retry.ts:1, reimplements the existing `withRetry` helper
+  refuted: "withRetry already covers this call"
+  contradicted by: src/shared/withRetry.ts:3 `// HTTP requests only; queue consumers retry themselves`
 ```
 
 Illustrative of the output format — not the result of a specific run. Severity thresholds and the verdict rule live in `core/shared/severity.md`.
@@ -126,12 +131,12 @@ The honest part: review-pro is prompts, and the review is executed by **your** c
 
 During a review, your agent may reach the network in exactly four named places:
 
-- **Spec resolution**: triage may run `gh pr view` / `gh issue view` through your own authenticated GitHub CLI to find what the change was supposed to do. No `gh`, no GitHub remote, or no PR are all ordinary conditions; everything falls through silently to local sources.
-- **External premise verification**: when a change's rationale cites an upstream artifact, the owning reviewer checks it, preferring the dependency source already on disk, then the lockfile, and only then the network. The report records which channel settled each premise, so you can always see whether a review left the machine.
-- **Finding verification**: the independent agent that tries to refute a Medium or higher finding may fetch upstream source pinned to a tag or commit when the finding rests on it. It never reads issues, pull requests or discussions, and it works read-only.
+- **Spec resolution**: triage may run `gh pr view` / `gh issue view` through your own authenticated GitHub CLI to find what the change was supposed to do, or fetch an issue URL you pass explicitly. No `gh`, no GitHub remote, or no PR are all ordinary conditions; everything falls through silently to local sources.
+- **External premise verification**: when a change's rationale cites an upstream artifact, the owning reviewer checks it, preferring the dependency source already on disk, then the lockfile, and only then the network. The report records which channel settled each premise, so you can see whether premise checking left the machine.
+- **Finding verification**: the independent agent that tries to refute a Medium or higher finding may fetch upstream source pinned to a tag or commit when the finding rests on it. It never reads issues, pull requests or discussions, and it works read-only. A claim it could not check, for instance because the source was out of reach, is shown as `verified, unchecked: <what>` under the finding.
 - **Stack pack installs**: `npx review-pro add <stack>` copies files from the already-downloaded package into your repo; the network use is npm's, not ours.
 
-Everything else is local: the diff is read with git, findings are grounded in repository files, and reviews run fully offline apart from the four cases above, which degrade to explicit "could not verify" statements rather than failures.
+Everything else is local: the diff is read with git, findings are grounded in repository files, and reviews run fully offline apart from the four cases above, which degrade to explicit "could not verify" or "unchecked" statements rather than failures.
 
 ## Install (one-time)
 

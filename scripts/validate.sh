@@ -70,7 +70,7 @@ for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
     req=""
     case "$name" in
       review-pro-triage)     req=$'## Steps\n## Signal map (non-exhaustive)\n## Dispatch plan format\n## Output discipline' ;;
-      review-pro-synthesize) req=$'## Steps\n## Out-of-diff evidence check\n## Spec axis\n## Conflict ownership\n## Output' ;;
+      review-pro-synthesize) req=$'## Steps\n## Out-of-diff evidence check\n## Spec axis\n## Verification\n## Conflict ownership\n## Output' ;;
       review-pro-verify)     req=$'## Role\n## Inputs\n## How to work\n## Verdicts\n## Rules\n## Output' ;;
     esac
     if [[ -n "$req" ]]; then
@@ -198,6 +198,27 @@ if [[ -f "$SYNTH_MD" ]]; then
     || add_error "review-pro-synthesize/SKILL.md: the external-premise ledger is gone - a reviewer's 'could not verify' statement dies before the report the reader actually reads"
   grep -qF 'not how the reviewer would have written it' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the approval standard is gone - verdicts drift from measuring code health to enforcing taste, and imperfect improvements start getting blocked"
+fi
+# Verification. The asymmetry is the whole safety argument of ADR-0009: one wrong
+# refutation must not ship a blocker, and an unchecked finding must not read as checked.
+if [[ -f "$SYNTH_MD" ]]; then
+  grep -qF 'keeps blocking' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the disputed-blocker rule is gone - one wrong refutation would remove a High or Critical from the verdict"
+  grep -qF 'Agreement does not override a refutation' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the agreement rule is gone - 'flagged by N reviewers' would outweigh a cited contradiction"
+  grep -qF 'never rendered as verified or standing' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the not-verified rule is gone - a capped or failed check could read as a clean one"
+  grep -qF 'defect_stands' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: no 'defect_stands' resolution - a partly_refuted that removed the defect would stay in the verdict"
+  grep -qF 'Refuted in verification' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the refuted section is gone - a refuted Medium would leave the report instead of staying visible"
+  rc=$(grep -nF '**Resolve conflicts**' "$SYNTH_MD" | head -1 | cut -d: -f1)
+  vr=$(grep -nF '**Verification results**' "$SYNTH_MD" | head -1 | cut -d: -f1)
+  if [[ -z "$vr" ]]; then
+    add_error "review-pro-synthesize/SKILL.md: the verification step is gone from Steps"
+  elif [[ -n "$rc" && "$rc" -gt "$vr" ]]; then
+    add_error "review-pro-synthesize/SKILL.md: verification runs before conflict resolution - a finding the owner raises to Medium afterwards is never selected"
+  fi
 fi
 # The verifier's contract. Each line is what keeps a refutation from being doubt, memory,
 # or the author's say-so; losing any one fails toward removing true findings.

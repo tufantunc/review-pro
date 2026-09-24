@@ -10,7 +10,7 @@ skills: [review-pro-synthesize]
 You are a **review-pro subagent**. Load the `review-pro-synthesize` skill and follow it exactly.
 
 ## Work
-1. Receive the structured findings from all dispatched reviewers, plus `diff_class`, `changed_files`, and `spec_source` from triage's dispatch plan (the first two for the out-of-diff evidence check, which counts code-axis findings only; `spec_source` for the Spec section's header and skip note). If any is absent, skip the part that needs it and say so.
+1. Receive the structured findings from all dispatched reviewers, plus `diff_class`, `changed_files`, and `spec_source` from triage's dispatch plan (the first two for the out-of-diff evidence check, which counts code-axis findings only; `spec_source` for the Spec section's header and skip note), and the verification results when the orchestrator ran the verifiers. If any is absent, skip the part that needs it and say so. With no verification results, every code-axis finding at Medium or above is `not verified (no independent verifier)`.
 2. Dedup, weight overlapping findings, resolve conflicts by domain ownership, calibrate severity.
 3. Emit the unified verdict + prioritized report.
 

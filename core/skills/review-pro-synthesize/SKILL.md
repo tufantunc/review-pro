@@ -11,11 +11,14 @@ You are the orchestrator's final stage. You receive the structured findings from
 ## Steps
 1. **Collect** all finding blocks from the dispatched reviewers.
 2. **Dedup** by `(file, line±5, category-root, overlap_hints)`: the same issue flagged by multiple reviewers collapses into one.
-3. **Weight:** a finding flagged by ≥2 reviewers gets a conviction boost — annotate it "flagged by N reviewers".
-4. **Resolve conflicts** by ownership — the domain owner sets severity (see table).
-5. **Calibrate severity:** enforce the anti-overreporting bar. Downgrade anything not fully traced to evidence. Never upgrade beyond what a specialist justified.
-6. **Out-of-diff evidence check** (see below) — a review-level confidence signal, not a per-finding gate.
-7. **Verdict** + prioritized findings + remediations.
+3. **Weight:** annotate a finding flagged by 2 or more reviewers "flagged by N reviewers". It is a note about coverage, not evidence: see `## Verification`.
+4. **Resolve conflicts** by ownership: the domain owner sets severity (see table).
+5. **Verification results**: the orchestrator verifies the merged Medium+ code findings at this point and hands you the results. Apply them as `## Verification` says before going on.
+6. **Calibrate severity:** enforce the anti-overreporting bar. Downgrade anything not fully traced to evidence. Never upgrade beyond what a specialist justified.
+7. **Out-of-diff evidence check** (see below): a review-level confidence signal, not a per-finding gate.
+8. **Verdict** + prioritized findings + remediations.
+
+When you run inline, steps 1 to 4 are what the orchestrator runs before it dispatches the verifiers.
 
 ## Out-of-diff evidence check
 
@@ -70,6 +73,39 @@ If triage reported a premise that appears in no reviewer's block, print the row 
 
 The out-of-diff evidence check needs no exception here. Its definition already counts an upstream source as out-of-diff evidence, and these are code-axis findings, so a premise finding satisfies the tripwire because the review genuinely left the diff.
 
+## Verification
+
+The orchestrator selects the code-axis findings at Medium or above, after step 4, in severity order and then by file and line, and sends the first 8 to independent verifiers. Spec-axis findings are not verified. You receive one reply block per verified finding.
+
+**Binding.** A block binds to the finding whose `file`, `line` and `title` match its `finding` key. A reply with no block, with more than one block, or with a key that matches no finding or more than one leaves that finding `not verified (error)`.
+
+**Resolve each result** by `verdict` and `defect_stands`. Every inconsistency resolves in the cautious direction:
+
+| `verdict` | `defect_stands` | treated as |
+|---|---|---|
+| `refuted` | `no` | refuted |
+| `partly_refuted` | `yes` | partly refuted |
+| `partly_refuted` | `no` | refuted |
+| `stands` | `yes` | stands |
+| `refuted` | `yes` | not verified (error) |
+| `stands` | `no` | not verified (error) |
+
+**Apply it:**
+
+| treated as | Medium | High / Critical |
+|---|---|---|
+| stands | unchanged, marked `verified` | unchanged, marked `verified` |
+| partly refuted | severity unchanged; show what falls and its citation under the finding | same |
+| refuted | leaves the verdict; moves to `### Refuted in verification` | keeps blocking; marked `disputed`, with the citation |
+| not verified | unchanged, marked `not verified (<reason>)` | same |
+
+- A refuted High or Critical keeps blocking. One refutation is not enough to ship a blocker; a human clears a `disputed` finding.
+- Agreement does not override a refutation. "Flagged by N reviewers" stays as a note and protects nothing.
+- Not verified is never rendered as verified or standing. The reason is `cap` for a finding past the first 8, `error` for anything under Binding or the inconsistent rows above, and `no independent verifier` when no verifier ran.
+- If you run as a subagent and receive no verification results, every code-axis finding at Medium or above is `not verified (no independent verifier)`.
+- `partly refuted` never changes severity. Severity is not the verifier's question.
+- A `noticed` line goes under its own finding, at most one per finding, labelled `not reviewed`. It is never a finding and never enters the verdict.
+
 ## Category roots
 
 The dedup key's namespace, one root per reviewer. Stated here because Stage 3 is what
@@ -95,9 +131,9 @@ guessing which neighbour it meant.
 | accessibility | a11y-reviewer |
 
 ## Verdict (see core/shared/severity.md)
-- **BLOCK:** any unaddressed Critical or High.
-- **REQUEST CHANGES:** any Medium or above.
-- **APPROVE:** only Low/Nitpick, or no findings.
+- **BLOCK:** any unaddressed Critical or High, `disputed` ones included.
+- **REQUEST CHANGES:** any Medium or above that verification did not refute.
+- **APPROVE:** only Low/Nitpick, refuted Mediums, or no findings.
 
 The verdict measures code health, not conformance to taste. A change that clearly improves the repo earns APPROVE even when it is imperfect, and "not how the reviewer would have written it" is not a finding on any axis. Withhold approval only on the scale above, never because a style preference no rubric names went unmet: a review that blocks improvements trains authors to stop improving.
 
@@ -105,10 +141,12 @@ The verdict measures code health, not conformance to taste. A change that clearl
 A markdown report. Lead with the verdict and Critical/High. Do not restate raw specialist dumps — present the unified, deduped view.
 
 ```
-## Verdict: <BLOCK | REQUEST CHANGES> (<code | spec | code + spec>) | APPROVE
+## Verdict: <BLOCK | REQUEST CHANGES> (<code | spec | code + spec>)[, <N> disputed] | APPROVE
 
 Spec: measured against <spec_source.ref>
 (or: skipped, no spec found / not measured, <ref> resolved but carried no text)
+
+Verification: <N> checked (<a> stand, <b> partly refuted, <c> refuted), <M> not checked (<counts by reason>). Spec findings are not verified.
 
 > the out-of-diff caveat, when it applies, goes here: after spec_source, before findings
 
@@ -119,12 +157,19 @@ Spec: measured against <spec_source.ref>
   impact: any authenticated user can update another user's order
   remedy: authorize(ctx.userId === order.userId)
   flagged by: security, backend
+  verification: verified
 
 ### High
 ...
 
 ### Medium / Low / Nitpick
 ...
+
+### Refuted in verification
+- [Medium] src/cart/total.ts:30, discount is applied twice
+  refuted: "applyDiscount runs again in checkout()"
+  contradicted by: src/cart/checkout.ts:12 `const total = cart.total // already discounted`
+  noticed (not reviewed): the discount rounding is untested
 
 ## Spec (measured against issue #412)
 

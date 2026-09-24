@@ -191,6 +191,8 @@ description: "synthesis"
 ---
 # Synthesis
 ## Steps
+4. **Resolve conflicts** by ownership.
+5. **Verification results** from the orchestrator.
 ## Out-of-diff evidence check
 Count the code-axis findings only whose evidence_refs name an unchanged path.
 ## Spec axis
@@ -198,6 +200,14 @@ Report it as abstained (no spec text) when the axis could not measure.
 Dedup the spec pool on the quoted requirement, not on `(file, line)` alone.
 "not how the reviewer would have written it" is not a finding.
 ### External premises
+## Verification
+A refuted High or Critical keeps blocking.
+Agreement does not override a refutation.
+Not verified is never rendered as verified or standing.
+Resolve each result by `verdict` and `defect_stands`.
+### Refuted in verification
+## Category roots
+`security`
 ## Conflict ownership
 ## Output
 EOF
@@ -1131,6 +1141,28 @@ stage_mutation "$VER" w_verify "the one-finding rule is gone"         "verifier 
 stage_mutation "$VER" w_verify "no 'defect_stands' field"             "verifier defect_stands field"  grep -vF "defect_stands"
 stage_mutation "$VER" w_verify "the author's-claim rule is gone"      "verifier author's-claim rule"  grep -vF "never settles a claim"
 stage_mutation "$VER" w_verify "the deleted-file rule is gone"        "verifier deleted-file rule"    grep -vF 'git show <base>:'
+rm -rf "$T"
+
+# Case AO: synthesis's verification rules. Each one's loss fails toward shipping a
+# blocker on a single refutation or toward reporting an unchecked finding as checked.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+SYN="$T/core/skills/review-pro-synthesize/SKILL.md"
+w_synth(){ write_orchestrator "$1" review-pro-synthesize; }
+w_synth "$SYN"
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "^FAIL: "; then bad "synthesis verification control: fired on an intact fixture"; else ok "synthesis verification control: silent on an intact fixture"; fi
+stage_mutation "$SYN" w_synth "missing section '## Verification'"             "synthesis Verification section"      grep -vxF "## Verification"
+stage_mutation "$SYN" w_synth "the disputed-blocker rule is gone"              "synthesis disputed-blocker rule"     grep -vF "keeps blocking"
+stage_mutation "$SYN" w_synth "the agreement rule is gone"                     "synthesis agreement rule"            grep -vF "Agreement does not override a refutation"
+stage_mutation "$SYN" w_synth "the not-verified rule is gone"                  "synthesis not-verified rule"         grep -vF "never rendered as verified or standing"
+stage_mutation "$SYN" w_synth "no 'defect_stands' resolution"                  "synthesis defect_stands resolution"  grep -vF "defect_stands"
+stage_mutation "$SYN" w_synth "the refuted section is gone"                    "synthesis refuted section"           grep -vF "Refuted in verification"
+stage_mutation "$SYN" w_synth "verification runs before conflict resolution"   "synthesis step order"                sed -e 's/\*\*Resolve conflicts\*\*/@@T@@/' -e 's/\*\*Verification results\*\*/**Resolve conflicts**/' -e 's/@@T@@/**Verification results**/'
 rm -rf "$T"
 
 echo "---"

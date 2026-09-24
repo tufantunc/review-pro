@@ -244,6 +244,8 @@ if [[ -f "$VERIFY_MD" ]]; then
     || add_error "review-pro-verify/SKILL.md: the author's-claim rule is gone - a PR description could be cited as the contradiction"
   grep -qF 'git show <base>:' "$VERIFY_MD" \
     || add_error "review-pro-verify/SKILL.md: the deleted-file rule is gone - a finding in a file the diff removes could not be re-read"
+  grep -qF "not the finding's title" "$VERIFY_MD" \
+    || add_error "review-pro-verify/SKILL.md: the harm-not-title rule is gone - a finding whose title is literally true but whose harm is false would keep its severity (contract run 1)"
 fi
 
 # Security calibration. Each rule is one line whose deletion leaves every other check

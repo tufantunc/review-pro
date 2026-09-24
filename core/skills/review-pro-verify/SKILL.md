@@ -32,6 +32,8 @@ You work in the repository's working tree, which is the branch under review. A f
 
 Set `defect_stands` to `no` when the defect the finding asserts is false, and to `yes` when it stands. `refuted` goes with `no`; `partly_refuted` and `stands` go with `yes`.
 
+The defect is the harm the finding asserts, not the finding's title: a title can be literally true of code that harms nothing. If every harm the impact claims is contradicted, the finding is `refuted` and `defect_stands` is `no`, even when its title is true. If one harm or one example falls but another harm the finding names still happens, the defect stands. A harm you could not contradict still stands, under rule 1.
+
 ## Rules
 1. A refutation is a positive contradiction you can cite, not doubt. "I could not confirm it", "it seems unlikely", or "this probably is not reached in practice" is `stands`.
 2. If a claim depends on runtime behaviour, a tool's behaviour, or a fact outside what you can read, and you cannot contradict it from a source you can cite, it stands, and you list it under `unchecked`. Do not settle it from memory.

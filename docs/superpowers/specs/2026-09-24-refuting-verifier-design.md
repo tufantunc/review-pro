@@ -125,6 +125,14 @@ inconsistency resolves in the cautious direction:
 | `refuted` | `yes` | not verified |
 | `stands` | `no` | not verified |
 
+**Amended after contract run 1 (2026-09-24).** The first acceptance run refuted 2 of 4
+false findings against a threshold of 3. Both misses had a literally true title and a
+false impact, and the verifier read the title as the defect. The skill now defines the
+defect as the harm the finding asserts, not its title: if every harm is contradicted
+the finding is refuted, and if one harm or example falls while another stands the
+defect stands. This is a wording change on the measured prompt, so it was measured
+again before merge (`studies/2026-09-refuting-verifier/acceptance/run2/`).
+
 The output block adds a `finding` key (`file:line` plus title) so synthesis binds each
 result to the right finding. A result that binds to no finding is discarded and that
 finding is not verified.

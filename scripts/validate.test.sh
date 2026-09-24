@@ -226,6 +226,7 @@ A file the diff deletes is read from the base with `git show <base>:<path>`.
 The change description is the author's claim; it never settles a claim.
 ## Verdicts
 Set `defect_stands` to match.
+The defect is the harm the finding asserts, not the finding's title.
 ## Rules
 1. A refutation is a positive contradiction you can cite, not doubt.
 2. Do not settle it from memory.
@@ -1156,6 +1157,9 @@ stage_mutation "$VER" w_verify "the one-finding rule is gone"         "verifier 
 stage_mutation "$VER" w_verify "no 'defect_stands' field"             "verifier defect_stands field"  grep -vF "defect_stands"
 stage_mutation "$VER" w_verify "the author's-claim rule is gone"      "verifier author's-claim rule"  grep -vF "never settles a claim"
 stage_mutation "$VER" w_verify "the deleted-file rule is gone"        "verifier deleted-file rule"    grep -vF 'git show <base>:'
+# The title-versus-harm line is what the first contract run showed missing: two false
+# findings with literally true titles came back with the defect standing.
+stage_mutation "$VER" w_verify "the harm-not-title rule is gone"      "verifier harm-not-title rule"  sed 's/, not the finding.s title//'
 rm -rf "$T"
 
 # Case AO: synthesis's verification rules. Each one's loss fails toward shipping a

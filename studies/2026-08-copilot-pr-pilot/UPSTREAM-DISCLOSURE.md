@@ -22,7 +22,7 @@ Outcomes are not ours to write, but they are ours to record once written. As of
 | [#1474](https://github.com/dotnet/Nerdbank.GitVersioning/issues/1474) | **Fixed.** The maintainer opened and merged [#1475](https://github.com/dotnet/Nerdbank.GitVersioning/pull/1475) the same day, "Fix shallow clone ancestor lookup diagnostics", closing this with `Fixes #1474`. He took the first of the two directions the report offered: `Lookup` keeps its nullable contract and reports a missing-ancestor cause, which the managed context converts into the project's existing shallow-clone diagnostic. He also added regression tests for both the missing ancestor and shallow commit selection. |
 | [#1318](https://github.com/openai/openai-dotnet/issues/1318) | **Answered, not a defect.** `created_at` is a required property in the OpenAI REST API specification, so the service guarantees it is never null and the asymmetry with the nullable `bytes` is intentional. Throwing on a payload that violates the contract is the intended behaviour. This is the outcome the issue named as its own most likely resolution, and the maintainer answered on exactly those terms. |
 | [#7707](https://github.com/dotnet/extensions/issues/7707) | **Withdrawn by us.** Its premise was that dropping the `openai-dotnet` workaround left this library exposed on `created_at`. The answer above removes that premise, so we closed it rather than leave a refuted issue open in someone else's repository. Its second point, that the version bump's stated rationale was wrong, stands but needs no code change and did not justify an open issue by itself. |
-| [#19540](https://github.com/microsoft/aspire/issues/19540) | Open, awaiting an area label. |
+| [#19540](https://github.com/microsoft/aspire/issues/19540) | Open, awaiting an area label. **2026-09-24: its main claim does not hold, found by our own re-check; corrected on the issue.** See [below](#a-filed-finding-that-did-not-hold). |
 
 ## What the outcomes say about the method
 
@@ -97,3 +97,34 @@ Both were corrected in the issue rather than filed as written.
 That last one matters for reading whatever happens next. A maintainer closing one of
 these because the unguarded path is unreachable in practice is not a refutation of the
 finding. It is the answer to a question the issue asked.
+
+## A filed finding that did not hold
+
+Added 2026-09-24.
+
+The main claim of #19540 was wrong, and nobody upstream had to say so. It said the
+`dotnet run` sites in `BundleSmokeTests.cs` still ran under the CLI's 120s default, so the
+cold-start flake #18671 targeted was "not relaxed" on that path, and that the
+constant's documented relationship was "inverted" there.
+
+Under the CLI run hook, `dotnet run` builds the AppHost itself and then starts
+`aspire run --no-build`, which also skips restore. The CLI's 120s timer never covers the
+cold restore and build. The only limit that does is the terminal wait, and #18671 raised
+it from 2 to 4 minutes, so the flake is mitigated on that path, and the CLI's own
+timeout still fires first with its diagnostic. What remains true is a comment-accuracy
+point: `AspireRunReadyTimeout` describes a budget those sites never set. The issue's
+second section, the four bare `aspire run` sites that still build inside the 120s
+budget, is not affected.
+
+It was found by an experiment in whether an independent agent told to refute a
+finding from source, citing the line that contradicts it, catches findings known to be
+false. This one was in the corpus as known to be true. Both runs refuted it, citing the
+same lines, and the lines check out at the PR head and at `7e4b8a7`, the commit the issue
+cites. We posted [a correction on the issue](https://github.com/microsoft/aspire/issues/19540#issuecomment-5809077247)
+and retitled it to the part that stands.
+
+That changes the honest yield above: one fixed, one answered as not-a-defect, one
+withdrawn, and one whose main claim we corrected ourselves. It also says something about
+"hand-verified": three reviewers converged on this finding and the hand check agreed,
+because none of the four readings went as far as the MSBuild target that decides what
+`dotnet run` does.

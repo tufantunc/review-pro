@@ -131,8 +131,23 @@ Read these as a shape, not a target. They are here so an unexpected drop is visi
 
 Needed once, not per release.
 
-1. **npm token.** On npmjs.com, Access Tokens, create a Granular Access Token with publish permission scoped to this package, or a classic Automation token.
+1. **npm token.** On npmjs.com, Access Tokens, create a Granular Access Token with publish permission scoped to this package, or a classic Automation token. Granular tokens expire. Note the expiry date where the next release will see it, because nothing warns before it passes.
 2. **GitHub secret.** Repo Settings, Secrets and variables, Actions, new repository secret named `NPM_TOKEN`.
+
+## When a publish fails with E404
+
+`npm error 404 Not Found - PUT https://registry.npmjs.org/review-pro` after a clean build, test and scan means the `NPM_TOKEN` secret has expired or lost its publish permission, not that the package is missing. npm reports a rejected publish as a 404. The v1.4.0 publish hit this: the token had been created 93 days earlier.
+
+1. Create a new token (see One-time setup) and replace the `NPM_TOKEN` repository secret. `gh secret list` shows when it was last set.
+2. Rerun the failed job from the same tag. Do not delete or move the tag:
+
+   ```bash
+   gh run rerun $(gh run list --workflow=publish.yml --limit 1 --json databaseId -q '.[0].databaseId') --failed
+   ```
+
+3. Verify as in step 7. The GitHub Release and the SBOM steps run after Publish, so they were skipped on the failed attempt and run on the rerun.
+
+A provenance statement is already in the transparency log from the failed attempt. That does no harm: it attests a tarball that was never accepted.
 
 ## When a publish fails on provenance
 

@@ -30,7 +30,11 @@ s
 ## What this reviewer flags
 f
 ## Evidence & severity
-e
+e: ask whether the result would fully defeat a control
+## A missing layer is not a missing control
+m
+## Not a vulnerability
+v
 ## No unresearched findings
 n
 ## Approval bar
@@ -187,6 +191,8 @@ description: "synthesis"
 ---
 # Synthesis
 ## Steps
+4. **Resolve conflicts** by ownership.
+5. **Verification results** from the orchestrator.
 ## Out-of-diff evidence check
 Count the code-axis findings only whose evidence_refs name an unchanged path.
 ## Spec axis
@@ -194,8 +200,59 @@ Report it as abstained (no spec text) when the axis could not measure.
 Dedup the spec pool on the quoted requirement, not on `(file, line)` alone.
 "not how the reviewer would have written it" is not a finding.
 ### External premises
+## Verification
+A refuted High or Critical keeps blocking.
+Agreement does not override a refutation.
+Not verified is never rendered as verified or standing.
+Resolve each result by `verdict` and `defect_stands`:
+| `partly_refuted` | `no` | refuted |
+| `stands` | `no` | not verified (error) |
+A refuted Medium moves to `### Refuted in verification`.
+A verified finding keeps the severity it had when it was selected.
+### Refuted in verification
+## Category roots
+`security`
 ## Conflict ownership
 ## Output
+EOF
+      ;;
+    review-pro-verify)
+      cat > "$1" <<'EOF'
+---
+name: review-pro-verify
+description: "verifier"
+---
+# Verification
+## Role
+## Inputs
+A file the diff deletes is read from the base with `git show <base>:<path>`.
+## How to work
+The change description is the author's claim; it never settles a claim.
+## Verdicts
+Set `defect_stands` to `no` when the harm is false.
+The defect is the harm the finding asserts, not the finding's title.
+## Rules
+1. A refutation is a positive contradiction you can cite, not doubt.
+2. Do not settle it from memory.
+3. Judge only this finding.
+## Output
+defect_stands: yes | no
+EOF
+      ;;
+    review-pro)
+      cat > "$1" <<'EOF'
+---
+name: review-pro
+description: "orchestrator"
+---
+# Review-Pro
+Dedup the spec pool on the quoted requirement.
+### External premises
+Invoke one `review-pro-verify-subagent` per selected finding.
+`### Diff`: first line `base: <ref>`.
+`### Written by`: the reviewer that wrote it. Never how many reviewers flagged it.
+If the verify subagent is unavailable, do **not** verify inline.
+Continue the `review-pro-synthesize` skill from **Verification results**: calibrate and emit the verdict.
 EOF
       ;;
     *)
@@ -300,6 +357,8 @@ cat > "$T/stacks/mystack/manifest.json" <<'EOF'
 EOF
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "manifest lists 'security' but security.md is missing"; then ok "missing pack file detected"; else bad "missing pack file not detected"; fi
+# A file that does not exist has no sections to check; reporting three of them would bury the cause.
+if echo "$out" | grep -qE "stacks/mystack/security.md: missing section|No such file"; then bad "missing pack file also reported as missing sections"; else ok "missing pack file reported once, not as missing sections"; fi
 rm -rf "$T"
 
 # Case G: stack pack lists a reviewer with no core skill -> fail
@@ -1012,6 +1071,150 @@ printf '{ "version": "9.9.9", \n' > "$T/cli/package-lock.json"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "package-lock.json: unreadable"; then ok "malformed lockfile reported as unreadable"; else bad "malformed lockfile NOT reported as unreadable"; fi
 if echo "$out" | grep -q "codex-plugin/plugin.json: version 0.7.0 != cli 9.9.9"; then ok "a finding collected before the malformed file survives it"; else bad "a malformed file discarded findings collected before it"; fi
+rm -rf "$T"
+
+# Case AL: the security calibration rules. Each is one line whose deletion leaves every
+# other check passing while severity drifts back to how alarming a pattern looks. Every
+# mutation starts from a fresh fixture instead of reverting the last one, and asserts
+# that exactly one calibration error fires: a revert that silently matches nothing is
+# how Case AJ once carried a mutation into the next assertion (ADR-0007).
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security"
+SEC="$T/core/skills/security/SKILL.md"
+write_good_reviewer "$SEC"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "security/SKILL.md: the "; then bad "security calibration control: fired on an intact fixture"; else ok "security calibration control: silent on an intact fixture"; fi
+# sec_mutation <msg> <label> <command...>: fresh fixture, apply the command to it, and
+# require exactly one calibration error, the one named by <msg>.
+sec_mutation(){
+  local msg="$1" label="$2"; shift 2
+  write_good_reviewer "$SEC"
+  "$@" "$SEC" > "$T/tmp"; mv "$T/tmp" "$SEC"
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  local n; n=$(echo "$out" | grep -c "security/SKILL.md: the ")
+  if echo "$out" | grep -qF "the $msg is gone" && [[ "$n" -eq 1 ]]; then ok "$label $msg detected, alone"; else bad "$label $msg NOT detected in isolation ($n calibration errors)"; fi
+}
+sec_mutation "missing-layer rule"       "missing" grep -vxF "## A missing layer is not a missing control"
+sec_mutation "not-a-vulnerability list" "missing" grep -vxF "## Not a vulnerability"
+sec_mutation "High/Medium question"     "missing" grep -vF "fully defeat a control"
+# -x anchoring: a demoted heading is not the rule.
+sec_mutation "missing-layer rule"       "demoted" sed 's/^## A missing layer is not a missing control$/#&/'
+sec_mutation "not-a-vulnerability list" "demoted" sed 's/^## Not a vulnerability$/#&/'
+rm -rf "$T"
+
+# Case AM: pack file format. Every pack file a manifest lists carries the three sections
+# stacks/CONTRIBUTING.md documents. Keyed on the manifest's reviewers, so it checks a
+# non-security file exactly as it checks a security one.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/correctness" "$T/stacks/demo" "$T/stacks/base"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+printf '{ "name": "demo", "version": "0.1.0", "reviewers": ["security"] }\n' > "$T/stacks/demo/manifest.json"
+printf '{ "name": "base", "version": "0.1.0", "reviewers": ["correctness"] }\n' > "$T/stacks/base/manifest.json"
+write_pack(){ printf '# Stack pack: %s\n\n## Stack-specific signals\n- s\n\n## Stack-specific remedies\n- r\n\n## Stack-specific severity guidance\n- g\n' "$2" > "$1"; }
+write_pack "$T/stacks/demo/security.md" "demo, security"
+write_pack "$T/stacks/base/correctness.md" "base, correctness"
+pack_errs(){ echo "$1" | grep -cE "stacks/(demo|base)[/:]"; }
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if [[ "$(pack_errs "$out")" -eq 0 ]]; then ok "pack format control: silent on intact security and non-security pack files"; else bad "pack format control: $(pack_errs "$out") pack errors on intact packs"; fi
+# Each documented section, removed alone from a non-security pack file.
+for h in "## Stack-specific signals" "## Stack-specific remedies" "## Stack-specific severity guidance"; do
+  write_pack "$T/stacks/base/correctness.md" "base, correctness"
+  grep -vxF "$h" "$T/stacks/base/correctness.md" > "$T/tmp"; mv "$T/tmp" "$T/stacks/base/correctness.md"
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  if echo "$out" | grep -qF "stacks/base/correctness.md: missing section '$h'" && [[ "$(pack_errs "$out")" -eq 1 ]]; then ok "pack file missing '$h' detected, alone"; else bad "pack file missing '$h' NOT detected in isolation ($(pack_errs "$out") pack errors)"; fi
+done
+write_pack "$T/stacks/base/correctness.md" "base, correctness"
+sed 's/^## Stack-specific signals$/### Stack-specific signals/' "$T/stacks/demo/security.md" > "$T/tmp" && mv "$T/tmp" "$T/stacks/demo/security.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -qF "stacks/demo/security.md: missing section '## Stack-specific signals'" && [[ "$(pack_errs "$out")" -eq 1 ]]; then ok "demoted base section heading detected, alone"; else bad "demoted base section heading NOT detected in isolation ($(pack_errs "$out") pack errors)"; fi
+rm -rf "$T"
+
+# stage_mutation <file> <writer> <expected> <label> <command...>: rewrite <file> fresh with
+# <writer>, apply <command> to it, and expect <expected> as the only FAIL line.
+stage_mutation(){
+  local file="$1" writer="$2" want="$3" label="$4"; shift 4
+  "$writer" "$file"
+  "$@" "$file" > "$T/tmp"; mv "$T/tmp" "$file"
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  local n; n=$(echo "$out" | grep -c "^FAIL: ")
+  if echo "$out" | grep -qF "$want" && [[ "$n" -eq 1 ]]; then ok "$label detected, alone"; else bad "$label NOT detected in isolation ($n errors)"; fi
+}
+
+# Case AN: the verifier skill. Its sections and the five lines that keep a refutation
+# honest: cite or stand, no memory, one finding only, the author's claim is not
+# evidence, and deleted files are read from the base.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-verify" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+VER="$T/core/skills/review-pro-verify/SKILL.md"
+w_verify(){ write_orchestrator "$1" review-pro-verify; }
+w_verify "$VER"
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-verify","role":"verifier"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "^FAIL: "; then bad "verifier control: fired on an intact fixture"; else ok "verifier control: silent on an intact fixture"; fi
+for h in "## Role" "## Inputs" "## How to work" "## Verdicts" "## Rules" "## Output"; do
+  stage_mutation "$VER" w_verify "missing section '$h'" "verifier section '$h'" grep -vxF "$h"
+done
+stage_mutation "$VER" w_verify "the cite-or-stand rule is gone"       "verifier cite-or-stand rule"   grep -vF "positive contradiction you can cite"
+stage_mutation "$VER" w_verify "the no-memory rule is gone"           "verifier no-memory rule"       grep -vF "Do not settle it from memory"
+stage_mutation "$VER" w_verify "the one-finding rule is gone"         "verifier one-finding rule"     grep -vF "Judge only this finding"
+stage_mutation "$VER" w_verify "no 'defect_stands' field"             "verifier defect_stands field"  grep -vxF 'defect_stands: yes | no'
+stage_mutation "$VER" w_verify "the defect_stands rule is gone"       "verifier defect_stands rule"   grep -vF 'Set `defect_stands` to `no`'
+stage_mutation "$VER" w_verify "the author's-claim rule is gone"      "verifier author's-claim rule"  grep -vF "never settles a claim"
+stage_mutation "$VER" w_verify "the deleted-file rule is gone"        "verifier deleted-file rule"    grep -vF 'git show <base>:'
+# The title-versus-harm line is what the first contract run showed missing: two false
+# findings with literally true titles came back with the defect standing.
+stage_mutation "$VER" w_verify "the harm-not-title rule is gone"      "verifier harm-not-title rule"  sed 's/, not the finding.s title//'
+rm -rf "$T"
+
+# Case AO: synthesis's verification rules. Each one's loss fails toward shipping a
+# blocker on a single refutation or toward reporting an unchecked finding as checked.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+SYN="$T/core/skills/review-pro-synthesize/SKILL.md"
+w_synth(){ write_orchestrator "$1" review-pro-synthesize; }
+w_synth "$SYN"
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "^FAIL: "; then bad "synthesis verification control: fired on an intact fixture"; else ok "synthesis verification control: silent on an intact fixture"; fi
+stage_mutation "$SYN" w_synth "missing section '## Verification'"             "synthesis Verification section"      grep -vxF "## Verification"
+stage_mutation "$SYN" w_synth "the disputed-blocker rule is gone"              "synthesis disputed-blocker rule"     grep -vF "keeps blocking"
+stage_mutation "$SYN" w_synth "the agreement rule is gone"                     "synthesis agreement rule"            grep -vF "Agreement does not override a refutation"
+stage_mutation "$SYN" w_synth "the not-verified rule is gone"                  "synthesis not-verified rule"         grep -vF "never rendered as verified or standing"
+stage_mutation "$SYN" w_synth "the partly_refuted/no row is gone"              "synthesis partly_refuted/no row"     grep -vF '| `partly_refuted` | `no` | refuted |'
+stage_mutation "$SYN" w_synth "the stands/no row is gone"                      "synthesis stands/no row"             grep -vF '| `stands` | `no` | not verified (error) |'
+stage_mutation "$SYN" w_synth "the refuted section is gone"                    "synthesis refuted section"           grep -vxF "### Refuted in verification"
+stage_mutation "$SYN" w_synth "the severity freeze is gone"                    "synthesis severity freeze"           grep -vF "keeps the severity it had when it was selected"
+stage_mutation "$SYN" w_synth "a numbered step reference"                      "synthesis numbered step reference"   sed 's/^## Conflict ownership$/Run steps 1 to 4 first.\n&/'
+stage_mutation "$SYN" w_synth "the verification step is gone from Steps"       "synthesis verification step missing" grep -vF '**Verification results**'
+stage_mutation "$SYN" w_synth "the conflict-resolution step is gone from Steps" "synthesis conflict step missing"    sed 's/\*\*Resolve conflicts\*\*/**Settle conflicts**/'
+stage_mutation "$SYN" w_synth "verification runs before conflict resolution"   "synthesis step order"                sed -e 's/\*\*Resolve conflicts\*\*/@@T@@/' -e 's/\*\*Verification results\*\*/**Resolve conflicts**/' -e 's/@@T@@/**Verification results**/'
+rm -rf "$T"
+
+# Case AP: the orchestrator's verification step. Without the dispatch the stage never
+# runs; without the ban the orchestrator checks its own findings, which is not independent.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+ORC="$T/core/skills/review-pro/SKILL.md"
+w_orch(){ write_orchestrator "$1" review-pro; }
+w_orch "$ORC"
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "^FAIL: "; then bad "orchestrator verification control: fired on an intact fixture"; else ok "orchestrator verification control: silent on an intact fixture"; fi
+stage_mutation "$ORC" w_orch "the verifier dispatch is gone"       "orchestrator verifier dispatch"  grep -vF "review-pro-verify-subagent"
+stage_mutation "$ORC" w_orch "the inline-verification ban is gone" "orchestrator inline ban"         grep -vF 'do **not** verify inline'
+stage_mutation "$ORC" w_orch "the agreement-count ban is gone"     "orchestrator agreement-count ban" grep -vF "Never how many reviewers flagged it"
+stage_mutation "$ORC" w_orch "the base line is gone"               "orchestrator base line"          grep -vF 'base: <ref>'
+stage_mutation "$ORC" w_orch "re-runs the merge after verification" "orchestrator re-merge"           sed 's/calibrate and emit the verdict/dedup, calibrate and emit the verdict/'
+stage_mutation "$ORC" w_orch "a numbered reference to a review-pro-synthesize step" "orchestrator numbered synthesize step" sed 's/skill from \*\*Verification results\*\*/skill from step 5/'
 rm -rf "$T"
 
 echo "---"

@@ -4,11 +4,12 @@ extends: core/skills/security/SKILL.md
 ## Stack-specific signals
 - `FromSqlRaw` / `FromSqlInterpolated` with string concatenation, or ADO.NET `SqlCommand` string-built SQL → SQL injection.
 - Path handling on user input without `Path.GetFullPath` + confinement → path traversal.
-- `BinaryFormatter` / `XmlSerializer` on untrusted data / `JsonTypeNameHandling.Auto` → deserialization RCE.
+- `BinaryFormatter` on untrusted data, `XmlSerializer` whose type comes from the payload or from input, or Newtonsoft.Json with `TypeNameHandling` other than `None` → deserialization RCE.
 - `MD5` / `SHA1` for passwords/hashes; `Random` for tokens (use `RandomNumberGenerator`).
 - ASP.NET Core endpoint missing `[Authorize]` / `[AllowAnonymous]` widening access; permissive CORS (`AllowAnyOrigin` + `AllowCredentials`).
 - Missing antiforgery on state-changing form posts; secrets in `appsettings.json` committed to the repo.
 - `Razor` `@Html.Raw(userContent)` → XSS.
+- Raw-markup sinks beyond `@Html.Raw`: `HtmlString`, `AppendHtml`, and in Blazor `(MarkupString)value` or `RenderTreeBuilder.AddMarkupContent` fed with user content → XSS.
 
 ## Stack-specific remedies
 - Parameterize (`FromSqlInterpolated` with parameters / `SqlParameter`); confine paths; use `Html.Raw` never on user content.

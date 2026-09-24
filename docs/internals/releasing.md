@@ -52,6 +52,7 @@ Two files describe behaviour and no automated check will notice when they go sta
 
 - **`docs/llms.txt`** is hand-written, so the site drift check never reads it.
 - **`cli/README.md`** is what npm renders on the package page, and it lives outside `core/`, which is where attention goes.
+- **Stack pack versions.** A changed pack file reaches existing installs only if its pack's `manifest.json` `version` was bumped; the rule and the reason are in [`stacks/CONTRIBUTING.md`](../../stacks/CONTRIBUTING.md#how-packs-reach-users). Nothing checks it.
 
 For the marketing site (`docs-src/i18n/*.json`), the rule is narrower: a change in the **reviewer count** is mandatory, because the published-count guard checks it in seven locales including the ones that spell the number as a word. A change in **behaviour** is not, because the site has never described an axis in prose. That precedent is recorded in [ADR-0006](adr/0006-one-closed-subcategory-list-per-reviewer.md)'s consequences.
 

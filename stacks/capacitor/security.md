@@ -15,6 +15,6 @@ extends: core/skills/security/SKILL.md
 - Keep secrets server-side; store tokens in Keychain/Keystore via a secure-storage plugin; deep-link auth via Universal/App Links + PKCE; scope CSP, permissions, and the native bridge to the app origin; disable cleartext and pin certs.
 
 ## Stack-specific severity guidance
-- Secret in bundle / custom-scheme OAuth without PKCE / remote `server.url` with full bridge: Critical.
-- Sensitive token in `Preferences` / no CSP / cleartext traffic: High.
-- Over-broad permission declaration or missing privacy manifest: Medium/High.
+- A privileged secret in the bundle (one that grants what the server should gate) / custom-scheme OAuth without PKCE / remote `server.url` with full bridge: Critical.
+- Sensitive token in `Preferences` / cleartext traffic carrying credentials: High. No CSP on its own: Low, a second layer; High only alongside an injection path it would have stopped.
+- Over-broad permission declaration: Low, least privilege with no boundary crossed on its own. Missing privacy manifest: Low here; it blocks App Store submission, which is a release problem rather than a vulnerability.

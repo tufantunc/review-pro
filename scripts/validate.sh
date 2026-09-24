@@ -559,14 +559,17 @@ shopt -u nullglob
 #
 # The remedy names `npm version` because setting a version is the whole of the job:
 # `--allow-same-version` is what lets it run when package.json is already correct and
-# only the lockfile is behind, and it cannot re-resolve the tree even in principle.
-# `npm install --package-lock-only` also fixes it, and measured on a pristine checkout
-# it produced a byte-identical result (same 223 package entries, one changed entry, and
-# both work offline), so the preference is about the narrower guarantee rather than any
-# observed difference. An earlier version of this comment claimed that command strips
-# `libc` fields from the lockfile; that was wrong. This lockfile carries no `libc`
-# fields at all, and the measurement behind the claim came from a scratch copy in a
-# state this repository has never committed.
+# only the lockfile is behind, and it edits the version fields without re-resolving the
+# tree. `npm install --package-lock-only` rewrites the whole lockfile, and with npm older
+# than 11.11.0 that rewrite drops the ten `libc` fields (glibc/musl) this lockfile carries
+# on its optional native bindings: 11.11.0 is the release that added `libc` to the fields
+# npm writes back. Measured on this lockfile, on the same machine: npm 11.10.0 and 11.9.0
+# take it from 10 `libc` fields to 0, npm 11.11.0 keeps all 10, and `npm version` on
+# 11.9.0 keeps all 10. A stripped lockfile does not heal: a newer npm writes `libc` from
+# what the lockfile already says, so the fields return only when a later bump re-resolves
+# those binding packages, as #40 and #63 did, and v1.3.0 shipped without them. An earlier
+# version of this comment called the libc effect a mistake: it had measured a lockfile
+# that a local regeneration had already stripped, in #53.
 #
 # Bumping a release with `npm version` keeps the two from drifting at all, which is how
 # this reached 0.7.0 against 1.2.0 in the first place.

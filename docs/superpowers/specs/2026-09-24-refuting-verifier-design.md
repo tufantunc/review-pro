@@ -50,7 +50,10 @@ context, which was never measured and lets one judgement bleed into the next.
 
 Stage 3 splits in three:
 
-- **3a Merge.** Unchanged: collect, partition into code and spec pools, dedup, weight.
+- **3a Merge.** Unchanged: collect, partition into code and spec pools, dedup, weight,
+  resolve conflicts by ownership. Conflict resolution comes before selection because it
+  can raise a finding to Medium, and a finding raised after selection would never be
+  verified.
 - **3b Verify (new).** The orchestrator selects the findings and dispatches one
   `review-pro-verify-subagent` per finding, in parallel.
 - **3c Calibrate, verdict, report.** The rest of today's synthesis, with the
@@ -126,9 +129,12 @@ The output block adds a `finding` key (`file:line` plus title) so synthesis bind
 result to the right finding. A result that binds to no finding is discarded and that
 finding is not verified.
 
-Tools: Read, Grep, Glob, Bash and WebFetch; no Edit or Write. "Do not build, run the
-project or install packages" stays in the prompt, since no portable mechanism
-restricts Bash per command. On Codex the installed agent is `sandbox_mode = "read-only"`.
+Tools: the body declares no `tools:` field. No other agent body does, and opencode
+copies the same file verbatim and reads `tools` as a map, so a comma list written for
+Claude Code could break the agent there. Read-only rests on the prompt ("do not modify
+the working tree, do not build or run the project, do not install packages") on every
+target, and on `sandbox_mode = "read-only"` on Codex, where the CLI sets it for every
+installed agent.
 
 ## Verdict and report
 

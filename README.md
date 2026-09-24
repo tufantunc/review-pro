@@ -42,6 +42,7 @@ Most "review this" prompts hand one agent the whole diff and ask for everything.
 - **Triage** classifies the diff, dispatches only the **relevant specialists**, and scopes each one's context — a reviewer gets exactly what it needs (callers, repo search, schema, consumers), not the whole repo.
 - **13 specialist reviewers** each own a single concern — `security`, `correctness`, `craft`, `ai-antipatterns`, `dry`, `performance`, `backend`, `frontend`, `a11y`, `db`, `api-contract`, `tests`, `spec` — and run in parallel, returning structured, evidence-backed findings.
 - **Synthesis** dedups overlaps, resolves cross-reviewer conflicts by domain ownership, calibrates severity (anti-overreporting), and emits one verdict: **BLOCK / REQUEST CHANGES / APPROVE**.
+- **Verification** sends each Medium or higher finding, after dedup, to a fresh agent told to refute it from source. A refutation must cite the line that contradicts the finding. A refuted Medium leaves the verdict but stays in the report; a refuted High or Critical keeps blocking and is marked disputed ([ADR-0009](docs/internals/adr/0009-verify-findings-by-refutation.md)).
 
 The **ai-antipatterns** reviewer owns agent-specific failure modes — hallucinated APIs/symbols, invented config keys, needless dependencies, ignored existing helpers. Our [pilot study](studies/2026-08-copilot-pr-pilot) on merged Copilot PRs found the hallucination categories barely fire in practice; **ignored conventions carried every finding that mattered**. The rubrics are calibrated from that kind of evidence — and from [reported false positives](https://github.com/tufantunc/review-pro/issues/new/choose).
 
@@ -66,8 +67,10 @@ flowchart TB
         Y["dedup · resolve conflicts · calibrate severity"]
     end
 
+    X["independent verifier<br/>one per Medium+ finding"]
     T --> R1 & R2 & R3 & R4
     R1 & R2 & R3 & R4 --> Y
+    Y <--> X
     Y --> V["verdict: BLOCK · REQUEST CHANGES · APPROVE"]
 
     P[".review-pro/ stack packs"] -.->|stack signals| S2
@@ -76,6 +79,7 @@ flowchart TB
 - **Triage** classifies the diff, picks relevant reviewers, scopes context, emits a dispatch plan. A one-line CSS change does not wake the `db` reviewer.
 - **Fan-out** runs only the selected specialists in parallel; each applies its core rubric plus any stack signals from the repo's `.review-pro/`.
 - **Synthesis** dedups, weights, resolves conflicts by domain ownership, calibrates severity, emits one verdict.
+- **Verification** runs one independent refuter per Medium+ code finding, at most 8 per review, between dedup and the verdict.
 
 See `docs/superpowers/specs/2026-06-20-review-pro-design.md` for the full design.
 
@@ -215,3 +219,5 @@ review-pro started from an idea inspired by [cursor/plugins — thermos](https:/
 The **Spec axis**, which reviews a diff against the issue it came from rather than against the code alone, is borrowed from the `code-review` skill in [mattpocock/skills](https://github.com/mattpocock/skills). That skill runs two axes, Standards and Spec, and deliberately refuses to merge them. The second axis was the piece review-pro was missing, and the argument for keeping the axes separate is theirs.
 
 Three calibration rules trace to the `code-review-and-quality` skill in [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills), itself distilled from Google's engineering practices: the approval standard (approve what clearly improves the repo, even imperfect), reviewing the lockfile diff as part of any dependency bump, and requiring a remedy to name a concrete restructuring move rather than restate the problem.
+
+The security reviewer's calibration traces to [cloudflare/security-audit-skill](https://github.com/cloudflare/security-audit-skill), a multi-phase audit of a whole repository where review-pro reviews a diff: severity anchored to what an attacker actually achieves, with one question separating High from Medium; a security impact that names the actor, the control, and the boundary it crosses; and a missing second layer treated as hardening when a control on the path already stops the attack. Its domain files state what a finding must establish rather than listing safe APIs, and review-pro learned the reason the hard way: see [ADR-0008](docs/internals/adr/0008-security-content-names-what-to-flag.md).

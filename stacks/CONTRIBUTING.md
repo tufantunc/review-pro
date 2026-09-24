@@ -49,11 +49,17 @@ extends: core/skills/<reviewer>/SKILL.md
 
 Keep each signal one line, concrete, and tied to a real API/construct in the stack.
 
+A security pack names what to flag; it does not list forms that are safe. A list of safe forms looks like the cure for pattern-shaped signals firing on look-alike code, and one was tried: six review passes each found an entry that excused exploitable code, and the count never fell. See [ADR-0008](../docs/internals/adr/0008-security-content-names-what-to-flag.md) before adding one back.
+
+List only what depends on the stack. Rules that hold everywhere (self-impact, how to judge a key shipped to the client, non-security randomness, option injection through an argument array, an escaper that does not fit its sink) live once in `core/skills/security/SKILL.md`, which reaches the reviewer with every pack. A copy in a pack drifts from the original, and packs compose, so a Next.js repo would receive each copy twice.
+
+Severity lines refine the anchors in `core/skills/security/SKILL.md`; they do not replace them. When a pack line and an anchor disagree about the same path, the anchor wins, so a pack line that contradicts one is a bug in the pack.
+
 ## Authoring checklist
 
 - [ ] `manifest.json` has `name`, `version`, `reviewers`.
 - [ ] Every listed reviewer has a `<reviewer>.md` file.
-- [ ] Each file has the three sections (signals / remedies / severity).
+- [ ] Each file has the three sections (signals / remedies / severity). `scripts/validate.sh` checks this for every file a manifest lists.
 - [ ] Signals are stack-specific (not core-rubric rehash).
 - [ ] `./scripts/validate.sh` passes.
 - [ ] (Optional) smoke the composition: from a repo with `.review-pro/<pack>/`, run the review and confirm the new signals surface in findings.
@@ -63,3 +69,4 @@ Keep each signal one line, concrete, and tied to a real API/construct in the sta
 1. `npm run build` (in `cli/`) bundles `stacks/` → `cli/catalog/`.
 2. `npx review-pro` (interactive) or `add <pack>` copies `stacks/<pack>/` into the user's repo `.review-pro/<pack>/`.
 3. At review time the orchestrator reads `.review-pro/<pack>/<reviewer>.md` and passes them to reviewers as `### Stack signals`.
+4. `npx review-pro update` re-copies a pack only when its `manifest.json` `version` differs from the installed copy. **Any change to a pack file must bump that pack's `version`**, or existing installs keep the old content and `update` reports them as already latest. Nothing checks this yet.

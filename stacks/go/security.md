@@ -9,6 +9,7 @@ extends: core/skills/security/SKILL.md
 - `math/rand` used for tokens/secrets/sessions instead of `crypto/rand`.
 - `crypto/md5` / `crypto/sha1` / `crypto/des` for passwords/security → weak crypto; use `golang.org/x/crypto/bcrypt` / `argon2`.
 - `TLSConfig{InsecureSkipVerify: true}` disabling cert validation.
+- A lower-trust value converted to one of `html/template`'s typed-content types (`template.HTML`, `HTMLAttr`, `JS`, `JSStr`, `CSS`, `URL`, `Srcset`) → the conversion skips contextual escaping → XSS.
 
 ## Stack-specific remedies
 - Parameterize SQL (`$1`, `?`); use `html/template` for HTML; arg-array `exec.Command`.

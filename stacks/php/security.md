@@ -10,6 +10,7 @@ extends: core/skills/security/SKILL.md
 - `echo $_GET['x']` / `print` of untrusted data without `htmlspecialchars(.., ENT_QUOTES)` → XSS.
 - File upload (`move_uploaded_file`) trusting `$_FILES['type']`/name; `md5`/`sha1` for passwords (use `password_hash`/`password_verify`).
 - `display_errors = On` / `ini_set('display_errors', 1)` reaching production → leaks stack/secrets.
+- PDO with emulated prepares (the default for MySQL) and the connection charset switched by `SET NAMES gbk`/`big5`/`sjis` instead of the DSN → multibyte sequences can defeat the emulated escaping.
 
 ## Stack-specific remedies
 - Prepared statements; `htmlspecialchars(..., ENT_QUOTES, 'UTF-8')` on output; `password_hash`; `move_uploaded_file` + verify; disable `display_errors` in prod.
@@ -17,4 +18,4 @@ extends: core/skills/security/SKILL.md
 ## Stack-specific severity guidance
 - `eval`/`unserialize`/string-built SQL/`include` on input: Critical/High.
 - Unescaped echo of `$_GET/$_POST`: High (XSS).
-- `display_errors` in prod config: Medium/High.
+- `display_errors` in prod config: High when the output can carry secrets, and by default it can: an uncaught exception prints its trace with call arguments (a PDO constructor's password, an auth helper's token) unless `zend.exception_ignore_args` is on. Critical when the leaked value is traced to unauthenticated code execution, whole-store access, or account takeover (a reachable database's credentials, an admin token, a framework signing key). Low only when you confirm the output carries no arguments, environment, or secrets.

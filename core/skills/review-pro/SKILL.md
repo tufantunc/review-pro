@@ -36,17 +36,32 @@ For each reviewer in the dispatch plan:
 
 If a reviewer subagent is unavailable on your platform, perform that review **inline**: apply the core skill (which you Read from the plugin) plus the stack signals to the scoped context, and emit findings in the shared schema.
 
-### 4. Synthesis (you, inline)
-Follow the `review-pro-synthesize` skill over ALL collected findings, passing it the `diff_class`, `changed_files`, `spec_source`, `external_premises`, and `premises_dropped` you determined in triage: dedup within each axis (code findings on `(file, line±5, category-root, overlap_hints)`, spec findings on `(quoted requirement, file, line)` per that skill's Spec axis section), weight overlaps, resolve conflicts by domain ownership, calibrate severity (anti-overreporting), and emit the verdict.
+### 4. Verification (subagents, parallel)
+Verification needs the merged findings, so first run the `review-pro-synthesize` skill's merge steps, **Collect** through **Resolve conflicts**, with the `diff_class`, `changed_files`, `spec_source`, `external_premises`, and `premises_dropped` you determined in triage: dedup within each axis (code findings on `(file, line±5, category-root, overlap_hints)`, spec findings on `(quoted requirement, file, line)` per that skill's Spec axis section), weight overlaps, and resolve conflicts by domain ownership. Then:
+
+1. **Select** the code-axis findings with severity Medium, High or Critical, ordered by severity and then by file and line. Take the first 8; the rest are `not verified (cap)`. Spec-axis findings are never verified.
+2. **Invoke one `review-pro-verify-subagent` per selected finding**, in parallel if your platform allows, else sequentially. Its prompt contains:
+   - `### Finding`: the merged finding block, verbatim.
+   - `### Written by`: the reviewer that wrote it. Never how many reviewers flagged it; that count is pressure, not evidence.
+   - `### Diff`: first line `base: <ref>`, then the output of `git diff <base>...HEAD`.
+   - `### Change description`: the PR body or the invocation's description, when there is one. Omit the section otherwise.
+3. **Collect** each reply. A reply that errors, times out, or carries no parseable block leaves its finding `not verified (error)`.
+
+If the verify subagent is unavailable on your platform, do **not** verify inline: a check in your own context is not independent. Mark every selected finding `not verified (no independent verifier)` and continue.
+
+### 5. Synthesis (you, inline)
+Continue the `review-pro-synthesize` skill from **Verification results**, with the verification results and the same triage values: apply the results, calibrate severity (anti-overreporting), run the out-of-diff check, and emit the verdict. Do not merge again: the results are bound to the merged findings as they stand.
 
 ## Output
 Return ONLY the final synthesis report:
 
 ```
-## Verdict: <BLOCK | REQUEST CHANGES> (<code | spec | code + spec>) | APPROVE
+## Verdict: <BLOCK | REQUEST CHANGES> (<code | spec | code + spec>)[, <N> disputed] | APPROVE
 
 Spec: measured against <spec_source.ref>
 (or: skipped, no spec found / not measured, <ref> resolved but carried no text)
+
+Verification: <N> checked (<a> stand, <b> partly refuted, <c> refuted), <M> not checked (<counts by reason>). Spec findings are not verified.
 
 ### Critical
 - [Critical] <file>:<line> — <title>
@@ -58,6 +73,11 @@ Spec: measured against <spec_source.ref>
 ...
 ### Medium / Low / Nitpick
 ...
+
+### Refuted in verification
+- [Medium] <file>:<line>, <title>
+  refuted: "<the claim>"
+  contradicted by: <file>:<line> `<excerpt>`
 
 ## Spec (measured against <spec_source.ref>; or skipped, no spec found; or not measured, resolved but empty)
 
@@ -75,3 +95,4 @@ Do not dump raw per-reviewer outputs. Lead with the verdict.
 - If triage dispatches no reviewers (e.g. docs-only change), return `APPROVE` with a one-line note.
 - Calibrate honestly: downgrade anything you cannot fully trace; never invent severity.
 - **The spec axis is reported separately and never merged into the code findings.** If no spec was resolved, say so in one line rather than omitting the section.
+- **Never verify a finding in your own context.** Verification is independent or it does not happen, and the report says which.

@@ -9,6 +9,7 @@ extends: core/skills/security/SKILL.md
 - Path built from user input via `format!`/`push` without `Path::canonicalize` + base confinement → path traversal.
 - `rand::thread_rng()` / `rand::random()` for tokens, session IDs, or crypto; use `rand::rngs::OsRng` / `getrandom`.
 - `rustls`/`reqwest` with `danger_accept_invalid_certs(true)` / `accept_invalid_hostnames`.
+- On sqlx 0.9, `AssertSqlSafe(...)` or `raw_sql` wrapping SQL text that holds lower-trust input → SQL injection; 0.9's `sqlx::query` accepts a dynamic string only through that wrapper.
 
 ## Stack-specific remedies
 - Avoid `unsafe`; if unavoidable, write a `// SAFETY:` comment justifying the invariant.

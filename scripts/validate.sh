@@ -6,7 +6,10 @@ set -uo pipefail
 if [[ $# -ge 1 ]]; then ROOT="$1"; else ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; fi
 SKILLS_DIR="$ROOT/core/skills"
 
-ORCHESTRATORS=("review-pro" "review-pro-triage" "review-pro-synthesize")
+# Pipeline-stage skills: they do not follow the reviewer section contract, and each has
+# its own required sections below. Not the CLI's ORCHESTRATOR_SKILLS, which lists the
+# stages run inline; the verifier must run as a real subagent and is not in that list.
+ORCHESTRATORS=("review-pro" "review-pro-triage" "review-pro-synthesize" "review-pro-verify")
 REQ_FM=("name" "description")
 REQ_SECTIONS=(
   "## Role & mandate"
@@ -67,7 +70,8 @@ for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
     req=""
     case "$name" in
       review-pro-triage)     req=$'## Steps\n## Signal map (non-exhaustive)\n## Dispatch plan format\n## Output discipline' ;;
-      review-pro-synthesize) req=$'## Steps\n## Out-of-diff evidence check\n## Spec axis\n## Conflict ownership\n## Output' ;;
+      review-pro-synthesize) req=$'## Steps\n## Out-of-diff evidence check\n## Spec axis\n## Verification\n## Conflict ownership\n## Output' ;;
+      review-pro-verify)     req=$'## Role\n## Inputs\n## How to work\n## Verdicts\n## Rules\n## Output' ;;
     esac
     if [[ -n "$req" ]]; then
       while IFS= read -r h; do
@@ -184,6 +188,18 @@ if [[ -f "$ORCH_MD" ]]; then
     || add_error "review-pro/SKILL.md: its dedup summary no longer names the spec key - the inline path would use the code key and collapse unattempted requirements"
   grep -qF '### External premises' "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: the '### External premises' prompt section is gone - triage routes premises the orchestrator then never passes to the owning reviewer"
+  grep -qF 'review-pro-verify-subagent' "$ORCH_MD" \
+    || add_error "review-pro/SKILL.md: the verifier dispatch is gone - Stage 3b never runs and every finding reads as unverified"
+  grep -qF 'do **not** verify inline' "$ORCH_MD" \
+    || add_error "review-pro/SKILL.md: the inline-verification ban is gone - the orchestrator would check its own findings, which is not independent"
+  grep -qF 'Never how many reviewers flagged it' "$ORCH_MD" \
+    || add_error "review-pro/SKILL.md: the agreement-count ban is gone - verifiers would be told how many reviewers agreed, which is pressure, not evidence"
+  grep -qF 'base: <ref>' "$ORCH_MD" \
+    || add_error "review-pro/SKILL.md: the base line is gone - a verifier cannot re-read a file the diff deletes"
+  grep -F 'Continue the `review-pro-synthesize` skill from' "$ORCH_MD" | grep -qi 'dedup' \
+    && add_error "review-pro/SKILL.md: the synthesis step re-runs the merge after verification - a second dedup can move the keys verifier results bind to"
+  grep -qE 'skill from step [0-9]|steps? [0-9]+( to [0-9]+)? of the `review-pro-synthesize`' "$ORCH_MD" \
+    && add_error "review-pro/SKILL.md: a numbered reference to a review-pro-synthesize step - an inserted step would silently move the handoff"
 fi
 if [[ -f "$SYNTH_MD" ]]; then
   grep -qF 'abstained (no spec text)' "$SYNTH_MD" \
@@ -194,6 +210,58 @@ if [[ -f "$SYNTH_MD" ]]; then
     || add_error "review-pro-synthesize/SKILL.md: the external-premise ledger is gone - a reviewer's 'could not verify' statement dies before the report the reader actually reads"
   grep -qF 'not how the reviewer would have written it' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the approval standard is gone - verdicts drift from measuring code health to enforcing taste, and imperfect improvements start getting blocked"
+fi
+# Verification. The asymmetry is the whole safety argument of ADR-0009: one wrong
+# refutation must not ship a blocker, and an unchecked finding must not read as checked.
+if [[ -f "$SYNTH_MD" ]]; then
+  grep -qF 'keeps blocking' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the disputed-blocker rule is gone - one wrong refutation would remove a High or Critical from the verdict"
+  grep -qF 'Agreement does not override a refutation' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the agreement rule is gone - 'flagged by N reviewers' would outweigh a cited contradiction"
+  grep -qF 'never rendered as verified or standing' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the not-verified rule is gone - a capped or failed check could read as a clean one"
+  # Anchored to the load-bearing lines: the token alone survives in prose after the table
+  # or the section it names is gone (PR #74 review).
+  grep -qF '| `partly_refuted` | `no` | refuted |' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the partly_refuted/no row is gone - a partly_refuted that removed the defect would stay in the verdict"
+  grep -qF '| `stands` | `no` | not verified (error) |' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the stands/no row is gone - an inconsistent reply could be read as a clean check"
+  grep -qxF '### Refuted in verification' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the refuted section is gone - a refuted Medium would leave the report instead of staying visible"
+  grep -qF 'keeps the severity it had when it was selected' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the severity freeze is gone - calibration could downgrade a disputed High below the blocking line"
+  grep -qE '(^|[^A-Za-z])steps? [0-9]' "$SYNTH_MD" \
+    && add_error "review-pro-synthesize/SKILL.md: a numbered step reference - the stage split is wired by step names, and an inserted step would silently move a numbered one"
+  rc=$(grep -nF '**Resolve conflicts**' "$SYNTH_MD" | head -1 | cut -d: -f1)
+  vr=$(grep -nF '**Verification results**' "$SYNTH_MD" | head -1 | cut -d: -f1)
+  if [[ -z "$vr" ]]; then
+    add_error "review-pro-synthesize/SKILL.md: the verification step is gone from Steps"
+  elif [[ -z "$rc" ]]; then
+    add_error "review-pro-synthesize/SKILL.md: the conflict-resolution step is gone from Steps - the order check cannot run"
+  elif [[ -n "$rc" && "$rc" -gt "$vr" ]]; then
+    add_error "review-pro-synthesize/SKILL.md: verification runs before conflict resolution - a finding the owner raises to Medium afterwards is never selected"
+  fi
+fi
+# The verifier's contract. Each line is what keeps a refutation from being doubt, memory,
+# or the author's say-so; losing any one fails toward removing true findings.
+VERIFY_MD="$SKILLS_DIR/review-pro-verify/SKILL.md"
+if [[ -f "$VERIFY_MD" ]]; then
+  grep -qF 'positive contradiction you can cite' "$VERIFY_MD" \
+    || add_error "review-pro-verify/SKILL.md: the cite-or-stand rule is gone - a verifier could refute a true finding on doubt alone"
+  grep -qF 'Do not settle it from memory' "$VERIFY_MD" \
+    || add_error "review-pro-verify/SKILL.md: the no-memory rule is gone - tool and runtime behaviour would be settled from recall instead of left unchecked"
+  grep -qF 'Judge only this finding' "$VERIFY_MD" \
+    || add_error "review-pro-verify/SKILL.md: the one-finding rule is gone - the verifier becomes another reviewer that never runs out of things to say (ADR-0008)"
+  grep -qxF 'defect_stands: yes | no' "$VERIFY_MD" \
+    || add_error "review-pro-verify/SKILL.md: no 'defect_stands' field - synthesis cannot catch a partly_refuted that removed the defect"
+  grep -qF 'Set `defect_stands` to `no`' "$VERIFY_MD" \
+    || add_error "review-pro-verify/SKILL.md: the defect_stands rule is gone - the verifier is never told when the defect falls"
+  grep -qF 'never settles a claim' "$VERIFY_MD" \
+    || add_error "review-pro-verify/SKILL.md: the author's-claim rule is gone - a PR description could be cited as the contradiction"
+  grep -qF 'git show <base>:' "$VERIFY_MD" \
+    || add_error "review-pro-verify/SKILL.md: the deleted-file rule is gone - a finding in a file the diff removes could not be re-read"
+  grep -qF "not the finding's title" "$VERIFY_MD" \
+    || add_error "review-pro-verify/SKILL.md: the harm-not-title rule is gone - a finding whose title is literally true but whose harm is false would keep its severity (contract run 1)"
 fi
 
 # Security calibration. Each rule is one line whose deletion leaves every other check

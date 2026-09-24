@@ -95,6 +95,20 @@ describe("uninstallCore per target", () => {
     expect(fs.existsSync(path.join(H("codex"), "agents", "security-reviewer.toml"))).toBe(false);
   });
 
+  it("codex uninstall removes the verifier .toml", () => {
+    fs.writeFileSync(
+      path.join(pluginSrc, "agents", "review-pro-verify-subagent.md"),
+      "---\nname: review-pro-verify-subagent\ndescription: \"x\"\nloads_skill: review-pro-verify\nskills: [review-pro-verify]\n---\n# body\n",
+    );
+    const home = H("codex-v");
+    const sHome = path.join(home, "skills");
+    installCore("codex", pluginSrc, home, sHome);
+    const toml = path.join(home, "agents", "review-pro-verify-subagent.toml");
+    expect(fs.existsSync(toml)).toBe(true);
+    uninstallCore("codex", pluginSrc, home, sHome);
+    expect(fs.existsSync(toml)).toBe(false);
+  });
+
   it("codex skips orchestrator agents that were never written", () => {
     fs.writeFileSync(
       path.join(pluginSrc, "agents", "review-pro-triage-subagent.md"),

@@ -12,7 +12,9 @@ filed upstream as microsoft/aspire#19540 before anyone noticed. A pre-registered
 ([studies/2026-09-refuting-verifier](../../../studies/2026-09-refuting-verifier)) gave
 13 labelled findings to fresh agents told to refute each one from source: 6 of 8 runs on
 known-false findings refuted them, none added new findings, and the only true-labelled
-finding they refuted turned out to be labelled wrong.
+finding they refuted turned out to be labelled wrong. A second label was wrong before any
+run: the #51 libc claim, planned as a known-false item, was true, because #59's
+"correction" had measured a lockfile a local regeneration had already stripped.
 
 ## Decision
 

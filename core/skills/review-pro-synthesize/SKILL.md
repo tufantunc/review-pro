@@ -75,11 +75,11 @@ The out-of-diff evidence check needs no exception here. Its definition already c
 
 ## Verification
 
-The orchestrator selects the code-axis findings at Medium or above, after Resolve conflicts, in severity order and then by file and line, and sends the first 8 to independent verifiers. Spec-axis findings are not verified. You receive one reply block per verified finding.
+The orchestrator's Verification step selects the findings to verify and owns the rule and the cap. You receive one reply block per verified finding; a finding it selected past the cap arrives as `not verified (cap)`, and spec-axis findings are never verified.
 
-**Binding.** A block binds to the finding whose `file`, `line` and `title` match its `finding` key. A reply with no block, with more than one block, or with a key that matches no finding or more than one leaves that finding `not verified (error)`.
+**Binding.** A block binds to the finding whose `file`, `line` and `title` match its `finding` key. A reply with no block, with more than one block, or with a key that matches no finding or more than one leaves that finding `not verified (error)`. A refutation without a citation is `not verified (error)` too: a `refuted` result, or a `partly_refuted` with `defect_stands: no`, needs at least one claim marked `false` whose evidence names a `file:line` or a pinned upstream path. For a `partly_refuted` with `defect_stands: no`, that claim must be the harm itself, not a supporting claim or the remedy. Doubt is not a refutation (the verifier's cite-or-stand rule).
 
-**Resolve each result** by `verdict` and `defect_stands`. Every inconsistency resolves in the cautious direction:
+**Resolve each result** by `verdict` and `defect_stands`. `defect_stands: no` wins over `partly_refuted`, because the verifier has said the defect falls; every other inconsistency is `not verified (error)`:
 
 | `verdict` | `defect_stands` | treated as |
 |---|---|---|
@@ -102,8 +102,7 @@ The orchestrator selects the code-axis findings at Medium or above, after Resolv
 - A refuted High or Critical keeps blocking. One refutation is not enough to ship a blocker; a human clears a `disputed` finding.
 - A verified finding keeps the severity it had when it was selected. Calibrate severity never downgrades a finding because a verifier refuted part or all of it, and never downgrades a `disputed` finding at all.
 - Agreement does not override a refutation. "Flagged by N reviewers" stays as a note and protects nothing.
-- Not verified is never rendered as verified or standing. The reason is `cap` for a finding past the first 8, `error` for anything under Binding or the inconsistent rows above, and `no independent verifier` when no verifier ran.
-- If you run as a subagent and receive no verification results, every code-axis finding at Medium or above is `not verified (no independent verifier)`.
+- Not verified is never rendered as verified or standing. The reason is `cap` when the orchestrator's selection passed a finding over, `error` for anything under Binding or the inconsistent rows above, and `no independent verifier` when no verifier ran. If you run as a subagent and receive no verification results, that reason applies to every code-axis finding at Medium or above.
 - `partly refuted` never changes severity. Severity is not the verifier's question.
 - A `noticed` line goes under its own finding, at most one per finding, labelled `not reviewed`. It is never a finding and never enters the verdict.
 

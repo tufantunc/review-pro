@@ -43,7 +43,7 @@ Verification needs the merged findings, so first run the `review-pro-synthesize`
 2. **Invoke one `review-pro-verify-subagent` per selected finding**, in parallel if your platform allows, else sequentially. Its prompt contains:
    - `### Finding`: the merged finding block, verbatim.
    - `### Written by`: the reviewer that wrote it. Never how many reviewers flagged it; that count is pressure, not evidence.
-   - `### Diff`: first line `base: <ref>`, then the output of `git diff <base>...HEAD`.
+   - `### Diff`: first line `base: <sha>`, then the output of `git diff <base>...HEAD`. The sha is the merge base, from `git merge-base <base> HEAD`, because that is what the diff was taken against.
    - `### Change description`: the PR body or the invocation's description, when there is one. Omit the section otherwise.
 3. **Collect** each reply. A reply that errors, times out, or carries no parseable block leaves its finding `not verified (error)`.
 
@@ -90,7 +90,7 @@ Verification: <N> checked (<a> stand, <b> partly refuted, <c> refuted), <M> not 
 Do not dump raw per-reviewer outputs. Lead with the verdict.
 
 ## Rules
-- **Never present a finding with unfinished research** — if you can verify it in-repo (callers, schema, consumers), do.
+- **Never present a finding with unfinished research** — if you can trace it in-repo (callers, schema, consumers), do.
 - **Stack signals come only from `.review-pro/`.** If it's empty, reviewers use core rubrics. Never invent stack signals.
 - If triage dispatches no reviewers (e.g. docs-only change), return `APPROVE` with a one-line note.
 - Calibrate honestly: downgrade anything you cannot fully trace; never invent severity.

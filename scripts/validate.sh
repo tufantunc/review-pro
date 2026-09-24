@@ -7,9 +7,8 @@ if [[ $# -ge 1 ]]; then ROOT="$1"; else ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}
 SKILLS_DIR="$ROOT/core/skills"
 
 # Pipeline-stage skills: they do not follow the reviewer section contract, and each has
-# its own required sections below. Not the CLI's ORCHESTRATOR_SKILLS, which lists the
-# stages run inline; the verifier must run as a real subagent and is not in that list.
-ORCHESTRATORS=("review-pro" "review-pro-triage" "review-pro-synthesize" "review-pro-verify")
+# its own required sections below.
+STAGE_SKILLS=("review-pro" "review-pro-triage" "review-pro-synthesize" "review-pro-verify")
 REQ_FM=("name" "description")
 REQ_SECTIONS=(
   "## Role & mandate"
@@ -26,9 +25,9 @@ REQ_SECTIONS=(
 errors=0
 add_error(){ echo "FAIL: $*" >&2; errors=$((errors+1)); }
 
-is_orchestrator(){
+is_stage_skill(){
   local n="$1"
-  for o in "${ORCHESTRATORS[@]}"; do [[ "$o" == "$n" ]] && return 0; done
+  for o in "${STAGE_SKILLS[@]}"; do [[ "$o" == "$n" ]] && return 0; done
   return 1
 }
 
@@ -62,9 +61,9 @@ for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
     v="$(fm_get "$skill_md" "$k")"
     [[ -n "$v" ]] || add_error "$skill_md: missing frontmatter key '$k'"
   done
-  if is_orchestrator "$name"; then
-    # Orchestrators have no shared section contract, but each has sections whose
-    # silent removal would break the pipeline. Checked per orchestrator.
+  if is_stage_skill "$name"; then
+    # Stage skills have no shared section contract, but each has sections whose
+    # silent removal would break the pipeline. Checked per stage.
     # bash 3.2 (macOS default) errors on "${arr[@]}" for an empty array under
     # `set -u`, so drive the loop off a newline-delimited string instead.
     req=""
@@ -194,8 +193,10 @@ if [[ -f "$ORCH_MD" ]]; then
     || add_error "review-pro/SKILL.md: the inline-verification ban is gone - the orchestrator would check its own findings, which is not independent"
   grep -qF 'Never how many reviewers flagged it' "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: the agreement-count ban is gone - verifiers would be told how many reviewers agreed, which is pressure, not evidence"
-  grep -qF 'base: <ref>' "$ORCH_MD" \
+  grep -qF 'base: <sha>' "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: the base line is gone - a verifier cannot re-read a file the diff deletes"
+  grep -qF 'git merge-base <base> HEAD' "$ORCH_MD" \
+    || add_error "review-pro/SKILL.md: the base is not the merge base - a verifier reading a deleted file would read the base tip, not what the diff deleted"
   grep -F 'Continue the `review-pro-synthesize` skill from' "$ORCH_MD" | grep -qi 'dedup' \
     && add_error "review-pro/SKILL.md: the synthesis step re-runs the merge after verification - a second dedup can move the keys verifier results bind to"
   grep -qE 'skill from step [0-9]|steps? [0-9]+( to [0-9]+)? of the `review-pro-synthesize`' "$ORCH_MD" \
@@ -228,10 +229,14 @@ if [[ -f "$SYNTH_MD" ]]; then
     || add_error "review-pro-synthesize/SKILL.md: the stands/no row is gone - an inconsistent reply could be read as a clean check"
   grep -qxF '### Refuted in verification' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the refuted section is gone - a refuted Medium would leave the report instead of staying visible"
+  grep -qF 'A refutation without a citation' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the citation rule is gone - an uncited refutation could take a Medium out of the verdict"
+  grep -qF 'needs at least one claim marked `false`' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the citation definition is gone - the rule would stand with nothing saying what a citation is"
   grep -qF 'keeps the severity it had when it was selected' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the severity freeze is gone - calibration could downgrade a disputed High below the blocking line"
-  grep -qE '(^|[^A-Za-z])steps? [0-9]' "$SYNTH_MD" \
-    && add_error "review-pro-synthesize/SKILL.md: a numbered step reference - the stage split is wired by step names, and an inserted step would silently move a numbered one"
+  grep -qE '(^|[^A-Za-z])(steps?|rules?) [0-9]' "$SYNTH_MD" \
+    && add_error "review-pro-synthesize/SKILL.md: a numbered step or rule reference - the stage split and the verifier's rules are referred to by name, and an inserted item would silently move a numbered one"
   rc=$(grep -nF '**Resolve conflicts**' "$SYNTH_MD" | head -1 | cut -d: -f1)
   vr=$(grep -nF '**Verification results**' "$SYNTH_MD" | head -1 | cut -d: -f1)
   if [[ -z "$vr" ]]; then

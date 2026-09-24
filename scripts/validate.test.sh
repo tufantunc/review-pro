@@ -158,9 +158,9 @@ EOFT
 EOFI
 }
 
-write_orchestrator(){
-  # $1 = path, $2 = orchestrator name (default review-pro-triage, so the existing
-  # call sites need no change). Sections must match the per-orchestrator req list
+write_stage_skill(){
+  # $1 = path, $2 = stage skill name (default review-pro-triage, so the existing
+  # call sites need no change). Sections must match the per-stage req list
   # in validate.sh or every case using this fixture goes red.
   local name="${2:-review-pro-triage}"
   case "$name" in
@@ -209,6 +209,8 @@ Resolve each result by `verdict` and `defect_stands`:
 | `stands` | `no` | not verified (error) |
 A refuted Medium moves to `### Refuted in verification`.
 A verified finding keeps the severity it had when it was selected.
+A refutation without a citation is `not verified (error)`.
+It needs at least one claim marked `false` that cites a `file:line`.
 ### Refuted in verification
 ## Category roots
 `security`
@@ -249,24 +251,55 @@ description: "orchestrator"
 Dedup the spec pool on the quoted requirement.
 ### External premises
 Invoke one `review-pro-verify-subagent` per selected finding.
-`### Diff`: first line `base: <ref>`.
+`### Diff`: first line `base: <sha>`.
+The sha is the merge base, from `git merge-base <base> HEAD`.
 `### Written by`: the reviewer that wrote it. Never how many reviewers flagged it.
 If the verify subagent is unavailable, do **not** verify inline.
 Continue the `review-pro-synthesize` skill from **Verification results**: calibrate and emit the verdict.
 EOF
       ;;
     *)
-      echo "write_orchestrator: unknown orchestrator '$name'" >&2
+      echo "write_stage_skill: unknown stage skill '$name'" >&2
       return 1
       ;;
   esac
 }
 
+# stage_mutation <file> <writer> <expected> <label> <command...>: rewrite <file> fresh with
+# <writer>, apply <command> to it, and expect <expected> as the only error. MUT_COUNT is the
+# pattern that counts as an error (every FAIL line by default), so a fixture that carries
+# unrelated failures on purpose can narrow it.
+stage_mutation(){
+  local file="$1" writer="$2" want="$3" label="$4"; shift 4
+  "$writer" "$file"
+  "$@" "$file" > "$T/tmp"; mv "$T/tmp" "$file"
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  local n; n=$(echo "$out" | grep -c "${MUT_COUNT:-^FAIL: }")
+  if echo "$out" | grep -qF "$want" && [[ "$n" -eq 1 ]]; then ok "$label detected, alone"; else bad "$label NOT detected in isolation ($n errors)"; fi
+}
+
+# stage_fixture <skill> <role> <writer>: a fresh tree holding one reviewer and one stage skill,
+# written by <writer>, with a manifest declaring both. Sets T and STAGE (the skill's path)
+# and asserts the intact tree raises nothing.
+stage_fixture(){
+  T=$(mktemp -d)
+  mkdir -p "$T/core/skills/security" "$T/core/skills/$1" "$T/core/agents"
+  write_good_reviewer "$T/core/skills/security/SKILL.md"
+  STAGE="$T/core/skills/$1/SKILL.md"
+  "$3" "$STAGE"
+  printf '{ "skills": [{"name":"security","role":"reviewer"},{"name":"%s","role":"%s"}], "agents": [] }\n' "$1" "$2" > "$T/manifest.json"
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  if echo "$out" | grep -q "^FAIL: "; then bad "$1 control: fired on an intact fixture"; else ok "$1 control: silent on an intact fixture"; fi
+}
+w_verify(){ write_stage_skill "$1" review-pro-verify; }
+w_synth(){ write_stage_skill "$1" review-pro-synthesize; }
+w_orch(){ write_stage_skill "$1" review-pro; }
+
 # Case A: clean tree -> exit 0
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md"
+write_stage_skill "$T/core/skills/review-pro-triage/SKILL.md"
 cat > "$T/manifest.json" <<'EOF'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
 EOF
@@ -430,7 +463,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md"
+write_stage_skill "$T/core/skills/review-pro-triage/SKILL.md"
 grep -v '^## Dispatch plan format$' "$T/core/skills/review-pro-triage/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-triage/SKILL.md"
 cat > "$T/manifest.json" <<'EOF'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
@@ -443,7 +476,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md"
+write_stage_skill "$T/core/skills/review-pro-triage/SKILL.md"
 sed 's/^## Tone$/### Tone/' "$T/core/skills/security/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/security/SKILL.md"
 cat > "$T/manifest.json" <<'EOF'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
@@ -457,7 +490,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
+write_stage_skill "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
 JSON
@@ -472,7 +505,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
+write_stage_skill "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
 JSON
@@ -487,7 +520,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
+write_stage_skill "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
 JSON
@@ -578,7 +611,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
+write_stage_skill "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
 JSON
@@ -594,7 +627,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
+write_stage_skill "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
 JSON
@@ -610,7 +643,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
+write_stage_skill "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
 JSON
@@ -787,7 +820,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
+write_stage_skill "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
 JSON
@@ -803,7 +836,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
+write_stage_skill "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
 JSON
@@ -818,7 +851,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
+write_stage_skill "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
 JSON
@@ -887,7 +920,7 @@ done
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
+write_stage_skill "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
 JSON
@@ -928,7 +961,7 @@ done
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
+write_stage_skill "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
 JSON
@@ -1088,11 +1121,7 @@ if echo "$out" | grep -q "security/SKILL.md: the "; then bad "security calibrati
 # require exactly one calibration error, the one named by <msg>.
 sec_mutation(){
   local msg="$1" label="$2"; shift 2
-  write_good_reviewer "$SEC"
-  "$@" "$SEC" > "$T/tmp"; mv "$T/tmp" "$SEC"
-  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
-  local n; n=$(echo "$out" | grep -c "security/SKILL.md: the ")
-  if echo "$out" | grep -qF "the $msg is gone" && [[ "$n" -eq 1 ]]; then ok "$label $msg detected, alone"; else bad "$label $msg NOT detected in isolation ($n calibration errors)"; fi
+  MUT_COUNT="security/SKILL.md: the " stage_mutation "$SEC" write_good_reviewer "the $msg is gone" "$label $msg" "$@"
 }
 sec_mutation "missing-layer rule"       "missing" grep -vxF "## A missing layer is not a missing control"
 sec_mutation "not-a-vulnerability list" "missing" grep -vxF "## Not a vulnerability"
@@ -1129,31 +1158,10 @@ out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -qF "stacks/demo/security.md: missing section '## Stack-specific signals'" && [[ "$(pack_errs "$out")" -eq 1 ]]; then ok "demoted base section heading detected, alone"; else bad "demoted base section heading NOT detected in isolation ($(pack_errs "$out") pack errors)"; fi
 rm -rf "$T"
 
-# stage_mutation <file> <writer> <expected> <label> <command...>: rewrite <file> fresh with
-# <writer>, apply <command> to it, and expect <expected> as the only FAIL line.
-stage_mutation(){
-  local file="$1" writer="$2" want="$3" label="$4"; shift 4
-  "$writer" "$file"
-  "$@" "$file" > "$T/tmp"; mv "$T/tmp" "$file"
-  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
-  local n; n=$(echo "$out" | grep -c "^FAIL: ")
-  if echo "$out" | grep -qF "$want" && [[ "$n" -eq 1 ]]; then ok "$label detected, alone"; else bad "$label NOT detected in isolation ($n errors)"; fi
-}
-
 # Case AN: the verifier skill. Its sections and the five lines that keep a refutation
 # honest: cite or stand, no memory, one finding only, the author's claim is not
 # evidence, and deleted files are read from the base.
-T=$(mktemp -d)
-mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-verify" "$T/core/agents"
-write_good_reviewer "$T/core/skills/security/SKILL.md"
-VER="$T/core/skills/review-pro-verify/SKILL.md"
-w_verify(){ write_orchestrator "$1" review-pro-verify; }
-w_verify "$VER"
-cat > "$T/manifest.json" <<'JSON'
-{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-verify","role":"verifier"}], "agents": [] }
-JSON
-out=$(bash "$VALIDATE" "$T" 2>&1 || true)
-if echo "$out" | grep -q "^FAIL: "; then bad "verifier control: fired on an intact fixture"; else ok "verifier control: silent on an intact fixture"; fi
+stage_fixture review-pro-verify verifier w_verify; VER="$STAGE"
 for h in "## Role" "## Inputs" "## How to work" "## Verdicts" "## Rules" "## Output"; do
   stage_mutation "$VER" w_verify "missing section '$h'" "verifier section '$h'" grep -vxF "$h"
 done
@@ -1171,17 +1179,7 @@ rm -rf "$T"
 
 # Case AO: synthesis's verification rules. Each one's loss fails toward shipping a
 # blocker on a single refutation or toward reporting an unchecked finding as checked.
-T=$(mktemp -d)
-mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
-write_good_reviewer "$T/core/skills/security/SKILL.md"
-SYN="$T/core/skills/review-pro-synthesize/SKILL.md"
-w_synth(){ write_orchestrator "$1" review-pro-synthesize; }
-w_synth "$SYN"
-cat > "$T/manifest.json" <<'JSON'
-{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
-JSON
-out=$(bash "$VALIDATE" "$T" 2>&1 || true)
-if echo "$out" | grep -q "^FAIL: "; then bad "synthesis verification control: fired on an intact fixture"; else ok "synthesis verification control: silent on an intact fixture"; fi
+stage_fixture review-pro-synthesize orchestrator w_synth; SYN="$STAGE"
 stage_mutation "$SYN" w_synth "missing section '## Verification'"             "synthesis Verification section"      grep -vxF "## Verification"
 stage_mutation "$SYN" w_synth "the disputed-blocker rule is gone"              "synthesis disputed-blocker rule"     grep -vF "keeps blocking"
 stage_mutation "$SYN" w_synth "the agreement rule is gone"                     "synthesis agreement rule"            grep -vF "Agreement does not override a refutation"
@@ -1189,8 +1187,11 @@ stage_mutation "$SYN" w_synth "the not-verified rule is gone"                  "
 stage_mutation "$SYN" w_synth "the partly_refuted/no row is gone"              "synthesis partly_refuted/no row"     grep -vF '| `partly_refuted` | `no` | refuted |'
 stage_mutation "$SYN" w_synth "the stands/no row is gone"                      "synthesis stands/no row"             grep -vF '| `stands` | `no` | not verified (error) |'
 stage_mutation "$SYN" w_synth "the refuted section is gone"                    "synthesis refuted section"           grep -vxF "### Refuted in verification"
+stage_mutation "$SYN" w_synth "the citation rule is gone"                     "synthesis citation rule"             grep -vF "A refutation without a citation"
+stage_mutation "$SYN" w_synth "the citation definition is gone"               "synthesis citation definition"       grep -vF 'needs at least one claim marked `false`'
+stage_mutation "$SYN" w_synth "a numbered step or rule reference"                      "synthesis numbered rule reference"   sed 's/^## Conflict ownership$/As the verifier.s rule 1 says.\n&/'
 stage_mutation "$SYN" w_synth "the severity freeze is gone"                    "synthesis severity freeze"           grep -vF "keeps the severity it had when it was selected"
-stage_mutation "$SYN" w_synth "a numbered step reference"                      "synthesis numbered step reference"   sed 's/^## Conflict ownership$/Run steps 1 to 4 first.\n&/'
+stage_mutation "$SYN" w_synth "a numbered step or rule reference"                      "synthesis numbered step reference"   sed 's/^## Conflict ownership$/Run steps 1 to 4 first.\n&/'
 stage_mutation "$SYN" w_synth "the verification step is gone from Steps"       "synthesis verification step missing" grep -vF '**Verification results**'
 stage_mutation "$SYN" w_synth "the conflict-resolution step is gone from Steps" "synthesis conflict step missing"    sed 's/\*\*Resolve conflicts\*\*/**Settle conflicts**/'
 stage_mutation "$SYN" w_synth "verification runs before conflict resolution"   "synthesis step order"                sed -e 's/\*\*Resolve conflicts\*\*/@@T@@/' -e 's/\*\*Verification results\*\*/**Resolve conflicts**/' -e 's/@@T@@/**Verification results**/'
@@ -1198,21 +1199,12 @@ rm -rf "$T"
 
 # Case AP: the orchestrator's verification step. Without the dispatch the stage never
 # runs; without the ban the orchestrator checks its own findings, which is not independent.
-T=$(mktemp -d)
-mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro" "$T/core/agents"
-write_good_reviewer "$T/core/skills/security/SKILL.md"
-ORC="$T/core/skills/review-pro/SKILL.md"
-w_orch(){ write_orchestrator "$1" review-pro; }
-w_orch "$ORC"
-cat > "$T/manifest.json" <<'JSON'
-{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro","role":"orchestrator"}], "agents": [] }
-JSON
-out=$(bash "$VALIDATE" "$T" 2>&1 || true)
-if echo "$out" | grep -q "^FAIL: "; then bad "orchestrator verification control: fired on an intact fixture"; else ok "orchestrator verification control: silent on an intact fixture"; fi
+stage_fixture review-pro orchestrator w_orch; ORC="$STAGE"
 stage_mutation "$ORC" w_orch "the verifier dispatch is gone"       "orchestrator verifier dispatch"  grep -vF "review-pro-verify-subagent"
 stage_mutation "$ORC" w_orch "the inline-verification ban is gone" "orchestrator inline ban"         grep -vF 'do **not** verify inline'
 stage_mutation "$ORC" w_orch "the agreement-count ban is gone"     "orchestrator agreement-count ban" grep -vF "Never how many reviewers flagged it"
-stage_mutation "$ORC" w_orch "the base line is gone"               "orchestrator base line"          grep -vF 'base: <ref>'
+stage_mutation "$ORC" w_orch "the base line is gone"               "orchestrator base line"          grep -vF 'base: <sha>'
+stage_mutation "$ORC" w_orch "the base is not the merge base"       "orchestrator merge-base"         grep -vF 'git merge-base <base> HEAD'
 stage_mutation "$ORC" w_orch "re-runs the merge after verification" "orchestrator re-merge"           sed 's/calibrate and emit the verdict/dedup, calibrate and emit the verdict/'
 stage_mutation "$ORC" w_orch "a numbered reference to a review-pro-synthesize step" "orchestrator numbered synthesize step" sed 's/skill from \*\*Verification results\*\*/skill from step 5/'
 rm -rf "$T"

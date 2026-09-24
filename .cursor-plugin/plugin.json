@@ -1,7 +1,7 @@
 {
   "name": "review-pro",
   "displayName": "Review-Pro",
-  "version": "0.1.0",
+  "version": "1.4.0",
   "description": "Tiered AI code-review: triage -> relevant specialist reviewers -> synthesis. Reviews AI-written code using AI agents.",
   "author": { "name": "review-pro contributors" },
   "homepage": "https://github.com/tufantunc/review-pro",

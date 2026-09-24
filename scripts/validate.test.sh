@@ -210,6 +210,7 @@ Resolve each result by `verdict` and `defect_stands`:
 A refuted Medium moves to `### Refuted in verification`.
 A verified finding keeps the severity it had when it was selected.
 A refutation without a citation is `not verified (error)`.
+A `stands` whose `unchecked` is not `none` is marked `verified, unchecked: <what>`.
 It needs at least one claim marked `false` that cites a `file:line`.
 ### Refuted in verification
 ## Category roots
@@ -1045,7 +1046,7 @@ if echo "$out" | grep -q "'backend.atomicity' is not in the backend rubric"; the
 rm -rf "$T"
 
 
-# Case AK: the version-alignment block. It compares five files against cli/package.json
+# Case AK: the version-alignment block. It compares six files against cli/package.json
 # and had no meta-test at all, which is how cli/package-lock.json reached 0.7.0 while
 # package.json said 1.2.0 across five releases. Every comparison the block makes gets
 # its own mutation, because a check nothing mutates can be deleted outright and the
@@ -1056,7 +1057,7 @@ rm -rf "$T"
 # covers the `or {}` null guard, whose removal is otherwise invisible: without it a
 # lockfile with no `packages` key crashes the run instead of reporting.
 T=$(mktemp -d)
-mkdir -p "$T/core/skills/security" "$T/core/agents" "$T/cli" "$T/.claude-plugin" "$T/core/.claude-plugin" "$T/core/.codex-plugin"
+mkdir -p "$T/core/skills/security" "$T/core/agents" "$T/cli" "$T/.claude-plugin" "$T/core/.claude-plugin" "$T/core/.codex-plugin" "$T/.cursor-plugin"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"}], "agents": [] }
@@ -1066,6 +1067,7 @@ printf '{ "version": "9.9.9", "packages": { "": { "version": "9.9.9" } } }\n' > 
 printf '{ "version": "9.9.9", "plugins": [{ "version": "9.9.9" }] }\n' > "$T/.claude-plugin/marketplace.json"
 printf '{ "version": "9.9.9" }\n' > "$T/core/.claude-plugin/plugin.json"
 printf '{ "version": "9.9.9" }\n' > "$T/core/.codex-plugin/plugin.json"
+printf '{ "version": "9.9.9" }\n' > "$T/.cursor-plugin/plugin.json"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "!= cli 9.9.9"; then bad "version-alignment control fired while all five files agreed"; else ok "version-alignment control silent when all five files agree"; fi
 printf '{ "version": "0.7.0", "packages": { "": { "version": "9.9.9" } } }\n' > "$T/cli/package-lock.json"
@@ -1090,6 +1092,11 @@ printf '{ "version": "0.7.0" }\n' > "$T/core/.codex-plugin/plugin.json"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "core/.codex-plugin/plugin.json: version 0.7.0 != cli 9.9.9"; then ok "drifted codex plugin manifest detected"; else bad "drifted codex plugin manifest NOT detected"; fi
 printf '{ "version": "9.9.9" }\n' > "$T/core/.codex-plugin/plugin.json"
+# The repo-root Cursor manifest ships too (README, cli/build-assets.mjs) and sat at 0.1.0 unnoticed.
+printf '{ "version": "0.1.0" }\n' > "$T/.cursor-plugin/plugin.json"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q ".cursor-plugin/plugin.json: version 0.1.0 != cli 9.9.9"; then ok "drifted cursor plugin manifest detected"; else bad "drifted cursor plugin manifest NOT detected"; fi
+printf '{ "version": "9.9.9" }\n' > "$T/.cursor-plugin/plugin.json"
 # The `or {}` guard: a lockfile with no `packages` key must report, never crash. Assert
 # on the absence of a traceback as well, because a crash also fails the grep above and
 # the two outcomes must not be confused.
@@ -1188,6 +1195,7 @@ stage_mutation "$SYN" w_synth "the partly_refuted/no row is gone"              "
 stage_mutation "$SYN" w_synth "the stands/no row is gone"                      "synthesis stands/no row"             grep -vF '| `stands` | `no` | not verified (error) |'
 stage_mutation "$SYN" w_synth "the refuted section is gone"                    "synthesis refuted section"           grep -vxF "### Refuted in verification"
 stage_mutation "$SYN" w_synth "the citation rule is gone"                     "synthesis citation rule"             grep -vF "A refutation without a citation"
+stage_mutation "$SYN" w_synth "the unchecked marker is gone"                  "synthesis unchecked marker"          grep -vF 'verified, unchecked:'
 stage_mutation "$SYN" w_synth "the citation definition is gone"               "synthesis citation definition"       grep -vF 'needs at least one claim marked `false`'
 stage_mutation "$SYN" w_synth "a numbered step or rule reference"                      "synthesis numbered rule reference"   sed 's/^## Conflict ownership$/As the verifier.s rule 1 says.\n&/'
 stage_mutation "$SYN" w_synth "the severity freeze is gone"                    "synthesis severity freeze"           grep -vF "keeps the severity it had when it was selected"
@@ -1207,6 +1215,20 @@ stage_mutation "$ORC" w_orch "the base line is gone"               "orchestrator
 stage_mutation "$ORC" w_orch "the base is not the merge base"       "orchestrator merge-base"         grep -vF 'git merge-base <base> HEAD'
 stage_mutation "$ORC" w_orch "re-runs the merge after verification" "orchestrator re-merge"           sed 's/calibrate and emit the verdict/dedup, calibrate and emit the verdict/'
 stage_mutation "$ORC" w_orch "a numbered reference to a review-pro-synthesize step" "orchestrator numbered synthesize step" sed 's/skill from \*\*Verification results\*\*/skill from step 5/'
+rm -rf "$T"
+
+# Case AQ: the shared verdict table. It is the copy the README points readers to and the
+# CLI installs as the shared contract, and it drifted from synthesis in #74.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/agents" "$T/core/shared"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+printf '{ "skills": [{"name":"security","role":"reviewer"}], "agents": [] }\n' > "$T/manifest.json"
+w_sev(){ printf '# Severity\n| BLOCK | any unaddressed Critical or High, `disputed` ones included |\n| REQUEST CHANGES | any Medium or above that verification did not refute |\n' > "$1"; }
+w_sev "$T/core/shared/severity.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "^FAIL: "; then bad "shared severity control: fired on an intact fixture"; else ok "shared severity control: silent on an intact fixture"; fi
+stage_mutation "$T/core/shared/severity.md" w_sev "the shared verdict table predates verification" "shared verdict, refuted Medium" grep -vF 'verification did not refute'
+stage_mutation "$T/core/shared/severity.md" w_sev "the shared verdict table predates verification" "shared verdict, disputed" sed 's/, `disputed` ones included//'
 rm -rf "$T"
 
 echo "---"

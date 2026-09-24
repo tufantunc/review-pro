@@ -50,7 +50,7 @@ Restart your tool so the new skills/agents are discovered, then in the repo you 
 
 A change's stated reason often points outside the repository: "fixed upstream in the new version". When it names something specific, the reviewer that owns the claim checks it against that artifact at the resolved dependency version, prefers the dependency source already on disk over the network, and records which channel settled it. An unsettled premise is reported as unsettled rather than trusted.
 
-The agent runs the whole pipeline natively (`git diff`, reads changed files, Globs `.review-pro/` for active stacks, dispatches the relevant reviewer subagents with their stack signals, and synthesizes one verdict: **BLOCK / REQUEST CHANGES / APPROVE**). No env vars, no scripts to run at review time.
+The agent runs the whole pipeline natively (`git diff`, reads changed files, Globs `.review-pro/` for active stacks, dispatches the relevant reviewer subagents with their stack signals, has an independent verifier try to refute up to 8 Medium or higher code findings, and synthesizes one verdict: **BLOCK / REQUEST CHANGES / APPROVE**). No env vars, no scripts to run at review time.
 
 ## Commands
 

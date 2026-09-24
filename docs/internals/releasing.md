@@ -20,7 +20,7 @@ Do not re-check these by hand. If one is wrong the run fails and tells you.
 
 ### 1. Bump the version
 
-Five fields across four files. Do `cli/package.json` and the lockfile together, or they drift:
+Six fields across five files. Do `cli/package.json` and the lockfile together, or they drift:
 
 ```bash
 cd cli && npm version <new-version> --no-git-tag-version
@@ -28,13 +28,14 @@ cd cli && npm version <new-version> --no-git-tag-version
 
 That writes `cli/package.json`, `cli/package-lock.json`'s top-level `version`, and its `packages[""].version`. Use `npm version` rather than editing `package.json` by hand: hand-editing is exactly how the lockfile reached `0.7.0` while the package said `1.2.0`.
 
-Then the three plugin manifests, by hand, to the same value:
+Then the four plugin manifests, by hand, to the same value:
 
 - `.claude-plugin/marketplace.json`, **two** fields: the top-level `version` and `plugins[0].version`
 - `core/.claude-plugin/plugin.json`
 - `core/.codex-plugin/plugin.json`
+- `.cursor-plugin/plugin.json` (it ships with the repo and the npm package; it sat at `0.1.0` until v1.4.0 because this list missed it)
 
-The validator will fail if any of the five disagree, so this is checked, not trusted.
+The validator will fail if any of the six disagree, so this is checked, not trusted.
 
 ### 2. Decide what the version means
 
@@ -48,7 +49,7 @@ Since 1.0.0 the reviewer roster, the finding schema, the category roots, and the
 
 ### 3. Update the surfaces no check reads
 
-Two files describe behaviour and no automated check will notice when they go stale. Both have.
+These surfaces describe behaviour or ship content, and no automated check notices when they go stale. The first two already have:
 
 - **`docs/llms.txt`** is hand-written, so the site drift check never reads it.
 - **`cli/README.md`** is what npm renders on the package page, and it lives outside `core/`, which is where attention goes.

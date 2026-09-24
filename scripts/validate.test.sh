@@ -233,6 +233,21 @@ Set `defect_stands` to match.
 ## Output
 EOF
       ;;
+    review-pro)
+      cat > "$1" <<'EOF'
+---
+name: review-pro
+description: "orchestrator"
+---
+# Review-Pro
+Dedup the spec pool on the quoted requirement.
+### External premises
+Invoke one `review-pro-verify-subagent` per selected finding.
+`### Diff`: first line `base: <ref>`.
+`### Written by`: the reviewer that wrote it. Never how many reviewers flagged it.
+If the verify subagent is unavailable, do **not** verify inline.
+EOF
+      ;;
     *)
       echo "write_orchestrator: unknown orchestrator '$name'" >&2
       return 1
@@ -1163,6 +1178,25 @@ stage_mutation "$SYN" w_synth "the not-verified rule is gone"                  "
 stage_mutation "$SYN" w_synth "no 'defect_stands' resolution"                  "synthesis defect_stands resolution"  grep -vF "defect_stands"
 stage_mutation "$SYN" w_synth "the refuted section is gone"                    "synthesis refuted section"           grep -vF "Refuted in verification"
 stage_mutation "$SYN" w_synth "verification runs before conflict resolution"   "synthesis step order"                sed -e 's/\*\*Resolve conflicts\*\*/@@T@@/' -e 's/\*\*Verification results\*\*/**Resolve conflicts**/' -e 's/@@T@@/**Verification results**/'
+rm -rf "$T"
+
+# Case AP: the orchestrator's verification step. Without the dispatch the stage never
+# runs; without the ban the orchestrator checks its own findings, which is not independent.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+ORC="$T/core/skills/review-pro/SKILL.md"
+w_orch(){ write_orchestrator "$1" review-pro; }
+w_orch "$ORC"
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro","role":"orchestrator"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "^FAIL: "; then bad "orchestrator verification control: fired on an intact fixture"; else ok "orchestrator verification control: silent on an intact fixture"; fi
+stage_mutation "$ORC" w_orch "the verifier dispatch is gone"       "orchestrator verifier dispatch"  grep -vF "review-pro-verify-subagent"
+stage_mutation "$ORC" w_orch "the inline-verification ban is gone" "orchestrator inline ban"         grep -vF 'do **not** verify inline'
+stage_mutation "$ORC" w_orch "the agreement-count ban is gone"     "orchestrator agreement-count ban" grep -vF "Never how many reviewers flagged it"
+stage_mutation "$ORC" w_orch "the base line is gone"               "orchestrator base line"          grep -vF 'base: <ref>'
 rm -rf "$T"
 
 echo "---"

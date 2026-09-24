@@ -188,6 +188,14 @@ if [[ -f "$ORCH_MD" ]]; then
     || add_error "review-pro/SKILL.md: its dedup summary no longer names the spec key - the inline path would use the code key and collapse unattempted requirements"
   grep -qF '### External premises' "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: the '### External premises' prompt section is gone - triage routes premises the orchestrator then never passes to the owning reviewer"
+  grep -qF 'review-pro-verify-subagent' "$ORCH_MD" \
+    || add_error "review-pro/SKILL.md: the verifier dispatch is gone - Stage 3b never runs and every finding reads as unverified"
+  grep -qF 'do **not** verify inline' "$ORCH_MD" \
+    || add_error "review-pro/SKILL.md: the inline-verification ban is gone - the orchestrator would check its own findings, which is not independent"
+  grep -qF 'Never how many reviewers flagged it' "$ORCH_MD" \
+    || add_error "review-pro/SKILL.md: the agreement-count ban is gone - verifiers would be told how many reviewers agreed, which is pressure, not evidence"
+  grep -qF 'base: <ref>' "$ORCH_MD" \
+    || add_error "review-pro/SKILL.md: the base line is gone - a verifier cannot re-read a file the diff deletes"
 fi
 if [[ -f "$SYNTH_MD" ]]; then
   grep -qF 'abstained (no spec text)' "$SYNTH_MD" \

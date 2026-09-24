@@ -158,9 +158,9 @@ EOFT
 EOFI
 }
 
-write_orchestrator(){
-  # $1 = path, $2 = orchestrator name (default review-pro-triage, so the existing
-  # call sites need no change). Sections must match the per-orchestrator req list
+write_stage_skill(){
+  # $1 = path, $2 = stage skill name (default review-pro-triage, so the existing
+  # call sites need no change). Sections must match the per-stage req list
   # in validate.sh or every case using this fixture goes red.
   local name="${2:-review-pro-triage}"
   case "$name" in
@@ -210,6 +210,7 @@ Resolve each result by `verdict` and `defect_stands`:
 A refuted Medium moves to `### Refuted in verification`.
 A verified finding keeps the severity it had when it was selected.
 A refutation without a citation is `not verified (error)`.
+It needs at least one claim marked `false` that cites a `file:line`.
 ### Refuted in verification
 ## Category roots
 `security`
@@ -258,7 +259,7 @@ Continue the `review-pro-synthesize` skill from **Verification results**: calibr
 EOF
       ;;
     *)
-      echo "write_orchestrator: unknown orchestrator '$name'" >&2
+      echo "write_stage_skill: unknown stage skill '$name'" >&2
       return 1
       ;;
   esac
@@ -290,15 +291,15 @@ stage_fixture(){
   out=$(bash "$VALIDATE" "$T" 2>&1 || true)
   if echo "$out" | grep -q "^FAIL: "; then bad "$1 control: fired on an intact fixture"; else ok "$1 control: silent on an intact fixture"; fi
 }
-w_verify(){ write_orchestrator "$1" review-pro-verify; }
-w_synth(){ write_orchestrator "$1" review-pro-synthesize; }
-w_orch(){ write_orchestrator "$1" review-pro; }
+w_verify(){ write_stage_skill "$1" review-pro-verify; }
+w_synth(){ write_stage_skill "$1" review-pro-synthesize; }
+w_orch(){ write_stage_skill "$1" review-pro; }
 
 # Case A: clean tree -> exit 0
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md"
+write_stage_skill "$T/core/skills/review-pro-triage/SKILL.md"
 cat > "$T/manifest.json" <<'EOF'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
 EOF
@@ -462,7 +463,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md"
+write_stage_skill "$T/core/skills/review-pro-triage/SKILL.md"
 grep -v '^## Dispatch plan format$' "$T/core/skills/review-pro-triage/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/review-pro-triage/SKILL.md"
 cat > "$T/manifest.json" <<'EOF'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
@@ -475,7 +476,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md"
+write_stage_skill "$T/core/skills/review-pro-triage/SKILL.md"
 sed 's/^## Tone$/### Tone/' "$T/core/skills/security/SKILL.md" > "$T/tmp" && mv "$T/tmp" "$T/core/skills/security/SKILL.md"
 cat > "$T/manifest.json" <<'EOF'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
@@ -489,7 +490,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
+write_stage_skill "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
 JSON
@@ -504,7 +505,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
+write_stage_skill "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
 JSON
@@ -519,7 +520,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
+write_stage_skill "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
 JSON
@@ -610,7 +611,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
+write_stage_skill "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
 JSON
@@ -626,7 +627,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
+write_stage_skill "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
 JSON
@@ -642,7 +643,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
+write_stage_skill "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
 JSON
@@ -819,7 +820,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
+write_stage_skill "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
 JSON
@@ -835,7 +836,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
+write_stage_skill "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
 JSON
@@ -850,7 +851,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
+write_stage_skill "$T/core/skills/review-pro-triage/SKILL.md" review-pro-triage
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
 JSON
@@ -919,7 +920,7 @@ done
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
+write_stage_skill "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
 JSON
@@ -960,7 +961,7 @@ done
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-synthesize" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_orchestrator "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
+write_stage_skill "$T/core/skills/review-pro-synthesize/SKILL.md" review-pro-synthesize
 cat > "$T/manifest.json" <<'JSON'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-synthesize","role":"orchestrator"}], "agents": [] }
 JSON
@@ -1187,8 +1188,10 @@ stage_mutation "$SYN" w_synth "the partly_refuted/no row is gone"              "
 stage_mutation "$SYN" w_synth "the stands/no row is gone"                      "synthesis stands/no row"             grep -vF '| `stands` | `no` | not verified (error) |'
 stage_mutation "$SYN" w_synth "the refuted section is gone"                    "synthesis refuted section"           grep -vxF "### Refuted in verification"
 stage_mutation "$SYN" w_synth "the citation rule is gone"                     "synthesis citation rule"             grep -vF "A refutation without a citation"
+stage_mutation "$SYN" w_synth "the citation definition is gone"               "synthesis citation definition"       grep -vF 'needs at least one claim marked `false`'
+stage_mutation "$SYN" w_synth "a numbered step or rule reference"                      "synthesis numbered rule reference"   sed 's/^## Conflict ownership$/As the verifier.s rule 1 says.\n&/'
 stage_mutation "$SYN" w_synth "the severity freeze is gone"                    "synthesis severity freeze"           grep -vF "keeps the severity it had when it was selected"
-stage_mutation "$SYN" w_synth "a numbered step reference"                      "synthesis numbered step reference"   sed 's/^## Conflict ownership$/Run steps 1 to 4 first.\n&/'
+stage_mutation "$SYN" w_synth "a numbered step or rule reference"                      "synthesis numbered step reference"   sed 's/^## Conflict ownership$/Run steps 1 to 4 first.\n&/'
 stage_mutation "$SYN" w_synth "the verification step is gone from Steps"       "synthesis verification step missing" grep -vF '**Verification results**'
 stage_mutation "$SYN" w_synth "the conflict-resolution step is gone from Steps" "synthesis conflict step missing"    sed 's/\*\*Resolve conflicts\*\*/**Settle conflicts**/'
 stage_mutation "$SYN" w_synth "verification runs before conflict resolution"   "synthesis step order"                sed -e 's/\*\*Resolve conflicts\*\*/@@T@@/' -e 's/\*\*Verification results\*\*/**Resolve conflicts**/' -e 's/@@T@@/**Verification results**/'

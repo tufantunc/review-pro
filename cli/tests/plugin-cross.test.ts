@@ -47,8 +47,14 @@ describe("installCore per target", () => {
   it("codex skips orchestrator subagents (triage/synthesize)", () => {
     fs.writeFileSync(path.join(pluginSrc, "agents", "review-pro-triage-subagent.md"),
       "---\nname: review-pro-triage-subagent\ndescription: \"x\"\nloads_skill: review-pro-triage\nskills: [review-pro-triage]\n---\n# body\n");
+    fs.writeFileSync(path.join(pluginSrc, "agents", "review-pro-synthesize-subagent.md"),
+      "---\nname: review-pro-synthesize-subagent\ndescription: \"x\"\nloads_skill: review-pro-synthesize\nskills: [review-pro-synthesize]\n---\n# body\n");
+    fs.writeFileSync(path.join(pluginSrc, "agents", "review-pro-subagent.md"),
+      "---\nname: review-pro-subagent\ndescription: \"x\"\nloads_skill: review-pro\nskills: [review-pro]\n---\n# body\n");
     installCore("codex", pluginSrc, H("codex2"), path.join(H("codex2"), "skills"));
-    expect(fs.existsSync(path.join(H("codex2"), "agents", "review-pro-triage-subagent.toml"))).toBe(false);
+    for (const a of ["review-pro-triage-subagent", "review-pro-synthesize-subagent", "review-pro-subagent"]) {
+      expect(fs.existsSync(path.join(H("codex2"), "agents", `${a}.toml`))).toBe(false);
+    }
   });
 
   const VERIFY_AGENT =

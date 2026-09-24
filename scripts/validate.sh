@@ -231,10 +231,12 @@ if [[ -f "$SYNTH_MD" ]]; then
     || add_error "review-pro-synthesize/SKILL.md: the refuted section is gone - a refuted Medium would leave the report instead of staying visible"
   grep -qF 'A refutation without a citation' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the citation rule is gone - an uncited refutation could take a Medium out of the verdict"
+  grep -qF 'needs at least one claim marked `false`' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the citation definition is gone - the rule would stand with nothing saying what a citation is"
   grep -qF 'keeps the severity it had when it was selected' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the severity freeze is gone - calibration could downgrade a disputed High below the blocking line"
-  grep -qE '(^|[^A-Za-z])steps? [0-9]' "$SYNTH_MD" \
-    && add_error "review-pro-synthesize/SKILL.md: a numbered step reference - the stage split is wired by step names, and an inserted step would silently move a numbered one"
+  grep -qE '(^|[^A-Za-z])(steps?|rules?) [0-9]' "$SYNTH_MD" \
+    && add_error "review-pro-synthesize/SKILL.md: a numbered step or rule reference - the stage split and the verifier's rules are referred to by name, and an inserted item would silently move a numbered one"
   rc=$(grep -nF '**Resolve conflicts**' "$SYNTH_MD" | head -1 | cut -d: -f1)
   vr=$(grep -nF '**Verification results**' "$SYNTH_MD" | head -1 | cut -d: -f1)
   if [[ -z "$vr" ]]; then

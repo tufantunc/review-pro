@@ -6,7 +6,10 @@ set -uo pipefail
 if [[ $# -ge 1 ]]; then ROOT="$1"; else ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; fi
 SKILLS_DIR="$ROOT/core/skills"
 
-ORCHESTRATORS=("review-pro" "review-pro-triage" "review-pro-synthesize")
+# Pipeline-stage skills: they do not follow the reviewer section contract, and each has
+# its own required sections below. Not the CLI's ORCHESTRATOR_SKILLS, which lists the
+# stages run inline; the verifier must run as a real subagent and is not in that list.
+ORCHESTRATORS=("review-pro" "review-pro-triage" "review-pro-synthesize" "review-pro-verify")
 REQ_FM=("name" "description")
 REQ_SECTIONS=(
   "## Role & mandate"
@@ -68,6 +71,7 @@ for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
     case "$name" in
       review-pro-triage)     req=$'## Steps\n## Signal map (non-exhaustive)\n## Dispatch plan format\n## Output discipline' ;;
       review-pro-synthesize) req=$'## Steps\n## Out-of-diff evidence check\n## Spec axis\n## Conflict ownership\n## Output' ;;
+      review-pro-verify)     req=$'## Role\n## Inputs\n## How to work\n## Verdicts\n## Rules\n## Output' ;;
     esac
     if [[ -n "$req" ]]; then
       while IFS= read -r h; do
@@ -194,6 +198,23 @@ if [[ -f "$SYNTH_MD" ]]; then
     || add_error "review-pro-synthesize/SKILL.md: the external-premise ledger is gone - a reviewer's 'could not verify' statement dies before the report the reader actually reads"
   grep -qF 'not how the reviewer would have written it' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the approval standard is gone - verdicts drift from measuring code health to enforcing taste, and imperfect improvements start getting blocked"
+fi
+# The verifier's contract. Each line is what keeps a refutation from being doubt, memory,
+# or the author's say-so; losing any one fails toward removing true findings.
+VERIFY_MD="$SKILLS_DIR/review-pro-verify/SKILL.md"
+if [[ -f "$VERIFY_MD" ]]; then
+  grep -qF 'positive contradiction you can cite' "$VERIFY_MD" \
+    || add_error "review-pro-verify/SKILL.md: the cite-or-stand rule is gone - a verifier could refute a true finding on doubt alone"
+  grep -qF 'Do not settle it from memory' "$VERIFY_MD" \
+    || add_error "review-pro-verify/SKILL.md: the no-memory rule is gone - tool and runtime behaviour would be settled from recall instead of left unchecked"
+  grep -qF 'Judge only this finding' "$VERIFY_MD" \
+    || add_error "review-pro-verify/SKILL.md: the one-finding rule is gone - the verifier becomes another reviewer that never runs out of things to say (ADR-0008)"
+  grep -qF 'defect_stands' "$VERIFY_MD" \
+    || add_error "review-pro-verify/SKILL.md: no 'defect_stands' field - synthesis cannot catch a partly_refuted that removed the defect"
+  grep -qF 'never settles a claim' "$VERIFY_MD" \
+    || add_error "review-pro-verify/SKILL.md: the author's-claim rule is gone - a PR description could be cited as the contradiction"
+  grep -qF 'git show <base>:' "$VERIFY_MD" \
+    || add_error "review-pro-verify/SKILL.md: the deleted-file rule is gone - a finding in a file the diff removes could not be re-read"
 fi
 
 # Security calibration. Each rule is one line whose deletion leaves every other check

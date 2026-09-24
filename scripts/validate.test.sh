@@ -202,6 +202,27 @@ Dedup the spec pool on the quoted requirement, not on `(file, line)` alone.
 ## Output
 EOF
       ;;
+    review-pro-verify)
+      cat > "$1" <<'EOF'
+---
+name: review-pro-verify
+description: "verifier"
+---
+# Verification
+## Role
+## Inputs
+A file the diff deletes is read from the base with `git show <base>:<path>`.
+## How to work
+The change description is the author's claim; it never settles a claim.
+## Verdicts
+Set `defect_stands` to match.
+## Rules
+1. A refutation is a positive contradiction you can cite, not doubt.
+2. Do not settle it from memory.
+3. Judge only this finding.
+## Output
+EOF
+      ;;
     *)
       echo "write_orchestrator: unknown orchestrator '$name'" >&2
       return 1
@@ -1074,6 +1095,42 @@ write_pack "$T/stacks/base/correctness.md" "base, correctness"
 sed 's/^## Stack-specific signals$/### Stack-specific signals/' "$T/stacks/demo/security.md" > "$T/tmp" && mv "$T/tmp" "$T/stacks/demo/security.md"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -qF "stacks/demo/security.md: missing section '## Stack-specific signals'" && [[ "$(pack_errs "$out")" -eq 1 ]]; then ok "demoted base section heading detected, alone"; else bad "demoted base section heading NOT detected in isolation ($(pack_errs "$out") pack errors)"; fi
+rm -rf "$T"
+
+# stage_mutation <file> <writer> <expected> <label> <command...>: rewrite <file> fresh with
+# <writer>, apply <command> to it, and expect <expected> as the only FAIL line.
+stage_mutation(){
+  local file="$1" writer="$2" want="$3" label="$4"; shift 4
+  "$writer" "$file"
+  "$@" "$file" > "$T/tmp"; mv "$T/tmp" "$file"
+  out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+  local n; n=$(echo "$out" | grep -c "^FAIL: ")
+  if echo "$out" | grep -qF "$want" && [[ "$n" -eq 1 ]]; then ok "$label detected, alone"; else bad "$label NOT detected in isolation ($n errors)"; fi
+}
+
+# Case AN: the verifier skill. Its sections and the five lines that keep a refutation
+# honest: cite or stand, no memory, one finding only, the author's claim is not
+# evidence, and deleted files are read from the base.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-verify" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+VER="$T/core/skills/review-pro-verify/SKILL.md"
+w_verify(){ write_orchestrator "$1" review-pro-verify; }
+w_verify "$VER"
+cat > "$T/manifest.json" <<'JSON'
+{ "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-verify","role":"verifier"}], "agents": [] }
+JSON
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "^FAIL: "; then bad "verifier control: fired on an intact fixture"; else ok "verifier control: silent on an intact fixture"; fi
+for h in "## Role" "## Inputs" "## How to work" "## Verdicts" "## Rules" "## Output"; do
+  stage_mutation "$VER" w_verify "missing section '$h'" "verifier section '$h'" grep -vxF "$h"
+done
+stage_mutation "$VER" w_verify "the cite-or-stand rule is gone"       "verifier cite-or-stand rule"   grep -vF "positive contradiction you can cite"
+stage_mutation "$VER" w_verify "the no-memory rule is gone"           "verifier no-memory rule"       grep -vF "Do not settle it from memory"
+stage_mutation "$VER" w_verify "the one-finding rule is gone"         "verifier one-finding rule"     grep -vF "Judge only this finding"
+stage_mutation "$VER" w_verify "no 'defect_stands' field"             "verifier defect_stands field"  grep -vF "defect_stands"
+stage_mutation "$VER" w_verify "the author's-claim rule is gone"      "verifier author's-claim rule"  grep -vF "never settles a claim"
+stage_mutation "$VER" w_verify "the deleted-file rule is gone"        "verifier deleted-file rule"    grep -vF 'git show <base>:'
 rm -rf "$T"
 
 echo "---"

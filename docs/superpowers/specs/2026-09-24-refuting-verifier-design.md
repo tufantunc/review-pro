@@ -237,6 +237,9 @@ The implementation PR is reviewed with review-pro, verifier on.
 - Parallel subagents on opencode and Cursor are unverified; without them the fallback
   is "not verified".
 - Cost: about 70k tokens per verified finding, up to about 560k per review at the cap.
+- A partly refuted finding keeps its severity even when what stands is much smaller than
+  what it claimed. Both acceptance runs showed this on V01 and V11, and ADR-0009 records
+  merging with it.
 - A wrong refutation can still take a Medium out of the verdict. The asymmetry bounds
   the damage to non-blocking findings; it does not remove it.
 

@@ -196,6 +196,10 @@ if [[ -f "$ORCH_MD" ]]; then
     || add_error "review-pro/SKILL.md: the agreement-count ban is gone - verifiers would be told how many reviewers agreed, which is pressure, not evidence"
   grep -qF 'base: <ref>' "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: the base line is gone - a verifier cannot re-read a file the diff deletes"
+  grep -F 'Continue the `review-pro-synthesize` skill from' "$ORCH_MD" | grep -qi 'dedup' \
+    && add_error "review-pro/SKILL.md: the synthesis step re-runs the merge after verification - a second dedup can move the keys verifier results bind to"
+  grep -qE 'skill from step [0-9]|steps? [0-9]+( to [0-9]+)? of the `review-pro-synthesize`' "$ORCH_MD" \
+    && add_error "review-pro/SKILL.md: a numbered reference to a review-pro-synthesize step - an inserted step would silently move the handoff"
 fi
 if [[ -f "$SYNTH_MD" ]]; then
   grep -qF 'abstained (no spec text)' "$SYNTH_MD" \
@@ -216,14 +220,24 @@ if [[ -f "$SYNTH_MD" ]]; then
     || add_error "review-pro-synthesize/SKILL.md: the agreement rule is gone - 'flagged by N reviewers' would outweigh a cited contradiction"
   grep -qF 'never rendered as verified or standing' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the not-verified rule is gone - a capped or failed check could read as a clean one"
-  grep -qF 'defect_stands' "$SYNTH_MD" \
-    || add_error "review-pro-synthesize/SKILL.md: no 'defect_stands' resolution - a partly_refuted that removed the defect would stay in the verdict"
-  grep -qF 'Refuted in verification' "$SYNTH_MD" \
+  # Anchored to the load-bearing lines: the token alone survives in prose after the table
+  # or the section it names is gone (PR #74 review).
+  grep -qF '| `partly_refuted` | `no` | refuted |' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the partly_refuted/no row is gone - a partly_refuted that removed the defect would stay in the verdict"
+  grep -qF '| `stands` | `no` | not verified (error) |' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the stands/no row is gone - an inconsistent reply could be read as a clean check"
+  grep -qxF '### Refuted in verification' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the refuted section is gone - a refuted Medium would leave the report instead of staying visible"
+  grep -qF 'keeps the severity it had when it was selected' "$SYNTH_MD" \
+    || add_error "review-pro-synthesize/SKILL.md: the severity freeze is gone - calibration could downgrade a disputed High below the blocking line"
+  grep -qE '(^|[^A-Za-z])steps? [0-9]' "$SYNTH_MD" \
+    && add_error "review-pro-synthesize/SKILL.md: a numbered step reference - the stage split is wired by step names, and an inserted step would silently move a numbered one"
   rc=$(grep -nF '**Resolve conflicts**' "$SYNTH_MD" | head -1 | cut -d: -f1)
   vr=$(grep -nF '**Verification results**' "$SYNTH_MD" | head -1 | cut -d: -f1)
   if [[ -z "$vr" ]]; then
     add_error "review-pro-synthesize/SKILL.md: the verification step is gone from Steps"
+  elif [[ -z "$rc" ]]; then
+    add_error "review-pro-synthesize/SKILL.md: the conflict-resolution step is gone from Steps - the order check cannot run"
   elif [[ -n "$rc" && "$rc" -gt "$vr" ]]; then
     add_error "review-pro-synthesize/SKILL.md: verification runs before conflict resolution - a finding the owner raises to Medium afterwards is never selected"
   fi
@@ -238,8 +252,10 @@ if [[ -f "$VERIFY_MD" ]]; then
     || add_error "review-pro-verify/SKILL.md: the no-memory rule is gone - tool and runtime behaviour would be settled from recall instead of left unchecked"
   grep -qF 'Judge only this finding' "$VERIFY_MD" \
     || add_error "review-pro-verify/SKILL.md: the one-finding rule is gone - the verifier becomes another reviewer that never runs out of things to say (ADR-0008)"
-  grep -qF 'defect_stands' "$VERIFY_MD" \
+  grep -qxF 'defect_stands: yes | no' "$VERIFY_MD" \
     || add_error "review-pro-verify/SKILL.md: no 'defect_stands' field - synthesis cannot catch a partly_refuted that removed the defect"
+  grep -qF 'Set `defect_stands` to `no`' "$VERIFY_MD" \
+    || add_error "review-pro-verify/SKILL.md: the defect_stands rule is gone - the verifier is never told when the defect falls"
   grep -qF 'never settles a claim' "$VERIFY_MD" \
     || add_error "review-pro-verify/SKILL.md: the author's-claim rule is gone - a PR description could be cited as the contradiction"
   grep -qF 'git show <base>:' "$VERIFY_MD" \

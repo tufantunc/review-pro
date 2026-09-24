@@ -14,11 +14,11 @@ You are the orchestrator's final stage. You receive the structured findings from
 3. **Weight:** annotate a finding flagged by 2 or more reviewers "flagged by N reviewers". It is a note about coverage, not evidence: see `## Verification`.
 4. **Resolve conflicts** by ownership: the domain owner sets severity (see table).
 5. **Verification results**: the orchestrator verifies the merged Medium+ code findings at this point and hands you the results. Apply them as `## Verification` says before going on.
-6. **Calibrate severity:** enforce the anti-overreporting bar. Downgrade anything not fully traced to evidence. Never upgrade beyond what a specialist justified.
+6. **Calibrate severity:** enforce the anti-overreporting bar. Downgrade anything not fully traced to evidence. Never upgrade beyond what a specialist justified. A verified finding is not recalibrated: see `## Verification`.
 7. **Out-of-diff evidence check** (see below): a review-level confidence signal, not a per-finding gate.
 8. **Verdict** + prioritized findings + remediations.
 
-When you run inline, steps 1 to 4 are what the orchestrator runs before it dispatches the verifiers.
+When you run inline, the orchestrator runs **Collect** through **Resolve conflicts** before it dispatches the verifiers.
 
 ## Out-of-diff evidence check
 
@@ -50,7 +50,7 @@ Spec findings arrive in the same stream as code findings and are kept apart from
   - The quoted requirement enters the key, because wholly unattempted requirements all carry the spec reference as `file` and `line: 0`. Without it the standard key gives them one identical tuple and collapses this axis's most severe class into a single finding.
   - `file` and `line` stay in the key, because one requirement is routinely unsatisfied in several places. "Every new endpoint validates input" yields one finding per endpoint, each quoting the same sentence verbatim. Keying on the requirement alone would merge them and silently drop every location but one.
   - The exception is a finding whose `file` is the non-repository spec reference with `line: 0`. Those have no location to preserve, so for them the requirement alone is the key.
-- **A spec finding's `file` may be a non-repository reference** (`#412`, a PR url) when the requirement was not attempted anywhere in the diff. That is valid on this axis and nowhere else. Never downgrade or drop such a finding for failing to resolve on disk; step 5's downgrade rule does not apply to it.
+- **A spec finding's `file` may be a non-repository reference** (`#412`, a PR url) when the requirement was not attempted anywhere in the diff. That is valid on this axis and nowhere else. Never downgrade or drop such a finding for failing to resolve on disk; the Calibrate severity downgrade does not apply to it.
 - **Print `spec_source` verbatim** directly under the verdict and above the out-of-diff caveat, so the reader can see what the review was measured against.
 - **Never re-rank a spec finding against a code finding.** Reporting them separately is what stops one axis from masking the other.
 
@@ -75,7 +75,7 @@ The out-of-diff evidence check needs no exception here. Its definition already c
 
 ## Verification
 
-The orchestrator selects the code-axis findings at Medium or above, after step 4, in severity order and then by file and line, and sends the first 8 to independent verifiers. Spec-axis findings are not verified. You receive one reply block per verified finding.
+The orchestrator selects the code-axis findings at Medium or above, after Resolve conflicts, in severity order and then by file and line, and sends the first 8 to independent verifiers. Spec-axis findings are not verified. You receive one reply block per verified finding.
 
 **Binding.** A block binds to the finding whose `file`, `line` and `title` match its `finding` key. A reply with no block, with more than one block, or with a key that matches no finding or more than one leaves that finding `not verified (error)`.
 
@@ -100,6 +100,7 @@ The orchestrator selects the code-axis findings at Medium or above, after step 4
 | not verified | unchanged, marked `not verified (<reason>)` | same |
 
 - A refuted High or Critical keeps blocking. One refutation is not enough to ship a blocker; a human clears a `disputed` finding.
+- A verified finding keeps the severity it had when it was selected. Calibrate severity never downgrades a finding because a verifier refuted part or all of it, and never downgrades a `disputed` finding at all.
 - Agreement does not override a refutation. "Flagged by N reviewers" stays as a note and protects nothing.
 - Not verified is never rendered as verified or standing. The reason is `cap` for a finding past the first 8, `error` for anything under Binding or the inconsistent rows above, and `no independent verifier` when no verifier ran.
 - If you run as a subagent and receive no verification results, every code-axis finding at Medium or above is `not verified (no independent verifier)`.

@@ -37,7 +37,7 @@ For each reviewer in the dispatch plan:
 If a reviewer subagent is unavailable on your platform, perform that review **inline**: apply the core skill (which you Read from the plugin) plus the stack signals to the scoped context, and emit findings in the shared schema.
 
 ### 4. Verification (subagents, parallel)
-Verification needs the merged findings, so first run steps 1 to 4 of the `review-pro-synthesize` skill (collect, dedup, weight, resolve conflicts). Then:
+Verification needs the merged findings, so first run the `review-pro-synthesize` skill's merge steps, **Collect** through **Resolve conflicts**, with the `diff_class`, `changed_files`, `spec_source`, `external_premises`, and `premises_dropped` you determined in triage: dedup within each axis (code findings on `(file, line±5, category-root, overlap_hints)`, spec findings on `(quoted requirement, file, line)` per that skill's Spec axis section), weight overlaps, and resolve conflicts by domain ownership. Then:
 
 1. **Select** the code-axis findings with severity Medium, High or Critical, ordered by severity and then by file and line. Take the first 8; the rest are `not verified (cap)`. Spec-axis findings are never verified.
 2. **Invoke one `review-pro-verify-subagent` per selected finding**, in parallel if your platform allows, else sequentially. Its prompt contains:
@@ -50,7 +50,7 @@ Verification needs the merged findings, so first run steps 1 to 4 of the `review
 If the verify subagent is unavailable on your platform, do **not** verify inline: a check in your own context is not independent. Mark every selected finding `not verified (no independent verifier)` and continue.
 
 ### 5. Synthesis (you, inline)
-Continue the `review-pro-synthesize` skill from step 5, with the verification results, passing it the `diff_class`, `changed_files`, `spec_source`, `external_premises`, and `premises_dropped` you determined in triage: dedup within each axis (code findings on `(file, line±5, category-root, overlap_hints)`, spec findings on `(quoted requirement, file, line)` per that skill's Spec axis section), weight overlaps, resolve conflicts by domain ownership, calibrate severity (anti-overreporting), and emit the verdict.
+Continue the `review-pro-synthesize` skill from **Verification results**, with the verification results and the same triage values: apply the results, calibrate severity (anti-overreporting), run the out-of-diff check, and emit the verdict. Do not merge again: the results are bound to the merged findings as they stand.
 
 ## Output
 Return ONLY the final synthesis report:

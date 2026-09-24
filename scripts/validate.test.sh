@@ -204,7 +204,11 @@ Dedup the spec pool on the quoted requirement, not on `(file, line)` alone.
 A refuted High or Critical keeps blocking.
 Agreement does not override a refutation.
 Not verified is never rendered as verified or standing.
-Resolve each result by `verdict` and `defect_stands`.
+Resolve each result by `verdict` and `defect_stands`:
+| `partly_refuted` | `no` | refuted |
+| `stands` | `no` | not verified (error) |
+A refuted Medium moves to `### Refuted in verification`.
+A verified finding keeps the severity it had when it was selected.
 ### Refuted in verification
 ## Category roots
 `security`
@@ -225,13 +229,14 @@ A file the diff deletes is read from the base with `git show <base>:<path>`.
 ## How to work
 The change description is the author's claim; it never settles a claim.
 ## Verdicts
-Set `defect_stands` to match.
+Set `defect_stands` to `no` when the harm is false.
 The defect is the harm the finding asserts, not the finding's title.
 ## Rules
 1. A refutation is a positive contradiction you can cite, not doubt.
 2. Do not settle it from memory.
 3. Judge only this finding.
 ## Output
+defect_stands: yes | no
 EOF
       ;;
     review-pro)
@@ -247,6 +252,7 @@ Invoke one `review-pro-verify-subagent` per selected finding.
 `### Diff`: first line `base: <ref>`.
 `### Written by`: the reviewer that wrote it. Never how many reviewers flagged it.
 If the verify subagent is unavailable, do **not** verify inline.
+Continue the `review-pro-synthesize` skill from **Verification results**: calibrate and emit the verdict.
 EOF
       ;;
     *)
@@ -1154,7 +1160,8 @@ done
 stage_mutation "$VER" w_verify "the cite-or-stand rule is gone"       "verifier cite-or-stand rule"   grep -vF "positive contradiction you can cite"
 stage_mutation "$VER" w_verify "the no-memory rule is gone"           "verifier no-memory rule"       grep -vF "Do not settle it from memory"
 stage_mutation "$VER" w_verify "the one-finding rule is gone"         "verifier one-finding rule"     grep -vF "Judge only this finding"
-stage_mutation "$VER" w_verify "no 'defect_stands' field"             "verifier defect_stands field"  grep -vF "defect_stands"
+stage_mutation "$VER" w_verify "no 'defect_stands' field"             "verifier defect_stands field"  grep -vxF 'defect_stands: yes | no'
+stage_mutation "$VER" w_verify "the defect_stands rule is gone"       "verifier defect_stands rule"   grep -vF 'Set `defect_stands` to `no`'
 stage_mutation "$VER" w_verify "the author's-claim rule is gone"      "verifier author's-claim rule"  grep -vF "never settles a claim"
 stage_mutation "$VER" w_verify "the deleted-file rule is gone"        "verifier deleted-file rule"    grep -vF 'git show <base>:'
 # The title-versus-harm line is what the first contract run showed missing: two false
@@ -1179,8 +1186,13 @@ stage_mutation "$SYN" w_synth "missing section '## Verification'"             "s
 stage_mutation "$SYN" w_synth "the disputed-blocker rule is gone"              "synthesis disputed-blocker rule"     grep -vF "keeps blocking"
 stage_mutation "$SYN" w_synth "the agreement rule is gone"                     "synthesis agreement rule"            grep -vF "Agreement does not override a refutation"
 stage_mutation "$SYN" w_synth "the not-verified rule is gone"                  "synthesis not-verified rule"         grep -vF "never rendered as verified or standing"
-stage_mutation "$SYN" w_synth "no 'defect_stands' resolution"                  "synthesis defect_stands resolution"  grep -vF "defect_stands"
-stage_mutation "$SYN" w_synth "the refuted section is gone"                    "synthesis refuted section"           grep -vF "Refuted in verification"
+stage_mutation "$SYN" w_synth "the partly_refuted/no row is gone"              "synthesis partly_refuted/no row"     grep -vF '| `partly_refuted` | `no` | refuted |'
+stage_mutation "$SYN" w_synth "the stands/no row is gone"                      "synthesis stands/no row"             grep -vF '| `stands` | `no` | not verified (error) |'
+stage_mutation "$SYN" w_synth "the refuted section is gone"                    "synthesis refuted section"           grep -vxF "### Refuted in verification"
+stage_mutation "$SYN" w_synth "the severity freeze is gone"                    "synthesis severity freeze"           grep -vF "keeps the severity it had when it was selected"
+stage_mutation "$SYN" w_synth "a numbered step reference"                      "synthesis numbered step reference"   sed 's/^## Conflict ownership$/Run steps 1 to 4 first.\n&/'
+stage_mutation "$SYN" w_synth "the verification step is gone from Steps"       "synthesis verification step missing" grep -vF '**Verification results**'
+stage_mutation "$SYN" w_synth "the conflict-resolution step is gone from Steps" "synthesis conflict step missing"    sed 's/\*\*Resolve conflicts\*\*/**Settle conflicts**/'
 stage_mutation "$SYN" w_synth "verification runs before conflict resolution"   "synthesis step order"                sed -e 's/\*\*Resolve conflicts\*\*/@@T@@/' -e 's/\*\*Verification results\*\*/**Resolve conflicts**/' -e 's/@@T@@/**Verification results**/'
 rm -rf "$T"
 
@@ -1201,6 +1213,8 @@ stage_mutation "$ORC" w_orch "the verifier dispatch is gone"       "orchestrator
 stage_mutation "$ORC" w_orch "the inline-verification ban is gone" "orchestrator inline ban"         grep -vF 'do **not** verify inline'
 stage_mutation "$ORC" w_orch "the agreement-count ban is gone"     "orchestrator agreement-count ban" grep -vF "Never how many reviewers flagged it"
 stage_mutation "$ORC" w_orch "the base line is gone"               "orchestrator base line"          grep -vF 'base: <ref>'
+stage_mutation "$ORC" w_orch "re-runs the merge after verification" "orchestrator re-merge"           sed 's/calibrate and emit the verdict/dedup, calibrate and emit the verdict/'
+stage_mutation "$ORC" w_orch "a numbered reference to a review-pro-synthesize step" "orchestrator numbered synthesize step" sed 's/skill from \*\*Verification results\*\*/skill from step 5/'
 rm -rf "$T"
 
 echo "---"

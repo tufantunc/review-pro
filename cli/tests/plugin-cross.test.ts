@@ -51,6 +51,23 @@ describe("installCore per target", () => {
     expect(fs.existsSync(path.join(H("codex2"), "agents", "review-pro-triage-subagent.toml"))).toBe(false);
   });
 
+  const VERIFY_AGENT =
+    "---\nname: review-pro-verify-subagent\ndescription: \"x\"\nloads_skill: review-pro-verify\nskills: [review-pro-verify]\n---\n# body\n";
+
+  it("claude-code installs the verifier subagent", () => {
+    fs.writeFileSync(path.join(pluginSrc, "agents", "review-pro-verify-subagent.md"), VERIFY_AGENT);
+    installCore("claude-code", pluginSrc, H("cc-verify"));
+    expect(fs.existsSync(path.join(H("cc-verify"), "agents", "review-pro-verify-subagent.md"))).toBe(true);
+  });
+
+  it("codex installs the verifier as a read-only subagent, unlike the inline stages", () => {
+    fs.writeFileSync(path.join(pluginSrc, "agents", "review-pro-verify-subagent.md"), VERIFY_AGENT);
+    installCore("codex", pluginSrc, H("codex-verify"), path.join(H("codex-verify"), "skills"));
+    const toml = path.join(H("codex-verify"), "agents", "review-pro-verify-subagent.toml");
+    expect(fs.existsSync(toml)).toBe(true);
+    expect(fs.readFileSync(toml, "utf8")).toContain('sandbox_mode = "read-only"');
+  });
+
   it("cursor is a no-op (installed via /add-plugin)", () => {
     installCore("cursor", pluginSrc, H("cursor"));
     expect(fs.existsSync(path.join(H("cursor"), "plugins"))).toBe(false);

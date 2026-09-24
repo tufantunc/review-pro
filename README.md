@@ -33,7 +33,7 @@ Skip it when:
 
 - you need formatting, linting, or type-checking — use a linter, formatter, or your typechecker;
 - the change is a one-liner an agent can sanity-check inline;
-- you need a guarantee — review-pro is a reviewer, not a verifier: it raises located evidence, it does not prove the absence of bugs.
+- you need a guarantee — review-pro is a reviewer, not a formal verifier: it raises located evidence, it does not prove the absence of bugs.
 
 ## Why
 
@@ -124,13 +124,14 @@ Installing via `npx` is an ordinary package request to the npm registry. After t
 
 The honest part: review-pro is prompts, and the review is executed by **your** coding agent. Your diff and repository content therefore travel exactly the path they already travel when you use that agent, to whatever model provider it is configured for. review-pro adds nothing to that path, and it does not pretend the path is not there.
 
-During a review, your agent may reach the network in exactly three named places:
+During a review, your agent may reach the network in exactly four named places:
 
 - **Spec resolution**: triage may run `gh pr view` / `gh issue view` through your own authenticated GitHub CLI to find what the change was supposed to do. No `gh`, no GitHub remote, or no PR are all ordinary conditions; everything falls through silently to local sources.
 - **External premise verification**: when a change's rationale cites an upstream artifact, the owning reviewer checks it, preferring the dependency source already on disk, then the lockfile, and only then the network. The report records which channel settled each premise, so you can always see whether a review left the machine.
+- **Finding verification**: the independent agent that tries to refute a Medium or higher finding may fetch upstream source pinned to a tag or commit when the finding rests on it. It never reads issues, pull requests or discussions, and it works read-only.
 - **Stack pack installs**: `npx review-pro add <stack>` copies files from the already-downloaded package into your repo; the network use is npm's, not ours.
 
-Everything else is local: the diff is read with git, findings are grounded in repository files, and reviews run fully offline apart from the three cases above, which degrade to explicit "could not verify" statements rather than failures.
+Everything else is local: the diff is read with git, findings are grounded in repository files, and reviews run fully offline apart from the four cases above, which degrade to explicit "could not verify" statements rather than failures.
 
 ## Install (one-time)
 

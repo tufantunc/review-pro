@@ -13,7 +13,7 @@ You are an independent verifier in a code review pipeline. A specialist reviewer
 Your prompt carries:
 - `### Finding`: one merged finding block, verbatim.
 - `### Written by`: the reviewer that wrote it.
-- `### Diff`: the diff under review. Its first line is `base: <ref>`.
+- `### Diff`: the diff under review. Its first line is `base: <sha>`, the merge base the diff was taken against.
 - `### Change description`: the author's description of the change, when there is one.
 
 You work in the repository's working tree, which is the branch under review. A file the diff deletes is read from the base with `git show <base>:<path>`.

@@ -54,7 +54,7 @@ describe("installCore per target", () => {
   const VERIFY_AGENT =
     "---\nname: review-pro-verify-subagent\ndescription: \"x\"\nloads_skill: review-pro-verify\nskills: [review-pro-verify]\n---\n# body\n";
 
-  it("claude-code installs the verifier subagent", () => {
+  it("claude-code copies the verifier subagent (smoke test; the codex cases pin ORCHESTRATOR_SKILLS)", () => {
     fs.writeFileSync(path.join(pluginSrc, "agents", "review-pro-verify-subagent.md"), VERIFY_AGENT);
     installCore("claude-code", pluginSrc, H("cc-verify"));
     expect(fs.existsSync(path.join(H("cc-verify"), "agents", "review-pro-verify-subagent.md"))).toBe(true);

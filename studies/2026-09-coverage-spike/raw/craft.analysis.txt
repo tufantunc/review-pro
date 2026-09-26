@@ -1,0 +1,13 @@
+== craft
+block present: True
+tool calls: 12
+declared examined: 16  declared not_examined: 103
+not_examined outside studies/: ['docs/superpowers/plans/2026-09-24-refuting-verifier.md', 'docs/superpowers/specs/2026-09-24-refuting-verifier-design.md']
+omitted from both lists: 0 []
+in both lists: []
+listed but not in changed list: []
+OVERCLAIM (declared examined, never in view): 0 []
+underclaim (declared not examined, but was in view): 0 []
+finding files: ['core/skills/review-pro/SKILL.md', 'scripts/validate.sh', 'scripts/validate.test.sh']; contradictions: []
+whole-commit diff commands: [('W=/private/tmp/claude-501/-Users-tufantunc-Desktop-Projects-Personal-review-pro/99075928-604e-433b-bc82-95e9c121edc8/scr', 7362, False)]
+trim markers in tool output: []

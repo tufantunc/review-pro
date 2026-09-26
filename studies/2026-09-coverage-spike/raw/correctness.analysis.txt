@@ -1,0 +1,13 @@
+== correctness
+block present: True
+tool calls: 23
+declared examined: 14  declared not_examined: 105
+not_examined outside studies/: ['docs/superpowers/plans/2026-09-24-refuting-verifier.md', 'docs/superpowers/specs/2026-09-24-refuting-verifier-design.md']
+omitted from both lists: 0 []
+in both lists: []
+listed but not in changed list: []
+OVERCLAIM (declared examined, never in view): 1 ['studies/2026-09-refuting-verifier/SHA256SUMS']
+underclaim (declared not examined, but was in view): 1 ['docs/superpowers/specs/2026-09-24-refuting-verifier-design.md']
+finding files: ['core/agents/review-pro-synthesize-subagent.md', 'core/skills/review-pro-verify/SKILL.md']; contradictions: []
+whole-commit diff commands: [('cat /private/tmp/claude-501/-Users-tufantunc-Desktop-Projects-Personal-review-pro/99075928-604e-433b-bc82-95e9c121edc8/s', 13658, False)]
+trim markers in tool output: [('Bash', '[see remaining: tail -n +1 "$HOME/Library/Application Support/rtk/tee/1790423873_ls-hidden.log"]')]

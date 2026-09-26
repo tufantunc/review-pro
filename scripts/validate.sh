@@ -76,7 +76,7 @@ for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
     req=""
     case "$name" in
       review-pro-triage)     req=$'## Steps\n## Signal map (non-exhaustive)\n## Dispatch plan format\n## Output discipline' ;;
-      review-pro-synthesize) req=$'## Steps\n## Out-of-diff evidence check\n## Coverage\n## Spec axis\n## Verification\n## Conflict ownership\n## Output' ;;
+      review-pro-synthesize) req=$'## Steps\n## Out-of-diff evidence check\n## Coverage\n## Repository rules\n## Spec axis\n## Verification\n## Conflict ownership\n## Output' ;;
       review-pro-verify)     req=$'## Role\n## Inputs\n## How to work\n## Verdicts\n## Rules\n## Output' ;;
     esac
     if [[ -n "$req" ]]; then
@@ -408,10 +408,31 @@ if [[ -f "$SYNTH_MD" ]]; then
     fi
   fi
 fi
+# Repository rules (roadmap item 3): what the report claims about each matched rule, and what
+# a rule may never do (block on its own authority, or pass for evidence the review left the diff).
+if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Repository rules' "$SYNTH_MD"; then
+  read_section "$SYNTH_MD" '## Repository rules' "review-pro-synthesize/SKILL.md"; RR="$SECTION_BODY"
+  if [[ -n "${RR//[[:space:]]/}" ]]; then
+    rr_pin(){ printf '%s\n' "$RR" | grep -qF "$1" || add_error "review-pro-synthesize/SKILL.md: $2"; }
+    rr_pin 'Omit the whole section when triage emitted no `repository_rules`' "the rules omit rule is gone - a repository without rules would get an empty section"
+    rr_pin 'never rendered as `held`'                     "the rules not-reported rule is gone - a rule nobody judged could read as held"
+    rr_pin "rules dropped by triage's cap"                "the rules dropped line is gone - a silent cap reads as every rule judged"
+    rr_pin "the review used the merge base's version"     "the rules-file-changed line is gone - a reader cannot tell the review ignored the change's own rule edits"
+    rr_pin 'is new in this change'                        "the rules-file-added line is gone - a new rules file reads as silently ignored"
+    rr_pin 'capped at Medium'                             "the rule Medium cap is gone - a rule added at the base could block every change on its own authority"
+    rr_pin 'does not count a reference to `.review-pro/rules.md`' "the rules out-of-diff exclusion is gone from ## Repository rules - a rule citation would pass for evidence the review left the diff"
+  fi
+fi
+if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Out-of-diff evidence check' "$SYNTH_MD"; then
+  section "$SYNTH_MD" '## Out-of-diff evidence check' | grep -qF 'A reference to `.review-pro/rules.md` does not count toward it' \
+    || add_error "review-pro-synthesize/SKILL.md: the rules out-of-diff exclusion is gone from ## Out-of-diff evidence check - the check itself would count rule citations"
+fi
 SSUB="$ROOT/core/agents/review-pro-synthesize-subagent.md"
 if [[ -f "$SSUB" ]]; then
   { grep -qF '`## Files examined` block' "$SSUB" && grep -qF '`context.changed_files`' "$SSUB"; } \
     || add_error "review-pro-synthesize-subagent.md: the coverage inputs are gone - subagent synthesis would report every file not reported"
+  { grep -qF '`repository_rules`' "$SSUB" && grep -qF '`## Repository rules` block' "$SSUB"; } \
+    || add_error "review-pro-synthesize-subagent.md: the rules inputs are gone - subagent synthesis would report every rule not reported"
 fi
 # Verification. The asymmetry is the whole safety argument of ADR-0009: one wrong
 # refutation must not ship a blocker, and an unchecked finding must not read as checked.

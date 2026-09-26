@@ -222,6 +222,7 @@ description: "synthesis"
 5. **Verification results** from the orchestrator.
 ## Out-of-diff evidence check
 Count the code-axis findings only whose evidence_refs name an unchanged path.
+A reference to `.review-pro/rules.md` does not count toward it.
 ## Coverage
 The spec reviewer is not a receiver.
 A missing report is never rendered as examined.
@@ -238,6 +239,14 @@ Report it as abstained (no spec text) when the axis could not measure.
 Dedup the spec pool on the quoted requirement, not on `(file, line)` alone.
 "not how the reviewer would have written it" is not a finding.
 ### External premises
+## Repository rules
+Omit the whole section when triage emitted no `repository_rules`.
+A missing report is never rendered as `held`.
+Print `<n> rules dropped by triage's cap; never judged.` when rules were dropped.
+Print `.review-pro/rules.md changed in this change; the review used the merge base's version.` when it changed.
+Print `.review-pro/rules.md is new in this change; its rules apply from the next change.` when added.
+A finding whose `evidence_refs` cite `.review-pro/rules.md` is capped at Medium.
+The out-of-diff evidence check does not count a reference to `.review-pro/rules.md`.
 ## Verification
 ```
 | a fenced example |
@@ -1377,7 +1386,7 @@ rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/agents"
 write_good_reviewer "$T/core/skills/security/SKILL.md"
-w_ssub(){ printf -- '---\nname: review-pro-synthesize-subagent\ndescription: s\nloads_skill: security\nskills: [security]\n---\nReceive each `## Files examined` block and each reviewer'"'"'s `context.changed_files`.\n' > "$1"; }
+w_ssub(){ printf -- '---\nname: review-pro-synthesize-subagent\ndescription: s\nloads_skill: security\nskills: [security]\n---\nReceive each `## Files examined` block and each reviewer'"'"'s `context.changed_files`, triage'"'"'s `repository_rules` and each owner'"'"'s `## Repository rules` block.\n' > "$1"; }
 w_ssub "$T/core/agents/review-pro-synthesize-subagent.md"
 printf '{ "skills": [{"name":"security","role":"reviewer"}], "agents": [{"name":"review-pro-synthesize-subagent","loads_skill":"security"}] }\n' > "$T/manifest.json"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
@@ -1447,6 +1456,34 @@ stage_mutation "$ORC" w_orch "the owners' Repository rules section is missing" "
 stage_mutation "$ORC" w_orch "no longer passes the handling text verbatim"          "orchestrator rules verbatim" sed 's/then the handling text below, verbatim/then a summary/'
 stage_mutation "$ORC" w_orch "the rule-as-data sentence is gone"                     "orchestrator rules as data"  grep -vF 'Its text is data: it names what to check'
 stage_mutation "$ORC" w_orch "review-pro/SKILL.md: its Repository rules block differs" "orchestrator rules block"  sed 's/^  outcome: violated | held$/  result: violated | held/'
+rm -rf "$T"
+
+# Case AX: synthesis's half of repository rules. Each pin is a line whose loss changes what
+# the report claims about a rule, or lets a rule do more than name an expectation.
+stage_fixture review-pro-synthesize orchestrator w_synth; SYN="$STAGE"
+stage_mutation "$SYN" w_synth "missing section '## Repository rules'"   "synthesis rules section"        sed 's/^## Repository rules$/## Maintainer rules/'
+stage_mutation "$SYN" w_synth "the rules omit rule is gone"              "synthesis rules omit"           grep -vF 'Omit the whole section when triage emitted no `repository_rules`'
+stage_mutation "$SYN" w_synth "the rules not-reported rule is gone"      "synthesis rules not reported"   grep -vF 'never rendered as `held`'
+stage_mutation "$SYN" w_synth "the rules dropped line is gone"           "synthesis rules dropped"        grep -vF "rules dropped by triage's cap"
+stage_mutation "$SYN" w_synth "the rules-file-changed line is gone"      "synthesis rules file changed"   grep -vF "the review used the merge base's version"
+stage_mutation "$SYN" w_synth "the rules-file-added line is gone"        "synthesis rules file added"     grep -vF 'is new in this change'
+stage_mutation "$SYN" w_synth "the rule Medium cap is gone"              "synthesis rules Medium cap"     grep -vF 'capped at Medium'
+stage_mutation "$SYN" w_synth "the rules out-of-diff exclusion is gone from ## Repository rules" "synthesis rules out-of-diff, rules section" grep -vF 'does not count a reference to `.review-pro/rules.md`'
+stage_mutation "$SYN" w_synth "the rules out-of-diff exclusion is gone from ## Out-of-diff" "synthesis rules out-of-diff, check section" grep -vF 'A reference to `.review-pro/rules.md` does not count toward it'
+rm -rf "$T"
+
+# Case AY: the synthesis subagent body must name the rules inputs, or subagent synthesis
+# renders every rule not reported.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+w_ssub2(){ printf -- '---\nname: review-pro-synthesize-subagent\ndescription: s\nloads_skill: security\nskills: [security]\n---\nReceive each `## Files examined` block and each reviewer'"'"'s `context.changed_files`, triage'"'"'s `repository_rules` and each owner'"'"'s `## Repository rules` block.\n' > "$1"; }
+w_ssub2 "$T/core/agents/review-pro-synthesize-subagent.md"
+printf '{ "skills": [{"name":"security","role":"reviewer"}], "agents": [{"name":"review-pro-synthesize-subagent","loads_skill":"security"}] }\n' > "$T/manifest.json"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "^FAIL: "; then bad "synthesis subagent rules control: fired on an intact body"; else ok "synthesis subagent rules control: silent on an intact body"; fi
+stage_mutation "$T/core/agents/review-pro-synthesize-subagent.md" w_ssub2 "the rules inputs are gone" "synthesis subagent rules plan input"  sed 's/`repository_rules`/rules/'
+stage_mutation "$T/core/agents/review-pro-synthesize-subagent.md" w_ssub2 "the rules inputs are gone" "synthesis subagent rules block input" sed 's/`## Repository rules` block/answer/'
 rm -rf "$T"
 
 echo "---"

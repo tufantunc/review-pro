@@ -60,5 +60,6 @@ Revisit the label if a larger sample, checked against transcripts, shows declara
 accurate across models and diff shapes. Revisit the axis rule if triage starts recording why
 each reviewer was dispatched per file. Roadmap item 2 (quote-anchored locations) was measured,
 not built ([studies/2026-09-anchor-spike](../../../studies/2026-09-anchor-spike)): every quote in
-a 70-finding corpus exists verbatim in its finding's own file, so the rule that a finding counts
+a 70-finding corpus exists in its finding's own file (verbatim once line-number prefixes are
+stripped and one joined line is split back), so the rule that a finding counts
 as evidence its file was read stands as written.

@@ -5,8 +5,9 @@ A pre-registered measurement, run 2026-09-26, before any design work on roadmap 
 finding's `evidence` in the repository at the commit its reviewer read.
 
 **Headline:** after hand-checking, 1 of 70 non-exempt findings (1.4%) cites a line other
-than the one its quote sits on, and that one is 3 lines off. Every quote exists verbatim in
-the finding's own file. Under the pre-registered rule (stop below 5%), item 2 is not
+than the one its quote sits on, and that one is 3 lines off. Every quote exists in the
+finding's own file, verbatim once line-number prefixes are stripped (3 quotes) and one quote
+that joins two lines is split back. Under the pre-registered rule (stop below 5%), item 2 is not
 designed; the decision goes back to the maintainer.
 
 ## Contents

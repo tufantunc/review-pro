@@ -41,7 +41,7 @@ Most "review this" prompts hand one agent the whole diff and ask for everything.
 
 - **Triage** classifies the diff, dispatches only the **relevant specialists**, and scopes each one's context — a reviewer gets exactly what it needs (callers, repo search, schema, consumers), not the whole repo.
 - **13 specialist reviewers** each own a single concern — `security`, `correctness`, `craft`, `ai-antipatterns`, `dry`, `performance`, `backend`, `frontend`, `a11y`, `db`, `api-contract`, `tests`, `spec` — and run in parallel, returning structured, evidence-backed findings.
-- **Synthesis** dedups overlaps, resolves cross-reviewer conflicts by domain ownership, calibrates severity (anti-overreporting), and emits one verdict: **BLOCK / REQUEST CHANGES / APPROVE**.
+- **Synthesis** dedups overlaps, resolves cross-reviewer conflicts by domain ownership, calibrates severity (anti-overreporting), and emits one verdict: **BLOCK / REQUEST CHANGES / APPROVE**. The report also says which changed files the reviewers examined, labelled self-reported because it is their own account, and names any file no reviewer was sent ([ADR-0010](docs/internals/adr/0010-report-coverage-as-self-reported.md)).
 - **Verification** sends up to 8 Medium or higher code findings, after dedup, to a fresh agent each, told to refute it from source. A refutation must cite the line that contradicts the finding. A refuted Medium leaves the verdict but stays in the report; a refuted High or Critical keeps blocking and is marked disputed ([ADR-0009](docs/internals/adr/0009-verify-findings-by-refutation.md)).
 
 The **ai-antipatterns** reviewer owns agent-specific failure modes — hallucinated APIs/symbols, invented config keys, needless dependencies, ignored existing helpers. Our [pilot study](studies/2026-08-copilot-pr-pilot) on merged Copilot PRs found the hallucination categories barely fire in practice; **ignored conventions carried every finding that mattered**. The rubrics are calibrated from that kind of evidence — and from [reported false positives](https://github.com/tufantunc/review-pro/issues/new/choose).
@@ -78,7 +78,7 @@ flowchart TB
 
 - **Triage** classifies the diff, picks relevant reviewers, scopes context, emits a dispatch plan. A one-line CSS change does not wake the `db` reviewer.
 - **Fan-out** runs only the selected specialists in parallel; each applies its core rubric plus any stack signals from the repo's `.review-pro/`.
-- **Synthesis** dedups, weights, resolves conflicts by domain ownership, calibrates severity, emits one verdict.
+- **Synthesis** dedups, weights, resolves conflicts by domain ownership, calibrates severity, reports self-reported file coverage, emits one verdict.
 - **Verification** runs one independent refuter per Medium+ code finding, at most 8 per review, between dedup and the verdict.
 
 See `docs/superpowers/specs/2026-06-20-review-pro-design.md` for the full design.
@@ -94,6 +94,9 @@ Synthesis emits one deduped report — not thirteen separate reviewer dumps. Eac
 ## Verdict: BLOCK (code)
 
 Spec: skipped, no spec found.
+
+Coverage (self-reported): 6 of 7 changed files examined by at least one reviewer, 1 not examined.
+  not examined: fixtures/cart-large.json (performance: generated fixture data; tests: fixture, no test logic)
 
 Verification: 3 checked (2 stand, 0 partly refuted, 1 refuted), 0 not checked. Spec findings are not verified.
 

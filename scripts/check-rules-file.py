@@ -28,15 +28,18 @@ for i, l in enumerate(lines, 1):
         sub["body"].append(l)
     elif cur is not None:
         cur["body"].append(l)
-# A '###' block with rule fields is a demoted rule: triage would fold it into the rule above it
-# and skip it. One without them is prose under its rule, such as a rationale subheading.
+# A rule field under a '###' heading is ambiguous: triage cannot tell a demoted rule from its
+# parent's own fields, so it is one error. Its fields still count for the parent when the parent
+# lacks them, so the rest of the report is not a cascade. A '###' with no fields is prose.
+field_re = r"^- (when|then|owner|rule):"
 for sec in sections:
     for sb in sec.get("subs", []):
-        if any(re.match(r"^- (when|rule):", b) for b in sb["body"]):
+        fields = [b for b in sb["body"] if re.match(field_re, b)]
+        if fields:
             name = sb["head"].split(":")[0].lstrip("# ")
-            bad.append(f"{where}:{sb['line']}: {name} sits under a '###' heading; a rule is a '## <ID>: <title>' section")
-        else:
-            sec["body"].extend(sb["body"])
+            bad.append(f"{where}:{sb['line']}: {name} sits under a '###' heading with rule fields; a rule's fields belong directly under its '## <ID>: <title>' heading")
+            own = {re.match(field_re, b).group(1) for b in sec["body"] if re.match(field_re, b)}
+            sec["body"].extend(b for b in fields if re.match(field_re, b).group(1) not in own)
 sections = [sec for sec in sections if not sec.get("preamble")]
 if not sections:
     bad.append(f"{where}: has no rule sections; triage would read no rules from it")

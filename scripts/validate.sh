@@ -967,5 +967,52 @@ PYROOTS
 fi
 
 
+# A repository's own .review-pro/rules.md (roadmap item 3). Triage reads it with no parser, as
+# the format its Repository rules step describes; a malformed rule would be skipped or routed to
+# nobody without a word, so this repository's own file is held to that format here.
+if command -v python3 >/dev/null 2>&1 && [[ -f "$ROOT/.review-pro/rules.md" ]] && [[ -f "$MANIFEST" ]]; then
+  python3 - "$ROOT" <<'PYRULES' || errors=$((errors+1))
+import json, os, re, sys
+root = sys.argv[1]
+reviewers = {s["name"] for s in json.load(open(os.path.join(root, "manifest.json"))).get("skills", [])
+             if s.get("role") == "reviewer"} - {"spec"}
+lines = open(os.path.join(root, ".review-pro/rules.md"), encoding="utf-8").read().split("\n")
+bad, seen, sections, cur = [], {}, [], None
+for i, l in enumerate(lines, 1):
+    if l.startswith("## "):
+        cur = {"head": l, "line": i, "body": []}; sections.append(cur)
+    elif cur is not None:
+        cur["body"].append(l)
+where = ".review-pro/rules.md"
+for sec in sections:
+    m = re.match(r"^## ([A-Za-z0-9_-]+): \S", sec["head"])
+    if not m:
+        bad.append(f"{where}:{sec['line']}: '{sec['head']}' is not a '## <ID>: <title>' heading")
+        continue
+    rid = m.group(1)
+    if rid in seen:
+        bad.append(f"{where}:{sec['line']}: rule id '{rid}' appears twice (first at line {seen[rid]})")
+    seen.setdefault(rid, sec["line"])
+    field = {}
+    for l in sec["body"]:
+        fm = re.match(r"^- (when|then|owner|rule):\s*(.*)$", l)
+        if fm:
+            field.setdefault(fm.group(1), fm.group(2).strip())
+    if not re.search(r"`[^`]+`", field.get("when", "")):
+        bad.append(f"{where}:{sec['line']}: {rid} has no '- when:' line with a backticked path")
+    if not field.get("rule"):
+        bad.append(f"{where}:{sec['line']}: {rid} has no '- rule:' line")
+    if "then" in field:
+        rest = re.sub(r"`[^`]+`\s*,?\s*", "", field["then"]).strip()
+        if not re.search(r"`[^`]+`", field["then"]) or rest not in ("", "(all)", "(any)"):
+            bad.append(f"{where}:{sec['line']}: {rid}: then mode must be (all) or (any), after backticked paths")
+    if "owner" in field and field["owner"] not in reviewers:
+        bad.append(f"{where}:{sec['line']}: {rid}: owner '{field['owner']}' is not a code reviewer")
+for b in bad:
+    print("FAIL: " + b, file=sys.stderr)
+sys.exit(1 if bad else 0)
+PYRULES
+fi
+
 [[ "$errors" -eq 0 ]] && { echo "OK: all artifacts valid"; exit 0; }
 exit 1

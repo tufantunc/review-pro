@@ -38,7 +38,7 @@ What OCR does not have and we keep: an evidence bar that requires out-of-diff ev
 
 **Direction.** A repo-level rules file with glob-matched rules that triage hands to the reviewers of matching files. It extends the "what the repository already knows" thesis rather than competing with it. Stack packs stay as they are.
 
-**Status.** not started
+**Status.** implemented on `feat/repo-rules`, in review. Measured first in `studies/2026-09-repo-rules-spike/`: over 66 merged PRs the draft co-change rules triggered 44 times, 77% legitimate; the judgment step cleared 8 of 8 legitimate triggers and caught 3 of 4 known misses (a count spelled as a word cannot trigger a file-level rule). Decision in ADR-0011, design in `docs/superpowers/specs/2026-09-27-repo-rules-design.md`; this repository's own rules in `.review-pro/rules.md`.
 
 ### 4. Cost that scales with the change
 

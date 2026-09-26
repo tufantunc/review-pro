@@ -76,7 +76,7 @@
   "docs.manual.ol2": "<strong>स्टैक पैक</strong> — <code>stacks/&lt;pack&gt;/</code> को समीक्षित रिपॉजिटरी के <code>.review-pro/&lt;pack&gt;/</code> में कॉपी करें।",
   "docs.manual.note": "CLI केवल इन कॉपीज़ को स्वचालित करता है (साथ ही Codex <code>.md</code>→<code>.toml</code> ट्रांसफ़ॉर्म और संस्करण ट्रैकिंग)। मैन्युअल और CLI इंस्टॉल समतुल्य हैं।",
   "docs.stacks.h2": "स्टैक पैक",
-  "docs.stacks.p": "पैक समीक्षण के समय समीक्षकों पर भाषा/फ़्रेमवर्क-विशिष्ट संकेत स्तरित करते हैं। किसी रिपॉजिटरी द्वारा उपयोग किए जाने वाले पैक उसके <code>.review-pro/</code> में इंस्टॉल करें। फ़्रेमवर्क/डोमेन पैक एक भाषा पैक के ऊपर संयोजित होते हैं।",
+  "docs.stacks.p": "पैक समीक्षण के समय समीक्षकों पर भाषा/फ़्रेमवर्क-विशिष्ट संकेत स्तरित करते हैं। किसी रिपॉजिटरी द्वारा उपयोग किए जाने वाले पैक उसके <code>.review-pro/</code> में इंस्टॉल करें। फ़्रेमवर्क/डोमेन पैक एक भाषा पैक के ऊपर संयोजित होते हैं। पैकों के साथ, कोई रिपॉजिटरी अपनी <code>.review-pro/rules.md</code> भी रख सकती है: “X बदले तो Y भी बदलना चाहिए” जैसे नियम, जिन्हें हर समीक्षा मर्ज-बेस से पढ़ती है और नियम-दर-नियम रिपोर्ट करती है।",
   "docs.stacks.catalog": "कैटलॉग (16): <code>python</code> · <code>go</code> · <code>rust</code> · <code>typescript-react</code> · <code>node</code> · <code>php</code> · <code>dotnet</code> · <code>kotlin</code> · <code>swift</code> · <code>flutter</code> · <code>capacitor</code> · <code>nextjs</code> · <code>tanstack-start</code> · <code>react-native</code> · <code>wordpress</code> · <code>ai-ml</code>। उदाहरण: एक Next.js रिपॉजिटरी <code>typescript-react</code> + <code>nextjs</code> सक्रिय करती है; एक LLM ऐप <code>python</code> + <code>ai-ml</code> सक्रिय करता है।",
   "docs.commands.h2": "कमांड",
   "docs.commands.th1": "कमांड",

@@ -1486,6 +1486,44 @@ stage_mutation "$T/core/agents/review-pro-synthesize-subagent.md" w_ssub2 "the r
 stage_mutation "$T/core/agents/review-pro-synthesize-subagent.md" w_ssub2 "the rules inputs are gone" "synthesis subagent rules block input" sed 's/`## Repository rules` block/answer/'
 rm -rf "$T"
 
+# Case AZ: the structure of a repository's own .review-pro/rules.md. Triage reads it as data at
+# review time with no parser; a malformed rule is silently skipped or misrouted, so this repo's
+# own file is held to the format the triage step describes.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/spec" "$T/core/agents" "$T/.review-pro"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_good_reviewer "$T/core/skills/spec/SKILL.md"
+printf 'never exceeds Medium. `line` is `0` when there is no such hunk.\nabstained (no spec text)\nUse the category roots `spec.scope-creep`.\n' >> "$T/core/skills/spec/SKILL.md"
+printf '{ "skills": [{"name":"security","role":"reviewer"},{"name":"spec","role":"reviewer"}], "agents": [] }\n' > "$T/manifest.json"
+w_rules(){ cat > "$1" <<'EOFR'
+# Review rules
+
+## R1: docs follow the code
+- when: `src/**`, `lib/*.ts`
+- then: `docs/api.md`, `docs/{name}.md` (any)
+- owner: security
+- rule: A change to the public code must be reflected in the docs.
+
+Why: the docs went stale once.
+
+## R2: a checklist rule
+- when: `migrations/**`
+- rule: Every migration is reversible.
+EOFR
+}
+w_rules "$T/.review-pro/rules.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "^FAIL: "; then bad "rules-file control: fired on a well-formed file"; else ok "rules-file control: silent on a well-formed file"; fi
+RF="$T/.review-pro/rules.md"
+stage_mutation "$RF" w_rules "R1 has no '- when:' line"        "rules file missing when"   grep -vF -- '- when: `src/**`'
+stage_mutation "$RF" w_rules "R2 has no '- rule:' line"        "rules file missing rule"   grep -vF -- '- rule: Every migration'
+stage_mutation "$RF" w_rules "rule id 'R1' appears twice"      "rules file duplicate id"   sed 's/^## R2: a checklist rule$/## R1: a checklist rule/'
+stage_mutation "$RF" w_rules "owner 'spec' is not a code reviewer" "rules file spec owner" sed 's/^- owner: security$/- owner: spec/'
+stage_mutation "$RF" w_rules "owner 'nobody' is not a code reviewer" "rules file unknown owner" sed 's/^- owner: security$/- owner: nobody/'
+stage_mutation "$RF" w_rules "then mode must be (all) or (any)" "rules file then mode"     sed 's/ (any)$/ (some)/'
+stage_mutation "$RF" w_rules "is not a '## <ID>: <title>' heading" "rules file bad heading" sed 's/^## R2: a checklist rule$/## a checklist rule/'
+rm -rf "$T"
+
 echo "---"
 echo "pass=$pass fail=$fail"
 

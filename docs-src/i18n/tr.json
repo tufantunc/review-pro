@@ -76,7 +76,7 @@
   "docs.manual.ol2": "<strong>Yığın paketleri</strong> — <code>stacks/&lt;pack&gt;/</code> klasörünü incelenen deponun <code>.review-pro/&lt;pack&gt;/</code> konumuna kopyala.",
   "docs.manual.note": "CLI yalnızca bu kopyaları otomatikleştirir (artı Codex <code>.md</code>→<code>.toml</code> dönüşümü ve sürüm takibi). El ile ve CLI kurulumları eşdeğerdir.",
   "docs.stacks.h2": "Yığın paketleri",
-  "docs.stacks.p": "Paketler, inceleme sırasında inceleyicilere dile/çerçeveye özgü sinyalleri katmanlar. Bir deponun kullandığı paketleri kendi <code>.review-pro/</code> klasörüne kur. Çerçeve/alan paketleri bir dil paketinin üzerine eklenir.",
+  "docs.stacks.p": "Paketler, inceleme sırasında inceleyicilere dile/çerçeveye özgü sinyalleri katmanlar. Bir deponun kullandığı paketleri kendi <code>.review-pro/</code> klasörüne kur. Çerçeve/alan paketleri bir dil paketinin üzerine eklenir. Paketlerin yanında bir depo kendi <code>.review-pro/rules.md</code> dosyasını tutabilir: “X değişirse Y de değişmeli” gibi kurallar; her inceleme bunları birleştirme tabanından okur ve kural kural raporlar.",
   "docs.stacks.catalog": "Katalog (16): <code>python</code> · <code>go</code> · <code>rust</code> · <code>typescript-react</code> · <code>node</code> · <code>php</code> · <code>dotnet</code> · <code>kotlin</code> · <code>swift</code> · <code>flutter</code> · <code>capacitor</code> · <code>nextjs</code> · <code>tanstack-start</code> · <code>react-native</code> · <code>wordpress</code> · <code>ai-ml</code>. Örnekler: bir Next.js deposu <code>typescript-react</code> + <code>nextjs</code> etkinleştirir; bir LLM uygulaması <code>python</code> + <code>ai-ml</code> etkinleştirir.",
   "docs.commands.h2": "Komutlar",
   "docs.commands.th1": "Komut",

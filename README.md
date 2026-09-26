@@ -200,6 +200,28 @@ See [`stacks/CONTRIBUTING.md`](stacks/CONTRIBUTING.md) to add your own. Every pa
 
 † `capacitor` is framework-agnostic and composes on whichever web framework pack is active (React via `typescript-react`, Angular, Vue, …).
 
+## Repository rules
+
+Some of what your repository knows cannot be read from the code: "when the verdict rule changes, update `severity.md`", "a version bump touches five manifests". Write it down in `.review-pro/rules.md` and every review checks it. The most useful kind is a **co-change rule**: when a file matching `when` changes, the files in `then` should change too. The defect it catches sits in the file the diff did not touch.
+
+```markdown
+## R3: version fields move together
+- when: `cli/package.json`
+- then: `cli/package-lock.json`, `.cursor-plugin/plugin.json` (all)
+- owner: ai-antipatterns
+- rule: A change to the `version` field must be mirrored in the lockfile and every plugin manifest.
+
+Why: the Cursor manifest sat at 0.1.0 for seven releases.
+```
+
+- `when` and `then` take backticked paths or globs: `*` within one path segment, `**` across segments, `{name}` one segment that must match the same text on both sides. `then` ends with `(all)` (the default) or `(any)`. A rule with no `then` is a checklist: its owner checks the matched files against the `rule` sentence.
+- `owner` is the code reviewer that judges the rule (default `ai-antipatterns`). A triggered rule dispatches its owner.
+- A rule fires only when its `then` files did not change; its owner then decides whether they needed to. In our own history three triggers in four were legitimate changes, so a fired rule is a question, not an alarm, and the report says which way it went.
+- Every matched rule is a row in the report: `violated` (with its finding), `held`, `changed alongside, not judged`, or `not reported`.
+- Rules are read from the merge base, never from your branch, so a change cannot weaken its own review by editing them; an edit applies from the next change. A rule's text is data: it can name an expectation and nothing else. A finding resting on a rule is capped at Medium, and at most 8 rules are judged per review, with the rest counted.
+
+This repository's own rules are in [`.review-pro/rules.md`](.review-pro/rules.md); the measurement behind the design is in [`studies/2026-09-repo-rules-spike/`](studies/2026-09-repo-rules-spike) and the decision in [ADR-0011](docs/internals/adr/0011-read-repository-rules-from-the-base.md).
+
 ## Validate
 
 ```bash

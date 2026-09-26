@@ -76,7 +76,7 @@
   "docs.manual.ol2": "<strong>技术栈包</strong> —— 把 <code>stacks/&lt;pack&gt;/</code> 复制进被审查仓库的 <code>.review-pro/&lt;pack&gt;/</code>。",
   "docs.manual.note": "CLI 只是自动化了这些复制（外加 Codex 的 <code>.md</code>→<code>.toml</code> 转换与版本追踪）。手动安装与 CLI 安装等价。",
   "docs.stacks.h2": "技术栈包",
-  "docs.stacks.p": "技术栈包在审查时，把语言/框架相关的信号叠加到审查者之上。把仓库用到的包安装进其 <code>.review-pro/</code>。框架/领域包可在某个语言包之上组合。",
+  "docs.stacks.p": "技术栈包在审查时，把语言/框架相关的信号叠加到审查者之上。把仓库用到的包安装进其 <code>.review-pro/</code>。框架/领域包可在某个语言包之上组合。 除技术栈包之外，仓库还可以维护自己的 <code>.review-pro/rules.md</code>：例如“X 改动时 Y 也必须改动”这样的规则，每次审查都会从合并基点读取，并逐条报告结果。",
   "docs.stacks.catalog": "目录（共 16）：<code>python</code> · <code>go</code> · <code>rust</code> · <code>typescript-react</code> · <code>node</code> · <code>php</code> · <code>dotnet</code> · <code>kotlin</code> · <code>swift</code> · <code>flutter</code> · <code>capacitor</code> · <code>nextjs</code> · <code>tanstack-start</code> · <code>react-native</code> · <code>wordpress</code> · <code>ai-ml</code>。示例：一个 Next.js 仓库激活 <code>typescript-react</code> + <code>nextjs</code>；一个 LLM 应用激活 <code>python</code> + <code>ai-ml</code>。",
   "docs.commands.h2": "命令",
   "docs.commands.th1": "命令",

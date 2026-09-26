@@ -79,10 +79,13 @@ fixture
 \`impact\` and \`remedy\` are held to the same evidence bar as the finding.
 ## Files examined
 Account for every file exactly once; a list that overstates what you read is wrong.
-examined: [<path>]
+\`\`\`
+## Files examined
+examined: [<path>, ...]
 not_examined:
   - file: <path>
-    reason: <why>
+    reason: <why, one line>
+\`\`\`
 ## Final reminder
 Findings or the none-line, followed by your \`## Files examined\` block.
 EOFB
@@ -211,7 +214,8 @@ Print `no Files examined block from: <reviewers>`.
 Print `contradiction: <reviewer> filed a finding in <file> and declared it not examined`.
 | sent to no reviewer | it has no receiver |
 Coverage (self-reported): <e> of <n> changed files examined by at least one reviewer[, <s> sent to no reviewer].
-> <s> changed files were sent to no reviewer, so nothing reviewed them: <files>.
+- Files sent to no reviewer also get this caveat, on every `diff_class`, because nothing reviewed them:
+  > <s> changed files were sent to no reviewer, so nothing reviewed them: <files>.
 With `diff_class: trivial`, omit the coverage line.
 It never changes a finding, a severity, or the verdict.
 ## Spec axis
@@ -220,6 +224,9 @@ Dedup the spec pool on the quoted requirement, not on `(file, line)` alone.
 "not how the reviewer would have written it" is not a finding.
 ### External premises
 ## Verification
+```
+| a fenced example |
+```
 A refuted High or Critical keeps blocking.
 Agreement does not override a refutation.
 Not verified is never rendered as verified or standing.
@@ -284,13 +291,15 @@ The sha is the merge base, from `git merge-base <base> HEAD`.
 If the verify subagent is unavailable, do **not** verify inline.
 Continue the `review-pro-synthesize` skill from **Verification results**: compute coverage, calibrate and emit the verdict.
 `### Changed file contents`: the files in this reviewer's `context.changed_files`, all of them.
-`### Files examined`: a one-line reminder to end with the block.
-Every inline code review ends with this block, each file exactly once:
+   - `### Files examined`, for every code reviewer (never `spec`): end with the block, `examined: [...]` then `not_examined:`, each file exactly once; a file counts as examined only if it read the file's diff or contents, and a complete-looking list that overstates what it read is wrong.
+Every inline code review ends with this block, accounting for each file in that reviewer's `context.changed_files` exactly once:
+```
 ## Files examined
-examined: [<path>]
+examined: [<path>, ...]
 not_examined:
   - file: <path>
-    reason: <why>
+    reason: <why, one line>
+```
 ## Output
 Return ONLY the final synthesis report, in the `review-pro-synthesize` skill's `## Output` format.
 EOF
@@ -1279,16 +1288,18 @@ printf 'Use the category roots `spec.scope-creep`.\n' >> "$T/core/skills/spec/SK
 write_good_spec_body "$T/core/agents/spec-reviewer.md"
 printf '{ "skills": [{"name":"security","role":"reviewer"},{"name":"spec","role":"reviewer"}], "agents": [{"name":"security-reviewer","loads_skill":"security"},{"name":"spec-reviewer","loads_skill":"spec"}] }\n' > "$T/manifest.json"
 w_body(){ write_good_agent_body "$1" security-reviewer; }
-w_schema(){ printf '# Schema\nevidence_refs\nsame evidence bar\n## Files examined\nEvery file appears exactly once.\nexamined: [<path>]\nnot_examined:\n  - file: <path>\n    reason: <why>\n' > "$1"; }
+w_schema(){ printf '# Schema\nevidence_refs\nsame evidence bar\n## Files examined\nEvery file appears exactly once.\n```\n## Files examined\nexamined: [<path>, ...]\nnot_examined:\n  - file: <path>\n    reason: <why, one line>\n```\n' > "$1"; }
 w_body "$T/core/agents/security-reviewer.md"; w_schema "$T/core/shared/output-schema.md"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "^FAIL: "; then bad "files-examined control: fired on an intact tree (the spec body carries no block, by design)"; else ok "files-examined control: silent on an intact tree, spec body exempt"; fi
 B="$T/core/agents/security-reviewer.md"
-stage_mutation "$B" w_body "no '## Files examined' block"          "body files-examined heading"   grep -vxF '## Files examined'
+stage_mutation "$B" w_body "no '## Files examined' block"          "body files-examined heading"   awk '$0=="## Files examined"&&!d{d=1;next}1'
 stage_mutation "$B" w_body "the exactly-once rule is gone"         "body exactly-once rule"        sed 's/exactly once/once/'
 stage_mutation "$B" w_body "the overstating rule is gone"          "body overstating rule"         sed 's/overstates what you read/is too long/'
 stage_mutation "$B" w_body "Final reminder does not name"          "body final reminder"           sed 's/followed by your .## Files examined. block/and nothing else/'
-stage_mutation "$B" w_body "the Files examined keys are gone"      "body files-examined keys"      sed 's/^not_examined:$/skipped:/'
+stage_mutation "$B" w_body "block format differs from the canonical" "body block file key"       sed 's/^  - file: <path>$/  - path: <path>/'
+stage_mutation "$B" w_body "block format differs from the canonical" "body block examined key"   sed 's/^examined: \[<path>, \.\.\.\]$/read: [<path>, ...]/'
+stage_mutation "$B" w_body "block format differs from the canonical" "body block reason key"     sed 's/^    reason: <why, one line>$/    why: <why, one line>/'
 # Divergence needs a second copy; added only here, because every mutation above changes the
 # section and would also trip the byte-identity check against it.
 cp "$T/manifest.json" "$T/manifest.one"
@@ -1297,8 +1308,8 @@ write_good_agent_body "$T/core/agents/db-reviewer.md" db-reviewer
 stage_mutation "$B" w_body "differs from"                          "body files-examined divergence" sed 's/is wrong\./is not right./'
 rm -f "$T/core/agents/db-reviewer.md"; mv "$T/manifest.one" "$T/manifest.json"
 w_body "$B"
-stage_mutation "$T/core/shared/output-schema.md" w_schema "output-schema.md: the Files examined keys are gone" "schema files-examined keys" sed 's/^not_examined:$/skipped:/'
-stage_mutation "$T/core/shared/output-schema.md" w_schema "output-schema.md: the Files examined block is gone" "schema files-examined block" grep -vxF '## Files examined'
+stage_mutation "$T/core/shared/output-schema.md" w_schema "output-schema.md: its Files examined block format differs" "schema block file key" sed 's/^  - file: <path>$/  - path: <path>/'
+stage_mutation "$T/core/shared/output-schema.md" w_schema "output-schema.md: the Files examined block is gone" "schema files-examined block" awk '$0=="## Files examined"&&!d{d=1;next}1'
 stage_mutation "$T/core/shared/output-schema.md" w_schema "output-schema.md: the Files examined block is gone" "schema exactly-once rule"    sed 's/exactly once/once/'
 rm -rf "$T"
 
@@ -1312,7 +1323,13 @@ stage_mutation "$SYN" w_synth "the spec exclusion is gone"             "synthesi
 stage_mutation "$SYN" w_synth "the not-reported rule is gone"          "synthesis coverage not-reported"    grep -vF 'never rendered as examined'
 stage_mutation "$SYN" w_synth "the missing-block line is gone"         "synthesis coverage missing block"   grep -vF 'no Files examined block from'
 stage_mutation "$SYN" w_synth "the contradiction line is gone"         "synthesis coverage contradiction"   grep -vF 'declared it not examined'
-stage_mutation "$SYN" w_synth "the sent-to-no-reviewer caveat is gone" "synthesis coverage deterministic"   grep -vF 'nothing reviewed them'
+stage_mutation "$SYN" w_synth "the caveat line is gone"                "synthesis coverage caveat line"     grep -vF '> <s> changed files'
+stage_mutation "$SYN" w_synth "the caveat rule is gone"                "synthesis coverage caveat rule"     grep -vF 'also get this caveat'
+stage_mutation "$SYN" w_synth "the ## Output section is empty or unreadable" "synthesis output behind open fence" awk '/^## Verification$/{v=1} v&&/^```$/&&!d{d=1;next} 1'
+# The exit status, not only the FAIL line: an add_error inside a $(...) subshell prints but
+# never reaches the error count, and this helper was first written exactly that way.
+w_synth "$SYN"; awk '/^## Coverage$/{print;s=1;next} s&&/^## /{s=0} !s' "$SYN" > "$T/tmp"; mv "$T/tmp" "$SYN"
+if bash "$VALIDATE" "$T" >/dev/null 2>&1; then bad "unreadable-section error does not fail the run"; else ok "unreadable-section error fails the run"; fi
 stage_mutation "$SYN" w_synth "the trivial rule is gone"               "synthesis coverage trivial"         grep -vF 'diff_class: trivial'
 stage_mutation "$SYN" w_synth "the no-effect rule is gone"             "synthesis coverage no-effect"       grep -vF 'never changes a finding'
 stage_mutation "$SYN" w_synth "Output template has no coverage line"   "synthesis template coverage line"   grep -vF 'Coverage (self-reported):'
@@ -1338,10 +1355,11 @@ rm -rf "$T"
 # layer never sees it; without the inline block a skills-only install reports nothing.
 stage_fixture review-pro orchestrator w_orch; ORC="$STAGE"
 stage_mutation "$ORC" w_orch "hands reviewers something other than their plan list" "orchestrator plan list"        sed "s/this reviewer's \`context.changed_files\`/the relevant files/"
-stage_mutation "$ORC" w_orch "inline reviews no longer end with the Files examined block" "orchestrator inline heading" grep -vxF '## Files examined'
-stage_mutation "$ORC" w_orch "inline reviews no longer end with the Files examined block" "orchestrator inline once"    sed 's/exactly once/once/'
-stage_mutation "$ORC" w_orch "review-pro/SKILL.md: the Files examined keys are gone"   "orchestrator block keys"        sed 's/^not_examined:$/skipped:/'
+stage_mutation "$ORC" w_orch "review-pro/SKILL.md: its Files examined block format differs" "orchestrator inline block" grep -vxF '## Files examined'
+stage_mutation "$ORC" w_orch "review-pro/SKILL.md: its Files examined block format differs" "orchestrator block key"   sed 's/^examined: \[<path>, \.\.\.\]$/read: [<path>, ...]/'
+stage_mutation "$ORC" w_orch "inline reviews no longer account for each file once"      "orchestrator inline once"       sed 's/`context.changed_files` exactly once/`context.changed_files`/'
 stage_mutation "$ORC" w_orch "the reviewer prompt no longer asks for the block"         "orchestrator prompt reminder"   grep -vF '### Files examined'
+stage_mutation "$ORC" w_orch "the reviewer prompt reminder lost its honesty rule"       "orchestrator reminder honesty"  sed 's/; a file counts as examined only if it read the file.s diff or contents, and a complete-looking list that overstates what it read is wrong//'
 stage_mutation "$ORC" w_orch "the step-5 handoff no longer names coverage"              "orchestrator step-5 coverage"   sed 's/compute coverage, //'
 stage_mutation "$ORC" w_orch "no longer points at the synthesis Output format"          "orchestrator output pointer"    sed "s/skill's \`## Output\` format/format/"
 rm -rf "$T"

@@ -96,7 +96,7 @@ Synthesis emits one deduped report — not thirteen separate reviewer dumps. Eac
 Spec: skipped, no spec found.
 
 Coverage (self-reported): 6 of 7 changed files examined by at least one reviewer, 1 not examined.
-  not examined: fixtures/cart-large.json (security: fixture data; backend: fixture data; performance: generated fixture data; frontend: not UI; tests: fixture, no test logic)
+  not examined: fixtures/cart-large.json (security: fixture data; correctness: generated data, no logic; backend: fixture data; performance: generated fixture data; frontend: not UI; dry: fixture data; tests: fixture, no test logic)
 
 Verification: 3 checked (2 stand, 0 partly refuted, 1 refuted), 0 not checked. Spec findings are not verified.
 

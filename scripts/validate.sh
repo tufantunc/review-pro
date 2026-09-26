@@ -124,11 +124,30 @@ for body in "$ROOT"/core/agents/*-reviewer.md; do
     || add_error "$(basename "$body"): no '## <Axis> findings: none' sentinel"
 done
 
-# The keys synthesis reads the block by. A copy that renames one still carries the
-# heading and the prose rules, so those checks alone would pass it.
-has_block_keys(){
-  { grep -qF 'examined: [' "$1" && grep -qxF 'not_examined:' "$1" && grep -qF 'reason:' "$1"; } \
-    || add_error "$2: the Files examined keys are gone (examined, not_examined, reason) - synthesis reads the block by those names"
+# The block format synthesis reads, held here once. Every copy (the twelve bodies, the
+# shared schema, the orchestrator's inline path) must carry it verbatim as consecutive
+# lines. Key-by-key substring pins were tried first and leaked: a key found elsewhere in
+# the file satisfied them, and a rename applied to every copy at once passed (round 2 of
+# this branch's own review). A canonical text catches both.
+FILES_EXAMINED_BLOCK='## Files examined
+examined: [<path>, ...]
+not_examined:
+  - file: <path>
+    reason: <why, one line>'
+has_canonical_block(){
+  [[ "$(cat "$1")" == *"$FILES_EXAMINED_BLOCK"* ]] \
+    || add_error "$2: its Files examined block format differs from the canonical one in validate.sh - synthesis reads the block by those exact keys"
+}
+# read_section <file> <heading> <label>: sets SECTION_BODY, and errors when the heading is
+# there but section() cannot see a body under it. That happens when the section was
+# emptied, and when an unbalanced code fence earlier in the file hides the heading, which
+# would otherwise switch every check that reads the section off without a word. It sets a
+# variable instead of printing because add_error in a $(...) subshell loses its count.
+read_section(){
+  SECTION_BODY="$(section "$1" "$2")"
+  if grep -qxF "$2" "$1" && [[ -z "${SECTION_BODY//[[:space:]]/}" ]]; then
+    add_error "$3: the $2 section is empty or unreadable - check for an unbalanced code fence before it"
+  fi
 }
 # Coverage accounting (ADR-0010). Every code reviewer accounts for each file it received
 # in a `## Files examined` block. The spec reviewer is exempt: coverage measures reading
@@ -138,7 +157,9 @@ for body in "$ROOT"/core/agents/*-reviewer.md; do
   [[ -f "$body" ]] || continue
   [[ "$(fm_get "$body" "loads_skill")" == "spec" ]] && continue
   b="$(basename "$body")"
-  grep -qxF '## Files examined' "$body" \
+  # Fence-aware: the canonical block repeats the heading inside a fence, and a plain
+  # whole-line grep would find that copy after the real section heading is gone.
+  [[ -n "$(section "$body" '## Files examined')" ]] \
     || add_error "$b: no '## Files examined' block - an empty review and an unread file look the same in the report"
   grep -qF 'exactly once' "$body" \
     || add_error "$b: the exactly-once rule is gone - a reviewer can leave files out of its declaration and they read as covered"
@@ -146,7 +167,7 @@ for body in "$ROOT"/core/agents/*-reviewer.md; do
     || add_error "$b: the overstating rule is gone - nothing tells the reviewer a complete-looking list is the wrong answer"
   section "$body" '## Final reminder' | grep -qF '## Files examined' \
     || add_error "$b: the Final reminder does not name the '## Files examined' block - its terminal restatement tells the reviewer to return findings only"
-  has_block_keys "$body" "$b"
+  has_canonical_block "$body" "$b"
   # ADR-0001's guards catch deletion, not divergence (#44). The section is one text
   # duplicated twelve times, so hold every copy to the first one byte for byte.
   sum="$(section "$body" '## Files examined' | cksum)"
@@ -156,9 +177,9 @@ for body in "$ROOT"/core/agents/*-reviewer.md; do
   fi
 done
 if [[ -f "$SCHEMA_DOC" ]]; then
-  { grep -qxF '## Files examined' "$SCHEMA_DOC" && grep -qF 'exactly once' "$SCHEMA_DOC"; } \
+  { [[ -n "$(section "$SCHEMA_DOC" '## Files examined')" ]] && grep -qF 'exactly once' "$SCHEMA_DOC"; } \
     || add_error "core/shared/output-schema.md: the Files examined block is gone - rubric readers and the inline path lose the coverage contract"
-  has_block_keys "$SCHEMA_DOC" "core/shared/output-schema.md"
+  has_canonical_block "$SCHEMA_DOC" "core/shared/output-schema.md"
 fi
 
 # Pointer resolution: rubrics reference `shared/<file>.md` relative to the skills
@@ -235,12 +256,18 @@ if [[ -f "$ORCH_MD" ]]; then
     || add_error "review-pro/SKILL.md: the '### External premises' prompt section is gone - triage routes premises the orchestrator then never passes to the owning reviewer"
   grep -qF "this reviewer's \`context.changed_files\`" "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: step 3 hands reviewers something other than their plan list - a narrowed prompt is invisible to the coverage check"
-  # Whole-line heading: step 3's prose mentions the block too and would satisfy a substring match.
-  { grep -qxF '## Files examined' "$ORCH_MD" && grep -qF 'exactly once' "$ORCH_MD"; } \
-    || add_error "review-pro/SKILL.md: inline reviews no longer end with the Files examined block - a skills-only install reports no coverage"
-  has_block_keys "$ORCH_MD" "review-pro/SKILL.md"
-  grep -qF '### Files examined' "$ORCH_MD" \
-    || add_error "review-pro/SKILL.md: the reviewer prompt no longer asks for the block - agents installed before this release never emit it"
+  # Pinned as the inline sentence itself: 'exactly once' alone also matches the prompt reminder.
+  grep -qF "accounting for each file in that reviewer's \`context.changed_files\` exactly once" "$ORCH_MD" \
+    || add_error "review-pro/SKILL.md: inline reviews no longer account for each file once - a skills-only install can leave files out and read as covered"
+  has_canonical_block "$ORCH_MD" "review-pro/SKILL.md"
+  # Line-scoped: for an agent older than this release the reminder is the whole contract,
+  # so it must carry the honesty rule the spike measured, not only the format.
+  reminder="$(grep -F '`### Files examined`, for every code reviewer' "$ORCH_MD")"
+  if [[ -z "$reminder" ]]; then
+    add_error "review-pro/SKILL.md: the reviewer prompt no longer asks for the block - agents installed before this release never emit it"
+  elif ! { printf '%s' "$reminder" | grep -qF 'examined only if it read' && printf '%s' "$reminder" | grep -qF 'overstates what it read'; }; then
+    add_error "review-pro/SKILL.md: the reviewer prompt reminder lost its honesty rule - an older agent learns the format but not that a complete-looking list is wrong"
+  fi
   grep -F 'Continue the `review-pro-synthesize` skill from' "$ORCH_MD" | grep -qF 'compute coverage' \
     || add_error "review-pro/SKILL.md: the step-5 handoff no longer names coverage - an inline run can go from the out-of-diff check straight to the verdict"
   grep -qF "skill's \`## Output\` format" "$ORCH_MD" \
@@ -273,18 +300,20 @@ fi
 # Coverage accounting (ADR-0010). Scoped to the section, because several of these
 # phrases would survive elsewhere in the file after the section that gives them meaning is gone.
 if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Coverage' "$SYNTH_MD"; then
-  COV="$(section "$SYNTH_MD" '## Coverage')"
-  if [[ -z "${COV//[[:space:]]/}" ]]; then
-    # One error, not seven: the heading passes the required-section check while every rule is gone.
-    add_error "review-pro-synthesize/SKILL.md: the ## Coverage section is empty - the heading passes while every coverage rule is gone"
-  else
+  # One error, not seven, when the body is gone: the heading still passes the required-section check.
+  read_section "$SYNTH_MD" '## Coverage' "review-pro-synthesize/SKILL.md"; COV="$SECTION_BODY"
+  if [[ -n "${COV//[[:space:]]/}" ]]; then
     cov_pin(){ printf '%s\n' "$COV" | grep -qF "$1" || add_error "review-pro-synthesize/SKILL.md: $2"; }
     cov_pin 'The spec reviewer is not a receiver' "the spec exclusion is gone from ## Coverage - a file only the spec reviewer read would show as examined"
     cov_pin 'never rendered as examined'          "the not-reported rule is gone from ## Coverage - a reviewer that returned nothing would read as full coverage"
     cov_pin 'no Files examined block from'        "the missing-block line is gone from ## Coverage - a reviewer contract violation becomes the quietest line in the report"
     cov_pin 'declared it not examined'            "the contradiction line is gone from ## Coverage - a finding in a file its reviewer called unread goes unnoticed"
-    # The caveat's own words: 'sent to no reviewer' also names a table row and a count, and survives the caveat.
-    cov_pin 'nothing reviewed them'               "the sent-to-no-reviewer caveat is gone from ## Coverage - a narrowed dispatch is never reported"
+    # The caveat is two lines, pinned one by one: every phrase they share also appears on the other
+    # line or in the state table, and a phrase pin let either line go (round 2).
+    printf '%s\n' "$COV" | sed 's/^ *//' | grep -qxF '> <s> changed files were sent to no reviewer, so nothing reviewed them: <files>.' \
+      || add_error "review-pro-synthesize/SKILL.md: the caveat line is gone from ## Coverage - a narrowed dispatch is never reported"
+    printf '%s\n' "$COV" | grep -F 'also get this caveat' | grep -qF 'on every `diff_class`' \
+      || add_error "review-pro-synthesize/SKILL.md: the caveat rule is gone from ## Coverage - nothing says the caveat prints on trivial diffs too"
     cov_pin 'diff_class: trivial'                 "the trivial rule is gone from ## Coverage - every one-line chore gets a coverage line and readers learn to skip it"
     cov_pin 'never changes a finding'             "the no-effect rule is gone from ## Coverage - coverage could start gating findings or the verdict"
   fi
@@ -292,8 +321,8 @@ fi
 # The report header order is Spec, Coverage, Verification (ADR-0010). The synthesis skill
 # holds the only copy of the template; the orchestrator points at it.
 if [[ -f "$SYNTH_MD" ]]; then
-  out="$(section "$SYNTH_MD" '## Output')"
-  if [[ -n "$out" ]]; then # a missing section is the required-section check's error
+  read_section "$SYNTH_MD" '## Output' "review-pro-synthesize/SKILL.md"; out="$SECTION_BODY"
+  if [[ -n "$out" ]]; then # absent: the required-section check's error; unreadable: read_section's
     line_of(){ printf '%s\n' "$out" | grep -nF "$1" | head -1 | cut -d: -f1; }
     c="$(line_of 'Coverage (self-reported):')"; sp="$(line_of 'Spec: measured against')"; v="$(line_of 'Verification: <N> checked')"
     if [[ -z "$c" ]]; then

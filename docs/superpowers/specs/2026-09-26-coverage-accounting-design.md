@@ -234,17 +234,25 @@ skills.
 Every check has its own mutation test in `scripts/validate.test.sh`:
 
 - Each code reviewer body (every `*-reviewer.md` whose `loads_skill` is not `spec`)
-  carries the `## Files examined` heading, the exactly-once rule, the overstating rule
-  and the block's keys, names the block inside its `## Final reminder`, which is the
+  carries the `## Files examined` section, the exactly-once rule, the overstating rule
+  and the block format verbatim, names the block inside its `## Final reminder`, which is the
   terminal restatement a reviewer obeys, and holds a `## Files examined` section byte
   for byte identical to every other code reviewer's, so the copies cannot drift.
-- `core/shared/output-schema.md` carries the block, its keys and the exactly-once rule.
+- `core/shared/output-schema.md` carries the section, the block format verbatim and the
+  exactly-once rule.
+- The block format is held once, as a canonical text in `validate.sh`, and every copy
+  must contain it as consecutive lines. Pinning keys one by one was tried first and
+  leaked: a key found elsewhere in a file satisfied the pin, and a rename applied to all
+  copies at once passed.
 - The synthesis skill has a non-empty `## Coverage` section carrying the not-reported
   rule, the no-effect rule, the spec exclusion, the contradiction line, the caveat's own
-  words and the trivial rule, and its Output template orders Spec, Coverage,
-  Verification, with a missing anchor line reported rather than skipped.
-- The orchestrator hands `context.changed_files`, carries the reviewer-prompt reminder,
-  the whole-line block heading and keys for inline reviewers, names coverage in the
+  template line and rule (each pinned on its own line) and the trivial rule, and its
+  Output template orders Spec, Coverage, Verification, with a missing anchor line
+  reported rather than skipped. A section whose heading exists but whose body cannot be
+  read, which is what an unbalanced code fence earlier in the file causes, is an error.
+- The orchestrator hands `context.changed_files`, carries the reviewer-prompt reminder
+  with its honesty rule on the same line, the inline sentence and the canonical block for
+  inline reviewers, names coverage in the
   step 5 handoff, and points at the synthesis template.
 - The synthesis subagent body names both new inputs.
 - Triage states that Stage 3 compares against `context.changed_files`.

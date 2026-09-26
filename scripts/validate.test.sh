@@ -77,6 +77,10 @@ fixture
 ## Output schema (one block per finding)
   evidence_refs: [src/x.ts:1]
 \`impact\` and \`remedy\` are held to the same evidence bar as the finding.
+## Files examined
+Account for every file exactly once; a list that overstates what you read is wrong.
+## Final reminder
+Findings or the none-line, followed by your \`## Files examined\` block.
 EOFB
 }
 
@@ -1229,6 +1233,32 @@ out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "^FAIL: "; then bad "shared severity control: fired on an intact fixture"; else ok "shared severity control: silent on an intact fixture"; fi
 stage_mutation "$T/core/shared/severity.md" w_sev "the shared verdict table predates verification" "shared verdict, refuted Medium" grep -vF 'verification did not refute'
 stage_mutation "$T/core/shared/severity.md" w_sev "the shared verdict table predates verification" "shared verdict, disputed" sed 's/, `disputed` ones included//'
+rm -rf "$T"
+
+# Case AR: the Files examined block in every code reviewer body. The body is what the
+# running subagent obeys (ADR-0001), and the Final reminder is its terminal restatement:
+# a reminder that says "findings or the none-line" and nothing else invites dropping the block.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/skills/spec" "$T/core/agents" "$T/core/shared"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+write_good_reviewer "$T/core/skills/spec/SKILL.md"
+printf 'never exceeds Medium. `line` is `0` when there is no such hunk.\nabstained (no spec text)\n' >> "$T/core/skills/spec/SKILL.md"
+printf 'Use the category roots `spec.scope-creep`.\n' >> "$T/core/skills/spec/SKILL.md"
+write_good_spec_body "$T/core/agents/spec-reviewer.md"
+printf '{ "skills": [{"name":"security","role":"reviewer"},{"name":"spec","role":"reviewer"}], "agents": [{"name":"security-reviewer","loads_skill":"security"},{"name":"spec-reviewer","loads_skill":"spec"}] }\n' > "$T/manifest.json"
+w_body(){ write_good_agent_body "$1" security-reviewer; }
+w_schema(){ printf '# Schema\nevidence_refs\nsame evidence bar\n## Files examined\nEvery file appears exactly once.\n' > "$1"; }
+w_body "$T/core/agents/security-reviewer.md"; w_schema "$T/core/shared/output-schema.md"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "^FAIL: "; then bad "files-examined control: fired on an intact tree (the spec body carries no block, by design)"; else ok "files-examined control: silent on an intact tree, spec body exempt"; fi
+B="$T/core/agents/security-reviewer.md"
+stage_mutation "$B" w_body "no '## Files examined' block"          "body files-examined heading"   grep -vxF '## Files examined'
+stage_mutation "$B" w_body "the exactly-once rule is gone"         "body exactly-once rule"        sed 's/exactly once/once/'
+stage_mutation "$B" w_body "the overstating rule is gone"          "body overstating rule"         sed 's/overstates what you read/is too long/'
+stage_mutation "$B" w_body "Final reminder does not name"          "body final reminder"           sed 's/followed by your .## Files examined. block/and nothing else/'
+w_body "$B"
+stage_mutation "$T/core/shared/output-schema.md" w_schema "output-schema.md: the Files examined block is gone" "schema files-examined block" grep -vxF '## Files examined'
+stage_mutation "$T/core/shared/output-schema.md" w_schema "output-schema.md: the Files examined block is gone" "schema exactly-once rule"    sed 's/exactly once/once/'
 rm -rf "$T"
 
 echo "---"

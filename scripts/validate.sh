@@ -117,6 +117,28 @@ for body in "$ROOT"/core/agents/*-reviewer.md; do
     || add_error "$(basename "$body"): no '## <Axis> findings: none' sentinel"
 done
 
+# Coverage accounting (ADR-0010). Every code reviewer accounts for each file it received
+# in a `## Files examined` block. The spec reviewer is exempt: coverage measures reading
+# for defects, and synthesis never counts it as a receiver. The Final reminder check is
+# scoped to that section because it is the restatement a reviewer obeys last.
+for body in "$ROOT"/core/agents/*-reviewer.md; do
+  [[ -f "$body" ]] || continue
+  [[ "$(fm_get "$body" "loads_skill")" == "spec" ]] && continue
+  b="$(basename "$body")"
+  grep -qxF '## Files examined' "$body" \
+    || add_error "$b: no '## Files examined' block - an empty review and an unread file look the same in the report"
+  grep -qF 'exactly once' "$body" \
+    || add_error "$b: the exactly-once rule is gone - a reviewer can leave files out of its declaration and they read as covered"
+  grep -qF 'overstates what you read' "$body" \
+    || add_error "$b: the overstating rule is gone - nothing tells the reviewer a complete-looking list is the wrong answer"
+  awk '/^## Final reminder/{s=1;next} s&&/^## /{exit} s' "$body" | grep -qF '## Files examined' \
+    || add_error "$b: the Final reminder does not name the '## Files examined' block - its terminal restatement tells the reviewer to return findings only"
+done
+if [[ -f "$SCHEMA_DOC" ]]; then
+  { grep -qxF '## Files examined' "$SCHEMA_DOC" && grep -qF 'exactly once' "$SCHEMA_DOC"; } \
+    || add_error "core/shared/output-schema.md: the Files examined block is gone - rubric readers and the inline path lose the coverage contract"
+fi
+
 # Pointer resolution: rubrics reference `shared/<file>.md` relative to the skills
 # root's parent. Every referenced target must exist in core/shared/, and the CLI
 # must actually install that directory — otherwise the pointers dangle in a real

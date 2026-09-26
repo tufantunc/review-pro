@@ -12,17 +12,32 @@ where = ".review-pro/rules.md"
 reviewers = {s["name"] for s in json.load(open(os.path.join(root, "manifest.json"))).get("skills", [])
              if s.get("role") == "reviewer"} - {"spec"}
 lines = open(os.path.join(root, where), encoding="utf-8").read().split("\n")
-bad, seen, sections, cur = [], {}, [], None
+bad, seen, sections, cur, sub = [], {}, [], None, None
 for i, l in enumerate(lines, 1):
-    if re.match(r"^#{3,} [A-Za-z0-9_-]+: \S", l):
-        # A demoted heading would fold this rule into the one above it and triage would skip it.
-        bad.append(f"{where}:{i}: {l.split(':')[0].lstrip('# ')} sits under a '###' heading; a rule is a '## <ID>: <title>' section")
-    if re.match(r"^#{2,} ", l):
-        cur = {"head": l, "line": i, "body": []}
-        if l.startswith("## "):
+    if l.startswith("## "):
+        cur, sub = {"head": l, "line": i, "body": []}, None
+        sections.append(cur)
+    elif re.match(r"^#{3,} ", l):
+        if cur is None:
+            # A '###' before any rule belongs to a placeholder the rule checks below skip.
+            cur = {"head": None, "line": i, "body": [], "preamble": True}
             sections.append(cur)
+        sub = {"head": l, "line": i, "body": []}
+        cur.setdefault("subs", []).append(sub)
+    elif sub is not None:
+        sub["body"].append(l)
     elif cur is not None:
         cur["body"].append(l)
+# A '###' block with rule fields is a demoted rule: triage would fold it into the rule above it
+# and skip it. One without them is prose under its rule, such as a rationale subheading.
+for sec in sections:
+    for sb in sec.get("subs", []):
+        if any(re.match(r"^- (when|rule):", b) for b in sb["body"]):
+            name = sb["head"].split(":")[0].lstrip("# ")
+            bad.append(f"{where}:{sb['line']}: {name} sits under a '###' heading; a rule is a '## <ID>: <title>' section")
+        else:
+            sec["body"].extend(sb["body"])
+sections = [sec for sec in sections if not sec.get("preamble")]
 if not sections:
     bad.append(f"{where}: has no rule sections; triage would read no rules from it")
 for sec in sections:

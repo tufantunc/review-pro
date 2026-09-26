@@ -21,6 +21,8 @@ if [[ -f "$TRIAGE_MD" ]]; then
     || add_error "review-pro-triage/SKILL.md: the step that reads the rules no longer reads the merge base - the sentence above it would stand while the read moved to the head"
   grep -qF 'one row, whatever its `{name}` bindings' "$TRIAGE_MD" \
     || add_error "review-pro-triage/SKILL.md: one row per rule is gone - bindings would share an id no owner answer can be matched to"
+  grep -qF 'including one this change adds' "$TRIAGE_MD" \
+    || add_error "review-pro-triage/SKILL.md: a target this change adds no longer counts as changed - every new pack would report its version rule as unable to fire"
   grep -qE '^repository_rules:' "$TRIAGE_MD" \
     || add_error "review-pro-triage/SKILL.md: no 'repository_rules' key in the dispatch plan format - rules reach no owner and no report"
 fi
@@ -29,8 +31,8 @@ if [[ -f "$ORCH_MD" ]]; then
   rl="$(grep -F '`### Repository rules`, for a rule'"'"'s owner only' "$ORCH_MD")"
   if [[ -z "$rl" ]]; then
     add_error "review-pro/SKILL.md: the owners' Repository rules section is missing - triage routes rules the orchestrator never passes to their owners"
-  elif ! printf '%s' "$rl" | grep -qF 'verbatim'; then
-    add_error "review-pro/SKILL.md: the Repository rules section no longer passes the handling text verbatim - an owner installed before this release gets rules with no contract"
+  elif ! printf '%s' "$rl" | grep -qF 'then the text between the `repository-rules-handling` markers below, verbatim'; then
+    add_error "review-pro/SKILL.md: the Repository rules section no longer names the marker bounds of the handling text it passes verbatim - an owner installed before this release could get text the bodies do not hold"
   fi
   # The handling text an older owner reads is the reviewer bodies' section itself, held to them.
   if ! grep -qxF '<!-- repository-rules-handling -->' "$ORCH_MD" || ! grep -qxF '<!-- /repository-rules-handling -->' "$ORCH_MD"; then
@@ -40,6 +42,11 @@ if [[ -f "$ORCH_MD" ]]; then
     bsum="$(section "$ROOT/core/agents/$rules_first_body" '## Repository rules' | grep -v '^[[:space:]]*$' | cksum)"
     [[ "$osum" == "$bsum" ]] \
       || add_error "review-pro/SKILL.md: the Repository rules handling text differs from the reviewer bodies' section - an owner installed before this release gets a different contract"
+    # Nothing may sit between the closing marker and the next known paragraph: text there reads as
+    # part of the handling text to an owner, yet no checksum covers it.
+    after="$(awk 'f && NF {print; exit} /^<!-- \/repository-rules-handling -->$/{f=1}' "$ORCH_MD")"
+    [[ "$after" == "If a reviewer subagent is unavailable on your platform"* ]] \
+      || add_error "review-pro/SKILL.md: text follows the closing handling marker - an owner reads it as part of the rules contract, and no check holds it to the bodies"
   fi
   grep -F '`### Rules file`' "$ORCH_MD" | grep -qF 'git show <base>:.review-pro/rules.md' \
     || add_error "review-pro/SKILL.md: the verification step no longer tells the verifier to read rules at the merge base - a change could reword the rule it broke and have the finding refuted"
@@ -67,6 +74,8 @@ if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Repository rules' "$SYNTH_MD"; then
     rr_pin "rules dropped by triage's cap"                "the rules dropped line is gone - a silent cap reads as every rule judged"
     rr_pin "the review used the merge base's version"     "the rules-file-changed line is gone - a reader cannot tell the review ignored the change's own rule edits"
     rr_pin 'is new in this change'                        "the rules-file-added line is gone - a new rules file reads as silently ignored"
+    grep -E '^2\. \*\*Dedup\*\*' "$SYNTH_MD" | grep -qF 'drops the rules citation' \
+      || add_error "review-pro-synthesize/SKILL.md: Dedup no longer drops the rules citation - a finding with its own evidence, merged with a rule finding, would be capped at Medium"
     rr_pin 'keeps the severity of the one that does not'  "the merged-severity rule is gone - a finding with its own evidence could lose its severity by merging with a rule finding"
   fi
 fi

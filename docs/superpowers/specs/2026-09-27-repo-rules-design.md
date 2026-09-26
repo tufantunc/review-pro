@@ -246,12 +246,19 @@ changed the design in these places:
 - **One row per rule.** `{name}` bindings share a rule id, so per-binding rows could not be
   matched to an owner's answer and could fill the cap. A rule's row carries the union.
 - **`no-target` rows.** A rule whose `then` paths all vanished used to disappear; it is now a
-  row, `then paths not found at the merge base`.
+  row, `then paths not found at the merge base or in this change`. A `then` path this change
+  adds counts as changed before absent paths are dropped, so a new pack's manifest satisfies R2
+  instead of reading as a rule that can no longer fire. A rule's bindings resolve to one state:
+  `judge` if any binding is, else `changed-alongside` if any is, else `no-target`.
+- **Dedup drops a rules citation** when it merges a rule finding with one that stands without
+  the rule, so the Medium cap in Resolve conflicts never lowers independent evidence.
 - **The handling text is the body section itself**, between markers in the orchestrator, held
   to the twelve body copies by checksum. The paraphrase had already dropped two clauses.
 - **The default owner's category is named** in the ai-antipatterns rubric (ADR-0007).
+- **A `###` heading is a demoted rule only when its block carries `- when:` or `- rule:`**; a
+  rationale subheading stays prose under its rule.
 - **The repository-rules checks live in `scripts/validate-repo-rules.sh`** and the rules-file
-  format check in `scripts/check-rules-file.py`, which keeps `validate.sh` under 1000 lines.
+  format check in `scripts/check-rules-file.py`, which keeps `validate.sh` under 1000 lines. `validate.sh` fails when the sourced file is missing.
 
 ## Known limits
 

@@ -931,7 +931,12 @@ fi
 
 # Repository rules (roadmap item 3): the triage, orchestrator, verifier, synthesis, schema and
 # owner-rubric checks live in their own file, sourced so they share add_error and the helpers.
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/validate-repo-rules.sh"
+RR_SH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/validate-repo-rules.sh"
+if [[ -f "$RR_SH" ]]; then
+  source "$RR_SH"
+else
+  add_error "validate-repo-rules.sh could not be sourced - every repository-rules check is off"
+fi
 
 # A repository's own .review-pro/rules.md (roadmap item 3), held to the format triage reads.
 # The check lives in its own script so it can run on any repository's rules file.

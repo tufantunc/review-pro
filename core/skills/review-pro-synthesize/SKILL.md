@@ -10,7 +10,7 @@ You are the orchestrator's final stage. You receive the structured findings from
 
 ## Steps
 1. **Collect** all finding blocks from the dispatched reviewers. Set aside each code reviewer's `## Files examined` block for **Coverage**: it is not a finding, so it is never deduped or ranked.
-2. **Dedup** by `(file, line±5, category-root, overlap_hints)`: the same issue flagged by multiple reviewers collapses into one.
+2. **Dedup** by `(file, line±5, category-root, overlap_hints)`: the same issue flagged by multiple reviewers collapses into one. A merge of a finding citing `.review-pro/rules.md` with one that does not drops the rules citation, so the Medium cap in Resolve conflicts never lowers evidence that stood without the rule.
 3. **Weight:** annotate a finding flagged by 2 or more reviewers "flagged by N reviewers". It is a note about coverage, not evidence: see `## Verification`.
 4. **Resolve conflicts** by ownership: the domain owner sets severity (see table). A finding citing `.review-pro/rules.md` is capped at Medium here, before verification selects anything: see `## Repository rules`.
 5. **Verification results**: the orchestrator verifies the merged Medium+ code findings at this point and hands you the results. Apply them as `## Verification` says before going on.
@@ -127,13 +127,13 @@ Triage's `repository_rules` lists every rule from `.review-pro/rules.md`, read a
 
 - One row per entry in `rows`. `Rule` is the id and the rule sentence; `Matched` is the matched files and, for a co-change rule, the expected files that did not change.
 - A `judge` row takes its outcome from its owner's `## Repository rules` block: `violated: <category>`, pointing at the finding filed with it, or `held: <because>`.
-- A `no-target` row reads `then paths not found at the merge base`: the rule can no longer fire and needs updating.
+- A `no-target` row reads `then paths not found at the merge base or in this change`: the rule can no longer fire and needs updating.
 - A `changed-alongside` row reads `changed alongside, not judged`: its expected files changed, and nobody checked that they changed enough.
 - A `judge` row that appears in no owner's block reads `not reported (<owner>)`. A missing report is never rendered as `held`: a rule routed to a reviewer that then said nothing is a contract violation, and it must not be the quietest line in the report.
 - Beneath the table, outside it, print `<n> rules dropped by triage's cap; never judged.` when `rules_dropped` is above zero.
 - Beneath the table, outside it, print `.review-pro/rules.md changed in this change; the review used the merge base's version.` when `file_changed` is `changed`.
 - When `file_changed` is `added`, print `.review-pro/rules.md is new in this change; its rules apply from the next change.` in place of the table.
-- A finding citing `.review-pro/rules.md` is capped at Medium in Resolve conflicts, before verification selects anything, so the verified-severity freeze never meets an uncapped rule finding: a rules file is not a trusted source, and a rule must not be able to block a change on its own authority. An owner whose own rubric justifies more files that as a separate finding without the rule citation. When dedup merges a finding citing `.review-pro/rules.md` with one that does not, the merged finding keeps the severity of the one that does not.
+- A finding citing `.review-pro/rules.md` is capped at Medium in Resolve conflicts, before verification selects anything, so the verified-severity freeze never meets an uncapped rule finding: a rules file is not a trusted source, and a rule must not be able to block a change on its own authority. An owner whose own rubric justifies more files that as a separate finding without the rule citation. When dedup merges a finding citing `.review-pro/rules.md` with one that does not, the merged finding drops the rules citation (see Dedup) and keeps the severity of the one that does not.
 - A rule citation does not count for the out-of-diff evidence check: see that section.
 - A `held` row removes nothing, and no row changes a finding its owner did not file.
 

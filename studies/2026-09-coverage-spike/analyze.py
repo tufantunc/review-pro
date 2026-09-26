@@ -43,7 +43,8 @@ for cid, (name, inp) in calls.items():
                 in_view.add(f)
     elif name == "Bash":
         cmd = inp.get("command", "")
-        named = [f for f in changed if f in cmd]
+        # Path boundaries, not substrings: `README.md` must not match `studies/.../README.md`.
+        named = [f for f in changed if re.search(r"(?<![\w./-])" + re.escape(f) + r"(?![\w/-])", cmd)]
         in_view.update(named)
         # any file whose diff header or full path appears in what the command returned
         for f in changed:
@@ -76,7 +77,6 @@ print(f"== {label}")
 print(f"block present: {bool(m)}")
 print(f"tool calls: {len(calls)}")
 print(f"declared examined: {len(examined)}  declared not_examined: {len(not_ex)}")
-non_studies = [f for f in changed if not f.startswith("studies/")]
 print(f"not_examined outside studies/: {sorted(f for f in not_ex if not f.startswith('studies/'))}")
 omitted = [f for f in changed if f not in examined and f not in not_ex]
 print(f"omitted from both lists: {len(omitted)} {omitted[:10]}")

@@ -32,6 +32,7 @@ For each reviewer in the dispatch plan:
      `external_premises` whose `owner` is this reviewer, verbatim. Omit the section for
      every other reviewer. Verification channels and the requirement to record which
      channel settled a premise live in `core/shared/context-policy.md`.
+   - `### Files examined`, for every code reviewer (never `spec`): one line asking it to end with its `## Files examined` block, `examined: [...]` then `not_examined:` entries with `file` and `reason`, accounting for each file in `### Changed file contents` exactly once. The agent body asks for the same block; repeating it here keeps coverage working when the installed agents are older than this skill.
 3. **Collect** its structured finding blocks, plus its `## Premise verification` block when one comes back, and its `## Files examined` block. Neither block is a finding: never dedup them against the finding blocks and never rank them alongside them.
 
 If a reviewer subagent is unavailable on your platform, perform that review **inline**: apply the core skill (which you Read from the plugin) plus the stack signals to the scoped context, and emit findings in the shared schema. Every inline code review ends with the same `## Files examined` block a subagent returns, accounting for each file in that reviewer's `context.changed_files` exactly once:
@@ -60,51 +61,17 @@ Verification needs the merged findings, so first run the `review-pro-synthesize`
 If the verify subagent is unavailable on your platform, do **not** verify inline: a check in your own context is not independent. Mark every selected finding `not verified (no independent verifier)` and continue.
 
 ### 5. Synthesis (you, inline)
-Continue the `review-pro-synthesize` skill from **Verification results**, with the verification results and the same triage values: apply the results, calibrate severity (anti-overreporting), run the out-of-diff check, and emit the verdict. Do not merge again: the results are bound to the merged findings as they stand.
+Continue the `review-pro-synthesize` skill from **Verification results**, with the verification results and the same triage values: apply the results, calibrate severity (anti-overreporting), run the out-of-diff check, compute coverage, and emit the verdict. Do not merge again: the results are bound to the merged findings as they stand.
 
 ## Output
-Return ONLY the final synthesis report:
-
-```
-## Verdict: <BLOCK | REQUEST CHANGES> (<code | spec | code + spec>)[, <N> disputed] | APPROVE
-
-Spec: measured against <spec_source.ref>
-(or: skipped, no spec found / not measured, <ref> resolved but carried no text)
-
-Coverage (self-reported): <e> of <n> changed files examined by at least one reviewer[, <x> not examined][, <u> not reported][, <s> sent to no reviewer].
-
-Verification: <N> checked (<a> stand, <b> partly refuted, <c> refuted), <M> not checked (<counts by reason>). Spec findings are not verified.
-
-### Critical
-- [Critical] <file>:<line> — <title>
-  impact: ...
-  remedy: ...
-  flagged by: <reviewer>, <reviewer>
-
-### High
-...
-### Medium / Low / Nitpick
-...
-
-### Refuted in verification
-- [Medium] <file>:<line>, <title>
-  refuted: "<the claim>"
-  contradicted by: <file>:<line> `<excerpt>`
-
-## Spec (measured against <spec_source.ref>; or skipped, no spec found; or not measured, resolved but empty)
-
-### Missing / Wrong / Scope creep
-- [<severity>] <file>:<line>, <title>
-  spec: "<the quoted requirement>"
-  remedy: ...
-```
+Return ONLY the final synthesis report, in the `review-pro-synthesize` skill's `## Output` format: the verdict line, then the Spec, Coverage and Verification lines, the caveats and the External premises table when they apply, the code findings by severity, `### Refuted in verification`, and the `## Spec` section. That skill holds the only copy of the template, so follow it there rather than a summary of it here.
 
 Do not dump raw per-reviewer outputs. Lead with the verdict.
 
 ## Rules
 - **Never present a finding with unfinished research** — if you can trace it in-repo (callers, schema, consumers), do.
 - **Stack signals come only from `.review-pro/`.** If it's empty, reviewers use core rubrics. Never invent stack signals.
-- If triage dispatches no reviewers (e.g. docs-only change), return `APPROVE` with a one-line note.
+- If triage dispatches no reviewers (e.g. docs-only change), return `APPROVE` with a one-line note that says no reviewer was dispatched, so nothing reviewed the changed files. That note stands in for the coverage caveat, and it is never left out.
 - Calibrate honestly: downgrade anything you cannot fully trace; never invent severity.
 - **The spec axis is reported separately and never merged into the code findings.** If no spec was resolved, say so in one line rather than omitting the section.
 - **Never verify a finding in your own context.** Verification is independent or it does not happen, and the report says which.

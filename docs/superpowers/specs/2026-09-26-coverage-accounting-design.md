@@ -129,8 +129,8 @@ Each file in `changed_files` lands in exactly one state, checked in this order:
 | State | Condition | Source |
 |---|---|---|
 | sent to no reviewer | no receiver | dispatch plan |
-| examined | at least one receiver lists it under `examined`, or filed a finding in it | reviewers |
-| not examined | every receiver lists it under `not_examined` | reviewers |
+| examined | at least one receiver lists it under `examined` and not also under `not_examined`, or filed a finding in it | reviewers |
+| not examined | every receiver lists it under `not_examined` and not also under `examined` | reviewers |
 | not reported | anything else: a receiver gave no entry for it | reviewers |
 
 A finding filed in a file counts as examined for that reviewer whatever its block
@@ -186,6 +186,9 @@ Rules:
 - `diff_class: trivial`: omit the coverage line and its detail lines. The whole change
   fits on a screen, and a self-reported line there adds nothing but length. The caveat
   above still prints.
+- When triage dispatches no reviewer at all, synthesis never runs and the orchestrator
+  returns APPROVE with a one-line note. That note says no reviewer was dispatched, so
+  nothing reviewed the changed files: it stands in for the caveat.
 - If `changed_files` or the dispatch plan's per-reviewer lists are missing from the input,
   print `Coverage: not computed, <what> missing from the input.` and do not guess.
 
@@ -198,6 +201,13 @@ changed files relevant to this reviewer", which invites a silent narrowing the p
 would never show. That line changes to "the files in this reviewer's
 `context.changed_files`", which is what the context policy already requires.
 
+The declared layer has a matching weak point. If the only instruction to emit the block
+lives in the agent bodies, a user whose skills are newer than their installed agents
+gets `no Files examined block from` every reviewer, which reads as reviewers skipping
+work rather than a stale install. So the orchestrator's reviewer prompt carries a
+one-line `### Files examined` reminder with the format, and the requirement ships with
+the skill as well as the body. (Added after the branch's own review, round 1.)
+
 ## Packaging
 
 | Surface | Change |
@@ -205,7 +215,7 @@ would never show. That line changes to "the files in this reviewer's
 | 12 code reviewer bodies | mandate line, Work step 4, a `## Files examined` section, Final reminder |
 | `spec-reviewer.md` | none (not a receiver) |
 | `core/shared/output-schema.md` | the block and its rules, for rubric readers and the inline path |
-| `review-pro/SKILL.md` | step 3 hands `context.changed_files`, collects the block, inline reviewers emit it; synthesis gets the per-reviewer lists; Output template line |
+| `review-pro/SKILL.md` | step 3 hands `context.changed_files`, adds the `### Files examined` reminder, collects the block, inline reviewers emit it; synthesis gets the per-reviewer lists; step 5 names coverage; `## Output` points at the synthesis template instead of carrying a second copy of it |
 | `review-pro-synthesize/SKILL.md` | `## Coverage` section, a Coverage step, Output template line |
 | `review-pro-synthesize-subagent.md` | the two new inputs |
 | `review-pro-triage/SKILL.md` | `context.changed_files` is what Stage 3 compares against |
@@ -224,15 +234,18 @@ skills.
 Every check has its own mutation test in `scripts/validate.test.sh`:
 
 - Each code reviewer body (every `*-reviewer.md` whose `loads_skill` is not `spec`)
-  carries the `## Files examined` heading, the exactly-once rule and the overstating
-  rule, and names the block inside its `## Final reminder`, which is the terminal
-  restatement a reviewer obeys.
-- `core/shared/output-schema.md` carries the block and the exactly-once rule.
-- The synthesis skill has a `## Coverage` section carrying the not-reported rule, the
-  no-effect rule, the spec exclusion, the contradiction line and the trivial rule, and
-  its Output template orders Spec, Coverage, Verification.
-- The orchestrator hands `context.changed_files`, carries the block for inline reviewers,
-  and its Output template carries the coverage line.
+  carries the `## Files examined` heading, the exactly-once rule, the overstating rule
+  and the block's keys, names the block inside its `## Final reminder`, which is the
+  terminal restatement a reviewer obeys, and holds a `## Files examined` section byte
+  for byte identical to every other code reviewer's, so the copies cannot drift.
+- `core/shared/output-schema.md` carries the block, its keys and the exactly-once rule.
+- The synthesis skill has a non-empty `## Coverage` section carrying the not-reported
+  rule, the no-effect rule, the spec exclusion, the contradiction line, the caveat's own
+  words and the trivial rule, and its Output template orders Spec, Coverage,
+  Verification, with a missing anchor line reported rather than skipped.
+- The orchestrator hands `context.changed_files`, carries the reviewer-prompt reminder,
+  the whole-line block heading and keys for inline reviewers, names coverage in the
+  step 5 handoff, and points at the synthesis template.
 - The synthesis subagent body names both new inputs.
 - Triage states that Stage 3 compares against `context.changed_files`.
 

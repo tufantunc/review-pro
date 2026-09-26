@@ -79,6 +79,10 @@ fixture
 \`impact\` and \`remedy\` are held to the same evidence bar as the finding.
 ## Files examined
 Account for every file exactly once; a list that overstates what you read is wrong.
+examined: [<path>]
+not_examined:
+  - file: <path>
+    reason: <why>
 ## Final reminder
 Findings or the none-line, followed by your \`## Files examined\` block.
 EOFB
@@ -205,7 +209,9 @@ The spec reviewer is not a receiver.
 A missing report is never rendered as examined.
 Print `no Files examined block from: <reviewers>`.
 Print `contradiction: <reviewer> filed a finding in <file> and declared it not examined`.
-Caveat: changed files were sent to no reviewer.
+| sent to no reviewer | it has no receiver |
+Coverage (self-reported): <e> of <n> changed files examined by at least one reviewer[, <s> sent to no reviewer].
+> <s> changed files were sent to no reviewer, so nothing reviewed them: <files>.
 With `diff_class: trivial`, omit the coverage line.
 It never changes a finding, a severity, or the verdict.
 ## Spec axis
@@ -230,9 +236,13 @@ It needs at least one claim marked `false` that cites a `file:line`.
 `security`
 ## Conflict ownership
 ## Output
+```
+## Verdict: <BLOCK | REQUEST CHANGES> | APPROVE
 Spec: measured against <ref>
 Coverage (self-reported): <e> of <n> changed files examined by at least one reviewer.
 Verification: <N> checked
+## Spec (measured against <ref>)
+```
 EOF
       ;;
     review-pro-verify)
@@ -272,13 +282,17 @@ Invoke one `review-pro-verify-subagent` per selected finding.
 The sha is the merge base, from `git merge-base <base> HEAD`.
 `### Written by`: the reviewer that wrote it. Never how many reviewers flagged it.
 If the verify subagent is unavailable, do **not** verify inline.
-Continue the `review-pro-synthesize` skill from **Verification results**: calibrate and emit the verdict.
+Continue the `review-pro-synthesize` skill from **Verification results**: compute coverage, calibrate and emit the verdict.
 `### Changed file contents`: the files in this reviewer's `context.changed_files`, all of them.
-Every inline code review ends with the `## Files examined` block, each file exactly once.
+`### Files examined`: a one-line reminder to end with the block.
+Every inline code review ends with this block, each file exactly once:
+## Files examined
+examined: [<path>]
+not_examined:
+  - file: <path>
+    reason: <why>
 ## Output
-Spec: measured against <ref>
-Coverage (self-reported): <e> of <n> changed files examined by at least one reviewer.
-Verification: <N> checked
+Return ONLY the final synthesis report, in the `review-pro-synthesize` skill's `## Output` format.
 EOF
       ;;
     *)
@@ -1265,7 +1279,7 @@ printf 'Use the category roots `spec.scope-creep`.\n' >> "$T/core/skills/spec/SK
 write_good_spec_body "$T/core/agents/spec-reviewer.md"
 printf '{ "skills": [{"name":"security","role":"reviewer"},{"name":"spec","role":"reviewer"}], "agents": [{"name":"security-reviewer","loads_skill":"security"},{"name":"spec-reviewer","loads_skill":"spec"}] }\n' > "$T/manifest.json"
 w_body(){ write_good_agent_body "$1" security-reviewer; }
-w_schema(){ printf '# Schema\nevidence_refs\nsame evidence bar\n## Files examined\nEvery file appears exactly once.\n' > "$1"; }
+w_schema(){ printf '# Schema\nevidence_refs\nsame evidence bar\n## Files examined\nEvery file appears exactly once.\nexamined: [<path>]\nnot_examined:\n  - file: <path>\n    reason: <why>\n' > "$1"; }
 w_body "$T/core/agents/security-reviewer.md"; w_schema "$T/core/shared/output-schema.md"
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "^FAIL: "; then bad "files-examined control: fired on an intact tree (the spec body carries no block, by design)"; else ok "files-examined control: silent on an intact tree, spec body exempt"; fi
@@ -1274,7 +1288,16 @@ stage_mutation "$B" w_body "no '## Files examined' block"          "body files-e
 stage_mutation "$B" w_body "the exactly-once rule is gone"         "body exactly-once rule"        sed 's/exactly once/once/'
 stage_mutation "$B" w_body "the overstating rule is gone"          "body overstating rule"         sed 's/overstates what you read/is too long/'
 stage_mutation "$B" w_body "Final reminder does not name"          "body final reminder"           sed 's/followed by your .## Files examined. block/and nothing else/'
+stage_mutation "$B" w_body "the Files examined keys are gone"      "body files-examined keys"      sed 's/^not_examined:$/skipped:/'
+# Divergence needs a second copy; added only here, because every mutation above changes the
+# section and would also trip the byte-identity check against it.
+cp "$T/manifest.json" "$T/manifest.one"
+sed 's/{"name":"spec-reviewer"/{"name":"db-reviewer","loads_skill":"security"},&/' "$T/manifest.one" > "$T/manifest.json"
+write_good_agent_body "$T/core/agents/db-reviewer.md" db-reviewer
+stage_mutation "$B" w_body "differs from"                          "body files-examined divergence" sed 's/is wrong\./is not right./'
+rm -f "$T/core/agents/db-reviewer.md"; mv "$T/manifest.one" "$T/manifest.json"
 w_body "$B"
+stage_mutation "$T/core/shared/output-schema.md" w_schema "output-schema.md: the Files examined keys are gone" "schema files-examined keys" sed 's/^not_examined:$/skipped:/'
 stage_mutation "$T/core/shared/output-schema.md" w_schema "output-schema.md: the Files examined block is gone" "schema files-examined block" grep -vxF '## Files examined'
 stage_mutation "$T/core/shared/output-schema.md" w_schema "output-schema.md: the Files examined block is gone" "schema exactly-once rule"    sed 's/exactly once/once/'
 rm -rf "$T"
@@ -1283,11 +1306,13 @@ rm -rf "$T"
 # loss changes what the report claims about files nobody read.
 stage_fixture review-pro-synthesize orchestrator w_synth; SYN="$STAGE"
 stage_mutation "$SYN" w_synth "missing section '## Coverage'"          "synthesis coverage section"         sed 's/^## Coverage$/## Files read/'
+stage_mutation "$SYN" w_synth "the ## Coverage section is empty"       "synthesis coverage empty body"      awk '/^## Coverage$/{print;s=1;next} s&&/^## /{s=0} !s'
+stage_mutation "$SYN" w_synth "lost its Spec or Verification line"     "synthesis template anchor"          grep -vF 'Spec: measured against'
 stage_mutation "$SYN" w_synth "the spec exclusion is gone"             "synthesis coverage spec exclusion"  grep -vF 'The spec reviewer is not a receiver'
 stage_mutation "$SYN" w_synth "the not-reported rule is gone"          "synthesis coverage not-reported"    grep -vF 'never rendered as examined'
 stage_mutation "$SYN" w_synth "the missing-block line is gone"         "synthesis coverage missing block"   grep -vF 'no Files examined block from'
 stage_mutation "$SYN" w_synth "the contradiction line is gone"         "synthesis coverage contradiction"   grep -vF 'declared it not examined'
-stage_mutation "$SYN" w_synth "the sent-to-no-reviewer caveat is gone" "synthesis coverage deterministic"   grep -vF 'sent to no reviewer'
+stage_mutation "$SYN" w_synth "the sent-to-no-reviewer caveat is gone" "synthesis coverage deterministic"   grep -vF 'nothing reviewed them'
 stage_mutation "$SYN" w_synth "the trivial rule is gone"               "synthesis coverage trivial"         grep -vF 'diff_class: trivial'
 stage_mutation "$SYN" w_synth "the no-effect rule is gone"             "synthesis coverage no-effect"       grep -vF 'never changes a finding'
 stage_mutation "$SYN" w_synth "Output template has no coverage line"   "synthesis template coverage line"   grep -vF 'Coverage (self-reported):'
@@ -1312,14 +1337,16 @@ rm -rf "$T"
 # orchestrator can hand a reviewer fewer files than the plan shows and the deterministic
 # layer never sees it; without the inline block a skills-only install reports nothing.
 stage_fixture review-pro orchestrator w_orch; ORC="$STAGE"
-stage_mutation "$ORC" w_orch "hands reviewers something other than their plan list" "orchestrator plan list"     sed "s/this reviewer's \`context.changed_files\`/the relevant files/"
-stage_mutation "$ORC" w_orch "inline reviews no longer end with the Files examined block" "orchestrator inline block" grep -vF 'exactly once'
-stage_mutation "$ORC" w_orch "Output template has no coverage line" "orchestrator template coverage line" grep -vF 'Coverage (self-reported):'
-stage_mutation "$ORC" w_orch "Output template orders" "orchestrator template order" sed -e 's/^Spec: measured against <ref>$/@@S@@/' -e 's/^Verification: <N> checked$/Spec: measured against <ref>/' -e 's/^@@S@@$/Verification: <N> checked/'
+stage_mutation "$ORC" w_orch "hands reviewers something other than their plan list" "orchestrator plan list"        sed "s/this reviewer's \`context.changed_files\`/the relevant files/"
+stage_mutation "$ORC" w_orch "inline reviews no longer end with the Files examined block" "orchestrator inline heading" grep -vxF '## Files examined'
+stage_mutation "$ORC" w_orch "inline reviews no longer end with the Files examined block" "orchestrator inline once"    sed 's/exactly once/once/'
+stage_mutation "$ORC" w_orch "review-pro/SKILL.md: the Files examined keys are gone"   "orchestrator block keys"        sed 's/^not_examined:$/skipped:/'
+stage_mutation "$ORC" w_orch "the reviewer prompt no longer asks for the block"         "orchestrator prompt reminder"   grep -vF '### Files examined'
+stage_mutation "$ORC" w_orch "the step-5 handoff no longer names coverage"              "orchestrator step-5 coverage"   sed 's/compute coverage, //'
+stage_mutation "$ORC" w_orch "no longer points at the synthesis Output format"          "orchestrator output pointer"    sed "s/skill's \`## Output\` format/format/"
 rm -rf "$T"
 stage_fixture review-pro-triage orchestrator write_stage_skill; TRI="$STAGE"
-w_tri(){ write_stage_skill "$1"; }
-stage_mutation "$TRI" w_tri "the coverage comparison is gone" "triage coverage comparison" grep -vF "coverage check compares against it"
+stage_mutation "$TRI" write_stage_skill "the coverage comparison is gone" "triage coverage comparison" grep -vF "coverage check compares against it"
 rm -rf "$T"
 
 echo "---"

@@ -51,8 +51,8 @@ Put each file in `changed_files` in exactly one state, checked in this order:
 | State | Condition |
 |---|---|
 | sent to no reviewer | it has no receiver |
-| examined | a receiver lists it under `examined`, or filed a finding in it |
-| not examined | every receiver lists it under `not_examined` |
+| examined | a receiver lists it under `examined` and not also under `not_examined`, or filed a finding in it |
+| not examined | every receiver lists it under `not_examined` and not also under `examined` |
 | not reported | anything else: some receiver gave no entry for it |
 
 - A finding filed in a file counts as its reviewer examining that file, whatever the block says, and a refuted finding counts too: it shows the file was read, not that the finding holds. When the same reviewer also listed the file under `not_examined`, print `contradiction: <reviewer> filed a finding in <file> and declared it not examined`.

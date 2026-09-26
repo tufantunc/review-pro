@@ -199,6 +199,14 @@ description: "synthesis"
 5. **Verification results** from the orchestrator.
 ## Out-of-diff evidence check
 Count the code-axis findings only whose evidence_refs name an unchanged path.
+## Coverage
+The spec reviewer is not a receiver.
+A missing report is never rendered as examined.
+Print `no Files examined block from: <reviewers>`.
+Print `contradiction: <reviewer> filed a finding in <file> and declared it not examined`.
+Caveat: changed files were sent to no reviewer.
+With `diff_class: trivial`, omit the coverage line.
+It never changes a finding, a severity, or the verdict.
 ## Spec axis
 Report it as abstained (no spec text) when the axis could not measure.
 Dedup the spec pool on the quoted requirement, not on `(file, line)` alone.
@@ -221,6 +229,9 @@ It needs at least one claim marked `false` that cites a `file:line`.
 `security`
 ## Conflict ownership
 ## Output
+Spec: measured against <ref>
+Coverage (self-reported): <e> of <n> changed files examined by at least one reviewer.
+Verification: <N> checked
 EOF
       ;;
     review-pro-verify)
@@ -1259,6 +1270,35 @@ stage_mutation "$B" w_body "Final reminder does not name"          "body final r
 w_body "$B"
 stage_mutation "$T/core/shared/output-schema.md" w_schema "output-schema.md: the Files examined block is gone" "schema files-examined block" grep -vxF '## Files examined'
 stage_mutation "$T/core/shared/output-schema.md" w_schema "output-schema.md: the Files examined block is gone" "schema exactly-once rule"    sed 's/exactly once/once/'
+rm -rf "$T"
+
+# Case AS: synthesis's coverage contract (ADR-0010). Each pin is one sentence whose
+# loss changes what the report claims about files nobody read.
+stage_fixture review-pro-synthesize orchestrator w_synth; SYN="$STAGE"
+stage_mutation "$SYN" w_synth "missing section '## Coverage'"          "synthesis coverage section"         sed 's/^## Coverage$/## Files read/'
+stage_mutation "$SYN" w_synth "the spec exclusion is gone"             "synthesis coverage spec exclusion"  grep -vF 'The spec reviewer is not a receiver'
+stage_mutation "$SYN" w_synth "the not-reported rule is gone"          "synthesis coverage not-reported"    grep -vF 'never rendered as examined'
+stage_mutation "$SYN" w_synth "the missing-block line is gone"         "synthesis coverage missing block"   grep -vF 'no Files examined block from'
+stage_mutation "$SYN" w_synth "the contradiction line is gone"         "synthesis coverage contradiction"   grep -vF 'declared it not examined'
+stage_mutation "$SYN" w_synth "the sent-to-no-reviewer caveat is gone" "synthesis coverage deterministic"   grep -vF 'sent to no reviewer'
+stage_mutation "$SYN" w_synth "the trivial rule is gone"               "synthesis coverage trivial"         grep -vF 'diff_class: trivial'
+stage_mutation "$SYN" w_synth "the no-effect rule is gone"             "synthesis coverage no-effect"       grep -vF 'never changes a finding'
+stage_mutation "$SYN" w_synth "Output template has no coverage line"   "synthesis template coverage line"   grep -vF 'Coverage (self-reported):'
+stage_mutation "$SYN" w_synth "Output template orders"                 "synthesis template order"           sed -e 's/^Spec: measured against <ref>$/@@S@@/' -e 's/^Verification: <N> checked$/Spec: measured against <ref>/' -e 's/^@@S@@$/Verification: <N> checked/'
+rm -rf "$T"
+
+# Case AT: the synthesis subagent body must name both coverage inputs, or subagent
+# synthesis renders every file not reported.
+T=$(mktemp -d)
+mkdir -p "$T/core/skills/security" "$T/core/agents"
+write_good_reviewer "$T/core/skills/security/SKILL.md"
+w_ssub(){ printf -- '---\nname: review-pro-synthesize-subagent\ndescription: s\nloads_skill: security\nskills: [security]\n---\nReceive each `## Files examined` block and each reviewer'"'"'s `context.changed_files`.\n' > "$1"; }
+w_ssub "$T/core/agents/review-pro-synthesize-subagent.md"
+printf '{ "skills": [{"name":"security","role":"reviewer"}], "agents": [{"name":"review-pro-synthesize-subagent","loads_skill":"security"}] }\n' > "$T/manifest.json"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -q "^FAIL: "; then bad "synthesis subagent control: fired on an intact body"; else ok "synthesis subagent control: silent on an intact body"; fi
+stage_mutation "$T/core/agents/review-pro-synthesize-subagent.md" w_ssub "the coverage inputs are gone" "synthesis subagent blocks input" sed 's/`## Files examined` block/finding/'
+stage_mutation "$T/core/agents/review-pro-synthesize-subagent.md" w_ssub "the coverage inputs are gone" "synthesis subagent lists input"  sed 's/`context.changed_files`/plan/'
 rm -rf "$T"
 
 echo "---"

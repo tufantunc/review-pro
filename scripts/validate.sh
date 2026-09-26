@@ -25,6 +25,24 @@ REQ_SECTIONS=(
 errors=0
 add_error(){ echo "FAIL: $*" >&2; errors=$((errors+1)); }
 
+# The report header order is Spec, Coverage, Verification (ADR-0010). Checked inside the
+# Output section of both copies of the template, because the orchestrator carries one too.
+# The template's own `## Verdict` and `## Spec (...)` lines are not section ends.
+check_header_order(){
+  local f="$1" label="$2" out s c v
+  # No Output section at all is its own failure (a required section for synthesis);
+  # the order question only exists once there is a template to order.
+  grep -qxF '## Output' "$f" || return 0
+  out="$(awk '/^## Output$/{s=1;next} s&&/^## [A-Z]/&&!/^## Verdict/&&!/^## Spec \(/{exit} s' "$f")"
+  c=$(printf '%s\n' "$out" | grep -nF 'Coverage (self-reported):' | head -1 | cut -d: -f1)
+  if [[ -z "$c" ]]; then add_error "$label: the Output template has no coverage line - the report would drop the coverage signal"; return; fi
+  s=$(printf '%s\n' "$out" | grep -nF 'Spec: measured against' | head -1 | cut -d: -f1)
+  v=$(printf '%s\n' "$out" | grep -nF 'Verification: <N> checked' | head -1 | cut -d: -f1)
+  if [[ -n "$s" && -n "$v" ]] && ! [[ "$s" -lt "$c" && "$c" -lt "$v" ]]; then
+    add_error "$label: the Output template orders the header lines wrong - it must be Spec, Coverage, Verification"
+  fi
+}
+
 is_stage_skill(){
   local n="$1"
   for o in "${STAGE_SKILLS[@]}"; do [[ "$o" == "$n" ]] && return 0; done
@@ -69,7 +87,7 @@ for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
     req=""
     case "$name" in
       review-pro-triage)     req=$'## Steps\n## Signal map (non-exhaustive)\n## Dispatch plan format\n## Output discipline' ;;
-      review-pro-synthesize) req=$'## Steps\n## Out-of-diff evidence check\n## Spec axis\n## Verification\n## Conflict ownership\n## Output' ;;
+      review-pro-synthesize) req=$'## Steps\n## Out-of-diff evidence check\n## Coverage\n## Spec axis\n## Verification\n## Conflict ownership\n## Output' ;;
       review-pro-verify)     req=$'## Role\n## Inputs\n## How to work\n## Verdicts\n## Rules\n## Output' ;;
     esac
     if [[ -n "$req" ]]; then
@@ -233,6 +251,27 @@ if [[ -f "$SYNTH_MD" ]]; then
     || add_error "review-pro-synthesize/SKILL.md: the external-premise ledger is gone - a reviewer's 'could not verify' statement dies before the report the reader actually reads"
   grep -qF 'not how the reviewer would have written it' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the approval standard is gone - verdicts drift from measuring code health to enforcing taste, and imperfect improvements start getting blocked"
+fi
+# Coverage accounting (ADR-0010). Scoped to the section, because several of these
+# phrases would survive elsewhere in the file after the section that gives them meaning is gone.
+if [[ -f "$SYNTH_MD" ]]; then
+  COV="$(awk '/^## Coverage$/{s=1;next} s&&/^## /{exit} s' "$SYNTH_MD")"
+  # An absent section is reported once by the required-section check; pinning its phrases
+  # too would turn one deletion into eight errors.
+  cov_pin(){ [[ -n "$COV" ]] || return 0; printf '%s\n' "$COV" | grep -qF "$1" || add_error "review-pro-synthesize/SKILL.md: $2"; }
+  cov_pin 'The spec reviewer is not a receiver' "the spec exclusion is gone from ## Coverage - a file only the spec reviewer read would show as examined"
+  cov_pin 'never rendered as examined'          "the not-reported rule is gone from ## Coverage - a reviewer that returned nothing would read as full coverage"
+  cov_pin 'no Files examined block from'        "the missing-block line is gone from ## Coverage - a reviewer contract violation becomes the quietest line in the report"
+  cov_pin 'declared it not examined'            "the contradiction line is gone from ## Coverage - a finding in a file its reviewer called unread goes unnoticed"
+  cov_pin 'sent to no reviewer'                 "the sent-to-no-reviewer caveat is gone from ## Coverage - a narrowed dispatch is never reported"
+  cov_pin 'diff_class: trivial'                 "the trivial rule is gone from ## Coverage - every one-line chore gets a coverage line and readers learn to skip it"
+  cov_pin 'never changes a finding'             "the no-effect rule is gone from ## Coverage - coverage could start gating findings or the verdict"
+  check_header_order "$SYNTH_MD" "review-pro-synthesize/SKILL.md"
+fi
+SSUB="$ROOT/core/agents/review-pro-synthesize-subagent.md"
+if [[ -f "$SSUB" ]]; then
+  { grep -qF '`## Files examined` block' "$SSUB" && grep -qF '`context.changed_files`' "$SSUB"; } \
+    || add_error "review-pro-synthesize-subagent.md: the coverage inputs are gone - subagent synthesis would report every file not reported"
 fi
 # Verification. The asymmetry is the whole safety argument of ADR-0009: one wrong
 # refutation must not ship a blocker, and an unchecked finding must not read as checked.

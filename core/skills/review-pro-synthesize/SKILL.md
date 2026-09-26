@@ -6,17 +6,18 @@ version: 0.1.0
 
 # Review-Pro Synthesis (Stage 3)
 
-You are the orchestrator's final stage. You receive the structured findings from all dispatched reviewers, plus `diff_class`, `changed_files`, `spec_source`, `external_premises`, and `premises_dropped` from triage's dispatch plan, and produce ONE unified review.
+You are the orchestrator's final stage. You receive the structured findings from all dispatched reviewers, plus `diff_class`, `changed_files`, `spec_source`, `external_premises`, `premises_dropped`, and each dispatched reviewer's `context.changed_files` from triage's dispatch plan, and produce ONE unified review.
 
 ## Steps
-1. **Collect** all finding blocks from the dispatched reviewers.
+1. **Collect** all finding blocks from the dispatched reviewers. Set aside each code reviewer's `## Files examined` block for **Coverage**: it is not a finding, so it is never deduped or ranked.
 2. **Dedup** by `(file, line±5, category-root, overlap_hints)`: the same issue flagged by multiple reviewers collapses into one.
 3. **Weight:** annotate a finding flagged by 2 or more reviewers "flagged by N reviewers". It is a note about coverage, not evidence: see `## Verification`.
 4. **Resolve conflicts** by ownership: the domain owner sets severity (see table).
 5. **Verification results**: the orchestrator verifies the merged Medium+ code findings at this point and hands you the results. Apply them as `## Verification` says before going on.
 6. **Calibrate severity:** enforce the anti-overreporting bar. Downgrade anything not fully traced to evidence. Never upgrade beyond what a specialist justified. A verified finding is not recalibrated: see `## Verification`.
 7. **Out-of-diff evidence check** (see below): a review-level confidence signal, not a per-finding gate.
-8. **Verdict** + prioritized findings + remediations.
+8. **Coverage** (see below): which changed files the review read, from the dispatch plan and the reviewers' own declarations. Review-level, never a gate.
+9. **Verdict** + prioritized findings + remediations.
 
 When you run inline, the orchestrator runs **Collect** through **Resolve conflicts** before it dispatches the verifiers.
 
@@ -38,6 +39,45 @@ Rules:
 - **Never** block, downgrade, or drop an individual finding on this basis, and never change the verdict. Some real defects live entirely inside new code — an off-by-one needs no external evidence.
 - **Never** emit the caveat when `diff_class: trivial`: a chore legitimately needs no out-of-diff evidence, and a spurious caveat trains the reader to ignore it.
 - If `diff_class` or `changed_files` is missing from your input, **skip the check** and say so in one line. Do not guess the threshold, and do not infer out-of-diff-ness from a finding's `file` — every reviewer is diff-scoped, so `file` is almost always a changed file and inferring from it would fire the caveat on nearly every review.
+
+## Coverage
+
+Which changed files the review read, from two sources that must never be confused: the dispatch plan, which says what each reviewer received, and each code reviewer's `## Files examined` block, which says what it read. The second is a statement, not evidence, and the report labels it self-reported every time.
+
+Inputs: triage's `changed_files` and `diff_class`, each dispatched reviewer's `context.changed_files` from the dispatch plan, the code reviewers' `## Files examined` blocks, and the merged findings. **The spec reviewer is not a receiver**: it reads a file to match it against a requirement, not for defects, and counting it would show a file no code reviewer opened as examined. The receivers of a file are the dispatched code reviewers whose `context.changed_files` contains it.
+
+Put each file in `changed_files` in exactly one state, checked in this order:
+
+| State | Condition |
+|---|---|
+| sent to no reviewer | it has no receiver |
+| examined | a receiver lists it under `examined`, or filed a finding in it |
+| not examined | every receiver lists it under `not_examined` |
+| not reported | anything else: some receiver gave no entry for it |
+
+- A finding filed in a file counts as its reviewer examining that file, whatever the block says, and a refuted finding counts too: it shows the file was read, not that the finding holds. When the same reviewer also listed the file under `not_examined`, print `contradiction: <reviewer> filed a finding in <file> and declared it not examined`.
+- A reviewer that returned no block, a block that leaves a file out, and a file listed in both of one reviewer's lists all leave that reviewer with no entry for the file. **A missing report is never rendered as examined.** Whenever any receiver returned no block, print `no Files examined block from: <reviewers>`, even when other reviewers examined every file it received.
+
+Print the coverage line directly under the Spec line and above the Verification line:
+
+```
+Coverage (self-reported): <e> of <n> changed files examined by at least one reviewer[, <x> not examined][, <u> not reported][, <s> sent to no reviewer].
+```
+
+- Under it, one indented detail line per file in the `not examined` and `not reported` states: `not examined: <file> (<reviewer>: <reason>; ...)`, `not reported: <file> (<silent reviewers>)`. When a state holds more than 10 files, collapse each directory (its first two path segments) holding more than 3 of them into one line with a count and at most three distinct reasons, and list the rest by name.
+- Files sent to no reviewer also get this caveat under the detail lines, on every `diff_class`, because nothing reviewed them and that does not rest on anyone's word:
+
+  ```
+  > <s> changed files were sent to no reviewer, so nothing reviewed them: <files>.
+  ```
+
+- Never write verified, confirmed, complete or full on this line. "By at least one reviewer" is the claim, and it is a claim about files, not about every axis.
+- Declared skips are listed, never warned about. A reason is the reviewer's own words and the reader judges it: skipping study data or design prose is usually right.
+
+Rules:
+- It **never changes a finding**, a severity, or the verdict. It is review-level, like the out-of-diff check.
+- With `diff_class: trivial`, omit the coverage line and its detail lines: the whole change fits on a screen. The sent-to-no-reviewer caveat still prints.
+- If `changed_files` or the per-reviewer `context.changed_files` lists are missing from your input, print `Coverage: not computed, <what> missing from the input.` and do not guess.
 
 ## Spec axis
 
@@ -147,6 +187,9 @@ A markdown report. Lead with the verdict and Critical/High. Do not restate raw s
 
 Spec: measured against <spec_source.ref>
 (or: skipped, no spec found / not measured, <ref> resolved but carried no text)
+
+Coverage (self-reported): <e> of <n> changed files examined by at least one reviewer[, <x> not examined][, <u> not reported][, <s> sent to no reviewer].
+  not examined: <file> (<reviewer>: <reason>)
 
 Verification: <N> checked (<a> stand, <b> partly refuted, <c> refuted), <M> not checked (<counts by reason>). Spec findings are not verified.
 

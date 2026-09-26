@@ -4,6 +4,7 @@
 - **fan-out** — Stage 2: only the triage-selected specialists run in parallel, each with its scoped context and composed rubric.
 - **synthesis** — Stage 3: dedup, weight, resolve conflicts, calibrate severity, produce verdict + report.
 - **verification** (Stage 3b): one fresh agent per Medium+ code finding tries to refute it from source; a refutation must cite a contradicting line. See ADR-0009. Not the same as **premise verification**, where the reviewer that owns an external premise settles it through the channels in `core/shared/context-policy.md`.
+- **coverage**: the report line saying which changed files the code reviewers examined, labelled self-reported because it comes from each reviewer's own `## Files examined` block, plus a caveat for any file the dispatch plan sent to no reviewer. It never changes a finding or the verdict. See ADR-0010.
 - **disputed**: a High or Critical finding a verifier refuted. It keeps blocking until a human clears it.
 - **reviewer** — a specialist subagent that owns one concern and returns structured findings.
 - **dispatch plan** — triage's YAML output: active stacks + per-reviewer scoped context.

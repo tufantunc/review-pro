@@ -74,8 +74,13 @@ these load-bearing sections, in order:
    verification semantics from the original body.
 5. **Output schema** — embedded inline (not just referenced) so the model never
    has to "find" it.
-6. **Final reminder** — terminal restatement: output is findings or the single
-   "no findings" line; anything else is a failure.
+6. **Files examined** (every code reviewer, not `spec`): the block that accounts
+   for each changed file exactly once, which synthesis reports as self-reported
+   coverage ([ADR-0010](adr/0010-report-coverage-as-self-reported.md)). It sits
+   before the Final reminder so the reminder is still the last word.
+7. **Final reminder** — terminal restatement: output is findings or the single
+   "no findings" line, followed by the `## Files examined` block (the spec
+   reviewer has no such block); anything else is a failure.
 
 ## Residual limitation (not fully fixable from here)
 

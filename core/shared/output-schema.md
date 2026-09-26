@@ -28,3 +28,21 @@ Rules:
 - `evidence_refs` is optional and lists `<path>:<line>` for every file the evidence was **located in**, when that differs from `file` — a caller, an existing guard, a canonical helper, a schema, an upstream source. `file`/`line` stays the finding's own location. Populate it whenever you left the diff to establish the finding; synthesis counts it.
 - `impact` and `remedy` are held to the same evidence bar as the finding itself. If either asserts that something **cannot** be done — an API is unavailable, a helper cannot express a case, a constant is unreachable — locate that too, or drop the assertion. A correct finding with an unverified rationale sends the reader into unnecessary work.
 - `overlap_hints` lists other reviewers' category roots that might flag the same spot, and each one must exist in that reviewer's own closed list. This is what the synthesizer uses to collapse duplicates.
+
+## Files examined
+
+Not a finding. After its findings or its none-line, every code reviewer appends one block. The spec reviewer does not: coverage measures reading for defects, and matching a file against a requirement is not that.
+
+```
+## Files examined
+examined: [<path>, ...]
+not_examined:
+  - file: <path>
+    reason: <why, one line>
+```
+
+- Every file the reviewer received under `### Changed file contents` appears **exactly once**, in one of the two lists. An empty list is `[]`.
+- Examined means the reviewer read the file's diff or contents while applying its rubric. A file known only from the list or from a `--stat` is not examined.
+- Any reason is acceptable; a missing entry is not.
+- An accurate list with gaps is correct; a complete-looking list that overstates what was read is wrong.
+- Synthesis turns these blocks into the report's coverage line, labelled self-reported. The block never changes a finding.

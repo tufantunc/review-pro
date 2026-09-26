@@ -25,6 +25,13 @@ REQ_SECTIONS=(
 errors=0
 add_error(){ echo "FAIL: $*" >&2; errors=$((errors+1)); }
 
+# section <file> <heading>: the body of one `## ` section, up to the next `## ` heading
+# outside a code fence. Fence-aware because report templates and block formats carry
+# `## ` lines inside fences (`## Verdict`, `## Files examined`) that are not section ends.
+section(){
+  awk -v h="$2" '/^ *```/{f=!f} !s&&!f&&$0==h{s=1;next} s&&!f&&/^## /{exit} s' "$1"
+}
+
 is_stage_skill(){
   local n="$1"
   for o in "${STAGE_SKILLS[@]}"; do [[ "$o" == "$n" ]] && return 0; done
@@ -69,7 +76,7 @@ for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
     req=""
     case "$name" in
       review-pro-triage)     req=$'## Steps\n## Signal map (non-exhaustive)\n## Dispatch plan format\n## Output discipline' ;;
-      review-pro-synthesize) req=$'## Steps\n## Out-of-diff evidence check\n## Spec axis\n## Verification\n## Conflict ownership\n## Output' ;;
+      review-pro-synthesize) req=$'## Steps\n## Out-of-diff evidence check\n## Coverage\n## Spec axis\n## Verification\n## Conflict ownership\n## Output' ;;
       review-pro-verify)     req=$'## Role\n## Inputs\n## How to work\n## Verdicts\n## Rules\n## Output' ;;
     esac
     if [[ -n "$req" ]]; then
@@ -117,6 +124,64 @@ for body in "$ROOT"/core/agents/*-reviewer.md; do
     || add_error "$(basename "$body"): no '## <Axis> findings: none' sentinel"
 done
 
+# The block format synthesis reads, held here once. Every copy (the twelve bodies, the
+# shared schema, the orchestrator's inline path) must carry it verbatim as consecutive
+# lines. Key-by-key substring pins were tried first and leaked: a key found elsewhere in
+# the file satisfied them, and a rename applied to every copy at once passed (round 2 of
+# this branch's own review). A canonical text catches both.
+FILES_EXAMINED_BLOCK='## Files examined
+examined: [<path>, ...]
+not_examined:
+  - file: <path>
+    reason: <why, one line>'
+has_canonical_block(){
+  [[ "$(cat "$1")" == *"$FILES_EXAMINED_BLOCK"* ]] \
+    || add_error "$2: its Files examined block format differs from the canonical one in validate.sh - synthesis reads the block by those exact keys"
+}
+# read_section <file> <heading> <label>: sets SECTION_BODY, and errors when the heading is
+# there but section() cannot see a body under it. That happens when the section was
+# emptied, and when an unbalanced code fence earlier in the file hides the heading, which
+# would otherwise switch every check that reads the section off without a word. It sets a
+# variable instead of printing because add_error in a $(...) subshell loses its count.
+read_section(){
+  SECTION_BODY="$(section "$1" "$2")"
+  if grep -qxF "$2" "$1" && [[ -z "${SECTION_BODY//[[:space:]]/}" ]]; then
+    add_error "$3: the $2 section is empty or unreadable - check for an unbalanced code fence before it"
+  fi
+}
+# Coverage accounting (ADR-0010). Every code reviewer accounts for each file it received
+# in a `## Files examined` block. The spec reviewer is exempt: coverage measures reading
+# for defects, and synthesis never counts it as a receiver. The Final reminder check is
+# scoped to that section because it is the restatement a reviewer obeys last.
+for body in "$ROOT"/core/agents/*-reviewer.md; do
+  [[ -f "$body" ]] || continue
+  [[ "$(fm_get "$body" "loads_skill")" == "spec" ]] && continue
+  b="$(basename "$body")"
+  # Fence-aware: the canonical block repeats the heading inside a fence, and a plain
+  # whole-line grep would find that copy after the real section heading is gone.
+  [[ -n "$(section "$body" '## Files examined')" ]] \
+    || add_error "$b: no '## Files examined' block - an empty review and an unread file look the same in the report"
+  grep -qF 'exactly once' "$body" \
+    || add_error "$b: the exactly-once rule is gone - a reviewer can leave files out of its declaration and they read as covered"
+  grep -qF 'overstates what you read' "$body" \
+    || add_error "$b: the overstating rule is gone - nothing tells the reviewer a complete-looking list is the wrong answer"
+  section "$body" '## Final reminder' | grep -qF '## Files examined' \
+    || add_error "$b: the Final reminder does not name the '## Files examined' block - its terminal restatement tells the reviewer to return findings only"
+  has_canonical_block "$body" "$b"
+  # ADR-0001's guards catch deletion, not divergence (#44). The section is one text
+  # duplicated twelve times, so hold every copy to the first one byte for byte.
+  sum="$(section "$body" '## Files examined' | cksum)"
+  if [[ -z "${first_sum:-}" ]]; then first_sum="$sum"; first_body="$b"
+  elif [[ "$sum" != "$first_sum" ]]; then
+    add_error "$b: its '## Files examined' section differs from $first_body - the copies have drifted and reviewers get different contracts"
+  fi
+done
+if [[ -f "$SCHEMA_DOC" ]]; then
+  { [[ -n "$(section "$SCHEMA_DOC" '## Files examined')" ]] && grep -qF 'exactly once' "$SCHEMA_DOC"; } \
+    || add_error "core/shared/output-schema.md: the Files examined block is gone - rubric readers and the inline path lose the coverage contract"
+  has_canonical_block "$SCHEMA_DOC" "core/shared/output-schema.md"
+fi
+
 # Pointer resolution: rubrics reference `shared/<file>.md` relative to the skills
 # root's parent. Every referenced target must exist in core/shared/, and the CLI
 # must actually install that directory — otherwise the pointers dangle in a real
@@ -148,6 +213,8 @@ if [[ -f "$TRIAGE_MD" ]]; then
     || add_error "review-pro-triage/SKILL.md: the assign-dispatches rule is gone - a premise can be routed to a reviewer the signal map never dispatches, and nothing reports that it was"
   grep -qF 'does not verify the premise' "$TRIAGE_MD" \
     || add_error "review-pro-triage/SKILL.md: the no-verification prohibition is gone - triage settling premises itself breaks the one-owner rule and produces verifications nobody can attribute"
+  grep -qF 'coverage check compares against it' "$TRIAGE_MD" \
+    || add_error "review-pro-triage/SKILL.md: the coverage comparison is gone - nothing says the per-reviewer lists are what Stage 3 measures"
 fi
 SYNTH_MD="$SKILLS_DIR/review-pro-synthesize/SKILL.md"
 if [[ -f "$SYNTH_MD" ]]; then
@@ -187,6 +254,31 @@ if [[ -f "$ORCH_MD" ]]; then
     || add_error "review-pro/SKILL.md: its dedup summary no longer names the spec key - the inline path would use the code key and collapse unattempted requirements"
   grep -qF '### External premises' "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: the '### External premises' prompt section is gone - triage routes premises the orchestrator then never passes to the owning reviewer"
+  grep -qF "this reviewer's \`context.changed_files\`" "$ORCH_MD" \
+    || add_error "review-pro/SKILL.md: step 3 hands reviewers something other than their plan list - a narrowed prompt is invisible to the coverage check"
+  # Pinned as the inline sentence itself: 'exactly once' alone also matches the prompt reminder.
+  grep -qF "accounting for each file in that reviewer's \`context.changed_files\` exactly once" "$ORCH_MD" \
+    || add_error "review-pro/SKILL.md: inline reviews no longer account for each file once - a skills-only install can leave files out and read as covered"
+  has_canonical_block "$ORCH_MD" "review-pro/SKILL.md"
+  # Line-scoped: for an agent older than this release the reminder is the whole contract,
+  # so it must carry the honesty rule the spike measured, not only the format.
+  reminder="$(grep -F '`### Files examined`, for every code reviewer' "$ORCH_MD")"
+  if [[ -z "$reminder" ]]; then
+    add_error "review-pro/SKILL.md: the reviewer prompt no longer asks for the block - agents installed before this release never emit it"
+  else
+    { printf '%s' "$reminder" | grep -qF 'examined only if it read' && printf '%s' "$reminder" | grep -qF 'overstates what it read'; } \
+      || add_error "review-pro/SKILL.md: the reviewer prompt reminder lost its honesty rule - an older agent learns the format but not that a complete-looking list is wrong"
+    { printf '%s' "$reminder" | grep -qF 'not_examined:' && printf '%s' "$reminder" | grep -qF 'exactly once'; } \
+      || add_error "review-pro/SKILL.md: the reviewer prompt reminder lost its format or its exactly-once rule - an older agent cannot produce a block synthesis can read"
+  fi
+  # The inline path's own honesty rule, on its line: on a skills-only install it is the only
+  # place that tells the orchestrator an overstated list is wrong.
+  grep -F 'A file counts as examined only if you read its diff or contents' "$ORCH_MD" | grep -qF 'overstates what you read' \
+    || add_error "review-pro/SKILL.md: the inline path lost its honesty rule - an inline review can list every file as examined"
+  grep -F 'Continue the `review-pro-synthesize` skill from' "$ORCH_MD" | grep -qF 'compute coverage' \
+    || add_error "review-pro/SKILL.md: the step-5 handoff no longer names coverage - an inline run can go from the out-of-diff check straight to the verdict"
+  grep -qF "skill's \`## Output\` format" "$ORCH_MD" \
+    || add_error "review-pro/SKILL.md: the report no longer points at the synthesis Output format - a second copy of the template drifts from the first"
   grep -qF 'review-pro-verify-subagent' "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: the verifier dispatch is gone - Stage 3b never runs and every finding reads as unverified"
   grep -qF 'do **not** verify inline' "$ORCH_MD" \
@@ -211,6 +303,48 @@ if [[ -f "$SYNTH_MD" ]]; then
     || add_error "review-pro-synthesize/SKILL.md: the external-premise ledger is gone - a reviewer's 'could not verify' statement dies before the report the reader actually reads"
   grep -qF 'not how the reviewer would have written it' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the approval standard is gone - verdicts drift from measuring code health to enforcing taste, and imperfect improvements start getting blocked"
+fi
+# Coverage accounting (ADR-0010). Scoped to the section, because several of these
+# phrases would survive elsewhere in the file after the section that gives them meaning is gone.
+if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Coverage' "$SYNTH_MD"; then
+  # One error, not seven, when the body is gone: the heading still passes the required-section check.
+  read_section "$SYNTH_MD" '## Coverage' "review-pro-synthesize/SKILL.md"; COV="$SECTION_BODY"
+  if [[ -n "${COV//[[:space:]]/}" ]]; then
+    cov_pin(){ printf '%s\n' "$COV" | grep -qF "$1" || add_error "review-pro-synthesize/SKILL.md: $2"; }
+    cov_pin 'The spec reviewer is not a receiver' "the spec exclusion is gone from ## Coverage - a file only the spec reviewer read would show as examined"
+    cov_pin 'never rendered as examined'          "the not-reported rule is gone from ## Coverage - a reviewer that returned nothing would read as full coverage"
+    cov_pin 'no Files examined block from'        "the missing-block line is gone from ## Coverage - a reviewer contract violation becomes the quietest line in the report"
+    cov_pin 'declared it not examined'            "the contradiction line is gone from ## Coverage - a finding in a file its reviewer called unread goes unnoticed"
+    # The caveat is two lines, pinned one by one: every phrase they share also appears on the other
+    # line or in the state table, and a phrase pin let either line go (round 2).
+    printf '%s\n' "$COV" | sed 's/^ *//' | grep -qxF '> <s> changed files were sent to no reviewer, so nothing reviewed them: <files>.' \
+      || add_error "review-pro-synthesize/SKILL.md: the caveat line is gone from ## Coverage - a narrowed dispatch is never reported"
+    printf '%s\n' "$COV" | grep -F 'also get this caveat' | grep -qF 'on every `diff_class`' \
+      || add_error "review-pro-synthesize/SKILL.md: the caveat rule is gone from ## Coverage - nothing says the caveat prints on trivial diffs too"
+    cov_pin 'diff_class: trivial'                 "the trivial rule is gone from ## Coverage - every one-line chore gets a coverage line and readers learn to skip it"
+    cov_pin 'never changes a finding'             "the no-effect rule is gone from ## Coverage - coverage could start gating findings or the verdict"
+  fi
+fi
+# The report header order is Spec, Coverage, Verification (ADR-0010). The synthesis skill
+# holds the only copy of the template; the orchestrator points at it.
+if [[ -f "$SYNTH_MD" ]]; then
+  read_section "$SYNTH_MD" '## Output' "review-pro-synthesize/SKILL.md"; out="$SECTION_BODY"
+  if [[ -n "$out" ]]; then # absent: the required-section check's error; unreadable: read_section's
+    line_of(){ printf '%s\n' "$out" | grep -nF "$1" | head -1 | cut -d: -f1; }
+    c="$(line_of 'Coverage (self-reported):')"; sp="$(line_of 'Spec: measured against')"; v="$(line_of 'Verification: <N> checked')"
+    if [[ -z "$c" ]]; then
+      add_error "review-pro-synthesize/SKILL.md: the Output template has no coverage line - the report would drop the coverage signal"
+    elif [[ -z "$sp" || -z "$v" ]]; then
+      add_error "review-pro-synthesize/SKILL.md: the Output template lost its Spec or Verification line - the header order can no longer be checked"
+    elif ! [[ "$sp" -lt "$c" && "$c" -lt "$v" ]]; then
+      add_error "review-pro-synthesize/SKILL.md: the Output template orders the header lines wrong - it must be Spec, Coverage, Verification"
+    fi
+  fi
+fi
+SSUB="$ROOT/core/agents/review-pro-synthesize-subagent.md"
+if [[ -f "$SSUB" ]]; then
+  { grep -qF '`## Files examined` block' "$SSUB" && grep -qF '`context.changed_files`' "$SSUB"; } \
+    || add_error "review-pro-synthesize-subagent.md: the coverage inputs are gone - subagent synthesis would report every file not reported"
 fi
 # Verification. The asymmetry is the whole safety argument of ADR-0009: one wrong
 # refutation must not ship a blocker, and an unchecked finding must not read as checked.

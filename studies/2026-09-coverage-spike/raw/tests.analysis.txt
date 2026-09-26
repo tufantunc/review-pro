@@ -1,0 +1,13 @@
+== tests
+block present: True
+tool calls: 15
+declared examined: 12  declared not_examined: 107
+not_examined outside studies/: ['docs/internals/adr/0009-verify-findings-by-refutation.md', 'docs/superpowers/plans/2026-09-24-refuting-verifier.md', 'docs/superpowers/specs/2026-09-24-refuting-verifier-design.md']
+omitted from both lists: 0 []
+in both lists: []
+listed but not in changed list: []
+OVERCLAIM (declared examined, never in view): 0 []
+underclaim (declared not examined, but was in view): 3 ['docs/internals/adr/0009-verify-findings-by-refutation.md', 'docs/superpowers/plans/2026-09-24-refuting-verifier.md', 'docs/superpowers/specs/2026-09-24-refuting-verifier-design.md']
+finding files: ['scripts/validate.sh']; contradictions: []
+whole-commit diff commands: [('cat /private/tmp/claude-501/-Users-tufantunc-Desktop-Projects-Personal-review-pro/99075928-604e-433b-bc82-95e9c121edc8/s', 13658, False)]
+trim markers in tool output: [('Bash', '+6 more in docs/.../plans/2026-09-24-refuting-verifier.md [see remaining: tail -n +26 "$HOME/Library/Application Support')]

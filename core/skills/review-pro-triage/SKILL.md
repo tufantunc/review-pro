@@ -69,7 +69,7 @@ You are the orchestrator's first stage. You do NOT review code yourself. You pre
    At most **three** premises, chosen by what the diff most depends on. State any
    dropped count in the plan: a silent cap reads to the next reader as complete
    coverage. Emit nothing when there are none.
-8. **Scope context per dispatched reviewer** per `core/shared/context-policy.md`: every reviewer gets diff + changed files; add the reviewer-specific scoped extras.
+8. **Scope context per dispatched reviewer** per `core/shared/context-policy.md`: every reviewer gets diff + changed files; add the reviewer-specific scoped extras. List every file you hand a reviewer in its `context.changed_files`: the orchestrator hands exactly that list, and a file on no code reviewer's list is reported as sent to no reviewer.
 9. **Emit the dispatch plan** (YAML below) and hand off to Stage 2 (fan-out). Do not run the reviewers inline unless the platform adapter requires it.
 
 ## Signal map (non-exhaustive)
@@ -102,7 +102,7 @@ premises_dropped: <n>                 # omit when zero
 dispatch:
   <reviewer>:
     context:
-      changed_files: [<paths>]
+      changed_files: [<paths>]   # exactly what the orchestrator hands this reviewer; Stage 3's coverage check compares against it
       related: [<scoped extras: callers, repo-search results, schema, consumers...>]
   # reviewers not dispatched are simply absent
 ```

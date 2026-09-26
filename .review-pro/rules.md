@@ -47,12 +47,13 @@ after #74. Source: docs/internals/releasing.md, step 3.
 
 ## R6: the roster is published everywhere
 - when: `manifest.json`
-- then: `README.md`, `docs/llms.txt`, `cli/README.md`, `cli/package.json`, `CONTRIBUTING.md`, `docs-src/i18n/*.json`
+- then: `README.md`, `docs/llms.txt`, `cli/README.md`, `cli/package.json`, `CONTRIBUTING.md`, `docs-src/i18n/en.json`, `docs-src/i18n/de.json`, `docs-src/i18n/fr.json`, `docs-src/i18n/nl.json`, `docs-src/i18n/tr.json`, `docs-src/i18n/hi.json`, `docs-src/i18n/zh.json`
 - rule: A change to the reviewer roster must update every surface that states the count or lists the reviewers.
 
 Why: the count went stale in llms.txt and, spelled as a word, in seven locales. The validator's
 published-count guard checks the count; this rule covers the rest of what a roster change
-touches. Source: CONTRIBUTING.md, "Adding a new reviewer".
+touches. The locales are listed one by one because a glob in `then` is satisfied by any one
+matching file. Source: CONTRIBUTING.md, "Adding a new reviewer".
 
 ## R7: a schema rule reaches the agent bodies
 - when: `core/shared/output-schema.md`

@@ -16,7 +16,7 @@ Your prompt carries:
 - `### Diff`: the diff under review. Its first line is `base: <sha>`, the merge base the diff was taken against.
 - `### Change description`: the author's description of the change, when there is one.
 
-You work in the repository's working tree, which is the branch under review. A file the diff deletes is read from the base with `git show <base>:<path>`.
+You work in the repository's working tree, which is the branch under review. A file the diff deletes is read from the base with `git show <base>:<path>`. `.review-pro/rules.md` is always read from the base with `git show <base>:.review-pro/rules.md`, never the working tree: its rules are the merge base's, and the change under review may have edited them.
 
 ## How to work
 - Re-read every line the finding cites, yourself, in the working tree. Do not trust its excerpts, its line numbers, or its description of what code does.

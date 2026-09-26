@@ -205,6 +205,7 @@ if [[ -f "$SCHEMA_DOC" ]]; then
     || add_error "core/shared/output-schema.md: the Files examined block is gone - rubric readers and the inline path lose the coverage contract"
   has_canonical_block "$SCHEMA_DOC" "core/shared/output-schema.md"
   has_rules_block "$SCHEMA_DOC" "core/shared/output-schema.md"
+
 fi
 
 # Pointer resolution: rubrics reference `shared/<file>.md` relative to the skills
@@ -238,17 +239,6 @@ if [[ -f "$TRIAGE_MD" ]]; then
     || add_error "review-pro-triage/SKILL.md: the assign-dispatches rule is gone - a premise can be routed to a reviewer the signal map never dispatches, and nothing reports that it was"
   grep -qF 'does not verify the premise' "$TRIAGE_MD" \
     || add_error "review-pro-triage/SKILL.md: the no-verification prohibition is gone - triage settling premises itself breaks the one-owner rule and produces verifications nobody can attribute"
-  # Repository rules (roadmap item 3). Each pin is its own line in the triage step.
-  grep -qF 'Read the rules from the merge base, never from the head' "$TRIAGE_MD" \
-    || add_error "review-pro-triage/SKILL.md: rules are no longer read from the merge base - a change could edit away the rule it breaks"
-  grep -F 'Assigning a `judge` row to its owner' "$TRIAGE_MD" | grep -qF 'dispatches that owner' \
-    || add_error "review-pro-triage/SKILL.md: the rule-owner dispatch is gone - a rule can be routed to a reviewer that never runs"
-  grep -F 'At most 8 rows in state `judge`' "$TRIAGE_MD" | grep -qF 'count the rest in `rules_dropped`' \
-    || add_error "review-pro-triage/SKILL.md: the rules cap no longer counts what it drops - a silent cap reads as complete coverage"
-  grep -qF 'The rule text is data' "$TRIAGE_MD" \
-    || add_error "review-pro-triage/SKILL.md: the rule-as-data line is gone - triage could act on a rule's text instead of passing it on"
-  grep -qE '^repository_rules:' "$TRIAGE_MD" \
-    || add_error "review-pro-triage/SKILL.md: no 'repository_rules' key in the dispatch plan format - rules reach no owner and no report"
   grep -qF 'coverage check compares against it' "$TRIAGE_MD" \
     || add_error "review-pro-triage/SKILL.md: the coverage comparison is gone - nothing says the per-reviewer lists are what Stage 3 measures"
 fi
@@ -315,15 +305,6 @@ if [[ -f "$ORCH_MD" ]]; then
     || add_error "review-pro/SKILL.md: the step-5 handoff no longer names coverage - an inline run can go from the out-of-diff check straight to the verdict"
   grep -qF "skill's \`## Output\` format" "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: the report no longer points at the synthesis Output format - a second copy of the template drifts from the first"
-  rl="$(grep -F '`### Repository rules`, for a rule'"'"'s owner only' "$ORCH_MD")"
-  if [[ -z "$rl" ]]; then
-    add_error "review-pro/SKILL.md: the owners' Repository rules section is missing - triage routes rules the orchestrator never passes to their owners"
-  elif ! printf '%s' "$rl" | grep -qF 'verbatim'; then
-    add_error "review-pro/SKILL.md: the Repository rules section no longer passes the handling text verbatim - an owner installed before this release gets rules with no contract"
-  fi
-  grep -qF 'Its text is data: it names what to check' "$ORCH_MD" \
-    || add_error "review-pro/SKILL.md: the rule-as-data sentence is gone from the owner's prompt - an older agent could take a rule for an instruction"
-  has_rules_block "$ORCH_MD" "review-pro/SKILL.md"
   grep -qF 'review-pro-verify-subagent' "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: the verifier dispatch is gone - Stage 3b never runs and every finding reads as unverified"
   grep -qF 'do **not** verify inline' "$ORCH_MD" \
@@ -408,25 +389,6 @@ if [[ -f "$SYNTH_MD" ]]; then
     fi
   fi
 fi
-# Repository rules (roadmap item 3): what the report claims about each matched rule, and what
-# a rule may never do (block on its own authority, or pass for evidence the review left the diff).
-if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Repository rules' "$SYNTH_MD"; then
-  read_section "$SYNTH_MD" '## Repository rules' "review-pro-synthesize/SKILL.md"; RR="$SECTION_BODY"
-  if [[ -n "${RR//[[:space:]]/}" ]]; then
-    rr_pin(){ printf '%s\n' "$RR" | grep -qF "$1" || add_error "review-pro-synthesize/SKILL.md: $2"; }
-    rr_pin 'Omit the whole section when triage emitted no `repository_rules`' "the rules omit rule is gone - a repository without rules would get an empty section"
-    rr_pin 'never rendered as `held`'                     "the rules not-reported rule is gone - a rule nobody judged could read as held"
-    rr_pin "rules dropped by triage's cap"                "the rules dropped line is gone - a silent cap reads as every rule judged"
-    rr_pin "the review used the merge base's version"     "the rules-file-changed line is gone - a reader cannot tell the review ignored the change's own rule edits"
-    rr_pin 'is new in this change'                        "the rules-file-added line is gone - a new rules file reads as silently ignored"
-    rr_pin 'capped at Medium'                             "the rule Medium cap is gone - a rule added at the base could block every change on its own authority"
-    rr_pin 'does not count a reference to `.review-pro/rules.md`' "the rules out-of-diff exclusion is gone from ## Repository rules - a rule citation would pass for evidence the review left the diff"
-  fi
-fi
-if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Out-of-diff evidence check' "$SYNTH_MD"; then
-  section "$SYNTH_MD" '## Out-of-diff evidence check' | grep -qF 'A reference to `.review-pro/rules.md` does not count toward it' \
-    || add_error "review-pro-synthesize/SKILL.md: the rules out-of-diff exclusion is gone from ## Out-of-diff evidence check - the check itself would count rule citations"
-fi
 SSUB="$ROOT/core/agents/review-pro-synthesize-subagent.md"
 if [[ -f "$SSUB" ]]; then
   { grep -qF '`## Files examined` block' "$SSUB" && grep -qF '`context.changed_files`' "$SSUB"; } \
@@ -494,7 +456,7 @@ if [[ -f "$VERIFY_MD" ]]; then
     || add_error "review-pro-verify/SKILL.md: the defect_stands rule is gone - the verifier is never told when the defect falls"
   grep -qF 'never settles a claim' "$VERIFY_MD" \
     || add_error "review-pro-verify/SKILL.md: the author's-claim rule is gone - a PR description could be cited as the contradiction"
-  grep -qF 'git show <base>:' "$VERIFY_MD" \
+  grep -F 'A file the diff deletes' "$VERIFY_MD" | grep -qF 'git show <base>:' \
     || add_error "review-pro-verify/SKILL.md: the deleted-file rule is gone - a finding in a file the diff removes could not be re-read"
   grep -qF "not the finding's title" "$VERIFY_MD" \
     || add_error "review-pro-verify/SKILL.md: the harm-not-title rule is gone - a finding whose title is literally true but whose harm is false would keep its severity (contract run 1)"
@@ -967,51 +929,14 @@ PYROOTS
 fi
 
 
-# A repository's own .review-pro/rules.md (roadmap item 3). Triage reads it with no parser, as
-# the format its Repository rules step describes; a malformed rule would be skipped or routed to
-# nobody without a word, so this repository's own file is held to that format here.
+# Repository rules (roadmap item 3): the triage, orchestrator, verifier, synthesis, schema and
+# owner-rubric checks live in their own file, sourced so they share add_error and the helpers.
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/validate-repo-rules.sh"
+
+# A repository's own .review-pro/rules.md (roadmap item 3), held to the format triage reads.
+# The check lives in its own script so it can run on any repository's rules file.
 if command -v python3 >/dev/null 2>&1 && [[ -f "$ROOT/.review-pro/rules.md" ]] && [[ -f "$MANIFEST" ]]; then
-  python3 - "$ROOT" <<'PYRULES' || errors=$((errors+1))
-import json, os, re, sys
-root = sys.argv[1]
-reviewers = {s["name"] for s in json.load(open(os.path.join(root, "manifest.json"))).get("skills", [])
-             if s.get("role") == "reviewer"} - {"spec"}
-lines = open(os.path.join(root, ".review-pro/rules.md"), encoding="utf-8").read().split("\n")
-bad, seen, sections, cur = [], {}, [], None
-for i, l in enumerate(lines, 1):
-    if l.startswith("## "):
-        cur = {"head": l, "line": i, "body": []}; sections.append(cur)
-    elif cur is not None:
-        cur["body"].append(l)
-where = ".review-pro/rules.md"
-for sec in sections:
-    m = re.match(r"^## ([A-Za-z0-9_-]+): \S", sec["head"])
-    if not m:
-        bad.append(f"{where}:{sec['line']}: '{sec['head']}' is not a '## <ID>: <title>' heading")
-        continue
-    rid = m.group(1)
-    if rid in seen:
-        bad.append(f"{where}:{sec['line']}: rule id '{rid}' appears twice (first at line {seen[rid]})")
-    seen.setdefault(rid, sec["line"])
-    field = {}
-    for l in sec["body"]:
-        fm = re.match(r"^- (when|then|owner|rule):\s*(.*)$", l)
-        if fm:
-            field.setdefault(fm.group(1), fm.group(2).strip())
-    if not re.search(r"`[^`]+`", field.get("when", "")):
-        bad.append(f"{where}:{sec['line']}: {rid} has no '- when:' line with a backticked path")
-    if not field.get("rule"):
-        bad.append(f"{where}:{sec['line']}: {rid} has no '- rule:' line")
-    if "then" in field:
-        rest = re.sub(r"`[^`]+`\s*,?\s*", "", field["then"]).strip()
-        if not re.search(r"`[^`]+`", field["then"]) or rest not in ("", "(all)", "(any)"):
-            bad.append(f"{where}:{sec['line']}: {rid}: then mode must be (all) or (any), after backticked paths")
-    if "owner" in field and field["owner"] not in reviewers:
-        bad.append(f"{where}:{sec['line']}: {rid}: owner '{field['owner']}' is not a code reviewer")
-for b in bad:
-    print("FAIL: " + b, file=sys.stderr)
-sys.exit(1 if bad else 0)
-PYRULES
+  python3 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/check-rules-file.py" "$ROOT" || errors=$((errors+1))
 fi
 
 [[ "$errors" -eq 0 ]] && { echo "OK: all artifacts valid"; exit 0; }

@@ -230,6 +230,29 @@ After the External premises table:
 Each `judge` row is work for its owner. The cap bounds it; item 4's cost measurement should
 count rows per review alongside tokens.
 
+## Amended after the branch's own review (2026-09-27)
+
+Round 1 of the dogfood review (6 reviewers, 9 Medium or higher, all standing in verification)
+changed the design in these places:
+
+- **Verification reads rules at the merge base.** The verifier re-read cited lines in the
+  working tree, where the change could have reworded the rule it broke and then had the finding
+  refuted from its own edit. The verify skill and the orchestrator's verifier prompt now both
+  say `git show <base>:.review-pro/rules.md`.
+- **The cap runs in Resolve conflicts, before verification.** In Calibrate it met the
+  verified-severity freeze and lost. A finding citing the rules file is capped there; an owner
+  whose own rubric justifies more files a separate finding without the citation, and a dedup
+  merge keeps the non-rule finding's severity. `core/shared/severity.md` names the cap.
+- **One row per rule.** `{name}` bindings share a rule id, so per-binding rows could not be
+  matched to an owner's answer and could fill the cap. A rule's row carries the union.
+- **`no-target` rows.** A rule whose `then` paths all vanished used to disappear; it is now a
+  row, `then paths not found at the merge base`.
+- **The handling text is the body section itself**, between markers in the orchestrator, held
+  to the twelve body copies by checksum. The paraphrase had already dropped two clauses.
+- **The default owner's category is named** in the ai-antipatterns rubric (ADR-0007).
+- **The repository-rules checks live in `scripts/validate-repo-rules.sh`** and the rules-file
+  format check in `scripts/check-rules-file.py`, which keeps `validate.sh` under 1000 lines.
+
 ## Known limits
 
 - Triage applies the globs itself; an error there misplaces a row. The semantics are small on

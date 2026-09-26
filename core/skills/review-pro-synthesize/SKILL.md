@@ -12,9 +12,9 @@ You are the orchestrator's final stage. You receive the structured findings from
 1. **Collect** all finding blocks from the dispatched reviewers. Set aside each code reviewer's `## Files examined` block for **Coverage**: it is not a finding, so it is never deduped or ranked.
 2. **Dedup** by `(file, line±5, category-root, overlap_hints)`: the same issue flagged by multiple reviewers collapses into one.
 3. **Weight:** annotate a finding flagged by 2 or more reviewers "flagged by N reviewers". It is a note about coverage, not evidence: see `## Verification`.
-4. **Resolve conflicts** by ownership: the domain owner sets severity (see table).
+4. **Resolve conflicts** by ownership: the domain owner sets severity (see table). A finding citing `.review-pro/rules.md` is capped at Medium here, before verification selects anything: see `## Repository rules`.
 5. **Verification results**: the orchestrator verifies the merged Medium+ code findings at this point and hands you the results. Apply them as `## Verification` says before going on.
-6. **Calibrate severity:** enforce the anti-overreporting bar. Downgrade anything not fully traced to evidence. Never upgrade beyond what a specialist justified. A verified finding is not recalibrated: see `## Verification`. A finding citing `.review-pro/rules.md` is capped at Medium: see `## Repository rules`.
+6. **Calibrate severity:** enforce the anti-overreporting bar. Downgrade anything not fully traced to evidence. Never upgrade beyond what a specialist justified. A verified finding is not recalibrated: see `## Verification`.
 7. **Out-of-diff evidence check** (see below): a review-level confidence signal, not a per-finding gate.
 8. **Coverage** (see below): which changed files the review read, from the dispatch plan and the reviewers' own declarations. Review-level, never a gate.
 9. **Verdict** + prioritized findings + remediations.
@@ -118,7 +118,7 @@ The out-of-diff evidence check needs no exception here. Its definition already c
 
 ## Repository rules
 
-Triage's `repository_rules` lists every rule from `.review-pro/rules.md`, read at the merge base, that the change matched. Omit the whole section when triage emitted no `repository_rules`. Otherwise print one table after the External premises table and before the findings: it is review-level context, like the premises.
+Triage's `repository_rules` lists every rule from `.review-pro/rules.md`, read at the merge base, that the change matched. Omit the whole section when triage emitted no `repository_rules`, and omit the table when `rows` is empty, keeping only the lines beneath it that apply. Otherwise print one table after the External premises table and before the findings: it is review-level context, like the premises.
 
 ```
 ### Repository rules (from .review-pro/rules.md at <merge-base sha>)
@@ -127,13 +127,14 @@ Triage's `repository_rules` lists every rule from `.review-pro/rules.md`, read a
 
 - One row per entry in `rows`. `Rule` is the id and the rule sentence; `Matched` is the matched files and, for a co-change rule, the expected files that did not change.
 - A `judge` row takes its outcome from its owner's `## Repository rules` block: `violated: <category>`, pointing at the finding filed with it, or `held: <because>`.
+- A `no-target` row reads `then paths not found at the merge base`: the rule can no longer fire and needs updating.
 - A `changed-alongside` row reads `changed alongside, not judged`: its expected files changed, and nobody checked that they changed enough.
 - A `judge` row that appears in no owner's block reads `not reported (<owner>)`. A missing report is never rendered as `held`: a rule routed to a reviewer that then said nothing is a contract violation, and it must not be the quietest line in the report.
 - Beneath the table, outside it, print `<n> rules dropped by triage's cap; never judged.` when `rules_dropped` is above zero.
 - Beneath the table, outside it, print `.review-pro/rules.md changed in this change; the review used the merge base's version.` when `file_changed` is `changed`.
 - When `file_changed` is `added`, print `.review-pro/rules.md is new in this change; its rules apply from the next change.` in place of the table.
-- A finding whose `evidence_refs` cite `.review-pro/rules.md` is capped at Medium in Calibrate severity: a rules file is not a trusted source, and a rule must not be able to block a change on its own authority. A real High still surfaces through the owner's own rubric as its own finding.
-- The out-of-diff evidence check does not count a reference to `.review-pro/rules.md`: a rule is the maintainer's claim, not evidence that the review left the diff. The stale file's own line is.
+- A finding citing `.review-pro/rules.md` is capped at Medium in Resolve conflicts, before verification selects anything, so the verified-severity freeze never meets an uncapped rule finding: a rules file is not a trusted source, and a rule must not be able to block a change on its own authority. An owner whose own rubric justifies more files that as a separate finding without the rule citation. When dedup merges a finding citing `.review-pro/rules.md` with one that does not, the merged finding keeps the severity of the one that does not.
+- A rule citation does not count for the out-of-diff evidence check: see that section.
 - A `held` row removes nothing, and no row changes a finding its owner did not file.
 
 ## Verification

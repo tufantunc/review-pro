@@ -22,8 +22,10 @@ it can be turned against the review.
 Triage reads `.review-pro/rules.md` from the merge base, never from the head, computes each
 rule's trigger without judgment, and routes each triggered rule to an owner among the code
 reviewers, which dispatches that owner. The rule's text reaches the owner as data: it names an
-expectation and can do nothing else. A finding resting on a rule is capped at Medium. Every
-matched rule is a row in the report, and a rule nobody answered reads `not reported`.
+expectation and can do nothing else. Verification reads the rule at the merge base as well, so
+the verifier cannot be handed the change's own edit of it. A finding resting on a rule is capped
+at Medium before verification selects anything. Every matched rule is a row in the report, and a
+rule nobody answered reads `not reported`.
 
 Rejected: reading from the head. The cheapest way to disable a rule would be to delete it in
 the change that breaks it.

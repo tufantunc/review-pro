@@ -265,9 +265,16 @@ if [[ -f "$ORCH_MD" ]]; then
   reminder="$(grep -F '`### Files examined`, for every code reviewer' "$ORCH_MD")"
   if [[ -z "$reminder" ]]; then
     add_error "review-pro/SKILL.md: the reviewer prompt no longer asks for the block - agents installed before this release never emit it"
-  elif ! { printf '%s' "$reminder" | grep -qF 'examined only if it read' && printf '%s' "$reminder" | grep -qF 'overstates what it read'; }; then
-    add_error "review-pro/SKILL.md: the reviewer prompt reminder lost its honesty rule - an older agent learns the format but not that a complete-looking list is wrong"
+  else
+    { printf '%s' "$reminder" | grep -qF 'examined only if it read' && printf '%s' "$reminder" | grep -qF 'overstates what it read'; } \
+      || add_error "review-pro/SKILL.md: the reviewer prompt reminder lost its honesty rule - an older agent learns the format but not that a complete-looking list is wrong"
+    { printf '%s' "$reminder" | grep -qF 'not_examined:' && printf '%s' "$reminder" | grep -qF 'exactly once'; } \
+      || add_error "review-pro/SKILL.md: the reviewer prompt reminder lost its format or its exactly-once rule - an older agent cannot produce a block synthesis can read"
   fi
+  # The inline path's own honesty rule, on its line: on a skills-only install it is the only
+  # place that tells the orchestrator an overstated list is wrong.
+  grep -F 'A file counts as examined only if you read its diff or contents' "$ORCH_MD" | grep -qF 'overstates what you read' \
+    || add_error "review-pro/SKILL.md: the inline path lost its honesty rule - an inline review can list every file as examined"
   grep -F 'Continue the `review-pro-synthesize` skill from' "$ORCH_MD" | grep -qF 'compute coverage' \
     || add_error "review-pro/SKILL.md: the step-5 handoff no longer names coverage - an inline run can go from the out-of-diff check straight to the verdict"
   grep -qF "skill's \`## Output\` format" "$ORCH_MD" \

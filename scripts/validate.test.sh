@@ -293,6 +293,7 @@ Continue the `review-pro-synthesize` skill from **Verification results**: comput
 `### Changed file contents`: the files in this reviewer's `context.changed_files`, all of them.
    - `### Files examined`, for every code reviewer (never `spec`): end with the block, `examined: [...]` then `not_examined:`, each file exactly once; a file counts as examined only if it read the file's diff or contents, and a complete-looking list that overstates what it read is wrong.
 Every inline code review ends with this block, accounting for each file in that reviewer's `context.changed_files` exactly once:
+A file counts as examined only if you read its diff or contents while applying that rubric. An accurate list with gaps is correct; a complete-looking list that overstates what you read is wrong.
 ```
 ## Files examined
 examined: [<path>, ...]
@@ -1325,6 +1326,7 @@ stage_mutation "$SYN" w_synth "the missing-block line is gone"         "synthesi
 stage_mutation "$SYN" w_synth "the contradiction line is gone"         "synthesis coverage contradiction"   grep -vF 'declared it not examined'
 stage_mutation "$SYN" w_synth "the caveat line is gone"                "synthesis coverage caveat line"     grep -vF '> <s> changed files'
 stage_mutation "$SYN" w_synth "the caveat rule is gone"                "synthesis coverage caveat rule"     grep -vF 'also get this caveat'
+stage_mutation "$SYN" w_synth "the caveat rule is gone"                "synthesis caveat every diff_class"  sed 's/, on every `diff_class`//'
 stage_mutation "$SYN" w_synth "the ## Output section is empty or unreadable" "synthesis output behind open fence" awk '/^## Verification$/{v=1} v&&/^```$/&&!d{d=1;next} 1'
 # The exit status, not only the FAIL line: an add_error inside a $(...) subshell prints but
 # never reaches the error count, and this helper was first written exactly that way.
@@ -1359,7 +1361,12 @@ stage_mutation "$ORC" w_orch "review-pro/SKILL.md: its Files examined block form
 stage_mutation "$ORC" w_orch "review-pro/SKILL.md: its Files examined block format differs" "orchestrator block key"   sed 's/^examined: \[<path>, \.\.\.\]$/read: [<path>, ...]/'
 stage_mutation "$ORC" w_orch "inline reviews no longer account for each file once"      "orchestrator inline once"       sed 's/`context.changed_files` exactly once/`context.changed_files`/'
 stage_mutation "$ORC" w_orch "the reviewer prompt no longer asks for the block"         "orchestrator prompt reminder"   grep -vF '### Files examined'
-stage_mutation "$ORC" w_orch "the reviewer prompt reminder lost its honesty rule"       "orchestrator reminder honesty"  sed 's/; a file counts as examined only if it read the file.s diff or contents, and a complete-looking list that overstates what it read is wrong//'
+stage_mutation "$ORC" w_orch "the reviewer prompt reminder lost its honesty rule"       "orchestrator reminder examined def"  sed 's/examined only if it read/examined when it saw/'
+stage_mutation "$ORC" w_orch "the reviewer prompt reminder lost its honesty rule"       "orchestrator reminder overstating"   sed 's/, and a complete-looking list that overstates what it read is wrong//'
+stage_mutation "$ORC" w_orch "the reviewer prompt reminder lost its format or its exactly-once rule" "orchestrator reminder once"          sed 's/`not_examined:`, each file exactly once;/`not_examined:`;/'
+stage_mutation "$ORC" w_orch "the reviewer prompt reminder lost its format or its exactly-once rule" "orchestrator reminder keys"          sed 's/ then `not_examined:`//'
+stage_mutation "$ORC" w_orch "the inline path lost its honesty rule"                    "orchestrator inline honesty gone"    grep -vF 'A file counts as examined only if you read'
+stage_mutation "$ORC" w_orch "the inline path lost its honesty rule"                    "orchestrator inline overstating"     sed 's/; a complete-looking list that overstates what you read is wrong//'
 stage_mutation "$ORC" w_orch "the step-5 handoff no longer names coverage"              "orchestrator step-5 coverage"   sed 's/compute coverage, //'
 stage_mutation "$ORC" w_orch "no longer points at the synthesis Output format"          "orchestrator output pointer"    sed "s/skill's \`## Output\` format/format/"
 rm -rf "$T"

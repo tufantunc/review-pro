@@ -135,6 +135,18 @@ examined: [<path>, ...]
 not_examined:
   - file: <path>
     reason: <why, one line>'
+# Repository rules (roadmap item 3): the block an owner answers in, held here once like the
+# Files examined block and required verbatim in every copy.
+RULES_BLOCK='## Repository rules
+- rule: <id>
+  outcome: violated | held
+  because: <one line>
+  evidence: <path:line, or a quoted diff line>
+  finding: <category>        # only when violated'
+has_rules_block(){
+  [[ "$(cat "$1")" == *"$RULES_BLOCK"* ]] \
+    || add_error "$2: its Repository rules block differs from the canonical one in validate.sh - synthesis reads an owner's answer by those exact keys"
+}
 has_canonical_block(){
   [[ "$(cat "$1")" == *"$FILES_EXAMINED_BLOCK"* ]] \
     || add_error "$2: its Files examined block format differs from the canonical one in validate.sh - synthesis reads the block by those exact keys"
@@ -169,6 +181,17 @@ for body in "$ROOT"/core/agents/*-reviewer.md; do
   section "$body" '## Final reminder' | grep -qF '## Files examined' \
     || add_error "$b: the Final reminder does not name the '## Files examined' block - its terminal restatement tells the reviewer to return findings only"
   has_canonical_block "$body" "$b"
+  # Repository rules: the section a running reviewer obeys when a rule is handed to it.
+  [[ -n "$(section "$body" '## Repository rules')" ]] \
+    || add_error "$b: no '## Repository rules' section - a rule handed to this reviewer arrives with no instruction to treat it as data"
+  has_rules_block "$body" "$b"
+  section "$body" '## Final reminder' | grep -qF '## Repository rules' \
+    || add_error "$b: the Final reminder does not name the '## Repository rules' block - its terminal restatement leaves the answer out"
+  rsum="$(section "$body" '## Repository rules' | cksum)"
+  if [[ -z "${rules_first_sum:-}" ]]; then rules_first_sum="$rsum"; rules_first_body="$b"
+  elif [[ "$rsum" != "$rules_first_sum" ]]; then
+    add_error "$b: its '## Repository rules' section differs from $rules_first_body - the copies have drifted and owners get different contracts"
+  fi
   # ADR-0001's guards catch deletion, not divergence (#44). The section is one text
   # duplicated twelve times, so hold every copy to the first one byte for byte.
   sum="$(section "$body" '## Files examined' | cksum)"
@@ -181,6 +204,7 @@ if [[ -f "$SCHEMA_DOC" ]]; then
   { [[ -n "$(section "$SCHEMA_DOC" '## Files examined')" ]] && grep -qF 'exactly once' "$SCHEMA_DOC"; } \
     || add_error "core/shared/output-schema.md: the Files examined block is gone - rubric readers and the inline path lose the coverage contract"
   has_canonical_block "$SCHEMA_DOC" "core/shared/output-schema.md"
+  has_rules_block "$SCHEMA_DOC" "core/shared/output-schema.md"
 fi
 
 # Pointer resolution: rubrics reference `shared/<file>.md` relative to the skills

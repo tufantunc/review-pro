@@ -49,7 +49,10 @@ reviewer run.
 1. **Two layers, labelled differently.** A deterministic layer from the dispatch plan
    (files sent to no reviewer) and a declared layer from the reviewers (files each one
    says it examined or did not). The first is computed from triage's own output and is
-   not labelled self-reported. The second is always labelled self-reported and never
+   not labelled self-reported. It rests on the orchestrator handing each reviewer exactly
+   its plan list: far firmer than a reviewer's declaration, not independent of the pipeline.
+   Its count is printed only in its own caveat, never on the self-reported line (amended
+   2026-09-27). The second is always labelled self-reported and never
    uses the words verified, confirmed, complete or full.
 2. **A file counts as examined when at least one code reviewer examined it.** The unit is
    the file, not the file per axis. The line says "by at least one reviewer" so it is
@@ -161,8 +164,9 @@ Verification: ...
 Rules:
 
 - The count line always states `<e> of <n> changed files examined by at least one
-  reviewer`, then only the non-zero states among `not examined`, `not reported` and
-  `sent to no reviewer`.
+  reviewer`, then only the non-zero states among `not examined` and `not reported`. Files
+  sent to no reviewer are counted in `<n>` and reported only in the caveat below, so the
+  self-reported line carries nothing a reviewer did not declare (amended 2026-09-27).
 - One detail line per file in each non-empty state, with each receiver's reason for
   `not examined` and the silent receivers for `not reported`. When a state holds more
   than 10 files, each directory (first two path segments) holding more than 3 of them
@@ -183,9 +187,11 @@ Rules:
 
   Under today's context policy this is expected to be empty. It is the only place that
   would notice triage or the orchestrator narrowing what a reviewer receives.
-- `diff_class: trivial`: omit the coverage line and its detail lines. The whole change
-  fits on a screen, and a self-reported line there adds nothing but length. The caveat
-  above still prints.
+- `diff_class: trivial`: omit the coverage line and its `not examined` and `not reported`
+  detail lines. The whole change fits on a screen, and a self-reported line there adds
+  nothing but length. Everything that reports a failure rather than a count still prints
+  on every diff class: the caveat above, `no Files examined block from:` and
+  `contradiction:` (amended 2026-09-27).
 - When triage dispatches no reviewer at all, synthesis never runs and the orchestrator
   returns APPROVE with a one-line note. That note says no reviewer was dispatched, so
   nothing reviewed the changed files: it stands in for the caveat.
@@ -250,6 +256,10 @@ Every check has its own mutation test in `scripts/validate.test.sh`:
   Output template orders Spec, Coverage, Verification, with a missing anchor line
   reported rather than skipped. A section whose heading exists but whose body cannot be
   read, which is what an unbalanced code fence earlier in the file causes, is an error.
+- Every `Coverage (self-reported):` line in the synthesis skill equals one canonical line
+  held in `validate.sh`, so the old form that carried the plan's count fails wherever it
+  reappears; the trivial rule names the two contract-violation lines on its own line
+  (amended 2026-09-27).
 - The orchestrator hands `context.changed_files`, carries the reviewer-prompt reminder
   with its honesty rule on the same line, the inline sentence and the canonical block for
   inline reviewers, names coverage in the

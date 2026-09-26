@@ -55,28 +55,31 @@ Put each file in `changed_files` in exactly one state, checked in this order:
 | not examined | every receiver lists it under `not_examined` and not also under `examined` |
 | not reported | anything else: some receiver gave no entry for it |
 
-- A finding filed in a file counts as its reviewer examining that file, whatever the block says, and a refuted finding counts too: it shows the file was read, not that the finding holds. When the same reviewer also listed the file under `not_examined`, print `contradiction: <reviewer> filed a finding in <file> and declared it not examined`.
-- A reviewer that returned no block, a block that leaves a file out, and a file listed in both of one reviewer's lists all leave that reviewer with no entry for the file. **A missing report is never rendered as examined.** Whenever any receiver returned no block, print `no Files examined block from: <reviewers>`, even when other reviewers examined every file it received.
+- A finding filed in a file counts as its reviewer examining that file, whatever the block says, and a refuted finding counts too: it shows the file was read, not that the finding holds. When the same reviewer also listed the file under `not_examined`, print `contradiction: <reviewer> filed a finding in <file> and declared it not examined`, on every `diff_class`.
+- A reviewer that returned no block, a block that leaves a file out, and a file listed in both of one reviewer's lists all leave that reviewer with no entry for the file. **A missing report is never rendered as examined.** Whenever any receiver returned no block, print `no Files examined block from: <reviewers>`, even when other reviewers examined every file it received, and on every `diff_class`.
 
 Print the coverage line directly under the Spec line and above the Verification line:
 
 ```
-Coverage (self-reported): <e> of <n> changed files examined by at least one reviewer[, <x> not examined][, <u> not reported][, <s> sent to no reviewer].
+Coverage (self-reported): <e> of <n> changed files examined by at least one reviewer[, <x> not examined][, <u> not reported].
 ```
 
+- The line carries only what reviewers declared. `<n>` still counts every changed file, so when some were sent to no reviewer the states on the line add up to `<n>` minus the caveat's count below; that count is the dispatch plan's, not a reviewer's, and never rides on the self-reported line.
 - Under it, one indented detail line per file in the `not examined` and `not reported` states: `not examined: <file> (<reviewer>: <reason>; ...)`, `not reported: <file> (<silent reviewers>)`. When a state holds more than 10 files, collapse each directory (its first two path segments) holding more than 3 of them into one line with a count and at most three distinct reasons, and list the rest by name.
-- Files sent to no reviewer also get this caveat under the detail lines, on every `diff_class`, because nothing reviewed them and that does not rest on anyone's word:
+- Files sent to no reviewer also get this caveat under the detail lines, on every `diff_class`, because nothing reviewed them:
 
   ```
   > <s> changed files were sent to no reviewer, so nothing reviewed them: <files>.
   ```
+
+  The caveat does not rest on a reviewer's word, but it is not independent either: it trusts that the orchestrator handed each reviewer exactly the list its plan names.
 
 - Never write verified, confirmed, complete or full on this line. "By at least one reviewer" is the claim, and it is a claim about files, not about every axis.
 - Declared skips are listed, never warned about. A reason is the reviewer's own words and the reader judges it: skipping study data or design prose is usually right.
 
 Rules:
 - It **never changes a finding**, a severity, or the verdict. It is review-level, like the out-of-diff check.
-- With `diff_class: trivial`, omit the coverage line and its detail lines: the whole change fits on a screen. The sent-to-no-reviewer caveat still prints.
+- With `diff_class: trivial`, omit the coverage line and its `not examined` and `not reported` detail lines: the whole change fits on a screen. Everything that reports a failure rather than a count still prints on every `diff_class`, in the coverage line's place under the Spec line: the sent-to-no-reviewer caveat, `no Files examined block from:` and `contradiction:`.
 - If `changed_files` or the per-reviewer `context.changed_files` lists are missing from your input, print `Coverage: not computed, <what> missing from the input.` and do not guess.
 
 ## Spec axis
@@ -188,7 +191,7 @@ A markdown report. Lead with the verdict and Critical/High. Do not restate raw s
 Spec: measured against <spec_source.ref>
 (or: skipped, no spec found / not measured, <ref> resolved but carried no text)
 
-Coverage (self-reported): <e> of <n> changed files examined by at least one reviewer[, <x> not examined][, <u> not reported][, <s> sent to no reviewer].
+Coverage (self-reported): <e> of <n> changed files examined by at least one reviewer[, <x> not examined][, <u> not reported].
   not examined: <file> (<reviewer>: <reason>)
 
 Verification: <N> checked (<a> stand, <b> partly refuted, <c> refuted), <M> not checked (<counts by reason>). Spec findings are not verified.

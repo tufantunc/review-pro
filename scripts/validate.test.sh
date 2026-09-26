@@ -210,13 +210,13 @@ Count the code-axis findings only whose evidence_refs name an unchanged path.
 ## Coverage
 The spec reviewer is not a receiver.
 A missing report is never rendered as examined.
-Print `no Files examined block from: <reviewers>`.
+Whenever any receiver returned no block, print `no Files examined block from: <reviewers>`.
 Print `contradiction: <reviewer> filed a finding in <file> and declared it not examined`.
 | sent to no reviewer | it has no receiver |
-Coverage (self-reported): <e> of <n> changed files examined by at least one reviewer[, <s> sent to no reviewer].
+Coverage (self-reported): <e> of <n> changed files examined by at least one reviewer[, <x> not examined][, <u> not reported].
 - Files sent to no reviewer also get this caveat, on every `diff_class`, because nothing reviewed them:
   > <s> changed files were sent to no reviewer, so nothing reviewed them: <files>.
-With `diff_class: trivial`, omit the coverage line.
+With `diff_class: trivial`, omit the coverage line; the caveat, `no Files examined block from:` and `contradiction:` still print.
 It never changes a finding, a severity, or the verdict.
 ## Spec axis
 Report it as abstained (no spec text) when the axis could not measure.
@@ -246,7 +246,7 @@ It needs at least one claim marked `false` that cites a `file:line`.
 ```
 ## Verdict: <BLOCK | REQUEST CHANGES> | APPROVE
 Spec: measured against <ref>
-Coverage (self-reported): <e> of <n> changed files examined by at least one reviewer.
+Coverage (self-reported): <e> of <n> changed files examined by at least one reviewer[, <x> not examined][, <u> not reported].
 Verification: <N> checked
 ## Spec (measured against <ref>)
 ```
@@ -1322,7 +1322,7 @@ stage_mutation "$SYN" w_synth "the ## Coverage section is empty"       "synthesi
 stage_mutation "$SYN" w_synth "lost its Spec or Verification line"     "synthesis template anchor"          grep -vF 'Spec: measured against'
 stage_mutation "$SYN" w_synth "the spec exclusion is gone"             "synthesis coverage spec exclusion"  grep -vF 'The spec reviewer is not a receiver'
 stage_mutation "$SYN" w_synth "the not-reported rule is gone"          "synthesis coverage not-reported"    grep -vF 'never rendered as examined'
-stage_mutation "$SYN" w_synth "the missing-block line is gone"         "synthesis coverage missing block"   grep -vF 'no Files examined block from'
+stage_mutation "$SYN" w_synth "the missing-block line is gone"         "synthesis coverage missing block"   grep -vF 'Whenever any receiver returned no block'
 stage_mutation "$SYN" w_synth "the contradiction line is gone"         "synthesis coverage contradiction"   grep -vF 'declared it not examined'
 stage_mutation "$SYN" w_synth "the caveat line is gone"                "synthesis coverage caveat line"     grep -vF '> <s> changed files'
 stage_mutation "$SYN" w_synth "the caveat rule is gone"                "synthesis coverage caveat rule"     grep -vF 'also get this caveat'
@@ -1334,7 +1334,16 @@ w_synth "$SYN"; awk '/^## Coverage$/{print;s=1;next} s&&/^## /{s=0} !s' "$SYN" >
 if bash "$VALIDATE" "$T" >/dev/null 2>&1; then bad "unreadable-section error does not fail the run"; else ok "unreadable-section error fails the run"; fi
 stage_mutation "$SYN" w_synth "the trivial rule is gone"               "synthesis coverage trivial"         grep -vF 'diff_class: trivial'
 stage_mutation "$SYN" w_synth "the no-effect rule is gone"             "synthesis coverage no-effect"       grep -vF 'never changes a finding'
-stage_mutation "$SYN" w_synth "Output template has no coverage line"   "synthesis template coverage line"   grep -vF 'Coverage (self-reported):'
+stage_mutation "$SYN" w_synth "Output template has no coverage line"   "synthesis template coverage line"   awk '/^## Output$/{o=1} o&&/^Coverage \(self-reported\):/{next} 1'
+# The self-reported line carries only what reviewers declared; the plan's count is the caveat's.
+# Re-adding the old suffix anywhere must fail, not only its absence (anchor-findings PR, Low b).
+stage_mutation "$SYN" w_synth "differs from the canonical coverage line" "synthesis old coverage format, template" awk '/^## Output$/{o=1} o&&/^Coverage \(self-reported\):/{sub(/\.$/, "[, <s> sent to no reviewer].")} 1'
+stage_mutation "$SYN" w_synth "differs from the canonical coverage line" "synthesis old coverage format, section"  awk '/^## Coverage$/{c=1} /^## Spec axis$/{c=0} c&&/^Coverage \(self-reported\):/{sub(/\.$/, "[, <s> sent to no reviewer].")} 1'
+stage_mutation "$SYN" w_synth "differs from the canonical coverage line" "synthesis old coverage format, tab-indented extra" awk '/^## Output$/{o=1} {print} o&&/^Coverage \(self-reported\):/{print "\tCoverage (self-reported): <e> of <n> changed files."}'
+stage_mutation "$SYN" w_synth "the plan's count is back beside the coverage line" "synthesis old suffix, unlabelled line" awk '/^## Output$/{o=1} {print} o&&/^Coverage \(self-reported\):/{print "Coverage: <e> of <n> changed files[, <s> sent to no reviewer]."}'
+stage_mutation "$SYN" w_synth "## Coverage no longer shows the coverage line" "synthesis coverage section line" awk '/^## Coverage$/{c=1} /^## Spec axis$/{c=0} c&&/^Coverage \(self-reported\):/{next} 1'
+stage_mutation "$SYN" w_synth "the trivial rule drops the contract-violation lines" "synthesis trivial keeps no-block line"     sed 's/, `no Files examined block from:` and `contradiction:` still print/ and `contradiction:` still print/'
+stage_mutation "$SYN" w_synth "the trivial rule drops the contract-violation lines" "synthesis trivial keeps contradiction line" sed 's/ and `contradiction:` still print/ still print/'
 stage_mutation "$SYN" w_synth "Output template orders"                 "synthesis template order"           sed -e 's/^Spec: measured against <ref>$/@@S@@/' -e 's/^Verification: <N> checked$/Spec: measured against <ref>/' -e 's/^@@S@@$/Verification: <N> checked/'
 rm -rf "$T"
 

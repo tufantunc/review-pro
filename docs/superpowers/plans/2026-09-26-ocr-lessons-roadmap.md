@@ -20,7 +20,7 @@ What OCR does not have and we keep: an evidence bar that requires out-of-diff ev
 
 **Done when.** A review of a multi-file branch prints a coverage line, a missing report renders as "not reported" and never as full coverage, and the validator guards the new contract.
 
-**Status.** implemented on `feat/coverage-accounting`, in review. Measured first in `studies/2026-09-coverage-spike/` (on #74, 103 of 119 files were read by no reviewer, all data or design prose, and 0 of 42 "examined" declarations were false); decision in ADR-0010, design in `docs/superpowers/specs/2026-09-26-coverage-accounting-design.md`.
+**Status.** merged in #78. Measured first in `studies/2026-09-coverage-spike/` (on #74, 103 of 119 files were read by no reviewer, all data or design prose, and 0 of 42 "examined" declarations were false); decision in ADR-0010, design in `docs/superpowers/specs/2026-09-26-coverage-accounting-design.md`.
 
 ### 2. Anchor findings to the quoted code
 
@@ -28,7 +28,9 @@ What OCR does not have and we keep: an evidence bar that requires out-of-diff ev
 
 **Direction.** Our `evidence` is already required to be a verbatim excerpt. Check it against the file at `file:line`, correct the line when the excerpt is found elsewhere in the file, and mark the finding when it is found nowhere.
 
-**Status.** not started
+**Status.** measured, not built ([`studies/2026-09-anchor-spike/`](../../../studies/2026-09-anchor-spike)). One of 70 findings cites the wrong line, 3 lines off and inside the dedup window. A naive quote check run over the same corpus raised 5 false alarms against that one real drift.
+
+**Revisit when.** Run `studies/2026-09-anchor-spike/measure.py` over the reviewer outputs of item 5's AACR-Bench run (its corpus is listed in `sources()`; add the new outputs there). That corpus is real code in 10 languages, which this study could not see. If wrong-line findings exceed 5% there, item 2 reopens.
 
 ### 3. Path-scoped repository rules
 
@@ -50,6 +52,6 @@ What OCR does not have and we keep: an evidence bar that requires out-of-diff ev
 
 **Problem.** The study is pre-registered and parked on the arm-isolation decision. OCR's leaderboard now gives a public Claude Code baseline on the same benchmark with the same models.
 
-**Direction.** Resolve the isolation decision and run the study. Before running, reconcile the ground-truth count: OCR's README cites 1,505 annotated issues, our pre-registration cites 2,145 reference comments. The leaderboard is run by the benchmark's own authors, which the write-up must state.
+**Direction.** Resolve the isolation decision and run the study. Before running, reconcile the ground-truth count: OCR's README cites 1,505 annotated issues, our pre-registration cites 2,145 reference comments. The leaderboard is run by the benchmark's own authors, which the write-up must state. Keep the reviewer outputs: item 2's revisit condition runs the anchor-spike script over them.
 
 **Status.** not started

@@ -25,19 +25,29 @@ For each reviewer in the dispatch plan:
 1. **Gather its stack signals.** For each installed stack, Read `.review-pro/<stack>/<reviewer>.md` **if it exists**. Concatenate the ones you find — this is the reviewer's `### Stack signals` content. (The subagent auto-loads its own core skill, so you do NOT need to pass the core rubric — only the stack-specific signals.)
 2. **Invoke the `<reviewer>-reviewer` subagent** — in parallel/background if your platform allows, else sequentially. Its prompt contains:
    - `### Stack signals` — the concatenated pack files from step 1 (omit the section if none).
-   - `### Changed file contents` — the changed files relevant to this reviewer (from your prep).
+   - `### Changed file contents`: the files in this reviewer's `context.changed_files` from the dispatch plan, all of them. Handing a reviewer fewer files than its plan lists is a narrowing the coverage check cannot see.
    - `### Related context` — scoped extras per context-policy (callers, consumers, schema, repo search). Omit if none.
    - `### Spec text`, for the `spec` reviewer only: the resolved spec text from triage's `spec_source`. Omit this section for every other reviewer; none of them should be measuring intent. If `spec_source.kind` is `none`, do not dispatch this reviewer at all.
    - `### External premises`, for the owning reviewer only: the entries from triage's
      `external_premises` whose `owner` is this reviewer, verbatim. Omit the section for
      every other reviewer. Verification channels and the requirement to record which
      channel settled a premise live in `core/shared/context-policy.md`.
-3. **Collect** its structured finding blocks, plus its `## Premise verification` block when one comes back. That block is not a finding: never dedup it against the finding blocks and never rank it alongside them.
+3. **Collect** its structured finding blocks, plus its `## Premise verification` block when one comes back, and its `## Files examined` block. Neither block is a finding: never dedup them against the finding blocks and never rank them alongside them.
 
-If a reviewer subagent is unavailable on your platform, perform that review **inline**: apply the core skill (which you Read from the plugin) plus the stack signals to the scoped context, and emit findings in the shared schema.
+If a reviewer subagent is unavailable on your platform, perform that review **inline**: apply the core skill (which you Read from the plugin) plus the stack signals to the scoped context, and emit findings in the shared schema. Every inline code review ends with the same `## Files examined` block a subagent returns, accounting for each file in that reviewer's `context.changed_files` exactly once:
+
+```
+## Files examined
+examined: [<path>, ...]
+not_examined:
+  - file: <path>
+    reason: <why, one line>
+```
+
+A file counts as examined only if you read its diff or contents while applying that rubric. An accurate list with gaps is correct; a complete-looking list that overstates what you read is wrong, because synthesis reports it as the review's coverage. The spec review emits no block.
 
 ### 4. Verification (subagents, parallel)
-Verification needs the merged findings, so first run the `review-pro-synthesize` skill's merge steps, **Collect** through **Resolve conflicts**, with the `diff_class`, `changed_files`, `spec_source`, `external_premises`, and `premises_dropped` you determined in triage: dedup within each axis (code findings on `(file, line±5, category-root, overlap_hints)`, spec findings on `(quoted requirement, file, line)` per that skill's Spec axis section), weight overlaps, and resolve conflicts by domain ownership. Then:
+Verification needs the merged findings, so first run the `review-pro-synthesize` skill's merge steps, **Collect** through **Resolve conflicts**, with the `diff_class`, `changed_files`, `spec_source`, `external_premises`, `premises_dropped`, and each reviewer's `context.changed_files` you determined in triage: dedup within each axis (code findings on `(file, line±5, category-root, overlap_hints)`, spec findings on `(quoted requirement, file, line)` per that skill's Spec axis section), weight overlaps, and resolve conflicts by domain ownership. Then:
 
 1. **Select** the code-axis findings with severity Medium, High or Critical, ordered by severity and then by file and line. Take the first 8; the rest are `not verified (cap)`. Spec-axis findings are never verified.
 2. **Invoke one `review-pro-verify-subagent` per selected finding**, in parallel if your platform allows, else sequentially. Its prompt contains:
@@ -60,6 +70,8 @@ Return ONLY the final synthesis report:
 
 Spec: measured against <spec_source.ref>
 (or: skipped, no spec found / not measured, <ref> resolved but carried no text)
+
+Coverage (self-reported): <e> of <n> changed files examined by at least one reviewer[, <x> not examined][, <u> not reported][, <s> sent to no reviewer].
 
 Verification: <N> checked (<a> stand, <b> partly refuted, <c> refuted), <M> not checked (<counts by reason>). Spec findings are not verified.
 

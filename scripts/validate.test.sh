@@ -181,6 +181,7 @@ description: "triage"
 spec_source:
   kind: none
 external_premises: []
+  changed_files: [a]   # Stage 3's coverage check compares against it
 Dispatch spec if and only if a spec was resolved.
 Assigning a premise to a reviewer dispatches that reviewer.
 Triage does not verify the premise itself.
@@ -272,6 +273,12 @@ The sha is the merge base, from `git merge-base <base> HEAD`.
 `### Written by`: the reviewer that wrote it. Never how many reviewers flagged it.
 If the verify subagent is unavailable, do **not** verify inline.
 Continue the `review-pro-synthesize` skill from **Verification results**: calibrate and emit the verdict.
+`### Changed file contents`: the files in this reviewer's `context.changed_files`, all of them.
+Every inline code review ends with the `## Files examined` block, each file exactly once.
+## Output
+Spec: measured against <ref>
+Coverage (self-reported): <e> of <n> changed files examined by at least one reviewer.
+Verification: <N> checked
 EOF
       ;;
     *)
@@ -1299,6 +1306,20 @@ out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "^FAIL: "; then bad "synthesis subagent control: fired on an intact body"; else ok "synthesis subagent control: silent on an intact body"; fi
 stage_mutation "$T/core/agents/review-pro-synthesize-subagent.md" w_ssub "the coverage inputs are gone" "synthesis subagent blocks input" sed 's/`## Files examined` block/finding/'
 stage_mutation "$T/core/agents/review-pro-synthesize-subagent.md" w_ssub "the coverage inputs are gone" "synthesis subagent lists input"  sed 's/`context.changed_files`/plan/'
+rm -rf "$T"
+
+# Case AU: the orchestrator's half of coverage (ADR-0010). Without the plan-list rule the
+# orchestrator can hand a reviewer fewer files than the plan shows and the deterministic
+# layer never sees it; without the inline block a skills-only install reports nothing.
+stage_fixture review-pro orchestrator w_orch; ORC="$STAGE"
+stage_mutation "$ORC" w_orch "hands reviewers something other than their plan list" "orchestrator plan list"     sed "s/this reviewer's \`context.changed_files\`/the relevant files/"
+stage_mutation "$ORC" w_orch "inline reviews no longer end with the Files examined block" "orchestrator inline block" grep -vF 'exactly once'
+stage_mutation "$ORC" w_orch "Output template has no coverage line" "orchestrator template coverage line" grep -vF 'Coverage (self-reported):'
+stage_mutation "$ORC" w_orch "Output template orders" "orchestrator template order" sed -e 's/^Spec: measured against <ref>$/@@S@@/' -e 's/^Verification: <N> checked$/Spec: measured against <ref>/' -e 's/^@@S@@$/Verification: <N> checked/'
+rm -rf "$T"
+stage_fixture review-pro-triage orchestrator write_stage_skill; TRI="$STAGE"
+w_tri(){ write_stage_skill "$1"; }
+stage_mutation "$TRI" w_tri "the coverage comparison is gone" "triage coverage comparison" grep -vF "coverage check compares against it"
 rm -rf "$T"
 
 echo "---"

@@ -188,6 +188,8 @@ if [[ -f "$TRIAGE_MD" ]]; then
     || add_error "review-pro-triage/SKILL.md: the assign-dispatches rule is gone - a premise can be routed to a reviewer the signal map never dispatches, and nothing reports that it was"
   grep -qF 'does not verify the premise' "$TRIAGE_MD" \
     || add_error "review-pro-triage/SKILL.md: the no-verification prohibition is gone - triage settling premises itself breaks the one-owner rule and produces verifications nobody can attribute"
+  grep -qF 'coverage check compares against it' "$TRIAGE_MD" \
+    || add_error "review-pro-triage/SKILL.md: the coverage comparison is gone - nothing says the per-reviewer lists are what Stage 3 measures"
 fi
 SYNTH_MD="$SKILLS_DIR/review-pro-synthesize/SKILL.md"
 if [[ -f "$SYNTH_MD" ]]; then
@@ -227,6 +229,11 @@ if [[ -f "$ORCH_MD" ]]; then
     || add_error "review-pro/SKILL.md: its dedup summary no longer names the spec key - the inline path would use the code key and collapse unattempted requirements"
   grep -qF '### External premises' "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: the '### External premises' prompt section is gone - triage routes premises the orchestrator then never passes to the owning reviewer"
+  grep -qF "this reviewer's \`context.changed_files\`" "$ORCH_MD" \
+    || add_error "review-pro/SKILL.md: step 3 hands reviewers something other than their plan list - a narrowed prompt is invisible to the coverage check"
+  { grep -qF '## Files examined' "$ORCH_MD" && grep -qF 'exactly once' "$ORCH_MD"; } \
+    || add_error "review-pro/SKILL.md: inline reviews no longer end with the Files examined block - a skills-only install reports no coverage"
+  check_header_order "$ORCH_MD" "review-pro/SKILL.md"
   grep -qF 'review-pro-verify-subagent' "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: the verifier dispatch is gone - Stage 3b never runs and every finding reads as unverified"
   grep -qF 'do **not** verify inline' "$ORCH_MD" \

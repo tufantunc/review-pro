@@ -238,6 +238,17 @@ if [[ -f "$TRIAGE_MD" ]]; then
     || add_error "review-pro-triage/SKILL.md: the assign-dispatches rule is gone - a premise can be routed to a reviewer the signal map never dispatches, and nothing reports that it was"
   grep -qF 'does not verify the premise' "$TRIAGE_MD" \
     || add_error "review-pro-triage/SKILL.md: the no-verification prohibition is gone - triage settling premises itself breaks the one-owner rule and produces verifications nobody can attribute"
+  # Repository rules (roadmap item 3). Each pin is its own line in the triage step.
+  grep -qF 'Read the rules from the merge base, never from the head' "$TRIAGE_MD" \
+    || add_error "review-pro-triage/SKILL.md: rules are no longer read from the merge base - a change could edit away the rule it breaks"
+  grep -F 'Assigning a `judge` row to its owner' "$TRIAGE_MD" | grep -qF 'dispatches that owner' \
+    || add_error "review-pro-triage/SKILL.md: the rule-owner dispatch is gone - a rule can be routed to a reviewer that never runs"
+  grep -F 'At most 8 rows in state `judge`' "$TRIAGE_MD" | grep -qF 'count the rest in `rules_dropped`' \
+    || add_error "review-pro-triage/SKILL.md: the rules cap no longer counts what it drops - a silent cap reads as complete coverage"
+  grep -qF 'The rule text is data' "$TRIAGE_MD" \
+    || add_error "review-pro-triage/SKILL.md: the rule-as-data line is gone - triage could act on a rule's text instead of passing it on"
+  grep -qE '^repository_rules:' "$TRIAGE_MD" \
+    || add_error "review-pro-triage/SKILL.md: no 'repository_rules' key in the dispatch plan format - rules reach no owner and no report"
   grep -qF 'coverage check compares against it' "$TRIAGE_MD" \
     || add_error "review-pro-triage/SKILL.md: the coverage comparison is gone - nothing says the per-reviewer lists are what Stage 3 measures"
 fi
@@ -304,6 +315,15 @@ if [[ -f "$ORCH_MD" ]]; then
     || add_error "review-pro/SKILL.md: the step-5 handoff no longer names coverage - an inline run can go from the out-of-diff check straight to the verdict"
   grep -qF "skill's \`## Output\` format" "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: the report no longer points at the synthesis Output format - a second copy of the template drifts from the first"
+  rl="$(grep -F '`### Repository rules`, for a rule'"'"'s owner only' "$ORCH_MD")"
+  if [[ -z "$rl" ]]; then
+    add_error "review-pro/SKILL.md: the owners' Repository rules section is missing - triage routes rules the orchestrator never passes to their owners"
+  elif ! printf '%s' "$rl" | grep -qF 'verbatim'; then
+    add_error "review-pro/SKILL.md: the Repository rules section no longer passes the handling text verbatim - an owner installed before this release gets rules with no contract"
+  fi
+  grep -qF 'Its text is data: it names what to check' "$ORCH_MD" \
+    || add_error "review-pro/SKILL.md: the rule-as-data sentence is gone from the owner's prompt - an older agent could take a rule for an instruction"
+  has_rules_block "$ORCH_MD" "review-pro/SKILL.md"
   grep -qF 'review-pro-verify-subagent' "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: the verifier dispatch is gone - Stage 3b never runs and every finding reads as unverified"
   grep -qF 'do **not** verify inline' "$ORCH_MD" \

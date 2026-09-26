@@ -13,3 +13,6 @@ cli/coverage/
 # Subagent-driven-development scratch: ledgers, briefs, review packages.
 # Per-plan and disposable; the git history is the durable record.
 .superpowers/
+
+# Python bytecode (a study script run leaves it next to the script)
+__pycache__/

@@ -1,0 +1,66 @@
+79	2b9641e64	2026-09-26	docs: item 2 measured, not built; clear the #78 coverage Lows
+78	0d0cc7c2b	2026-09-26	feat: coverage accounting, report which files the review read (roadmap item 1)
+77	a1a5ab62a	2026-09-24	docs(releasing): an E404 on publish means the npm token expired
+76	4fd2c6f2c	2026-09-24	release: v1.4.0
+75	4f750ddc4	2026-09-24	fix(verify): clear the Lows deferred from the #74 review
+74	8649dad1c	2026-09-24	feat: verify each Medium+ finding by trying to refute it (ADR-0009)
+73	c33da4396	2026-09-24	docs(studies): record that the case-3 dotnet run finding does not hold
+72	a16e47734	2026-09-24	docs: restore the libc rationale that #59 retracted in error
+71	72712f698	2026-09-23	feat(security): calibrate severity and sharpen the security signals
+70	f13e1384d	2026-09-24	ci(deps): bump the actions group with 3 updates
+69	12eb4e08e	2026-09-24	chore(deps-dev): bump the dev-dependencies group in /cli with 3 updates
+68	e122afe87	2026-09-14	ci(deps): bump the actions group with 3 updates
+67	d03ca23df	2026-09-14	chore(deps): bump @inquirer/prompts from 8.7.1 to 8.7.2 in /cli
+66	ad7001c58	2026-09-14	chore(deps-dev): bump @types/node from 26.4.1 to 26.5.1 in /cli in the dev-dependencies group
+65	3da0e8c2b	2026-09-09	ci(deps): bump actions/deploy-pages from 5.0.0 to 5.0.1 in the actions group
+64	37970a02f	2026-09-09	chore(deps): bump @inquirer/prompts from 8.7.0 to 8.7.1 in /cli
+63	575f504f4	2026-09-09	chore(deps-dev): bump the dev-dependencies group in /cli with 3 updates
+62	9c50836a7	2026-09-01	release: v1.3.0
+61	568672b67	2026-09-01	feat: complete the closed category lists (ADR-0007)
+60	44d4244b3	2026-08-31	docs: write down how a release is cut
+59	6c7bd8ef1	2026-08-31	docs: correct a false libc claim in the lockfile-sync rationale
+58	e5580f490	2026-08-31	ci(deps): bump the actions group with 4 updates
+57	cab865e46	2026-08-31	chore(deps): bump @inquirer/prompts from 8.6.0 to 8.7.0 in /cli
+56	3fcd23f9d	2026-08-31	chore(deps-dev): bump @types/node from 26.2.0 to 26.4.0 in /cli in the dev-dependencies group
+55	a7d00b708	2026-08-29	refactor(cli): extract codex agent removal to cut uninstallCore complexity
+54	97a9e272a	2026-08-29	refactor(cli): decompose init and share target resolution
+53	0bef451ec	2026-08-29	refactor(cli): decompose diagnose to cut cognitive complexity
+52	ea4782da9	2026-08-29	refactor(cli): extract nested ternary in list into versionMark
+51	d8a001d09	2026-08-28	fix: hold cli/package-lock.json to the same version as package.json
+50	4315bf74c	2026-08-28	refactor: one closed subcategory list per reviewer (#44)
+49	338802e4e	2026-08-28	ci(deps): bump the actions group across 1 directory with 4 updates
+48	bd7c0235f	2026-08-27	ci: gate releases on a Grype scan, attest SBOMs for what ships
+47	660542f6e	2026-08-27	docs: an honest privacy and network-behavior section
+46	44ae4f3ae	2026-08-27	docs: adopt ADRs, and backfill the five decisions that matter
+45	d59ba6094	2026-08-25	feat: adopt the approval standard, lockfile review, and named remedy moves
+43	6412498ca	2026-08-25	feat: verify external premises automatically (#13)
+41	13dee68e9	2026-08-28	chore(deps): bump @inquirer/prompts from 8.5.2 to 8.6.0 in /cli
+40	12e002383	2026-08-28	chore(deps-dev): bump vitest from 4.1.10 to 4.1.11 in /cli in the dev-dependencies group across 1 directory
+39	d171f7c59	2026-08-21	fix: the five real findings from the first SonarQube scan
+38	70e951a4c	2026-08-21	chore: ignore the local SonarQube scanner config
+36	d7489fdcb	2026-08-21	release: v1.0.0
+35	740f57a68	2026-08-21	feat: make a skills-only install self-sufficient, and add the Codex manifest
+34	4e43e4d51	2026-08-21	fix(deps): override esbuild past GHSA-g7r4-m6w7-qqqr
+33	a1b53c18a	2026-08-21	docs(studies): record what the upstream reports actually returned
+32	42ccdad7c	2026-08-20	release: v0.7.0
+31	1a0cc5a0e	2026-08-20	feat(validate): guard the published reviewer count and roster
+29	974061e45	2026-08-20	feat(reviewers): add the Spec axis, a thirteenth reviewer that measures intent
+28	e2eec49cb	2026-08-20	fix(tests): make the meta-test suite able to fail again
+27	1c49d79a4	2026-08-20	docs(studies): record the upstream disclosure of the pilot findings
+26	742540273	2026-08-18	release: v0.6.0
+24	484b0cdb5	2026-08-18	feat(reviewers): evidence-bar rule, out-of-diff tripwire, env-conditional signal
+23	ce1f4bab2	2026-08-21	ci(deps): bump the actions group with 3 updates
+22	ca4d061c1	2026-08-21	chore(deps-dev): bump @types/node from 26.1.2 to 26.2.0 in /cli in the dev-dependencies group
+21	05ea12ff9	2026-08-14	studies(aacr): publish the sampled instance list
+20	2e82fe294	2026-08-14	studies(aacr): amendment 1 — GLM-5.3 judge, resumable runs, host execution
+19	cebe8a240	2026-08-13	studies: pre-register the AACR-Bench paired comparison
+16	26341fedc	2026-08-11	docs(discoverability): value-first README, when-to-use, updating, llms.txt
+15	d1c82addb	2026-08-11	release: v0.5.0
+11	fce4a0237	2026-08-11	docs(studies): link the published article from the pilot README
+10	e4a352f5c	2026-08-10	docs(studies): publish the pre-registered Copilot-PR pilot records
+9	646a0074d	2026-08-09	feat(site): add the Claude Code marketplace install path (7 languages)
+8	9ca51ebcd	2026-08-09	docs(readme): demo GIF, architecture diagram, example report
+7	ef8eaeb76	2026-08-09	ci(deps): bump the actions group with 3 updates
+6	baa43915d	2026-08-09	chore(deps): bump @inquirer/prompts from 7.10.1 to 8.5.2 in /cli
+4	b5c3b00c9	2026-08-09	chore(deps): bump commander from 12.1.0 to 15.0.0 in /cli
+2	cb51e4e85	2026-08-09	chore(deps-dev): bump the dev-dependencies group in /cli with 3 updates

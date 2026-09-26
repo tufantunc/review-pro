@@ -1,4 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { uninstall } from "../src/commands/uninstall.js";
 import { uninstallCore } from "../src/lib/plugin.js";
 import { checkbox, confirm } from "@inquirer/prompts";
@@ -45,6 +48,34 @@ describe("uninstall", () => {
     expect(logs).toContain("removed review-pro core from opencode");
     expect(logs).toContain("Cursor manages its own plugins. In Cursor, run:");
     expect(logs).toContain("Stack packs live in your repo's .review-pro/ and are not removed by this command.");
+  });
+
+  it("never advises deleting .review-pro, which may hold the maintainer's rules", async () => {
+    await uninstall({ target: "all", yes: true });
+    expect(logs.join("\n")).not.toContain("rm -rf");
+    expect(logs).toContain("Remove one with:  npx review-pro remove <stack>");
+  });
+
+  it("says a rules file is left in place when the repo has one", async () => {
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), "rp-repo-"));
+    try {
+      fs.mkdirSync(path.join(repo, ".review-pro"), { recursive: true });
+      fs.writeFileSync(path.join(repo, ".review-pro", "rules.md"), "# Review rules\n");
+      await uninstall({ target: "opencode", yes: true, where: repo });
+      expect(logs).toContain(".review-pro/rules.md is your repository's own rules file; it is left in place.");
+    } finally {
+      fs.rmSync(repo, { recursive: true, force: true });
+    }
+  });
+
+  it("does not mention a rules file the repo does not have", async () => {
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), "rp-repo-"));
+    try {
+      await uninstall({ target: "opencode", yes: true, where: repo });
+      expect(logs.join("\n")).not.toContain("rules.md");
+    } finally {
+      fs.rmSync(repo, { recursive: true, force: true });
+    }
   });
 
   it("asks for confirmation on a TTY when --yes is not given", async () => {

@@ -129,6 +129,7 @@ done
 # lines. Key-by-key substring pins were tried first and leaked: a key found elsewhere in
 # the file satisfied them, and a rename applied to every copy at once passed (round 2 of
 # this branch's own review). A canonical text catches both.
+COVERAGE_LINE='Coverage (self-reported): <e> of <n> changed files examined by at least one reviewer[, <x> not examined][, <u> not reported].'
 FILES_EXAMINED_BLOCK='## Files examined
 examined: [<path>, ...]
 not_examined:
@@ -313,7 +314,9 @@ if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Coverage' "$SYNTH_MD"; then
     cov_pin(){ printf '%s\n' "$COV" | grep -qF "$1" || add_error "review-pro-synthesize/SKILL.md: $2"; }
     cov_pin 'The spec reviewer is not a receiver' "the spec exclusion is gone from ## Coverage - a file only the spec reviewer read would show as examined"
     cov_pin 'never rendered as examined'          "the not-reported rule is gone from ## Coverage - a reviewer that returned nothing would read as full coverage"
-    cov_pin 'no Files examined block from'        "the missing-block line is gone from ## Coverage - a reviewer contract violation becomes the quietest line in the report"
+    # Line-scoped: the trivial rule names this line too, and would satisfy a section-wide pin.
+    printf '%s\n' "$COV" | grep -F 'Whenever any receiver returned no block' | grep -qF 'no Files examined block from' \
+      || add_error "review-pro-synthesize/SKILL.md: the missing-block line is gone from ## Coverage - a reviewer contract violation becomes the quietest line in the report"
     cov_pin 'declared it not examined'            "the contradiction line is gone from ## Coverage - a finding in a file its reviewer called unread goes unnoticed"
     # The caveat is two lines, pinned one by one: every phrase they share also appears on the other
     # line or in the state table, and a phrase pin let either line go (round 2).
@@ -322,12 +325,32 @@ if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Coverage' "$SYNTH_MD"; then
     printf '%s\n' "$COV" | grep -F 'also get this caveat' | grep -qF 'on every `diff_class`' \
       || add_error "review-pro-synthesize/SKILL.md: the caveat rule is gone from ## Coverage - nothing says the caveat prints on trivial diffs too"
     cov_pin 'diff_class: trivial'                 "the trivial rule is gone from ## Coverage - every one-line chore gets a coverage line and readers learn to skip it"
+    # The two contract-violation lines report a failure, not a count, so trivial does not omit them.
+    trivial="$(printf '%s\n' "$COV" | grep -F 'diff_class: trivial')"
+    if [[ -n "$trivial" ]] && ! { printf '%s' "$trivial" | grep -qF 'no Files examined block from:' && printf '%s' "$trivial" | grep -qF 'contradiction:'; }; then
+      add_error "review-pro-synthesize/SKILL.md: the trivial rule drops the contract-violation lines - a reviewer that returned nothing on a one-file change goes unreported"
+    fi
+    # Presence only; its exact form is the canonical check below, so one edit raises one error.
+    printf '%s\n' "$COV" | grep -qE '^[[:space:]]*Coverage \(self-reported\):' \
+      || add_error "review-pro-synthesize/SKILL.md: ## Coverage no longer shows the coverage line - the rules above describe a line nobody printed"
     cov_pin 'never changes a finding'             "the no-effect rule is gone from ## Coverage - coverage could start gating findings or the verdict"
   fi
 fi
 # The report header order is Spec, Coverage, Verification (ADR-0010). The synthesis skill
 # holds the only copy of the template; the orchestrator points at it.
 if [[ -f "$SYNTH_MD" ]]; then
+  # Every coverage line the skill shows is this one. The dispatch plan's count once rode on
+  # it under the self-reported label; it belongs to the caveat, so an old-format line anywhere
+  # in the file fails here, not only a missing one.
+  while IFS= read -r cl; do
+    [[ "$cl" == "$COVERAGE_LINE" ]] \
+      || add_error "review-pro-synthesize/SKILL.md: a coverage line differs from the canonical coverage line in validate.sh - the self-reported line carries only what reviewers declared"
+  done < <(grep -E '^[[:space:]]*Coverage \(self-reported\):' "$SYNTH_MD" | sed 's/^[[:space:]]*//')
+  # The old suffix itself, under any label: a line printing the plan's count next to the
+  # self-reported one passes the canonical check above because its label differs.
+  # Lines the canonical check owns are left to it, so one edit raises one error.
+  grep -vE '^[[:space:]]*Coverage \(self-reported\):' "$SYNTH_MD" | grep -qF '<s> sent to no reviewer]' \
+    && add_error "review-pro-synthesize/SKILL.md: the plan's count is back beside the coverage line - it belongs to the sent-to-no-reviewer caveat alone"
   read_section "$SYNTH_MD" '## Output' "review-pro-synthesize/SKILL.md"; out="$SECTION_BODY"
   if [[ -n "$out" ]]; then # absent: the required-section check's error; unreadable: read_section's
     line_of(){ printf '%s\n' "$out" | grep -nF "$1" | head -1 | cut -d: -f1; }

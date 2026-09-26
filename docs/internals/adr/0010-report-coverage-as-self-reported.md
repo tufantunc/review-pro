@@ -22,8 +22,11 @@ Every code reviewer appends a `## Files examined` block accounting for each file
 exactly once, and synthesis prints one coverage line between Spec and Verification:
 the reviewers' declarations, always labelled self-reported, counted per file as "examined by
 at least one reviewer", plus a caveat, not labelled self-reported, for any file the dispatch
-plan sent to no reviewer. A missing block renders as `not reported`, never as examined. The
-signal never changes a finding, a severity, or the verdict.
+plan sent to no reviewer. That caveat rests on the orchestrator handing each reviewer exactly
+the list its plan names: far firmer than a reviewer's declaration, but not independent of the
+pipeline it describes. Its count stays off the self-reported line, which carries only what
+reviewers declared. A missing block renders as `not reported`, never as examined. The signal
+never changes a finding, a severity, or the verdict.
 
 Rejected: a file-by-axis matrix. Triage sends every reviewer every file, so most cells are
 correct skips (a11y on a migration), and a matrix grows with reviewers times files.
@@ -55,5 +58,7 @@ would need per-file relevance from triage, which the plan does not carry.
 
 Revisit the label if a larger sample, checked against transcripts, shows declarations stay
 accurate across models and diff shapes. Revisit the axis rule if triage starts recording why
-each reviewer was dispatched per file. Roadmap item 2 (quote-anchored locations) may exclude a
-finding whose excerpt exists nowhere in its file from counting as evidence the file was read.
+each reviewer was dispatched per file. Roadmap item 2 (quote-anchored locations) was measured,
+not built ([studies/2026-09-anchor-spike](../../../studies/2026-09-anchor-spike)): every quote in
+a 70-finding corpus exists verbatim in its finding's own file, so the rule that a finding counts
+as evidence its file was read stands as written.

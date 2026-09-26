@@ -430,3 +430,13 @@ and in the `TRIAGE_MD` block:
 - [ ] Run review-pro on the branch (triage, reviewers as subagents, verification, synthesis). Ask one reviewer explicitly about published surfaces (README, llms.txt, cli README and package description, site, ADR index).
 - [ ] For every fix, ask: did it remove the problem or move it? Re-run all three suites after each round.
 - [ ] Open the PR (do not merge) with the measurement, decisions, rejected alternatives, and what was not verified.
+
+---
+
+## Execution notes (2026-09-26)
+
+Tasks 1 to 4 ran as written, except where a ruling says otherwise. The branch's own review (Task 5) changed the design in three places, all reflected in the spec:
+
+- The orchestrator no longer carries a copy of the report template. Its `## Output` points at the synthesis skill's, because the copy had already lost the coverage detail line (round 1). The `check_header_order` helper planned for both files became a single check on the synthesis template.
+- The orchestrator's reviewer prompt carries a `### Files examined` reminder with the format and the honesty rule, so agents installed before this release still emit an honest block (rounds 1 and 2).
+- The block's keys are held in `validate.sh` as one canonical text instead of per-key pins, and prose rules are pinned on their own line (round 2), because phrase pins kept being satisfied by another line in the same file.

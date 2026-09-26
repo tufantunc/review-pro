@@ -1,6 +1,6 @@
 # Design: coverage accounting for review-pro
 
-**Status:** designed 2026-09-26 from the brief for roadmap item 1
+**Status:** implemented 2026-09-26 on `feat/coverage-accounting`, revised by three rounds of the branch's own review. Designed from the brief for roadmap item 1
 ([`docs/superpowers/plans/2026-09-26-ocr-lessons-roadmap.md`](../plans/2026-09-26-ocr-lessons-roadmap.md)).
 
 ## The gap

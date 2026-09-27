@@ -1,0 +1,35 @@
+== c39
+   waiting turns: 0 / 0K (0%)   phase A: 5 / 378K (16%)
+   total: 1.95M   phase A: 2.42M   (-19%)
+   wall: 327 s   phase A: 247 s   (+32%)
+   reviewers: {'n': 7, 'peak': 7, 'union_s': 154.90700006484985, 'longest_s': 126.7720000743866, 'sum_s': 420.15900015830994, 'verdict': 'parallel'}
+   verifiers: {'n': 1, 'peak': 1, 'union_s': 35.75099992752075, 'longest_s': 35.75099992752075, 'sum_s': 35.75099992752075, 'verdict': 'single'}
+   started in background: 0 of 9
+   E1 reviewers: ['a11y-reviewer', 'ai-antipatterns-reviewer', 'correctness-reviewer', 'craft-reviewer', 'performance-reviewer', 'spec-reviewer', 'tests-reviewer']
+   E1 phase A: ['ai-antipatterns-reviewer', 'api-contract-reviewer', 'correctness-reviewer', 'craft-reviewer', 'performance-reviewer', 'spec-reviewer', 'tests-reviewer']
+   E1 same set: False
+   E2 missing Files examined: []
+   E3 verifiers: 1
+   E3 report checked: 1
+   E3 ok: True
+   E4: {'verdict': True, 'spec line': True, 'coverage': True, 'verification': True, 'rules': True, 'spec section': True}
+   E4 ok: True
+   this case: between (E1 set differences are read by hand against the run's own plan)
+== c53
+   waiting turns: 0 / 0K (0%)   phase A: 6 / 460K (20%)
+   total: 2.29M   phase A: 2.32M   (-1%)
+   wall: 345 s   phase A: 234 s   (+47%)
+   reviewers: {'n': 7, 'peak': 7, 'union_s': 176.8180000782013, 'longest_s': 162.71799993515015, 'sum_s': 393.30600023269653, 'verdict': 'parallel'}
+   verifiers: {'n': 3, 'peak': 3, 'union_s': 47.73700022697449, 'longest_s': 26.719000101089478, 'sum_s': 71.96700024604797, 'verdict': 'mixed'}
+   started in background: 0 of 13
+   E1 reviewers: ['ai-antipatterns-reviewer', 'correctness-reviewer', 'craft-reviewer', 'dry-reviewer', 'performance-reviewer', 'spec-reviewer', 'tests-reviewer']
+   E1 phase A: ['ai-antipatterns-reviewer', 'correctness-reviewer', 'craft-reviewer', 'dry-reviewer', 'spec-reviewer', 'tests-reviewer']
+   E1 same set: False
+   E2 missing Files examined: []
+   E3 verifiers: 3
+   E3 report checked: 3
+   E3 ok: True
+   E4: {'verdict': True, 'spec line': True, 'coverage': True, 'verification': True, 'rules': True, 'spec section': True}
+   E4 ok: True
+   this case: between (E1 set differences are read by hand against the run's own plan)
+decision: between: stop and report

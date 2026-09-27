@@ -18,6 +18,13 @@ decision rule says to stop and report. The wall-time decomposition puts the whol
 slowest reviewer's own run time, which the change does not touch. The orchestrator's own time was
 flat. Two runs cannot prove that, and the maintainer decides.
 
+**Decision (maintainer, 2026-09-28): accepted and shipped.** The acceptance rests on the mechanism,
+not on the pre-registered wall-time criterion, which the change did not meet. In both modes the
+orchestrator waits for the last reviewer before it merges, so how the agents are started cannot
+move the slowest reviewer's run time, and the orchestrator's own time did not change. Settling it
+statistically would take roughly 18 to 28M tokens. Wall time is re-checked per stage across the
+many reviews of roadmap item 5; if it rises there, this decision reopens.
+
 ## Contents
 
 | File | What it is |
@@ -144,8 +151,8 @@ time.
 | E1 to E4 (no stage lost) | holds | holds |
 | **Outcome** | **between** | **between** |
 
-**Between: stop and report to the maintainer.** The skill change and its validator check stay on
-the branch; nothing has been reverted or shipped.
+**Between: stop and report to the maintainer.** The maintainer accepted the change on the
+mechanism described under Headline; see the decision there.
 
 ## Budget
 

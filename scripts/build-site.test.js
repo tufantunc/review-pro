@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { rmSync, readFileSync, writeFileSync, mkdirSync, mkdtempSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { escapeHtml, renderTemplate, assertParity, assertNoTokens, buildContext, buildAll, SUPPORTED } from './build-site.js';
+import { escapeHtml, renderTemplate, assertParity, assertNoTokens, assertDemoVerdict, buildContext, buildAll, SUPPORTED } from './build-site.js';
 
 // --- escapeHtml ---
 test('escapeHtml escapes & < > " and \'', () => {
@@ -52,6 +52,36 @@ test('assertNoTokens throws on real token syntax', () => {
 test('assertNoTokens ignores stray braces in inline JS / code', () => {
   assert.doesNotThrow(() => assertNoTokens('if (x) { foo(); }', 'en', 'index.html'));
   assert.doesNotThrow(() => assertNoTokens('var o = {a:1};', 'en', 'index.html'));
+});
+
+// --- assertDemoVerdict (the landing demo follows the verdict rule in core/shared/severity.md) ---
+const demo = (label, ...sevs) =>
+  `<div class="demo__verdict-label" data-stream>Verdict: ${label}</div>` +
+  sevs.map((s) => `<div class="demo__finding"><span class="demo__sev demo__sev--${s.toLowerCase()}">[${s}]</span></div>`).join('');
+test('assertDemoVerdict throws when a High finding sits under a non-Block verdict', () => {
+  assert.throws(() => assertDemoVerdict(demo('Request Changes', 'H', 'M'), 'en/index.html'), /en\/index\.html.*"Request Changes".*\[H\].*"Block"/);
+  assert.throws(() => assertDemoVerdict(demo('Approve', 'C'), 'en/index.html'), /expected "Block"/);
+});
+test('assertDemoVerdict passes when Critical or High findings show Block', () => {
+  assert.doesNotThrow(() => assertDemoVerdict(demo('Block', 'H', 'H', 'M'), 'en/index.html'));
+  assert.doesNotThrow(() => assertDemoVerdict(demo('Block', 'C'), 'en/index.html'));
+});
+test('assertDemoVerdict holds Medium to Request Changes and Low-only to Approve', () => {
+  assert.doesNotThrow(() => assertDemoVerdict(demo('Request Changes', 'M', 'L'), 'en/index.html'));
+  assert.doesNotThrow(() => assertDemoVerdict(demo('Approve', 'L', 'N'), 'en/index.html'));
+  assert.doesNotThrow(() => assertDemoVerdict(demo('Approve'), 'en/index.html'));
+  assert.throws(() => assertDemoVerdict(demo('Block', 'M'), 'en/index.html'), /expected "Request Changes"/);
+});
+test('assertDemoVerdict rejects a severity tag it does not know', () => {
+  assert.throws(() => assertDemoVerdict(demo('Block', 'X'), 'en/index.html'), /unknown severity \[X\]/);
+});
+test('assertDemoVerdict ignores a page with no demo verdict', () => {
+  assert.doesNotThrow(() => assertDemoVerdict('<p>docs</p> <span class="demo__sev">[H]</span>', 'en/docs.html'));
+});
+test('the real landing demo is consistent with the verdict rule', () => {
+  const tmpl = readFileSync(new URL('../docs-src/index.html', import.meta.url), 'utf8');
+  assert.match(tmpl, /demo__verdict-label/); // the guard must actually see the demo
+  assert.doesNotThrow(() => assertDemoVerdict(tmpl, 'docs-src/index.html'));
 });
 
 // --- buildContext ---
@@ -137,6 +167,24 @@ test('buildAll throws on parity failure (missing key in a translation)', () => {
     writeFileSync(join(src, 'i18n', 'en.json'), JSON.stringify({ 'nav.how': 'How it works' }));
     writeFileSync(join(src, 'i18n', 'tr.json'), JSON.stringify({})); // missing nav.how
     assert.throws(() => buildAll({ srcDir: src, outDir: out, langs: ['en', 'tr'] }), /parity error.*tr.*nav\.how/i);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('buildAll throws when the demo verdict contradicts its findings', () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'build-site-demo-'));
+  try {
+    const src = join(tmp, 'src'), out = join(tmp, 'out');
+    mkdirSync(join(src, 'i18n'), { recursive: true });
+    mkdirSync(join(src, 'flags'), { recursive: true });
+    for (const l of SUPPORTED) writeFileSync(join(src, 'flags', `${l}.svg`), `<svg id="${l}"/>`);
+    writeFileSync(join(src, 'detect.js'), '');
+    writeFileSync(join(src, 'lang-menu.js'), '');
+    writeFileSync(join(src, 'index.html'), `<html lang="{{lang}}">${demo('Request Changes', 'H')}</html>`);
+    writeFileSync(join(src, 'docs.html'), '<html lang="{{lang}}"></html>');
+    writeFileSync(join(src, 'i18n', 'en.json'), '{}');
+    assert.throws(() => buildAll({ srcDir: src, outDir: out, langs: ['en'] }), /en\/index\.html.*expected "Block"/);
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }

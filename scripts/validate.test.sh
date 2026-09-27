@@ -1696,7 +1696,10 @@ out=$(bash "$V/validate.sh" "$T" 2>&1); rc=$?
 if [[ "$rc" -ne 0 ]] && echo "$out" | grep -q "validate-stack-signals.sh could not be sourced" && ! echo "$out" | grep -q "^OK:"; then ok "missing stack-signals file fails the run"; else bad "missing stack-signals file does not fail the run (rc=$rc)"; fi
 cp "$(dirname "$VALIDATE")/validate-stack-signals.sh" "$V/"
 out=$(bash "$V/validate.sh" "$T" 2>&1); rc=$?
-if [[ "$rc" -eq 0 ]]; then ok "BD control: the same tree passes with both files present"; else bad "BD control: the same tree fails with both files present (rc=$rc)"; fi
+if [[ "$rc" -ne 0 ]] && echo "$out" | grep -q "validate-dispatch.sh could not be sourced" && ! echo "$out" | grep -q "^OK:"; then ok "missing dispatch file fails the run"; else bad "missing dispatch file does not fail the run (rc=$rc)"; fi
+cp "$(dirname "$VALIDATE")/validate-dispatch.sh" "$V/"
+out=$(bash "$V/validate.sh" "$T" 2>&1); rc=$?
+if [[ "$rc" -eq 0 ]]; then ok "BD control: the same tree passes with every file present"; else bad "BD control: the same tree fails with every file present (rc=$rc)"; fi
 # An empty canonical line would make the orchestrator pins on it pass vacuously.
 sed "s/^PACK_DATA_LINE='.*'$/PACK_DATA_LINE=''/" "$V/validate.sh" > "$V/v2.sh"; mv "$V/v2.sh" "$V/validate.sh"
 out=$(bash "$V/validate.sh" "$T" 2>&1); rc=$?

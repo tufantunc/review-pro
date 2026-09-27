@@ -38,9 +38,11 @@ canonical clause, and step 3.2 no longer says "background". The clause:
 > has returned before you go on, and do not run them as background tasks that each report back on
 > their own: every separate return starts a new turn that re-reads your whole context.
 
-It names no platform parameter, and the sequential fallback stays. `scripts/validate.sh` pins the
-clause on each line and fails on "background" outside it. Five mutation tests cover it: each line
-losing the clause, a background request added, and each line removed.
+It names no platform parameter, and the sequential fallback stays. `scripts/validate-dispatch.sh`,
+sourced by `validate.sh` like the other checks that live in their own files, pins the clause on each
+line and fails on "background" outside it. Five mutation tests cover it: each line losing the clause,
+a background request added, and each line removed. A sixth fails the run when the file is missing.
+It lives in its own file because adding it to `validate.sh` would have taken that file past 1000 lines.
 
 ## Results, side by side with phase A
 

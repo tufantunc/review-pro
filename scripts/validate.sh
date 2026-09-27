@@ -291,7 +291,6 @@ if [[ -f "$ROOT/core/agents/spec-reviewer.md" ]]; then
   # only exists after the fix, in both the body and synthesis's branch for it.
 fi
 ORCH_MD="$SKILLS_DIR/review-pro/SKILL.md"
-DISPATCH_CLAUSE='all in one step: in parallel if your platform allows, else sequentially. Wait until every one has returned before you go on, and do not run them as background tasks that each report back on their own: every separate return starts a new turn that re-reads your whole context.'
 if [[ -f "$ORCH_MD" ]]; then
   grep -qF 'quoted requirement' "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: its dedup summary no longer names the spec key - the inline path would use the code key and collapse unattempted requirements"
@@ -338,22 +337,6 @@ if [[ -f "$ORCH_MD" ]]; then
     && add_error "review-pro/SKILL.md: the synthesis step re-runs the merge after verification - a second dedup can move the keys verifier results bind to"
   grep -qE 'skill from step [0-9]|steps? [0-9]+( to [0-9]+)? of the `review-pro-synthesize`' "$ORCH_MD" \
     && add_error "review-pro/SKILL.md: a numbered reference to a review-pro-synthesize step - an inserted step would silently move the handoff"
-  # Dispatch every reviewer, then every verifier, in one step and wait for all (roadmap item 4):
-  # an agent run as a background task returns on its own, and each return is an orchestrator turn
-  # that re-reads the whole context. Pinned on each dispatch line, as one canonical clause.
-  for inv in '**Invoke the `<reviewer>-reviewer` subagent' '**Invoke one `review-pro-verify-subagent` per selected finding**'; do
-    line="$(grep -F "$inv" "$ORCH_MD")"
-    who="reviewer"; [[ "$inv" == *verify* ]] && who="verifier"
-    if [[ -z "$line" ]]; then
-      # With the verifier's name gone entirely, the verifier-dispatch check above already fails.
-      [[ "$who" == reviewer ]] || grep -qF 'review-pro-verify-subagent' "$ORCH_MD" \
-        && add_error "review-pro/SKILL.md: the $who dispatch line is gone - nothing says how its agents are started"
-    elif [[ "$line" != *"$DISPATCH_CLAUSE"* ]]; then
-      add_error "review-pro/SKILL.md: the $who dispatch no longer starts every agent in one step and waits for all - each background return re-reads the orchestrator's whole context"
-    elif [[ "${line//"$DISPATCH_CLAUSE"/}" == *background* ]]; then
-      add_error "review-pro/SKILL.md: the $who dispatch line asks for background dispatch - each background return re-reads the orchestrator's whole context"
-    fi
-  done
 fi
 if [[ -f "$SYNTH_MD" ]]; then
   grep -qF 'abstained (no spec text)' "$SYNTH_MD" \
@@ -991,8 +974,9 @@ fi
 # validate-repo-rules.sh: repository rules (roadmap item 3, ADR-0011), the triage, orchestrator,
 # verifier, synthesis, schema and owner-rubric checks. validate-stack-signals.sh: stack packs read
 # from the merge base (ADR-0012), the triage, orchestrator, verifier and synthesis checks.
+# validate-dispatch.sh: the orchestrator starts every agent in one step (roadmap item 4).
 HERE_SH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-for part in "validate-repo-rules.sh:repository-rules" "validate-stack-signals.sh:stack-signals"; do
+for part in "validate-repo-rules.sh:repository-rules" "validate-stack-signals.sh:stack-signals" "validate-dispatch.sh:dispatch"; do
   f="${part%%:*}"
   if [[ -f "$HERE_SH/$f" ]]; then
     source "$HERE_SH/$f"

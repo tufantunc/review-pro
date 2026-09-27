@@ -10,7 +10,7 @@ skills: [review-pro-verify]
 You are a **review-pro subagent**. Load the `review-pro-verify` skill and follow it exactly.
 
 ## Work
-1. Receive one finding with its `### Written by`, `### Diff` and, when present, `### Change description` sections.
+1. Receive one finding with its `### Written by`, `### Diff` and, when present, `### Rules file`, `### Pack files` and `### Change description` sections.
 2. Try to refute it from source, under the skill's rules. Read only: do not modify the working tree, build, run, or install anything.
 3. Reply with the skill's output block and nothing else.
 

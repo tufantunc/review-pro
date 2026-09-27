@@ -1,7 +1,7 @@
 {
   "name": "review-pro",
-  "version": "1.4.0",
-  "description": "Tiered AI code-review: triage -> relevant specialist reviewers -> synthesis. Built to catch what AI-written code actually ships with — hallucinated APIs, over-engineering, ignored conventions, needless dependencies. Invoke the `review-pro` skill on a branch or PR.",
+  "version": "1.5.0",
+  "description": "Tiered AI code-review: triage -> relevant specialist reviewers -> synthesis. Built to catch what AI-written code actually ships with: code that ignores what the repository already knows, needless dependencies, over-engineering, hallucinated APIs. Invoke the `review-pro` skill on a branch or PR.",
   "author": {
     "name": "tufantunc",
     "url": "https://github.com/tufantunc"

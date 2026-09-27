@@ -242,7 +242,9 @@ changed the design in these places:
 - **The cap runs in Resolve conflicts, before verification.** In Calibrate it met the
   verified-severity freeze and lost. A finding citing the rules file is capped there; an owner
   whose own rubric justifies more files a separate finding without the citation, and a dedup
-  merge keeps the non-rule finding's severity. `core/shared/severity.md` names the cap.
+  merge keeps the higher of the non-rule finding's severity and the rule finding's capped one
+  (amended in the v1.5.0 release review: keeping only the non-rule severity let a nearby Low
+  pull a rule violation below Medium). `core/shared/severity.md` names the cap.
 - **One row per rule.** `{name}` bindings share a rule id, so per-binding rows could not be
   matched to an owner's answer and could fill the cap. A rule's row carries the union.
 - **`no-target` rows.** A rule whose `then` paths all vanished used to disappear; it is now a

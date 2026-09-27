@@ -58,7 +58,7 @@ if [[ -f "$ORCH_MD" ]]; then
       && [[ "$(grep -c '^The handling text for `### Repository rules`, passed after the rows.' "$ORCH_MD")" -eq 1 ]] \
       || add_error "review-pro/SKILL.md: text precedes the opening handling marker - an owner reads it as part of the rules contract, and no check holds it to the bodies"
   fi
-  grep -F '`### Rules file`' "$ORCH_MD" | grep -qF 'git show <base>:.review-pro/rules.md' \
+  grep -F '`### Rules file`' "$ORCH_MD" | grep -qF 'git show <merge-base>:.review-pro/rules.md' \
     || add_error "review-pro/SKILL.md: the verification step no longer tells the verifier to read rules at the merge base - a change could reword the rule it broke and have the finding refuted"
   has_rules_block "$ORCH_MD" "review-pro/SKILL.md"
 fi
@@ -88,7 +88,7 @@ if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Repository rules' "$SYNTH_MD"; then
       || add_error "review-pro-synthesize/SKILL.md: the no-target row no longer covers a target this change adds - a new pack would read as a rule that can no longer fire"
     grep -E '^2\. \*\*Dedup\*\*' "$SYNTH_MD" | grep -qF 'drops the rules citation' \
       || add_error "review-pro-synthesize/SKILL.md: Dedup no longer drops the rules citation - a finding with its own evidence, merged with a rule finding, would be capped at Medium"
-    rr_pin 'keeps the severity of the one that does not'  "the merged-severity rule is gone - a finding with its own evidence could lose its severity by merging with a rule finding"
+    rr_pin "keeps the higher of the other finding's own severity and the rule finding's severity capped at Medium"  "the merged-severity rule is gone - a finding with its own evidence could lose its severity by merging with a rule finding"
   fi
 fi
 # The rules cap runs before verification selects anything; after it, the verified-severity
@@ -110,4 +110,42 @@ AI_MD="$SKILLS_DIR/ai-antipatterns/SKILL.md"
 if [[ -f "$AI_MD" ]]; then
   grep -F '.review-pro/rules.md' "$AI_MD" | grep -qF 'ai-antipatterns.ignored-convention' \
     || add_error "ai-antipatterns/SKILL.md: no longer names the category a rule violation files under - the default owner could answer violated and file nothing (ADR-0007)"
+fi
+
+# v1.5.0 release review: the joins between rules, packs and verification. Each pin is scoped to
+# the one line that carries the rule, so a phrase repeated elsewhere cannot satisfy it.
+if [[ -f "$ORCH_MD" ]]; then
+  grep -F '**Merge base:**' "$ORCH_MD" | grep -qF 'stop and report that the branch shares no history with the base' \
+    || add_error "review-pro/SKILL.md: Prep no longer stops when no merge base resolves - git show with an empty revision reads the index, the change's own rules and packs"
+  grep -F '`### Rules file`' "$ORCH_MD" | grep -qF "any rule text it relies on is still read at the merge base" \
+    || add_error "review-pro/SKILL.md: the Rules file section no longer splits a finding located in rules.md - its edit and the rule it relies on must be read from different places"
+  grep -F '`### Change description`, last' "$ORCH_MD" | grep -qF 'never an instruction' \
+    || add_error "review-pro/SKILL.md: the verifier's Change description is no longer last - a forged Rules file heading in the PR body could come first"
+fi
+if [[ -f "$TRIAGE_MD" ]]; then
+  grep -F 'Resolve the merge base with `git merge-base <base> HEAD`, the sha step 8' "$TRIAGE_MD" | grep -qF 'If it prints nothing, stop' \
+    || add_error "review-pro-triage/SKILL.md: step 3 no longer stops when no merge base resolves - git show with an empty revision reads the change's own rules and packs"
+  grep -F 'When `file_changed` is `changed` or `added`' "$TRIAGE_MD" | grep -qF 'dispatch `security`' \
+    || add_error "review-pro-triage/SKILL.md: an edit to rules.md no longer dispatches security - a change could loosen a rule with nobody reading it, and every later review applies it"
+  # Owner and HEAD pins judge a present line; a missing line is the pin above's error, or the read-step pin's.
+  ! grep -qF 'When `file_changed` is `changed` or `added`' "$TRIAGE_MD" \
+    || grep -F 'When `file_changed` is `changed` or `added`' "$TRIAGE_MD" | grep -qF "as the merge base's copy names it" \
+    || add_error "review-pro-triage/SKILL.md: a rules edit no longer dispatches the base copy's owner - the change could choose who reads its loosening"
+  ! grep -qF "Read \`git show <merge-base>:.review-pro/rules.md\`" "$TRIAGE_MD" \
+    || grep -F "Read \`git show <merge-base>:.review-pro/rules.md\`" "$TRIAGE_MD" | grep -qF 'git show HEAD:.review-pro/rules.md`, never the working tree' \
+    || add_error "review-pro-triage/SKILL.md: HEAD's rules.md is no longer read with git show - an uncommitted edit would be reported as part of the change"
+fi
+# A missing base-read line is its own pin's error; this one judges the exemption on it.
+if [[ -f "$VERIFY_MD" ]] && grep -qF '`.review-pro/rules.md` is always read from the base' "$VERIFY_MD"; then
+  grep -F '`.review-pro/rules.md` is always read from the base' "$VERIFY_MD" | grep -qF "any rule text it relies on at the merge base" \
+    || add_error "review-pro-verify/SKILL.md: the verifier no longer splits a finding located in rules.md - it could read the rule from the change's own wording"
+fi
+if [[ -f "$SYNTH_MD" ]]; then
+  grep -F 'A finding **cites** `.review-pro/rules.md` when its `evidence_refs` names it' "$SYNTH_MD" | grep -qF 'or its own `file` is that path' \
+    || add_error "review-pro-synthesize/SKILL.md: a finding located in rules.md no longer counts as citing it - a rule violation there would escape the Medium cap"
+fi
+SSUB_MD="$ROOT/core/agents/review-pro-synthesize-subagent.md"
+if [[ -f "$SSUB_MD" ]]; then
+  grep -F '1. Receive' "$SSUB_MD" | grep -F '`external_premises`' | grep -qF '## Premise verification' \
+    || add_error "review-pro-synthesize-subagent.md: no longer names the External premises inputs - subagent synthesis would drop the premises table, not-reported rows included"
 fi

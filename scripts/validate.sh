@@ -297,7 +297,7 @@ if [[ -f "$ORCH_MD" ]]; then
   grep -qF '### External premises' "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: the '### External premises' prompt section is gone - triage routes premises the orchestrator then never passes to the owning reviewer"
   # Scoped to its own line: the Stack signals item names the same list (ADR-0012).
-  anchor_line "$ORCH_MD" '`### Changed file contents`:'
+  anchor_line "$ORCH_MD" '`### Changed file contents`, always the **last** section'
   anchor_has "this reviewer's \`context.changed_files\`" \
     || add_error "review-pro/SKILL.md: step 3 hands reviewers something other than their plan list - a narrowed prompt is invisible to the coverage check"
   # Pinned as the inline sentence itself: 'exactly once' alone also matches the prompt reminder.
@@ -331,7 +331,8 @@ if [[ -f "$ORCH_MD" ]]; then
     || add_error "review-pro/SKILL.md: the agreement-count ban is gone - verifiers would be told how many reviewers agreed, which is pressure, not evidence"
   grep -qF 'base: <sha>' "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: the base line is gone - a verifier cannot re-read a file the diff deletes"
-  grep -qF 'git merge-base <base> HEAD' "$ORCH_MD" \
+  # Line-scoped: Prep's Merge base line carries the same command since v1.5.0.
+  grep -F 'The sha is the merge base' "$ORCH_MD" | grep -qF 'git merge-base <base> HEAD' \
     || add_error "review-pro/SKILL.md: the base is not the merge base - a verifier reading a deleted file would read the base tip, not what the diff deleted"
   grep -F 'Continue the `review-pro-synthesize` skill from' "$ORCH_MD" | grep -qi 'dedup' \
     && add_error "review-pro/SKILL.md: the synthesis step re-runs the merge after verification - a second dedup can move the keys verifier results bind to"

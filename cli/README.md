@@ -4,7 +4,7 @@
 [![CI](https://github.com/tufantunc/review-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/tufantunc/review-pro/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/github/license/tufantunc/review-pro)](https://github.com/tufantunc/review-pro/blob/main/LICENSE)
 
-> **review-pro** is a tiered AI code-review system: **triage → relevant specialist reviewers → synthesis**. It reviews code written by AI agents, using AI agents — built to catch the failure modes AI-generated code actually ships with (hallucinated APIs, over-engineering, ignored conventions, needless dependencies).
+> **review-pro** is a tiered AI code-review system: **triage → relevant specialist reviewers → synthesis**. It reviews code written by AI agents, using AI agents. It is built to catch the failure modes AI-generated code actually ships with: code that ignores what the repository already knows (existing guards, canonical helpers, established conventions), needless dependencies, over-engineering, and the occasional hallucinated API.
 >
 > **This package** is the installer CLI (`npx review-pro`). It installs the review-pro core (skills + subagents) into your agent tool, and the stack packs into your repo's `.review-pro/`.
 
@@ -34,12 +34,12 @@ Stack packs layer language/framework-specific signals onto the reviewers at revi
 npx review-pro                # interactive multi-select
 npx review-pro add python     # or: node, go, rust, typescript-react, dotnet, php,
                               #     kotlin, swift, flutter, nextjs, react-native,
-                              #     wordpress, ai-ml
+                              #     wordpress, ai-ml, capacitor, tanstack-start
 npx review-pro list           # show catalog + installed versions
 npx review-pro doctor         # check drift / roster integrity
 ```
 
-Packs land in the reviewed repo's `.review-pro/` and carry their own version.
+Packs land in the reviewed repo's `.review-pro/` and carry their own version. Commit `.review-pro/` to your base branch: a review applies packs from the merge base, so a pack that is not committed there is reported, not applied.
 
 ## Run a review
 
@@ -51,6 +51,8 @@ Restart your tool so the new skills/agents are discovered, then in the repo you 
 A change's stated reason often points outside the repository: "fixed upstream in the new version". When it names something specific, the reviewer that owns the claim checks it against that artifact at the resolved dependency version, prefers the dependency source already on disk over the network, and records which channel settled it. An unsettled premise is reported as unsettled rather than trusted.
 
 The agent runs the whole pipeline natively (`git diff`, reads changed files, reads active stacks from `.review-pro/` at the merge base, dispatches the relevant reviewer subagents with their stack signals, has an independent verifier try to refute up to 8 Medium or higher code findings, reports which changed files the reviewers say they examined, and synthesizes one verdict: **BLOCK / REQUEST CHANGES / APPROVE**). No env vars, no scripts to run at review time.
+
+Some of what a repository knows cannot be read from its code: "when the verdict rule changes, update `severity.md`". Write such rules down in `.review-pro/rules.md` and every review checks them. Rules are read from the merge base, so a change cannot weaken its own review by editing them, and the report shows every matched rule with its outcome. Format and details: [Repository rules](https://github.com/tufantunc/review-pro#repository-rules).
 
 ## Commands
 

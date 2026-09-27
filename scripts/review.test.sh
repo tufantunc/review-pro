@@ -91,10 +91,54 @@ mkdir -p "$R/.review-pro/evil"
 echo '{"name":"evil","version":"1.0.0","reviewers":["security"]}' > "$R/.review-pro/evil/manifest.json"
 echo 'EVIL SIGNAL' > "$R/.review-pro/evil/security.md"
 g add .; g commit -qm orphan
+if git -C "$R" cat-file -e HEAD:.review-pro/evil/manifest.json 2>/dev/null; then ok "orphan branch control: the orphan commit holds the pack"; else bad "orphan branch control: setup failed"; fi
 out=$(cd "$R" && bash "$REVIEW" stacks); rc=$?
 if [[ "$rc" -eq 0 && -z "$out" ]]; then ok "orphan branch: no stacks"; else bad "orphan branch: stacks printed '$out' (rc=$rc)"; fi
 out=$(cd "$R" && bash "$REVIEW" signals security)
 if [[ -z "$out" ]]; then ok "orphan branch: no signals"; else bad "orphan branch: signals printed the change's packs"; fi
+rm -rf "$R"
+
+# A tag named main on the change's own commit: git prefers the tag over the branch for the bare
+# name, which would make the merge base the change. The base is the branch refs/heads/main.
+R=$(mktemp -d)
+g init -q -b main
+mkdir -p "$R/.review-pro/node"
+echo '{"name":"node","version":"1.0.0","reviewers":["security"]}' > "$R/.review-pro/node/manifest.json"
+echo 'BASE SIGNAL' > "$R/.review-pro/node/security.md"
+g add .; g commit -qm base
+g checkout -q -b feat
+echo 'EVIL SIGNAL' > "$R/.review-pro/node/security.md"
+g commit -qam change
+g tag main
+if [[ "$(git -C "$R" rev-parse main 2>/dev/null)" == "$(git -C "$R" rev-parse HEAD)" ]]; then ok "tag control: the bare name main resolves to the change's tag"; else bad "tag control: setup failed"; fi
+out=$(cd "$R" && bash "$REVIEW" signals security)
+if echo "$out" | grep -qxF 'BASE SIGNAL' && ! echo "$out" | grep -qF 'EVIL SIGNAL'; then ok "a tag named main: the branch's merge base is used"; else bad "a tag named main: the change's pack was applied"; fi
+rm -rf "$R"
+
+# An explicit base that does not resolve is an error, never an empty "no packs" answer.
+R=$(mktemp -d)
+g init -q -b main; echo x > "$R/a.txt"; g add .; g commit -qm base
+for sub in "stacks mian" "signals security mian" "prep mian"; do
+  out=$(cd "$R" && bash "$REVIEW" $sub 2>&1); rc=$?
+  if [[ "$rc" -eq 2 ]] && echo "$out" | grep -qF 'unknown base: mian'; then ok "$sub: an unknown base fails"; else bad "$sub: an unknown base returned rc=$rc"; fi
+done
+rm -rf "$R"
+
+# A reviewer file only at the merge base still applies; one the branch adds does not.
+R=$(mktemp -d)
+g init -q -b main
+mkdir -p "$R/.review-pro/node"
+echo '{"name":"node","version":"1.0.0","reviewers":["security","correctness"]}' > "$R/.review-pro/node/manifest.json"
+echo 'BASE SIGNAL' > "$R/.review-pro/node/security.md"
+g add .; g commit -qm base
+g checkout -q -b feat
+g rm -q .review-pro/node/security.md
+echo 'ADDED SIGNAL' > "$R/.review-pro/node/correctness.md"
+g add .; g commit -qm change
+out=$(cd "$R" && bash "$REVIEW" signals security)
+if echo "$out" | grep -qxF 'BASE SIGNAL'; then ok "a reviewer file the branch deletes still applies"; else bad "a reviewer file the branch deletes was dropped"; fi
+out=$(cd "$R" && bash "$REVIEW" signals correctness)
+if [[ -z "$out" ]]; then ok "a reviewer file the branch adds does not apply"; else bad "a reviewer file the branch adds printed '$out'"; fi
 rm -rf "$R"
 
 echo "---"

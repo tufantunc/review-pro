@@ -143,12 +143,13 @@ Triage's `stack_signals` compares the stack packs under `.review-pro/<stack>/` a
 
 ```
 .review-pro/<stack>/ is new in this change; its signals apply from the next change.
-.review-pro/<stack>/ is not committed; its signals apply once it is committed to the base branch.
-.review-pro/<stack>/ is removed in this change; the review still used the merge base's pack.
-.review-pro/<stack>/ changed in this change (<files>); the review used the merge base's version.
+.review-pro/<stack>/ is removed in this change; the review still used the merge base's pack, which stops applying from the next change.
+.review-pro/<stack>/ changed in this change (<files>); the review used the merge base's version, and the change's applies from the next change.
+.review-pro/<stack>/ has changes that are not committed (<files>); a review applies a pack only once it is committed to the base branch.
 ```
 
-- `added` takes the first line, `uncommitted` the second, `removed` the third, `changed` the fourth, with the entry's `files`.
+- `added` takes the first line, `removed` the second, `changed` the third and `uncommitted` the fourth, the last two with the entry's `files`. A stack can print two lines: a committed one and an `uncommitted` one.
+- A committed entry means the change edits what every later review applies. Triage dispatches `security` and the pack's own reviewer on it, and their findings are the review of that edit; these lines are not.
 - The lines exist so a reader sees that the change touched what its own review was told to look for, and that the review did not apply the change's version. A pack is not a trusted source: the change's version of it never reached a reviewer as a signal.
 - They never change a finding, a severity, or the verdict.
 

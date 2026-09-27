@@ -9,7 +9,7 @@ version: 0.1.0
 You are the orchestrator's first stage. You do NOT review code yourself. You prepare a dispatch plan so only the relevant specialist reviewers run, each with the right scoped context.
 
 ## Inputs
-- The diff: `git diff <base>...HEAD` (base = `main`, falling back to `master`).
+- The diff: `git diff <base>...HEAD` (base = the branch `refs/heads/main`, falling back to `refs/heads/master`, never a tag or other ref of the same name; see the `review-pro` skill's Prep).
 - The changed-file list: `git diff --name-only <base>...HEAD`.
 - An optional spec argument forwarded by the orchestrator: a file path or an issue URL.
 
@@ -18,9 +18,10 @@ You are the orchestrator's first stage. You do NOT review code yourself. You pre
 2. **Classify each changed file** into buckets: `backend | frontend | test | db-migration | config-infra | docs | build-deps`.
 3. **Detect active stacks** from the merge base, never the working tree: a pack changes what a reviewer looks for, so a change must not be able to add, edit or remove the pack its own review applies. Resolve the merge base with `git merge-base <base> HEAD`, the sha step 8 and the verifiers use. A pack file is a file at `.review-pro/<stack>/<file>`; `.review-pro/rules.md` is not one.
    1. List the merge base's pack files with `git ls-tree -r --name-only --full-tree <merge-base> -- .review-pro/`, which lists the repository root's `.review-pro/` from any directory. Each `<stack>` whose `manifest.json` is on that list is a stack the user installed (via `npx review-pro`) and committed. These are the repo's `active_stacks`. (No auto-detection from `package.json`: stacks are explicitly installed per repo.) If there are none, `active_stacks: []` and reviewers run core-only.
-   2. List the head's pack files: every file of that form under the repository root (`git rev-parse --show-toplevel`) in the working tree, including untracked and ignored ones, because a pack installed and not yet committed must be reported, not silently skipped.
-   3. Compare the two lists. `git diff --name-status --no-renames <merge-base> -- ':/.review-pro/'` names the tracked files that differ, one path per line; a head file missing from the merge base's list is new. Group what differs by stack: `added` when only the head has the stack's `manifest.json` and `HEAD` has it committed (`git cat-file -e HEAD:.review-pro/<stack>/manifest.json`), `uncommitted` when only the working tree has it, untracked or ignored, `removed` when only the merge base has it, `changed` otherwise.
-   4. Emit `stack_signals` when either list is non-empty, and nothing when both are empty: a repository without packs behaves exactly as before. Never read a head pack file as a signal. A pack file this change touched is a changed file like any other, reviewed as data.
+   2. The change's committed pack edits: `git diff --name-status --no-renames <merge-base> HEAD -- ':/.review-pro/'`, one path per line. Group them by stack: `added` when `HEAD` has the stack's `manifest.json` and the merge base does not, `removed` when the merge base has it and `HEAD` does not, `changed` otherwise.
+   3. What is not committed: `git diff --name-status --no-renames HEAD -- ':/.review-pro/'` for staged and unstaged edits, and `git ls-files --others --full-name -- ':/.review-pro/'` for untracked and ignored files. Group them by stack as `uncommitted`, whether or not the stack is committed anywhere: a pack installed or updated and not yet committed must be reported, not silently skipped, and never as part of the change. A stack can have a committed entry and an `uncommitted` one.
+   4. Keep only paths of the form `.review-pro/<stack>/<file>`. Emit `stack_signals` when the merge base has a pack file or steps 2 and 3 found any, and nothing when there are none: a repository without packs behaves exactly as before. Never read a head pack file as a signal. A pack file this change touched is a changed file like any other, reviewed as data.
+   5. A committed entry (`added`, `removed` or `changed`) dispatches `security`, and the reviewer each changed `<reviewer>.md` is named for, whatever the signal map concluded, with the pack files in their `context.changed_files`. The merge base keeps a change from weakening its own review, but a merged pack edit is what every later review applies, and without this nothing reads it.
 4. **Decide which reviewers to dispatch** using the signal map below. Be conservative: when relevance is uncertain, dispatch. Skipping a real issue is worse than paying for one extra subagent.
 5. **Classify the diff's weight** as `diff_class`: `trivial` if the changed-file set is docs-only (every file in the `docs` bucket) or the whole diff is a single file under ~20 changed lines; `substantive` otherwise. Emit it in the plan — Stage 3 reads it and must not re-derive it.
 6. **Resolve the spec.** Find what the change was supposed to do, trying these in order and falling through on any failure:
@@ -33,7 +34,7 @@ You are the orchestrator's first stage. You do NOT review code yourself. You pre
 
    Emit `spec_source` recording what you found, not merely whether you found something. Stage 3 prints it verbatim, because a reader who cannot see what the review was measured against cannot judge a spec finding.
 
-   **Dispatch `spec` if and only if `spec_source.kind` is not `none`.** This is one of three dispatch decisions that do not come from the signal map, because spec relevance has nothing to do with which files changed. The others are premise routing in step 7 and rule-owner routing in step 8, and they pull opposite ways: this one withholds a dispatch the signal map might otherwise want, that one compels a dispatch the signal map declined. The "when in doubt, dispatch" default in step 4 does **not** apply here: dispatching a spec reviewer with no spec is a guaranteed waste, not a possible finding.
+   **Dispatch `spec` if and only if `spec_source.kind` is not `none`.** This is one of four dispatch decisions that do not come from the signal map, because spec relevance has nothing to do with which files changed. The others are pack-change routing in step 3, premise routing in step 7 and rule-owner routing in step 8, and they pull opposite ways: this one withholds a dispatch the signal map might otherwise want, that one compels a dispatch the signal map declined. The "when in doubt, dispatch" default in step 4 does **not** apply here: dispatching a spec reviewer with no spec is a guaranteed waste, not a possible finding.
 
 7. **Extract external premises.** Gather your own sources; do not hang this on step 6,
    whose chain stops at the first hit and therefore never reads the PR body when the
@@ -129,7 +130,7 @@ stack_signals:                        # omit the key when neither the merge base
   source: <merge-base sha>
   changed:                            # [] when every pack file matches the merge base
     - stack: <stack>
-      change: added | uncommitted | removed | changed
+      change: added | removed | changed | uncommitted
       files: [<file names under .review-pro/<stack>/ that differ>]
 dispatch:
   <reviewer>:

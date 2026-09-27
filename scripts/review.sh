@@ -20,9 +20,11 @@ TARGET="$(pwd)"
 
 cmd="${1:-prep}"; shift || true
 
+# The base is a branch, never a tag or other ref of the same name: git prefers a tag named
+# main over the branch, and a change could push one pointing at its own commit.
 detect_base(){
-  if git -C "$TARGET" rev-parse --verify main >/dev/null 2>&1; then echo main
-  elif git -C "$TARGET" rev-parse --verify master >/dev/null 2>&1; then echo master
+  if git -C "$TARGET" rev-parse --verify --quiet refs/heads/main >/dev/null; then echo refs/heads/main
+  elif git -C "$TARGET" rev-parse --verify --quiet refs/heads/master >/dev/null; then echo refs/heads/master
   fi
 }
 
@@ -30,9 +32,14 @@ base="$(detect_base)"
 # merge_base [ref]: the merge base with the given ref, else with the detected base. Empty when
 # there is no base branch or the histories are unrelated, and then no pack applies. Never HEAD
 # as a fallback: the merge base of HEAD with itself is the change, packs included.
+# An explicit ref that does not resolve is an error, not "no packs": a typo, or an unfetched
+# origin/main, must not read as a base without packs.
 merge_base(){
   local ref="${1:-$base}"
   [[ -n "$ref" ]] || return 0
+  if [[ -n "${1:-}" ]] && ! git -C "$TARGET" rev-parse --verify --quiet "$1^{commit}" >/dev/null; then
+    echo "unknown base: $1" >&2; exit 2
+  fi
   git -C "$TARGET" merge-base "$ref" HEAD 2>/dev/null || true
 }
 
@@ -44,12 +51,12 @@ stacks_list(){
 }
 
 case "$cmd" in
-  stacks) mb="$(merge_base "${1:-}")"; stacks_list; exit 0 ;;
+  stacks) mb="$(merge_base "${1:-}")" || exit 2; stacks_list; exit 0 ;;
   diff) git -C "$TARGET" diff "${1:-${base:-HEAD}}...HEAD"; exit 0 ;;
   signals)
     [[ $# -ge 1 ]] || { echo "usage: review.sh signals <reviewer> [base]" >&2; exit 2; }
     reviewer="$1"
-    mb="$(merge_base "${2:-}")"
+    mb="$(merge_base "${2:-}")" || exit 2
     for s in $(stacks_list); do
       if git -C "$TARGET" cat-file -e "$mb:.review-pro/$s/$reviewer.md" 2>/dev/null; then
         echo "--- stack: $s ($reviewer) ---"
@@ -59,7 +66,7 @@ case "$cmd" in
     done
     exit 0 ;;
   prep)
-    mb="$(merge_base "${1:-}")"
+    mb="$(merge_base "${1:-}")" || exit 2
     echo "BASE: ${1:-${base:-none}}"
     echo "ACTIVE_STACKS: $(stacks_list | tr '\n' ' ' | sed 's/ $//')"
     echo "CHANGED FILES:"

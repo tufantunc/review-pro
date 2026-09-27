@@ -16,23 +16,36 @@ if [[ -f "$TRIAGE_MD" ]]; then
   anchor_line "$TRIAGE_MD" 'git ls-tree -r --name-only --full-tree <merge-base> -- .review-pro/'
   anchor_has '`active_stacks`' \
     || add_error "review-pro-triage/SKILL.md: the step that lists stacks no longer lists the merge base's root .review-pro/ - the sentence above it would stand while the read moved, or found nothing from a subdirectory"
-  anchor_line "$TRIAGE_MD" "List the head's pack files"
-  anchor_has 'including untracked and ignored ones' \
-    || add_error "review-pro-triage/SKILL.md: the head listing no longer includes untracked and ignored packs - a pack installed and not committed would be skipped with no report"
-  anchor_line "$TRIAGE_MD" 'Compare the two lists.'
-  anchor_has "\`git diff --name-status --no-renames <merge-base> -- ':/.review-pro/'\`" \
-    || add_error "review-pro-triage/SKILL.md: the pack comparison is no longer root-anchored with one path per line - from a subdirectory it finds nothing, and a rename hides one path"
-  anchor_has '`added` when only the head has the stack'"'"'s `manifest.json` and `HEAD` has it committed' \
-    || add_error "review-pro-triage/SKILL.md: the added state no longer requires a committed manifest - an uncommitted pack would read as applying from the next change"
-  anchor_has '`uncommitted` when only the working tree has it' \
-    || add_error "review-pro-triage/SKILL.md: the uncommitted state is gone - a pack only in the working tree would read as applying from the next change"
-  anchor_has '`removed` when only the merge base has it, `changed` otherwise' \
+  # Two layers (round 2): committed edits are the change's, anything between HEAD and the working
+  # tree is uncommitted. One diff against the working tree reported uncommitted edits as the change's.
+  anchor_line "$TRIAGE_MD" "The change's committed pack edits:"
+  anchor_has "\`git diff --name-status --no-renames <merge-base> HEAD -- ':/.review-pro/'\`" \
+    || add_error "review-pro-triage/SKILL.md: the committed pack comparison is no longer merge base to HEAD, root-anchored, one path per line - uncommitted edits would read as the change's, or nothing is found from a subdirectory"
+  anchor_has '`added` when `HEAD` has the stack'"'"'s `manifest.json` and the merge base does not' \
+    || add_error "review-pro-triage/SKILL.md: the added state no longer compares HEAD with the merge base - a pack only in the working tree would read as applying from the next change"
+  anchor_has '`removed` when the merge base has it and `HEAD` does not, `changed` otherwise' \
     || add_error "review-pro-triage/SKILL.md: the removed and changed states are gone - pack edits and removals reach the report with no state"
-  anchor_line "$TRIAGE_MD" 'Emit `stack_signals` when either list is non-empty'
-  anchor_has 'nothing when both are empty' \
+  anchor_line "$TRIAGE_MD" 'What is not committed:'
+  anchor_has "\`git diff --name-status --no-renames HEAD -- ':/.review-pro/'\`" \
+    || add_error "review-pro-triage/SKILL.md: staged and unstaged pack edits are no longer listed as uncommitted - they would be skipped with no report"
+  anchor_has "\`git ls-files --others --full-name -- ':/.review-pro/'\`" \
+    || add_error "review-pro-triage/SKILL.md: untracked and ignored pack files are no longer listed - a pack installed and not committed would be skipped with no report"
+  anchor_has 'as `uncommitted`, whether or not the stack is committed anywhere' \
+    || add_error "review-pro-triage/SKILL.md: the uncommitted state is gone or narrowed - an uncommitted edit inside a committed stack would read as the change's"
+  anchor_line "$TRIAGE_MD" 'Emit `stack_signals` when the merge base has a pack file'
+  anchor_has 'nothing when there are none' \
     || add_error "review-pro-triage/SKILL.md: stack_signals is no longer omitted without packs - a repository without packs would not behave as before"
   anchor_has 'Never read a head pack file as a signal' \
     || add_error "review-pro-triage/SKILL.md: the bar on reading a head pack as a signal is gone - triage could hand the change's pack to its own review"
+  anchor_line "$TRIAGE_MD" 'A committed entry (`added`, `removed` or `changed`) dispatches `security`'
+  anchor_has 'whatever the signal map concluded' \
+    || add_error "review-pro-triage/SKILL.md: a committed pack edit no longer compels a dispatch - a change that softens a pack for every later review could be approved with no reviewer"
+  anchor_line "$TRIAGE_MD" 'For each dispatched reviewer and each stack in `active_stacks`'
+  anchor_has 'git show <merge-base>:.review-pro/<stack>/<reviewer>.md' \
+    || add_error "review-pro-triage/SKILL.md: its Stack signals section no longer reads packs at the merge base - inline triage would contradict the orchestrator's read"
+  anchor_line "$TRIAGE_MD" '- The diff: `git diff <base>...HEAD`'
+  anchor_has 'refs/heads/main' \
+    || add_error "review-pro-triage/SKILL.md: the base is no longer the branch ref - a tag named main would make the merge base the change itself"
   grep -qE '^stack_signals:' "$TRIAGE_MD" \
     || add_error "review-pro-triage/SKILL.md: no 'stack_signals' key in the dispatch plan format - pack changes reach no report"
 fi
@@ -44,6 +57,12 @@ for f in "$TRIAGE_MD" "$ORCH_MD"; do
 done
 
 if [[ -f "$ORCH_MD" ]]; then
+  anchor_line "$ORCH_MD" '- **Base branch:**'
+  { anchor_has 'git rev-parse --verify --quiet refs/heads/main' && anchor_has 'Use that full ref as `<base>` in every git command'; } \
+    || add_error "review-pro/SKILL.md: the base is no longer resolved as a branch ref - a tag named main would make the merge base the change itself, and its packs and rules would apply"
+  anchor_line "$ORCH_MD" 'Be conservative, when in doubt dispatch'
+  anchor_has "as do \`security\` and a pack's own reviewer when the change commits a pack edit" \
+    || add_error "review-pro/SKILL.md: the orchestrator no longer runs the reviewers a pack edit compels - a pack-only change could be approved with no reviewer"
   anchor_line "$ORCH_MD" '**Gather its stack signals.**'
   anchor_has 'git show <merge-base>:.review-pro/<stack>/<reviewer>.md' \
     || add_error "review-pro/SKILL.md: stack signals are no longer read with git show at the merge base - the fan-out could read the change's own pack"
@@ -60,16 +79,18 @@ if [[ -f "$ORCH_MD" ]]; then
   anchor_has 'stack signals step 1 read from the merge base' \
     || add_error "review-pro/SKILL.md: the inline review no longer applies the merge base's stack signals - the inline path could read the change's own pack"
   anchor_line "$ORCH_MD" '`### Pack files`'
-  { anchor_has 'git show <base>:<path>' && anchor_has 'never the working tree'; } \
+  { anchor_has 'when the merge base or the diff has a file under `.review-pro/<stack>/`' && anchor_has 'git show <base>:<path>' && anchor_has 'never the working tree'; } \
     || add_error "review-pro/SKILL.md: the verification step no longer tells the verifier to read a cited pack at the merge base - a change could reword the signal a finding rests on and have it refuted"
   anchor_line "$ORCH_MD" 'If triage dispatches no reviewers'
-  anchor_has 'the Stack signals lines exactly as the `review-pro-synthesize` skill' \
-    || add_error "review-pro/SKILL.md: the no-reviewer path no longer prints the Stack signals lines - a change that only adds a pack, the likeliest to dispatch nobody, would be reported as nothing"
+  anchor_has 'print the Repository rules table and lines and the Stack signals lines exactly as the `review-pro-synthesize` skill' \
+    || add_error "review-pro/SKILL.md: the no-reviewer path no longer prints the Repository rules and Stack signals output - a change that only touches .review-pro/, the likeliest to dispatch nobody, would be reported as nothing"
+  anchor_has 'whenever triage emitted them' \
+    || add_error "review-pro/SKILL.md: the no-reviewer path no longer says when to print the rules and pack output - it could print them only sometimes"
 fi
 
 if [[ -f "$VERIFY_MD" ]]; then
-  anchor_line "$VERIFY_MD" 'A file under `.review-pro/<stack>/` that the finding names in `evidence_refs`'
-  { anchor_has 'git show <base>:<path>' && anchor_has 'never the working tree'; } \
+  anchor_line "$VERIFY_MD" 'Every file under `.review-pro/<stack>/` is a stack pack'
+  { anchor_has 'whether the finding cites it or your search finds it' && anchor_has 'git show <base>:<path>' && anchor_has 'never the working tree' && anchor_has 'it never settles a claim'; } \
     || add_error "review-pro-verify/SKILL.md: the verifier no longer reads a cited pack at the merge base - a change could reword the signal a finding rests on and refute it from its own edit"
 fi
 
@@ -79,14 +100,16 @@ if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Stack signals' "$SYNTH_MD"; then
     ss_line(){ printf '%s\n' "$SS" | grep -qxF -- "$1" || add_error "review-pro-synthesize/SKILL.md: $2"; }
     ss_line '.review-pro/<stack>/ is new in this change; its signals apply from the next change.' \
       "the pack-added line is gone - a pack the change added reads as silently ignored"
-    ss_line '.review-pro/<stack>/ is not committed; its signals apply once it is committed to the base branch.' \
-      "the pack-uncommitted line is gone - a pack only in the working tree reads as applying from the next change"
-    ss_line ".review-pro/<stack>/ is removed in this change; the review still used the merge base's pack." \
+    ss_line ".review-pro/<stack>/ is removed in this change; the review still used the merge base's pack, which stops applying from the next change." \
       "the pack-removed line is gone - a reader cannot tell the change removed a pack its own review still applied"
-    ss_line ".review-pro/<stack>/ changed in this change (<files>); the review used the merge base's version." \
+    ss_line ".review-pro/<stack>/ changed in this change (<files>); the review used the merge base's version, and the change's applies from the next change." \
       "the pack-changed line is gone - a reader cannot tell the review ignored the change's own pack edits"
-    ss_line '- `added` takes the first line, `uncommitted` the second, `removed` the third, `changed` the fourth, with the entry'"'"'s `files`.' \
+    ss_line '.review-pro/<stack>/ has changes that are not committed (<files>); a review applies a pack only once it is committed to the base branch.' \
+      "the pack-uncommitted line is gone - a pack only in the working tree reads as part of the change"
+    ss_line '- `added` takes the first line, `removed` the second, `changed` the third and `uncommitted` the fourth, the last two with the entry'"'"'s `files`. A stack can print two lines: a committed one and an `uncommitted` one.' \
       "the state-to-line mapping is gone - a state could print another state's line"
+    printf '%s\n' "$SS" | grep -F 'Otherwise print one line per entry' | grep -qF 'on every `diff_class`' \
+      || add_error "review-pro-synthesize/SKILL.md: the stack-signals lines no longer print on every diff_class - a small pack edit, classed trivial, is the change they exist for"
     ss_line '- They never change a finding, a severity, or the verdict.' \
       "the stack-signals lines may now change the verdict - a pack edit would act on its own authority"
     printf '%s\n' "$SS" | grep -qF 'Omit the whole section when triage emitted no `stack_signals` or its `changed` list is empty.' \

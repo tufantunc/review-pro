@@ -19,14 +19,18 @@ signal refines the rubric itself.
 
 Triage lists installed stacks at the merge base with `git ls-tree`, the orchestrator reads each
 reviewer's pack with `git show <merge-base>:<path>`, and nothing reads a pack from the working
-tree. Triage compares the merge base's pack files with the head's, untracked and ignored files
-included, and emits `stack_signals`; synthesis prints one line per stack the change adds, edits
-or removes, saying the review used the merge base's version, and prints them on the no-reviewer
-path too. A pack new in this change applies from the next change, like a new rules file; a pack
-that is only in the working tree is named as not committed. Every reviewer body, and the orchestrator's
-`### Stack signals` section for bodies installed before this release, says that a `.review-pro/`
-file among the changed files is under review, never a signal. The verifier reads a pack a
-finding cites at the merge base.
+tree. The base is the branch `refs/heads/main` (or `master`), never a ref that shares its name,
+because git prefers a tag named `main` and a change could push one at its own commit; that
+protects ADR-0011's rules too. Triage emits `stack_signals` in two layers: what the change commits
+(`added`, `removed`, `changed`, from the merge base to `HEAD`) and what is only in the working tree
+(`uncommitted`). Synthesis prints one line per entry, saying the review used the merge base's
+version, and prints them on the no-reviewer path too. A pack new in this change applies from the
+next change, like a new rules file. A committed pack edit dispatches `security` and the pack's own
+reviewer: the merge base keeps a change from weakening its own review, but a merged edit is what
+every later review applies. Every reviewer body, and the orchestrator's `### Stack signals`
+section for bodies installed before this release, says that everything under `### Changed file
+contents` is under review, never a signal, whatever its path or headings. The verifier reads
+every pack at the merge base, whether a finding cites it or a search finds it.
 
 Rejected: applying the head's packs on a first install, when the merge base has none. That is
 the attack itself: a change adds a pack directory and its text reaches its own reviewer.
@@ -37,6 +41,9 @@ installed skill directories, so no reviewer can reach it portably (ADR-0001).
 
 Rejected: applying the union of both versions. An added line saying a pattern is safe would
 still reach the reviewer.
+
+Rejected: one comparison of the merge base with the working tree. It reported an uncommitted
+`npx review-pro update` as part of the change (round 2 of this branch's review).
 
 Rejected: printing a line when packs are unchanged. It would appear on every review of a
 repository with packs and say nothing.

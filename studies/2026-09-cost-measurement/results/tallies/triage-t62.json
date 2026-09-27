@@ -1,0 +1,56 @@
+{
+ "session": "96ad076e-8be5-42bf-be20-51762c93cf98",
+ "model": "claude-opus-5-5",
+ "cwd": "/private/tmp/claude-501/-Users-tufantunc-Desktop-Projects-Personal-review-pro/99075928-604e-433b-bc82-95e9c121edc8/scratchpad/cost/work/t62/repo",
+ "duration_ms": 54594,
+ "wrapper_s": 56.0,
+ "num_turns": 7,
+ "cost_usd_list": 0.330812,
+ "grand": {
+  "input_tokens": 14,
+  "cache_creation_input_tokens": 25207,
+  "cache_read_input_tokens": 187400,
+  "output_tokens": 4581
+ },
+ "modelUsage": {
+  "input_tokens": 14,
+  "cache_creation_input_tokens": 25207,
+  "cache_read_input_tokens": 187400,
+  "output_tokens": 4581
+ },
+ "check": "match",
+ "n_results": 1,
+ "sum_result_duration_ms": 54594,
+ "five_hour_util": [
+  0.21
+ ],
+ "rows": [
+  {
+   "stage": "main: triage",
+   "agent": "orchestrator",
+   "n_msgs": 7,
+   "usage": {
+    "input_tokens": 14,
+    "cache_creation_input_tokens": 25207,
+    "cache_read_input_tokens": 187400,
+    "output_tokens": 4581
+   },
+   "wall_s": 52.16700005531311
+  },
+  {
+   "stage": "main: dispatch+merge",
+   "agent": "orchestrator",
+   "n_msgs": 0,
+   "usage": {},
+   "wall_s": 0.0
+  },
+  {
+   "stage": "main: synthesis",
+   "agent": "orchestrator",
+   "n_msgs": 0,
+   "usage": {},
+   "wall_s": 0.0
+  }
+ ],
+ "result_text": "```yaml\nbase: main\nactive_stacks: []\nchanged_files_total: 10\nchanged_files:\n  - .claude-plugin/marketplace.json\n  - .github/workflows/ci.yml\n  - .github/workflows/publish.yml\n  - CONTRIBUTING.md\n  - RELEASING.md                      # deleted\n  - cli/package-lock.json\n  - cli/package.json\n  - core/.claude-plugin/plugin.json\n  - core/.codex-plugin/plugin.json\n  - docs/internals/releasing.md\ndiff_class: substantive\nspec_source:\n  kind: none\nexternal_premises:\n  - claim: \"Read from the action's own bundled dist: v7.4.0 carries grype v0.110.0 and v7.4.2 carries v0.118.0\"\n    cited: anchore/scan-action v7.4.0 -> v7.4.2 bundled default grype version (dist)\n    source: commit-message\n    pinned: grype (inherited from anchore/scan-action@27805bf v7.4.2 default) -> v0.118.0 explicit grype-version\n    owner: correctness\nrepository_rules:\n  source: .review-pro/rules.md@466075f6f393046536c0e3cf8f3eaf798c367ffc\n  file_changed: none\n  rows:\n    - id: R3\n      line: 24\n      when_matched: [cli/package.json]\n      then_missing: [.cursor-plugin/plugin.json]\n      state: judge\n      owner: ai-antipatterns\n      text: \"A change to the `version` field of `cli/package.json` must be mirrored in the lockfile and every plugin manifest; a dependency or description change needs none of them.\"\ndispatch:\n  ai-antipatterns:\n    context:\n      changed_files:\n        - .claude-plugin/marketplace.json\n        - .github/workflows/ci.yml\n        - .github/workflows/publish.yml\n        - CONTRIBUTING.md\n        - RELEASING.md\n        - cli/package-lock.json\n        - cli/package.json\n        - core/.claude-plugin/plugin.json\n        - core/.codex-plugin/plugin.json\n        - docs/internals/releasing.md\n      related:\n        - .cursor-plugin/plugin.json          # R3 then-path, unchanged, still at \"version\": \"0.1.0\"\n        - scripts/validate.sh:555-605         # version-alignment block; checks marketplace, core claude/codex plugins, lockfile, not .cursor-plugin\n        - git show 466075f:RELEASING.md       # deleted file content, to confirm the merge into docs/internals/releasing.md kept what it claims\n        - docs/superpowers/plans/2026-06-27-site-multilanguage.md:974-1009   # still references RELEASING.md\n        - docs/superpowers/specs/2026-06-27-site-multilanguage-design.md:186 # still references RELEASING.md\n  correctness:\n    context:\n      changed_files:\n        - .github/workflows/ci.yml\n        - .github/workflows/publish.yml\n        - CONTRIBUTING.md\n        - RELEASING.md\n        - docs/internals/releasing.md\n        - cli/package.json\n        - cli/package-lock.json\n      related:\n        - git show 466075f:RELEASING.md\n        - scripts/validate.sh:555-605\n        - .github/workflows/publish.yml       # full file: grype gate step id/outputs, id-token/provenance claims in the new doc section\n        - scripts/build-site.js               # the new \"The site\" section's claims about docs/ generation\n  security:\n    context:\n      changed_files:\n        - .github/workflows/ci.yml\n        - .github/workflows/publish.yml\n        - docs/internals/releasing.md\n      related:\n        - .github/workflows/publish.yml       # full file: gate job, fail-build/severity-cutoff, permissions (id-token: write)\n        - .github/workflows/ci.yml            # full file: report-only scan job\n  craft:\n    context:\n      changed_files:\n        - .github/workflows/ci.yml\n        - .github/workflows/publish.yml\n        - docs/internals/releasing.md\n        - CONTRIBUTING.md\n      related:\n        - git show 466075f:RELEASING.md\n  dry:\n    context:\n      changed_files:\n        - .github/workflows/ci.yml\n        - .github/workflows/publish.yml\n        - docs/internals/releasing.md\n        - RELEASING.md\n        - CONTRIBUTING.md\n      related:\n        - git show 466075f:RELEASING.md\n        - grep: other references to release procedure / grype pinning in docs/, docs-src/, README.md\n```\n\nTriage plan for a 10-file release change (version bump, `grype-version` pin in two workflows, merging `RELEASING.md` into `docs/internals/releasing.md`). No stack packs are installed and no spec was found, so `spec` is not dispatched. Five reviewers are dispatched: `ai-antipatterns`, `correctness`, `security`, `craft` and `dry`. Rule R3 is flagged for judgement because `.cursor-plugin/plugin.json` wasn't bumped, and the premise about grype versions bundled in scan-action is routed to `correctness`."
+}

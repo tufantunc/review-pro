@@ -1,0 +1,75 @@
+{
+ "session": "2bf342a0-1600-48e5-8ac6-1c9b4ea62df2",
+ "model": "claude-opus-5-5",
+ "cwd": "/private/tmp/claude-501/-Users-tufantunc-Desktop-Projects-Personal-review-pro/99075928-604e-433b-bc82-95e9c121edc8/scratchpad/cost/work/t62/repo",
+ "duration_ms": 139012,
+ "wrapper_s": 140.0,
+ "num_turns": 2,
+ "cost_usd_list": 0.8984686000000002,
+ "grand": {
+  "input_tokens": 16,
+  "cache_creation_input_tokens": 75503,
+  "cache_read_input_tokens": 227708,
+  "output_tokens": 18614
+ },
+ "modelUsage": {
+  "input_tokens": 16,
+  "cache_creation_input_tokens": 75503,
+  "cache_read_input_tokens": 227708,
+  "output_tokens": 18614
+ },
+ "check": "match",
+ "n_results": 1,
+ "sum_result_duration_ms": 139012,
+ "five_hour_util": [
+  0.23,
+  0.24,
+  0.26,
+  0.27
+ ],
+ "rows": [
+  {
+   "stage": "main: triage",
+   "agent": "orchestrator",
+   "n_msgs": 0,
+   "usage": {},
+   "wall_s": 0.0
+  },
+  {
+   "stage": "main: dispatch+merge",
+   "agent": "orchestrator",
+   "n_msgs": 2,
+   "usage": {
+    "input_tokens": 4,
+    "cache_creation_input_tokens": 34356,
+    "cache_read_input_tokens": 43803,
+    "output_tokens": 14392
+   },
+   "wall_s": 55.99799990653992
+  },
+  {
+   "stage": "main: synthesis",
+   "agent": "orchestrator",
+   "n_msgs": 0,
+   "usage": {},
+   "wall_s": 0.0
+  },
+  {
+   "stage": "reviewer",
+   "agent": "ai-antipatterns-reviewer",
+   "n_msgs": 6,
+   "usage": {
+    "input_tokens": 12,
+    "cache_creation_input_tokens": 41147,
+    "cache_read_input_tokens": 183905,
+    "output_tokens": 4222
+   },
+   "wall_s": 42.37600016593933,
+   "prompt_chars": 33250,
+   "first_input": 30046,
+   "reads": 0,
+   "reread_chars": 0
+  }
+ ],
+ "result_text": "- severity: Medium\n  category: ai-antipatterns.ignored-convention\n  file: cli/package.json\n  line: 3\n  title: The version bump to 1.3.0 leaves `.cursor-plugin/plugin.json` at 0.1.0, which breaks written rule R3\n  evidence: |\n    cli/package.json:3            \"version\": \"1.3.0\",\n    .cursor-plugin/plugin.json:4  \"version\": \"0.1.0\",\n  evidence_refs: [.cursor-plugin/plugin.json:4, .review-pro/rules.md:24, docs/internals/releasing.md:23, docs/internals/releasing.md:31, docs/internals/releasing.md:14, scripts/validate.sh:583-602]\n  impact: Rule R3 in `.review-pro/rules.md` says a version change in `cli/package.json` has to appear in the lockfile and in every plugin manifest. Its file list names `.cursor-plugin/plugin.json`. This change updates the lockfile and three manifests (`marketplace.json` both fields, `core/.claude-plugin`, `core/.codex-plugin`) but not the Cursor manifest, which is still at 0.1.0. Nothing will catch this. The version check in `scripts/validate.sh` (lines 583-602) only looks at `marketplace.json`, the two `core/` manifests and the lockfile. The new process doc repeats the gap: it keeps \"Five fields across four files\" (docs/internals/releasing.md:23) and \"Then the three plugin manifests\" (:31), and adds \"All five version fields agree\" to the guarded table (:14). The `RELEASING.md` this change deletes described the Cursor version as \"its own independent version\". The consolidated doc drops that sentence but never lists the Cursor manifest as a bump target, so the rule has no support in the doc that is supposed to be the release list. The rule's own \"Why\" says this exact file already sat at 0.1.0 for seven releases.\n  remedy: Set `.cursor-plugin/plugin.json` `version` to `1.3.0`. In docs/internals/releasing.md step 1, list it as the fourth plugin manifest (six fields across five files) and fix the matching table row. Then extend the version-alignment block in `scripts/validate.sh` to check `.cursor-plugin/plugin.json`, so the doc's claim that this is \"checked, not trusted\" becomes true for every file.\n  confidence: high\n  overlap_hints: [correctness.side-effect, craft.boundary]\n\n## Repository rules\n- rule: R3\n  outcome: violated\n  because: The cli/package.json version went from 1.2.0 to 1.3.0 and the lockfile plus three manifests followed, but `.cursor-plugin/plugin.json`, which the rule names, is still at 0.1.0. docs/internals/releasing.md step 1 still leaves it out.\n  evidence: .cursor-plugin/plugin.json:4 `\"version\": \"0.1.0\"`; cli/package.json:3 `\"version\": \"1.3.0\"`; .review-pro/rules.md:24\n  finding: ai-antipatterns.ignored-convention\n\nOther checks, none of which produced a finding:\n- The only lockfile change is the version, at both spots (`version` and `packages[\"\"].version`). No dependencies moved.\n- `grype-version` is a real input of `anchore/scan-action` at the pinned commit 27805bf (its `action.yml` line 43).\n- The comment's claim is accurate. The action's built-in default grype version is v0.118.0 at that commit and v0.110.0 at v7.4.0 (from the action's `GrypeVersion.js`, checked over the network). The grype tag v0.118.0 exists.\n- The CLI flags in releasing.md step 7 (`--no-stacks`, `-t`) exist at cli/src/cli.ts:47-48.\n- The only remaining references to `RELEASING.md` are in past plan and spec documents under `docs/superpowers/`. No live link points to it.\n\n## Files examined\nexamined: [.claude-plugin/marketplace.json, .github/workflows/ci.yml, .github/workflows/publish.yml, CONTRIBUTING.md, RELEASING.md, cli/package-lock.json, cli/package.json, core/.claude-plugin/plugin.json, core/.codex-plugin/plugin.json, docs/internals/releasing.md]\nnot_examined: []"
+}

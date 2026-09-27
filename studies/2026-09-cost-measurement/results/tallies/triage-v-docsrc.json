@@ -1,0 +1,56 @@
+{
+ "session": "cba34d4e-c1be-436d-8418-43a000513790",
+ "model": "claude-opus-5-5",
+ "cwd": "/private/tmp/claude-501/-Users-tufantunc-Desktop-Projects-Personal-review-pro/99075928-604e-433b-bc82-95e9c121edc8/scratchpad/cost/work/v-docsrc/repo",
+ "duration_ms": 20971,
+ "wrapper_s": 22.0,
+ "num_turns": 4,
+ "cost_usd_list": 0.18098419999999998,
+ "grand": {
+  "input_tokens": 8,
+  "cache_creation_input_tokens": 16315,
+  "cache_read_input_tokens": 84761,
+  "output_tokens": 1674
+ },
+ "modelUsage": {
+  "input_tokens": 8,
+  "cache_creation_input_tokens": 16315,
+  "cache_read_input_tokens": 84761,
+  "output_tokens": 1674
+ },
+ "check": "match",
+ "n_results": 1,
+ "sum_result_duration_ms": 20971,
+ "five_hour_util": [
+  0.22
+ ],
+ "rows": [
+  {
+   "stage": "main: triage",
+   "agent": "orchestrator",
+   "n_msgs": 4,
+   "usage": {
+    "input_tokens": 8,
+    "cache_creation_input_tokens": 16315,
+    "cache_read_input_tokens": 84761,
+    "output_tokens": 1674
+   },
+   "wall_s": 16.47499990463257
+  },
+  {
+   "stage": "main: dispatch+merge",
+   "agent": "orchestrator",
+   "n_msgs": 0,
+   "usage": {},
+   "wall_s": 0.0
+  },
+  {
+   "stage": "main: synthesis",
+   "agent": "orchestrator",
+   "n_msgs": 0,
+   "usage": {},
+   "wall_s": 0.0
+  }
+ ],
+ "result_text": "```yaml\nbase: main\nactive_stacks: []\nchanged_files_total: 1\nchanged_files: [docs-src/i18n/tr.json]\ndiff_class: trivial\nspec_source:\n  kind: none\nrepository_rules:\n  source: .review-pro/rules.md@bccb367ecfe22874b59f2aae5d27a15cf8c0a954\n  file_changed: none\n  rows:\n    - id: R1\n      line: 8\n      when_matched: [docs-src/i18n/tr.json]\n      then_missing: [docs/index.html, docs/docs.html, docs/*/index.html, docs/*/docs.html]\n      state: judge\n      owner: ai-antipatterns\n      text: \"A change to the site sources must be rebuilt into `docs/` in the same change.\"\ndispatch:\n  ai-antipatterns:\n    context:\n      changed_files: [docs-src/i18n/tr.json]\n      related: [.review-pro/rules.md@bccb367 (R1), docs/tr/index.html, docs/tr/docs.html, CONTRIBUTING.md (site rebuild step)]\n  frontend:\n    context:\n      changed_files: [docs-src/i18n/tr.json]\n      related: [docs-src/i18n/en.json, docs-src/i18n/de.json, docs-src/index.html]\n```\n\nThe only change is one line in the Turkish site title in `docs-src/i18n/tr.json`, and it adds a double space. No `.review-pro/` stacks are installed and no spec was found, so the spec reviewer is skipped. `ai-antipatterns` is dispatched to judge rule R1, because `docs/` wasn't rebuilt. `frontend` is dispatched to check the user-facing i18n string."
+}

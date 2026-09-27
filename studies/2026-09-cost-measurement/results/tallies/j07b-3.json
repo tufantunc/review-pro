@@ -1,0 +1,74 @@
+{
+ "session": "404fb0a6-ee8e-4514-b591-f24ca255c6ef",
+ "model": "claude-opus-5-5",
+ "cwd": "/private/tmp/claude-501/-Users-tufantunc-Desktop-Projects-Personal-review-pro/99075928-604e-433b-bc82-95e9c121edc8/scratchpad/cost/work/t62/repo",
+ "duration_ms": 163665,
+ "wrapper_s": 165.0,
+ "num_turns": 2,
+ "cost_usd_list": 0.753667,
+ "grand": {
+  "input_tokens": 16,
+  "cache_creation_input_tokens": 45392,
+  "cache_read_input_tokens": 252950,
+  "output_tokens": 18677
+ },
+ "modelUsage": {
+  "input_tokens": 16,
+  "cache_creation_input_tokens": 45392,
+  "cache_read_input_tokens": 252950,
+  "output_tokens": 18677
+ },
+ "check": "match",
+ "n_results": 1,
+ "sum_result_duration_ms": 163665,
+ "five_hour_util": [
+  0.23,
+  0.26,
+  0.27
+ ],
+ "rows": [
+  {
+   "stage": "main: triage",
+   "agent": "orchestrator",
+   "n_msgs": 0,
+   "usage": {},
+   "wall_s": 0.0
+  },
+  {
+   "stage": "main: dispatch+merge",
+   "agent": "orchestrator",
+   "n_msgs": 2,
+   "usage": {
+    "input_tokens": 4,
+    "cache_creation_input_tokens": 34171,
+    "cache_read_input_tokens": 43803,
+    "output_tokens": 14218
+   },
+   "wall_s": 69.92199993133545
+  },
+  {
+   "stage": "main: synthesis",
+   "agent": "orchestrator",
+   "n_msgs": 0,
+   "usage": {},
+   "wall_s": 0.0
+  },
+  {
+   "stage": "reviewer",
+   "agent": "ai-antipatterns-reviewer",
+   "n_msgs": 6,
+   "usage": {
+    "input_tokens": 12,
+    "cache_creation_input_tokens": 11221,
+    "cache_read_input_tokens": 209147,
+    "output_tokens": 4459
+   },
+   "wall_s": 53.805999994277954,
+   "prompt_chars": 33250,
+   "first_input": 30046,
+   "reads": 0,
+   "reread_chars": 0
+  }
+ ],
+ "result_text": "- severity: Medium\n  category: ai-antipatterns.ignored-convention\n  file: docs/internals/releasing.md\n  line: 23\n  title: Release v1.3.0 leaves .cursor-plugin/plugin.json at 0.1.0, and the new release runbook drops that manifest from the bump list the repo's rule R3 requires\n  evidence: |\n    cli/package.json:3            \"version\": \"1.3.0\",\n    .cursor-plugin/plugin.json:4  \"version\": \"0.1.0\",\n    docs/internals/releasing.md:23  Five fields across four files. Do `cli/package.json` and the lockfile together, or they drift:\n    docs/internals/releasing.md:31  Then the three plugin manifests, by hand, to the same value:\n    docs/internals/releasing.md:14  | All five version fields agree | `scripts/validate.sh`, the version-alignment block |\n  evidence_refs: [.cursor-plugin/plugin.json:4, .review-pro/rules.md:26, .review-pro/rules.md:29, scripts/validate.sh:592, cli/build-assets.mjs:30]\n  impact: R3 is the maintainer's written rule. Its file list names `.cursor-plugin/plugin.json` as a file whose version must move with `cli/package.json` (rules.md:26). The rule's rationale also names this exact drift: \"`.cursor-plugin/plugin.json` sat at 0.1.0 for seven releases\" (rules.md:29). This release bumps the other four files to 1.3.0 and leaves the Cursor manifest at 0.1.0. That stale manifest ships: `cli/build-assets.mjs:30` bundles the repo-root `.cursor-plugin/plugin.json` into the package. The new runbook makes the drift permanent. It lists only four files and three plugin manifests (lines 23 and 31) and never mentions the Cursor manifest. Line 14 calls version alignment \"already guarded\", but the validator only checks `core/.claude-plugin` and `core/.codex-plugin` (validate.sh:592), so nothing catches this. The deleted RELEASING.md at least said the Cursor manifest \"carries its own independent version\". The replacement drops even that, so the gap is now invisible. Anyone following the runbook will keep skipping this file.\n  remedy: Set `.cursor-plugin/plugin.json` `version` to 1.3.0 in this release. Add it to step 1 of docs/internals/releasing.md (six fields across five files, four plugin manifests) and update the \"guarded\" table row to match. Add `.cursor-plugin/plugin.json` to the validator's `for rel in (...)` tuple at scripts/validate.sh:592, so the check the runbook describes really covers every manifest the rule names.\n  confidence: high\n  overlap_hints: [correctness.side-effect, spec.missing]\n\n## Repository rules\n- rule: R3\n  outcome: violated\n  because: cli/package.json moved to 1.3.0, but .cursor-plugin/plugin.json, which R3 names in its file list, stays at 0.1.0. The new docs/internals/releasing.md also drops that file from the documented bump list (drift against the rule's list).\n  evidence: .cursor-plugin/plugin.json:4 `\"version\": \"0.1.0\"` vs cli/package.json:3 `\"version\": \"1.3.0\"`; .review-pro/rules.md:26\n  finding: ai-antipatterns.ignored-convention\n\n## Files examined\nexamined: [.claude-plugin/marketplace.json, .github/workflows/ci.yml, .github/workflows/publish.yml, CONTRIBUTING.md, RELEASING.md, cli/package-lock.json, cli/package.json, core/.claude-plugin/plugin.json, core/.codex-plugin/plugin.json, docs/internals/releasing.md]\nnot_examined: []"
+}

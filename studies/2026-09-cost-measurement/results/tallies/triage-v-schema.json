@@ -1,0 +1,56 @@
+{
+ "session": "ddc1186c-2fd5-4ef6-953c-b0e80db0f8ff",
+ "model": "claude-opus-5-5",
+ "cwd": "/private/tmp/claude-501/-Users-tufantunc-Desktop-Projects-Personal-review-pro/99075928-604e-433b-bc82-95e9c121edc8/scratchpad/cost/work/v-schema/repo",
+ "duration_ms": 39851,
+ "wrapper_s": 41.0,
+ "num_turns": 4,
+ "cost_usd_list": 0.2195406,
+ "grand": {
+  "input_tokens": 8,
+  "cache_creation_input_tokens": 18729,
+  "cache_read_input_tokens": 87683,
+  "output_tokens": 2607
+ },
+ "modelUsage": {
+  "input_tokens": 8,
+  "cache_creation_input_tokens": 18729,
+  "cache_read_input_tokens": 87683,
+  "output_tokens": 2607
+ },
+ "check": "match",
+ "n_results": 1,
+ "sum_result_duration_ms": 39851,
+ "five_hour_util": [
+  0.22
+ ],
+ "rows": [
+  {
+   "stage": "main: triage",
+   "agent": "orchestrator",
+   "n_msgs": 4,
+   "usage": {
+    "input_tokens": 8,
+    "cache_creation_input_tokens": 18729,
+    "cache_read_input_tokens": 87683,
+    "output_tokens": 2607
+   },
+   "wall_s": 32.912999868392944
+  },
+  {
+   "stage": "main: dispatch+merge",
+   "agent": "orchestrator",
+   "n_msgs": 0,
+   "usage": {},
+   "wall_s": 0.0
+  },
+  {
+   "stage": "main: synthesis",
+   "agent": "orchestrator",
+   "n_msgs": 0,
+   "usage": {},
+   "wall_s": 0.0
+  }
+ ],
+ "result_text": "```yaml\nbase: main\nactive_stacks: []\nchanged_files_total: 1\nchanged_files: [core/shared/output-schema.md]\ndiff_class: trivial\nspec_source:\n  kind: none\nrepository_rules:\n  source: .review-pro/rules.md@bccb367ecfe22874b59f2aae5d27a15cf8c0a954\n  file_changed: none\n  rows:\n    - id: R4\n      line: 32\n      when_matched: [core/shared/output-schema.md]\n      then_missing: [docs/llms.txt]\n      state: judge\n      owner: ai-antipatterns\n      text: \"A change to what review-pro does, as a reader of `docs/llms.txt` would describe it, must be reflected there; no check reads that file.\"\n    - id: R5\n      line: 40\n      when_matched: [core/shared/output-schema.md]\n      then_missing: [cli/README.md]\n      state: judge\n      owner: ai-antipatterns\n      text: \"A change to what review-pro does, as the npm package page describes it, must be reflected in `cli/README.md`.\"\n    - id: R7\n      line: 58\n      when_matched: [core/shared/output-schema.md]\n      then_missing: [core/agents/*-reviewer.md]\n      state: judge\n      owner: correctness\n      text: \"A rule added to the shared output schema must also be added to the reviewer agent bodies that inline it.\"\ndispatch:\n  correctness:\n    context:\n      changed_files: [core/shared/output-schema.md]\n      related: [core/agents/a11y-reviewer.md, core/agents/ai-antipatterns-reviewer.md, core/agents/api-contract-reviewer.md, core/agents/backend-reviewer.md, core/agents/correctness-reviewer.md, core/agents/craft-reviewer.md, core/agents/db-reviewer.md, core/agents/dry-reviewer.md, core/agents/frontend-reviewer.md, core/agents/performance-reviewer.md, core/agents/security-reviewer.md, core/agents/spec-reviewer.md, core/agents/tests-reviewer.md, docs/internals/adr/0001-inline-the-schema-into-agent-bodies.md]\n  ai-antipatterns:\n    context:\n      changed_files: [core/shared/output-schema.md]\n      related: [docs/llms.txt, cli/README.md]\n  api-contract:\n    context:\n      changed_files: [core/shared/output-schema.md]\n      related: [core/skills/review-pro-synthesize/SKILL.md, core/skills/review-pro-verify/SKILL.md, docs/internals/adr/0001-inline-the-schema-into-agent-bodies.md]\n```\n\n**Summary:** One 2-line change to `core/shared/output-schema.md` (trivial, no stacks installed, no spec found). It matches three repository rules still waiting on a judgement (R4, R5, R7), so ai-antipatterns and correctness are dispatched. api-contract is dispatched too, as a precaution: the output schema is a contract."
+}

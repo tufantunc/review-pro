@@ -1,0 +1,57 @@
+{
+ "session": "31d4e490-f55b-4a23-840f-1b0744754802",
+ "model": "claude-opus-5-5",
+ "cwd": "/private/tmp/claude-501/-Users-tufantunc-Desktop-Projects-Personal-review-pro/99075928-604e-433b-bc82-95e9c121edc8/scratchpad/cost/work/t71/repo",
+ "duration_ms": 75701,
+ "wrapper_s": 77.0,
+ "num_turns": 6,
+ "cost_usd_list": 0.41783780000000004,
+ "grand": {
+  "input_tokens": 12,
+  "cache_creation_input_tokens": 30238,
+  "cache_read_input_tokens": 161929,
+  "output_tokens": 7175
+ },
+ "modelUsage": {
+  "input_tokens": 12,
+  "cache_creation_input_tokens": 30238,
+  "cache_read_input_tokens": 161929,
+  "output_tokens": 7175
+ },
+ "check": "match",
+ "n_results": 1,
+ "sum_result_duration_ms": 75701,
+ "five_hour_util": [
+  0.21,
+  0.22
+ ],
+ "rows": [
+  {
+   "stage": "main: triage",
+   "agent": "orchestrator",
+   "n_msgs": 6,
+   "usage": {
+    "input_tokens": 12,
+    "cache_creation_input_tokens": 30238,
+    "cache_read_input_tokens": 161929,
+    "output_tokens": 7175
+   },
+   "wall_s": 72.82500004768372
+  },
+  {
+   "stage": "main: dispatch+merge",
+   "agent": "orchestrator",
+   "n_msgs": 0,
+   "usage": {},
+   "wall_s": 0.0
+  },
+  {
+   "stage": "main: synthesis",
+   "agent": "orchestrator",
+   "n_msgs": 0,
+   "usage": {},
+   "wall_s": 0.0
+  }
+ ],
+ "result_text": "```yaml\nbase: main\nactive_stacks: []\nchanged_files_total: 29\nchanged_files: [README.md, core/skills/security/SKILL.md, docs/internals/adr/0008-security-content-names-what-to-flag.md, docs/internals/releasing.md, scripts/validate.sh, scripts/validate.test.sh, stacks/CONTRIBUTING.md, stacks/ai-ml/manifest.json, stacks/ai-ml/security.md, stacks/capacitor/manifest.json, stacks/capacitor/security.md, stacks/dotnet/manifest.json, stacks/dotnet/security.md, stacks/go/manifest.json, stacks/go/security.md, stacks/node/manifest.json, stacks/node/security.md, stacks/php/manifest.json, stacks/php/security.md, stacks/python/manifest.json, stacks/python/security.md, stacks/rust/manifest.json, stacks/rust/security.md, stacks/swift/manifest.json, stacks/swift/security.md, stacks/typescript-react/manifest.json, stacks/typescript-react/security.md, stacks/wordpress/manifest.json, stacks/wordpress/security.md]\ndiff_class: substantive\nspec_source:\n  kind: none\nexternal_premises:\n  - claim: \"onnx below 1.16 follows `external_data` paths out of the model directory (CVE-2024-27318) ... the entry cites every advisory up to onnx 1.21.0, since three landed after 1.16 (CVE-2026-27489, CVE-2026-34446, CVE-2026-34447)\"\n    cited: CVE-2024-27318, CVE-2026-27489, CVE-2026-34446, CVE-2026-34447 (onnx < 1.21.0)\n    source: commit-message\n    owner: api-contract\n  - claim: \"the signal line's torch>=2.0 is torch 2.6 (CVE-2025-32434)\"\n    cited: CVE-2025-32434 (torch weights_only bypass below 2.6)\n    source: commit-message\n    owner: api-contract\n  - claim: \"rust gains sqlx 0.9's `AssertSqlSafe`\"\n    cited: sqlx 0.9 release notes / changelog (AssertSqlSafe, sqlx::query accepting dynamic strings only through it)\n    source: commit-message\n    owner: api-contract\npremises_dropped: 2   # Cloudflare security-audit-skill domain-file claim; \"DOMPurify has published eight advisories between June and August 2026\"\nrepository_rules:\n  source: .review-pro/rules.md@10c183eb0516c408ad28a2a9dd75e6c16c1ea173\n  file_changed: none\n  rows:\n    - id: R2\n      line: 16\n      when_matched: [stacks/ai-ml/security.md, stacks/capacitor/security.md, stacks/dotnet/security.md, stacks/go/security.md, stacks/node/security.md, stacks/php/security.md, stacks/python/security.md, stacks/rust/security.md, stacks/swift/security.md, stacks/typescript-react/security.md, stacks/wordpress/security.md]\n      then_missing: []\n      state: changed-alongside\n      owner: ai-antipatterns\n      text: \"A change to a stack pack's files must bump that pack's `manifest.json` version.\"\n    - id: R4\n      line: 32\n      when_matched: [core/skills/security/SKILL.md]\n      then_missing: [docs/llms.txt]\n      state: judge\n      owner: ai-antipatterns\n      text: \"A change to what review-pro does, as a reader of `docs/llms.txt` would describe it, must be reflected there; no check reads that file.\"\n    - id: R5\n      line: 40\n      when_matched: [core/skills/security/SKILL.md]\n      then_missing: [cli/README.md]\n      state: judge\n      owner: ai-antipatterns\n      text: \"A change to what review-pro does, as the npm package page describes it, must be reflected in `cli/README.md`.\"\ndispatch:\n  security:\n    context:\n      changed_files: [core/skills/security/SKILL.md, stacks/ai-ml/security.md, stacks/capacitor/security.md, stacks/dotnet/security.md, stacks/go/security.md, stacks/node/security.md, stacks/php/security.md, stacks/python/security.md, stacks/rust/security.md, stacks/swift/security.md, stacks/typescript-react/security.md, stacks/wordpress/security.md, docs/internals/adr/0008-security-content-names-what-to-flag.md, README.md]\n      related: [core/agents/security-reviewer.md, stacks/kotlin/security.md, stacks/nextjs/security.md, stacks/tanstack-start/security.md, stacks/flutter/security.md, stacks/react-native/security.md, core/shared/severity.md]\n  correctness:\n    context:\n      changed_files: [scripts/validate.sh, scripts/validate.test.sh, core/skills/security/SKILL.md, stacks/CONTRIBUTING.md, docs/internals/releasing.md, stacks/ai-ml/manifest.json, stacks/capacitor/manifest.json, stacks/dotnet/manifest.json, stacks/go/manifest.json, stacks/node/manifest.json, stacks/php/manifest.json, stacks/python/manifest.json, stacks/rust/manifest.json, stacks/swift/manifest.json, stacks/typescript-react/manifest.json, stacks/wordpress/manifest.json]\n      related: [\".github/workflows/* (validate.sh invocation)\", \"stacks/*/manifest.json (all packs the PACK_SECTIONS loop walks)\", \"cli/src update command (version-match skip logic)\", stacks/kotlin/manifest.json, stacks/nextjs/manifest.json, stacks/tanstack-start/manifest.json]\n  tests:\n    context:\n      changed_files: [scripts/validate.test.sh, scripts/validate.sh, core/skills/security/SKILL.md]\n      related: [\"stacks/*/manifest.json (fixtures the meta-test mutates)\"]\n  craft:\n    context:\n      changed_files: [core/skills/security/SKILL.md, scripts/validate.sh, scripts/validate.test.sh, stacks/CONTRIBUTING.md, docs/internals/adr/0008-security-content-names-what-to-flag.md, stacks/ai-ml/security.md, stacks/capacitor/security.md, stacks/dotnet/security.md, stacks/go/security.md, stacks/node/security.md, stacks/php/security.md, stacks/python/security.md, stacks/rust/security.md, stacks/swift/security.md, stacks/typescript-react/security.md, stacks/wordpress/security.md]\n      related: [core/skills/correctness/SKILL.md, core/skills/backend/SKILL.md, docs/internals/adr/0000-template.md, docs/internals/adr/0007-the-closed-list-must-cover-every-flag.md, \"existing add_error guards in scripts/validate.sh\"]\n  dry:\n    context:\n      changed_files: [core/skills/security/SKILL.md, stacks/CONTRIBUTING.md, scripts/validate.sh, scripts/validate.test.sh, stacks/ai-ml/security.md, stacks/capacitor/security.md, stacks/dotnet/security.md, stacks/go/security.md, stacks/node/security.md, stacks/php/security.md, stacks/python/security.md, stacks/rust/security.md, stacks/swift/security.md, stacks/typescript-react/security.md, stacks/wordpress/security.md]\n      related: [\"repo search: stack-agnostic rules (self-impact, client-key judging, randomness, argument-array option injection, escaper-to-sink) duplicated across stacks/*/security.md and core/skills/security/SKILL.md\", \"repo search: pack-version bump rule restated in stacks/CONTRIBUTING.md, docs/internals/releasing.md, .review-pro/rules.md R2\", \"existing helper functions in scripts/validate.test.sh\"]\n  ai-antipatterns:\n    context:\n      changed_files: [core/skills/security/SKILL.md, README.md, docs/internals/adr/0008-security-content-names-what-to-flag.md, docs/internals/releasing.md, stacks/CONTRIBUTING.md, scripts/validate.sh, stacks/ai-ml/security.md, stacks/capacitor/security.md, stacks/dotnet/security.md, stacks/go/security.md, stacks/node/security.md, stacks/php/security.md, stacks/python/security.md, stacks/rust/security.md, stacks/swift/security.md, stacks/typescript-react/security.md, stacks/wordpress/security.md]\n      related: [docs/llms.txt, cli/README.md, .review-pro/rules.md, \"repo conventions for ADRs (docs/internals/adr/README.md)\", \"stack-API fact claims to check: Newtonsoft TypeNameHandling, Blazor MarkupString/AddMarkupContent, html/template typed-content types, PDO SET NAMES, zend.exception_ignore_args, WordPress admin_init on admin-ajax/admin-post, CommonCrypto CCKeyDerivationPBKDF, Vapor Bcrypt\"]\n  api-contract:\n    context:\n      changed_files: [stacks/ai-ml/security.md, stacks/rust/security.md, stacks/python/security.md, stacks/ai-ml/manifest.json, stacks/rust/manifest.json, stacks/python/manifest.json]\n      related: [\"premises: onnx < 1.21.0 external_data CVEs; torch 2.6 weights_only (CVE-2025-32434); sqlx 0.9 AssertSqlSafe/raw_sql\", \"cli update command consumers of stacks/*/manifest.json version field\"]\n```\n\nSummary: 29 files changed (the security rubric, 11 security packs with version bumps, the validator and its meta-test, and docs), no installed stacks. The plan dispatches 7 reviewers: security, correctness, tests, craft, dry, ai-antipatterns, and api-contract. Spec is not dispatched because no spec was found (no git remote for `gh`, no matching file), and 3 CVE/version premises go to api-contract with 2 dropped. Rules R4 and R5 go to ai-antipatterns to judge whether `docs/llms.txt` and `cli/README.md` needed updating, and R2 is satisfied because every changed pack bumped its manifest."
+}

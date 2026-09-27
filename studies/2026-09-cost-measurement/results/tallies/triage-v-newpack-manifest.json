@@ -1,0 +1,56 @@
+{
+ "session": "d6aa69fe-0262-4649-8c67-f916c1b2035a",
+ "model": "claude-opus-5-5",
+ "cwd": "/private/tmp/claude-501/-Users-tufantunc-Desktop-Projects-Personal-review-pro/99075928-604e-433b-bc82-95e9c121edc8/scratchpad/cost/work/v-newpack-manifest/repo",
+ "duration_ms": 28249,
+ "wrapper_s": 29.0,
+ "num_turns": 6,
+ "cost_usd_list": 0.231282,
+ "grand": {
+  "input_tokens": 12,
+  "cache_creation_input_tokens": 18957,
+  "cache_read_input_tokens": 145890,
+  "output_tokens": 2520
+ },
+ "modelUsage": {
+  "input_tokens": 12,
+  "cache_creation_input_tokens": 18957,
+  "cache_read_input_tokens": 145890,
+  "output_tokens": 2520
+ },
+ "check": "match",
+ "n_results": 1,
+ "sum_result_duration_ms": 28249,
+ "five_hour_util": [
+  0.22
+ ],
+ "rows": [
+  {
+   "stage": "main: triage",
+   "agent": "orchestrator",
+   "n_msgs": 6,
+   "usage": {
+    "input_tokens": 12,
+    "cache_creation_input_tokens": 18957,
+    "cache_read_input_tokens": 145890,
+    "output_tokens": 2520
+   },
+   "wall_s": 23.550999879837036
+  },
+  {
+   "stage": "main: dispatch+merge",
+   "agent": "orchestrator",
+   "n_msgs": 0,
+   "usage": {},
+   "wall_s": 0.0
+  },
+  {
+   "stage": "main: synthesis",
+   "agent": "orchestrator",
+   "n_msgs": 0,
+   "usage": {},
+   "wall_s": 0.0
+  }
+ ],
+ "result_text": "```yaml\nbase: main\nactive_stacks: []\nchanged_files_total: 2\nchanged_files: [stacks/newpack/manifest.json, stacks/newpack/security.md]\ndiff_class: substantive\nspec_source:\n  kind: none\nrepository_rules:\n  source: .review-pro/rules.md@bccb367ecfe22874b59f2aae5d27a15cf8c0a954\n  file_changed: none\n  rows:\n    - id: R2\n      line: 16\n      when_matched: [stacks/newpack/security.md]\n      then_missing: []\n      state: changed-alongside\n      owner: ai-antipatterns\n      text: \"A change to a stack pack's files must bump that pack's `manifest.json` version.\"\ndispatch:\n  api-contract:\n    context:\n      changed_files: [stacks/newpack/manifest.json, stacks/newpack/security.md]\n      related: [stacks/*/manifest.json (sibling manifests, all carry a \"reviewers\" field), cli/build-assets.mjs, scripts/validate.sh, scripts/validate.test.sh, stacks/CONTRIBUTING.md, manifest.json (reviewer roster)]\n  correctness:\n    context:\n      changed_files: [stacks/newpack/manifest.json, stacks/newpack/security.md]\n      related: [cli/build-assets.mjs, scripts/validate.sh, scripts/review.sh, stacks/README.md]\n  ai-antipatterns:\n    context:\n      changed_files: [stacks/newpack/manifest.json, stacks/newpack/security.md]\n      related: [stacks/CONTRIBUTING.md, stacks/node/manifest.json, stacks/node/security.md, stacks/README.md]\n  security:\n    context:\n      changed_files: [stacks/newpack/security.md]\n      related: [core/skills/security/SKILL.md, stacks/node/security.md]\n```\n\nSummary: This is a 2-file change that adds a new stack pack, so it's `substantive`. No stacks are installed and no spec was found. Rule R2 is satisfied because the pack's `manifest.json` changed alongside it. Four reviewers are dispatched: api-contract, correctness, ai-antipatterns and security."
+}

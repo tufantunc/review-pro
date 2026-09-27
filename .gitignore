@@ -16,3 +16,6 @@ cli/coverage/
 
 # Python bytecode (a study script run leaves it next to the script)
 __pycache__/
+
+# Claude Code desktop app: one git worktree per parallel session
+.claude/worktrees/

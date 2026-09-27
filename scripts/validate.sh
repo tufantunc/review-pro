@@ -811,27 +811,47 @@ if [[ -d "$STACKS_DIR" ]] && command -v python3 >/dev/null 2>&1; then
   shopt -u nullglob
 fi
 
-# Guardrail: SKILL.md only under core/skills/ (skip build/deps dirs)
-shopt -s nullglob
+# repo_files: the repository's own files under $ROOT, one $ROOT-prefixed path per line.
+# A plain filesystem walk also reads every git worktree nested in the checkout, and the
+# Claude Code desktop app makes one per parallel session under .claude/worktrees/, so
+# each worktree's copy of core/ failed both guardrails below. When $ROOT is the top of a
+# git work tree the list comes from git: tracked files plus untracked ones that are not
+# ignored, so a stray file fails before it is committed, while nested worktrees and the
+# ignored build output (node_modules/, cli/dist/, cli/plugin/) stay out. A fixture root
+# that is not a work tree falls back to find, which prunes the same build directories,
+# .claude/worktrees/ and any directory that is a git work tree of its own.
+repo_files(){
+  local top p
+  top="$(git -C "$ROOT" rev-parse --show-toplevel 2>/dev/null)"
+  if [[ -n "$top" && "$top" == "$(cd "$ROOT" && pwd -P)" ]]; then
+    while IFS= read -r -d '' p; do
+      [[ -f "$ROOT/$p" ]] && printf '%s\n' "$ROOT/$p"
+    done < <(git -C "$ROOT" ls-files -z --cached --others --exclude-standard)
+  else
+    find "$ROOT" -mindepth 1 \( -name .git -o -name node_modules \
+      -o -path '*/cli/plugin' -o -path '*/cli/dist' -o -path '*/.claude/worktrees' \
+      -o \( -type d -exec test -e '{}/.git' \; \) \) -prune -o -type f -print 2>/dev/null
+  fi
+}
+REPO_FILES="$(repo_files)"
+
+# Guardrail: SKILL.md only under core/skills/
 while IFS= read -r f; do
+  [[ "$f" == */SKILL.md ]] || continue
   case "$f" in
     "$SKILLS_DIR"/*/SKILL.md) ;;
     *) add_error "$f: SKILL.md outside core/skills/";;
   esac
-done < <(find "$ROOT" -name SKILL.md -type f \
-  -not -path '*/node_modules/*' -not -path '*/.git/*' \
-  -not -path '*/cli/plugin/*' -not -path '*/cli/dist/*' 2>/dev/null)
+done <<< "$REPO_FILES"
 
 # Guardrail: loads_skill: frontmatter only under core/agents/
 while IFS= read -r f; do
+  [[ "$f" == *.md ]] || continue
   case "$f" in
     "$AGENTS_DIR"/*.md) ;;
     *) if head -n20 "$f" 2>/dev/null | grep -q '^loads_skill:'; then add_error "$f: agent frontmatter outside core/agents/"; fi;;
   esac
-done < <(find "$ROOT" -name '*.md' -type f \
-  -not -path '*/node_modules/*' -not -path '*/.git/*' \
-  -not -path '*/cli/plugin/*' -not -path '*/cli/dist/*' 2>/dev/null)
-shopt -u nullglob
+done <<< "$REPO_FILES"
 
 # Version-carrying files. Five of them hold the same number and none is bumped
 # automatically, so they drift silently: a directory listing shows the wrong version

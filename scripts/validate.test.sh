@@ -423,14 +423,19 @@ w_verify(){ write_stage_skill "$1" review-pro-verify; }
 w_synth(){ write_stage_skill "$1" review-pro-synthesize; }
 w_orch(){ write_stage_skill "$1" review-pro; }
 
-# Case A: clean tree -> exit 0
-T=$(mktemp -d)
-mkdir -p "$T/core/skills/security" "$T/core/skills/review-pro-triage" "$T/core/agents"
-write_good_reviewer "$T/core/skills/security/SKILL.md"
-write_stage_skill "$T/core/skills/review-pro-triage/SKILL.md"
-cat > "$T/manifest.json" <<'EOF'
+# write_clean_tree <dir>: the smallest tree the validator passes.
+write_clean_tree(){
+  mkdir -p "$1/core/skills/security" "$1/core/skills/review-pro-triage" "$1/core/agents"
+  write_good_reviewer "$1/core/skills/security/SKILL.md"
+  write_stage_skill "$1/core/skills/review-pro-triage/SKILL.md"
+  cat > "$1/manifest.json" <<'EOF'
 { "skills": [{"name":"security","role":"reviewer"},{"name":"review-pro-triage","role":"orchestrator"}], "agents": [] }
 EOF
+}
+
+# Case A: clean tree -> exit 0
+T=$(mktemp -d)
+write_clean_tree "$T"
 if bash "$VALIDATE" "$T" >/dev/null 2>&1; then ok "clean tree passes"; else bad "clean tree should pass"; fi
 rm -rf "$T"
 
@@ -565,6 +570,46 @@ loads_skill: security
 EOF
 out=$(bash "$VALIDATE" "$T" 2>&1 || true)
 if echo "$out" | grep -q "agent frontmatter outside core/agents"; then ok "stray agent frontmatter detected"; else bad "stray agent frontmatter not detected"; fi
+rm -rf "$T"
+
+# Case I2: a git worktree nested in the checkout is not the repository's files. The
+# Claude Code desktop app makes one per parallel session under .claude/worktrees/, and
+# a filesystem walk read its copy of core/ as stray SKILL.md and agent files. The
+# fixture is its own repository, so the worktree's metadata lives in $T/.git and
+# `rm -rf "$T"` removes all of it; nothing touches the repository running this suite.
+fixture_git(){ git -C "$1" -c user.name=fixture -c user.email=fixture@example.com -c commit.gpgsign=false "${@:2}"; }
+T=$(mktemp -d)
+write_clean_tree "$T"
+git -C "$T" init -q 2>/dev/null
+fixture_git "$T" add -A && fixture_git "$T" commit -qm fixture
+git -C "$T" worktree add -q --detach "$T/.claude/worktrees/probe" HEAD 2>/dev/null
+mkdir -p "$T/.claude/worktrees/probe/core/agents"
+printf -- '---\nname: stray-agent\nloads_skill: security\n---\n# x\n' > "$T/.claude/worktrees/probe/core/agents/stray-agent.md"
+if [[ -f "$T/.claude/worktrees/probe/core/skills/security/SKILL.md" ]]; then ok "nested worktree fixture: the worktree carries a copy of core/"; else bad "nested worktree fixture: git worktree add made no copy of core/"; fi
+out=$(bash "$VALIDATE" "$T" 2>&1); rc=$?
+if [[ $rc -eq 0 ]] && ! echo "$out" | grep -q '^FAIL: '; then ok "nested git worktree: validator passes"; else bad "nested git worktree: validator failed: $(echo "$out" | grep '^FAIL: ' | head -3)"; fi
+# Listing from git must still see a stray the author has not committed yet, and must
+# skip one the repository ignores, the way cli/dist/ and cli/plugin/ are skipped.
+mkdir -p "$T/cli/docs" "$T/build"
+printf '# stray\n' > "$T/cli/docs/SKILL.md"
+printf '# built\n' > "$T/build/SKILL.md"
+printf 'build/\n' > "$T/.gitignore"
+out=$(bash "$VALIDATE" "$T" 2>&1 || true)
+if echo "$out" | grep -qF "$T/cli/docs/SKILL.md: SKILL.md outside core/skills/"; then ok "git listing: untracked stray SKILL.md detected"; else bad "git listing: untracked stray SKILL.md not detected"; fi
+if echo "$out" | grep -qF "build/SKILL.md"; then bad "git listing: ignored SKILL.md flagged"; else ok "git listing: ignored SKILL.md skipped"; fi
+if echo "$out" | grep -qF ".claude/worktrees/"; then bad "git listing: nested worktree read once the tree is dirty"; else ok "git listing: nested worktree skipped in a dirty tree"; fi
+rm -rf "$T"
+
+# Case I3: a root that is not a git work tree (every other fixture here) walks the
+# filesystem instead, and prunes .claude/worktrees/ and any nested work tree there too.
+T=$(mktemp -d)
+write_clean_tree "$T"
+mkdir -p "$T/.claude/worktrees/probe" "$T/vendor/other"
+cp -R "$T/core" "$T/.claude/worktrees/probe/core"
+cp -R "$T/core" "$T/vendor/other/core"
+printf 'gitdir: /nowhere\n' > "$T/vendor/other/.git"
+out=$(bash "$VALIDATE" "$T" 2>&1); rc=$?
+if [[ $rc -eq 0 ]] && ! echo "$out" | grep -q '^FAIL: '; then ok "non-git root: copies under .claude/worktrees/ and a nested work tree skipped"; else bad "non-git root: validator failed: $(echo "$out" | grep '^FAIL: ' | head -3)"; fi
 rm -rf "$T"
 
 # Case J: agent skills: field inconsistent with loads_skill: -> fail

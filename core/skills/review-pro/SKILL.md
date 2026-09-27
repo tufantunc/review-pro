@@ -11,9 +11,9 @@ You are the **orchestrator**. Run the entire pipeline on the current branch in O
 ## Procedure
 
 ### 1. Prep (native — you do this, not the user)
-- **Base branch:** the branch `main`, falling back to `master` if `main` doesn't exist, resolved as a branch: `git rev-parse --verify --quiet refs/heads/main`, then `refs/heads/master`. Use that full ref as `<base>` in every git command. A tag or other ref that shares the name is never the base: git prefers a tag named `main` over the branch, and a change could push one pointing at its own commit, which would make the merge base the change itself.
+- **Base branch:** the branch `main`, falling back to `master` if `main` doesn't exist, resolved as a branch: `git rev-parse --verify --quiet refs/heads/main`, then `refs/heads/master`. A base named in the argument resolves by the same rule: a full ref (`refs/...`) or a commit sha is used as given, and any other name resolves as `refs/heads/<name>`, else `refs/remotes/<name>`; if `refs/tags/<name>` also exists, stop and ask for the full ref. Use that full ref as `<base>` in every git command. A tag is never the base by a shared name: git prefers a tag named `main` (or `origin/main`) over the branch, and a change could push one pointing at its own commit, which would make the merge base the change itself.
 - **Changed files:** run `git diff --name-only <base>...HEAD` in your shell. Read each changed file's full contents with Read. (git already excludes gitignored/generated paths from the diff.)
-- **Argument (optional):** if the invocation carried an argument, it is either a base branch or ref, or a spec to review against (a file path or an issue URL). Forward a spec argument to triage as the first link of its spec resolution.
+- **Argument (optional):** if the invocation carried an argument, it is either a base branch or ref, resolved as the Base branch line says, or a spec to review against (a file path or an issue URL). Forward a spec argument to triage as the first link of its spec resolution.
 - **Installed stacks:** triage's step 3 lists them at the merge base, never in the working tree, so a change cannot add, edit or remove the pack its own review applies. These are the repo's **active stacks**. If the merge base has no `.review-pro/<stack>/manifest.json`, reviewers run on their core rubric only.
 
 ### 2. Triage (you, inline)
@@ -82,7 +82,7 @@ Verification needs the merged findings, so first run the `review-pro-synthesize`
    - `### Diff`: first line `base: <sha>`, then the output of `git diff <base>...HEAD`. The sha is the merge base, from `git merge-base <base> HEAD`, because that is what the diff was taken against.
    - `### Change description`: the PR body or the invocation's description, when there is one. Omit the section otherwise.
    - `### Rules file`, when the finding cites `.review-pro/rules.md`: a finding citing `.review-pro/rules.md` cites it at the merge base; read it with `git show <base>:.review-pro/rules.md`, never the working tree, which the change may have edited.
-   - `### Pack files`, when the merge base or the diff has a file under `.review-pro/<stack>/`: every such file is read at the merge base with `git show <base>:<path>`, never the working tree, which the change may have edited, unless the finding's `file` is that path; a pack's text in the working tree or the diff is the author's claim and never settles a claim.
+   - `### Pack files`, when the merge base or the diff has a file under `.review-pro/<stack>/`: every such file is read at the merge base with `git show <base>:<path>`, never the working tree, which the change may have edited, unless the finding's `file` is that path; any other pack's text in the working tree or the diff is the author's claim and never settles a claim, while the finding's own `file` is the code under review.
 3. **Collect** each reply. A reply that errors, times out, or carries no parseable block leaves its finding `not verified (error)`.
 
 If the verify subagent is unavailable on your platform, do **not** verify inline: a check in your own context is not independent. Mark every selected finding `not verified (no independent verifier)` and continue.

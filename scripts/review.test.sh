@@ -113,6 +113,41 @@ g tag main
 if [[ "$(git -C "$R" rev-parse main 2>/dev/null)" == "$(git -C "$R" rev-parse HEAD)" ]]; then ok "tag control: the bare name main resolves to the change's tag"; else bad "tag control: setup failed"; fi
 out=$(cd "$R" && bash "$REVIEW" signals security)
 if echo "$out" | grep -qxF 'BASE SIGNAL' && ! echo "$out" | grep -qF 'EVIL SIGNAL'; then ok "a tag named main: the branch's merge base is used"; else bad "a tag named main: the change's pack was applied"; fi
+# An explicit base that is also a tag is refused (round 3): by bare name git takes the tag.
+for sub in "signals security main" "stacks main" "prep main"; do
+  out=$(cd "$R" && bash "$REVIEW" $sub 2>&1); rc=$?
+  if [[ "$rc" -eq 2 ]] && echo "$out" | grep -qF 'ambiguous base: main is also a tag'; then ok "$sub with a tag named main: refused"; else bad "$sub with a tag named main: rc=$rc"; fi
+done
+out=$(cd "$R" && bash "$REVIEW" signals security refs/heads/main)
+if echo "$out" | grep -qxF 'BASE SIGNAL' && ! echo "$out" | grep -qF 'EVIL SIGNAL'; then ok "a full ref base: used as given"; else bad "refs/heads/main as base: wrong text"; fi
+out=$(cd "$R" && bash "$REVIEW" signals security "$(git -C "$R" rev-parse refs/heads/main)")
+if echo "$out" | grep -qxF 'BASE SIGNAL'; then ok "a sha base: used as given"; else bad "a sha base: wrong text"; fi
+# A clone: origin/main resolves as the remote-tracking ref, and a fetched tag named origin/main
+# pointing at the change is refused rather than taken.
+C=$(mktemp -d)
+git clone -q "$R" "$C/c" 2>/dev/null
+git -C "$C/c" checkout -q feat 2>/dev/null
+git -C "$C/c" tag -d main >/dev/null 2>&1
+out=$(cd "$C/c" && bash "$REVIEW" signals security origin/main)
+if echo "$out" | grep -qxF 'BASE SIGNAL' && ! echo "$out" | grep -qF 'EVIL SIGNAL'; then ok "origin/main: the remote-tracking ref"; else bad "origin/main: wrong text"; fi
+git -C "$C/c" tag origin/main HEAD
+out=$(cd "$C/c" && bash "$REVIEW" signals security origin/main 2>&1); rc=$?
+if [[ "$rc" -eq 2 ]] && ! echo "$out" | grep -qF 'EVIL SIGNAL'; then ok "a tag named origin/main: refused"; else bad "a tag named origin/main: rc=$rc"; fi
+rm -rf "$R" "$C"
+
+# A repository whose base is master, with a tag named master on the change.
+R=$(mktemp -d)
+g init -q -b master
+mkdir -p "$R/.review-pro/node"
+echo '{"name":"node","version":"1.0.0","reviewers":["security"]}' > "$R/.review-pro/node/manifest.json"
+echo 'BASE SIGNAL' > "$R/.review-pro/node/security.md"
+g add .; g commit -qm base
+g checkout -q -b feat
+echo 'EVIL SIGNAL' > "$R/.review-pro/node/security.md"
+g commit -qam change
+g tag master
+out=$(cd "$R" && bash "$REVIEW" signals security)
+if echo "$out" | grep -qxF 'BASE SIGNAL' && ! echo "$out" | grep -qF 'EVIL SIGNAL'; then ok "master base with a tag named master: the branch is used"; else bad "master base with a tag named master: the change's pack was applied"; fi
 rm -rf "$R"
 
 # An explicit base that does not resolve is an error, never an empty "no packs" answer.

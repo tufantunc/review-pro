@@ -19,18 +19,21 @@ signal refines the rubric itself.
 
 Triage lists installed stacks at the merge base with `git ls-tree`, the orchestrator reads each
 reviewer's pack with `git show <merge-base>:<path>`, and nothing reads a pack from the working
-tree. The base is the branch `refs/heads/main` (or `master`), never a ref that shares its name,
-because git prefers a tag named `main` and a change could push one at its own commit; that
-protects ADR-0011's rules too. Triage emits `stack_signals` in two layers: what the change commits
+tree. The base is the branch `refs/heads/main` (or `master`), and a base named in the argument
+resolves as `refs/heads/<name>` or `refs/remotes/<name>`, refused when a tag shares the name:
+git prefers a tag named `main` or `origin/main`, and a change could push one at its own commit.
+That protects ADR-0011's rules too. Triage emits `stack_signals` in two layers: what the change commits
 (`added`, `removed`, `changed`, from the merge base to `HEAD`) and what is only in the working tree
-(`uncommitted`). Synthesis prints one line per entry, saying the review used the merge base's
+(`uncommitted`), plus what the base branch changed after the branch point (`behind`), since the
+author chooses the branch point and the review applies the older pack. Synthesis prints one line per entry, saying the review used the merge base's
 version, and prints them on the no-reviewer path too. A pack new in this change applies from the
 next change, like a new rules file. A committed pack edit dispatches `security` and the pack's own
 reviewer: the merge base keeps a change from weakening its own review, but a merged edit is what
 every later review applies. Every reviewer body, and the orchestrator's `### Stack signals`
 section for bodies installed before this release, says that everything under `### Changed file
 contents` is under review, never a signal, whatever its path or headings. The verifier reads
-every pack at the merge base, whether a finding cites it or a search finds it.
+every pack at the merge base, whether a finding cites it or a search finds it, except the pack a
+finding is about, which is the code under review.
 
 Rejected: applying the head's packs on a first install, when the merge base has none. That is
 the attack itself: a change adds a pack directory and its text reaches its own reviewer.
@@ -44,6 +47,10 @@ still reach the reviewer.
 
 Rejected: one comparison of the merge base with the working tree. It reported an uncommitted
 `npx review-pro update` as part of the change (round 2 of this branch's review).
+
+Rejected: reading packs from the base branch's tip instead of the merge base. It would close the
+branch-point choice outright, but it splits packs from rules (ADR-0011) and from the diff the
+review reads; the `behind` line names the gap instead.
 
 Rejected: printing a line when packs are unchanged. It would appear on every review of a
 repository with packs and say nothing.
@@ -67,3 +74,9 @@ A `.review-pro/` file in the diff still reaches the reviewers as changed-file co
 correct, since the change's own pack edit deserves review. Their text is data there, and the
 line every body carries is the only defense against a reviewer that treats it as instructions;
 it is not measured. Revisit with ADR-0011's condition: a review mode with no merge base.
+
+`.review-pro/rules.md` has the same branch-point property and no `behind` line yet; ADR-0011's
+report says only whether the change edited it. Three rounds of this branch's own review each found
+that a fix had moved a problem rather than removed it (the base ref twice: to a tag, then to the
+argument; the uncommitted state; the verifier's reading of packs), so a fourth reader will likely
+find more. The known limit no pin closes: a qualifier added in place to a pinned line still passes.

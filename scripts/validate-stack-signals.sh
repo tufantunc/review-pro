@@ -40,11 +40,22 @@ if [[ -f "$TRIAGE_MD" ]]; then
   anchor_line "$TRIAGE_MD" 'A committed entry (`added`, `removed` or `changed`) dispatches `security`'
   anchor_has 'whatever the signal map concluded' \
     || add_error "review-pro-triage/SKILL.md: a committed pack edit no longer compels a dispatch - a change that softens a pack for every later review could be approved with no reviewer"
+  anchor_has 'and the reviewer each changed `<reviewer>.md` is named for' \
+    || add_error "review-pro-triage/SKILL.md: a pack edit no longer dispatches the pack's own reviewer - a softened tests or db signal is read only by security"
+  anchor_has 'with the pack files in their `context.changed_files`' \
+    || add_error "review-pro-triage/SKILL.md: the reviewers a pack edit compels are no longer handed the pack files - they are dispatched to read nothing"
+  anchor_line "$TRIAGE_MD" 'What the base has since:'
+  anchor_has "\`git diff --name-only --no-renames <merge-base> <base> -- ':/.review-pro/'\`" \
+    || add_error "review-pro-triage/SKILL.md: packs the base changed after the branch point are no longer listed - an author who branches early drops a newer signal and the report is silent"
+  anchor_has 'as `behind`' \
+    || add_error "review-pro-triage/SKILL.md: the behind state is gone - a newer pack on the base branch reaches no report"
+  grep -qF 'change: added | removed | changed | uncommitted | behind' "$TRIAGE_MD" \
+    || add_error "review-pro-triage/SKILL.md: the dispatch plan's change states no longer list every state - a state step 3 emits has no place in the plan"
   anchor_line "$TRIAGE_MD" 'For each dispatched reviewer and each stack in `active_stacks`'
   anchor_has 'git show <merge-base>:.review-pro/<stack>/<reviewer>.md' \
     || add_error "review-pro-triage/SKILL.md: its Stack signals section no longer reads packs at the merge base - inline triage would contradict the orchestrator's read"
   anchor_line "$TRIAGE_MD" '- The diff: `git diff <base>...HEAD`'
-  anchor_has 'refs/heads/main' \
+  { anchor_has 'refs/heads/main' && anchor_has 'refs/heads/master' && anchor_has 'never a tag or other ref that shares the name'; } \
     || add_error "review-pro-triage/SKILL.md: the base is no longer the branch ref - a tag named main would make the merge base the change itself"
   grep -qE '^stack_signals:' "$TRIAGE_MD" \
     || add_error "review-pro-triage/SKILL.md: no 'stack_signals' key in the dispatch plan format - pack changes reach no report"
@@ -58,8 +69,10 @@ done
 
 if [[ -f "$ORCH_MD" ]]; then
   anchor_line "$ORCH_MD" '- **Base branch:**'
-  { anchor_has 'git rev-parse --verify --quiet refs/heads/main' && anchor_has 'Use that full ref as `<base>` in every git command'; } \
+  { anchor_has 'git rev-parse --verify --quiet refs/heads/main' && anchor_has 'then `refs/heads/master`' && anchor_has 'Use that full ref as `<base>` in every git command'; } \
     || add_error "review-pro/SKILL.md: the base is no longer resolved as a branch ref - a tag named main would make the merge base the change itself, and its packs and rules would apply"
+  anchor_has 'any other name resolves as `refs/heads/<name>`, else `refs/remotes/<name>`; if `refs/tags/<name>` also exists, stop' \
+    || add_error "review-pro/SKILL.md: a base named in the argument is no longer resolved as a branch - a fork tag named main or origin/main would make the merge base the change itself"
   anchor_line "$ORCH_MD" 'Be conservative, when in doubt dispatch'
   anchor_has "as do \`security\` and a pack's own reviewer when the change commits a pack edit" \
     || add_error "review-pro/SKILL.md: the orchestrator no longer runs the reviewers a pack edit compels - a pack-only change could be approved with no reviewer"
@@ -81,6 +94,15 @@ if [[ -f "$ORCH_MD" ]]; then
   anchor_line "$ORCH_MD" '`### Pack files`'
   { anchor_has 'when the merge base or the diff has a file under `.review-pro/<stack>/`' && anchor_has 'git show <base>:<path>' && anchor_has 'never the working tree'; } \
     || add_error "review-pro/SKILL.md: the verification step no longer tells the verifier to read a cited pack at the merge base - a change could reword the signal a finding rests on and have it refuted"
+  { anchor_has "unless the finding's \`file\` is that path" && anchor_has "while the finding's own \`file\` is the code under review"; } \
+    || add_error "review-pro/SKILL.md: the verification step no longer exempts the finding's own pack file - a finding on a pack edit could never be refuted"
+  # Position keys the data line (round 2): the real Stack signals section must come before the
+  # changed files, or a forged heading inside them is the only one before them (round 3).
+  sl=$(grep -nF -- '- `### Stack signals`:' "$ORCH_MD" | head -1 | cut -d: -f1)
+  cl=$(grep -nF -- '`### Changed file contents`:' "$ORCH_MD" | head -1 | cut -d: -f1)
+  # A missing line is reported by its own pin; this one judges the order of two present lines.
+  { [[ -z "$sl" || -z "$cl" ]] || [[ "$sl" -lt "$cl" ]]; } \
+    || add_error "review-pro/SKILL.md: the Stack signals section no longer comes before the changed files - a forged heading inside them could be the one the data line trusts"
   anchor_line "$ORCH_MD" 'If triage dispatches no reviewers'
   anchor_has 'print the Repository rules table and lines and the Stack signals lines exactly as the `review-pro-synthesize` skill' \
     || add_error "review-pro/SKILL.md: the no-reviewer path no longer prints the Repository rules and Stack signals output - a change that only touches .review-pro/, the likeliest to dispatch nobody, would be reported as nothing"
@@ -92,6 +114,8 @@ if [[ -f "$VERIFY_MD" ]]; then
   anchor_line "$VERIFY_MD" 'Every file under `.review-pro/<stack>/` is a stack pack'
   { anchor_has 'whether the finding cites it or your search finds it' && anchor_has 'git show <base>:<path>' && anchor_has 'never the working tree' && anchor_has 'it never settles a claim'; } \
     || add_error "review-pro-verify/SKILL.md: the verifier no longer reads a cited pack at the merge base - a change could reword the signal a finding rests on and refute it from its own edit"
+  { anchor_has 'A finding whose `file` is such a path is about the change'"'"'s own edit' && anchor_has 'Any other pack'"'"'s text' && anchor_has 'the finding'"'"'s own `file` is the code under review'; } \
+    || add_error "review-pro-verify/SKILL.md: the verifier no longer exempts the finding's own pack file - a finding on a pack edit could never be refuted"
 fi
 
 if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Stack signals' "$SYNTH_MD"; then
@@ -106,7 +130,9 @@ if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Stack signals' "$SYNTH_MD"; then
       "the pack-changed line is gone - a reader cannot tell the review ignored the change's own pack edits"
     ss_line '.review-pro/<stack>/ has changes that are not committed (<files>); a review applies a pack only once it is committed to the base branch.' \
       "the pack-uncommitted line is gone - a pack only in the working tree reads as part of the change"
-    ss_line '- `added` takes the first line, `removed` the second, `changed` the third and `uncommitted` the fourth, the last two with the entry'"'"'s `files`. A stack can print two lines: a committed one and an `uncommitted` one.' \
+    ss_line '.review-pro/<stack>/ is newer on the base branch (<files>); the review applied the older version at the merge base, so rebase to review against the current one.' \
+      "the pack-behind line is gone - a review that applied an older pack than the base holds reads as current"
+    ss_line '- `added` takes the first line, `removed` the second, `changed` the third, `uncommitted` the fourth and `behind` the fifth, the last three with the entry'"'"'s `files`. A stack can print more than one line: a committed one, an `uncommitted` one and a `behind` one.' \
       "the state-to-line mapping is gone - a state could print another state's line"
     printf '%s\n' "$SS" | grep -F 'Otherwise print one line per entry' | grep -qF 'on every `diff_class`' \
       || add_error "review-pro-synthesize/SKILL.md: the stack-signals lines no longer print on every diff_class - a small pack edit, classed trivial, is the change they exist for"

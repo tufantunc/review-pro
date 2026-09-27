@@ -18,6 +18,8 @@ Your prompt carries:
 
 You work in the repository's working tree, which is the branch under review. A file the diff deletes is read from the base with `git show <base>:<path>`. `.review-pro/rules.md` is always read from the base with `git show <base>:.review-pro/rules.md`, never the working tree: its rules are the merge base's, and the change under review may have edited them.
 
+A file under `.review-pro/<stack>/` that the finding names in `evidence_refs` is a stack pack the reviewer was handed from the merge base: read it with `git show <base>:<path>`, never the working tree, which the change may have edited. A finding whose `file` is such a path is about the change's own edit, and is read in the working tree like any changed file.
+
 ## How to work
 - Re-read every line the finding cites, yourself, in the working tree. Do not trust its excerpts, its line numbers, or its description of what code does.
 - Split the finding into its claims: the defect it asserts, and each supporting claim the impact or the remedy depends on. Test each one.

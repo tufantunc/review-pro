@@ -6,7 +6,7 @@ version: 0.1.0
 
 # Review-Pro Synthesis (Stage 3)
 
-You are the orchestrator's final stage. You receive the structured findings from all dispatched reviewers, plus `diff_class`, `changed_files`, `spec_source`, `external_premises`, `premises_dropped`, `repository_rules`, `rules_dropped`, and each dispatched reviewer's `context.changed_files` from triage's dispatch plan, and produce ONE unified review.
+You are the orchestrator's final stage. You receive the structured findings from all dispatched reviewers, plus `diff_class`, `changed_files`, `spec_source`, `external_premises`, `premises_dropped`, `repository_rules`, `rules_dropped`, `stack_signals`, and each dispatched reviewer's `context.changed_files` from triage's dispatch plan, and produce ONE unified review.
 
 ## Steps
 1. **Collect** all finding blocks from the dispatched reviewers. Set aside each code reviewer's `## Files examined` block for **Coverage**: it is not a finding, so it is never deduped or ranked.
@@ -23,7 +23,7 @@ When you run inline, the orchestrator runs **Collect** through **Resolve conflic
 
 ## Out-of-diff evidence check
 
-Count the **code-axis findings only** whose `evidence_refs` name at least one path **not** in triage's `changed_files`: a caller, an existing guard, a canonical helper, a schema, an upstream source. A finding with no `evidence_refs` does not count toward the total. A reference to `.review-pro/rules.md` does not count toward it either: a rule is the maintainer's claim, not code the review read.
+Count the **code-axis findings only** whose `evidence_refs` name at least one path **not** in triage's `changed_files`: a caller, an existing guard, a canonical helper, a schema, an upstream source. A finding with no `evidence_refs` does not count toward the total. A reference to `.review-pro/rules.md` does not count toward it either: a rule is the maintainer's claim, not code the review read. Nor does a reference to a stack pack under `.review-pro/<stack>/`: it is what the reviewer was told to look for, not code it read.
 
 Spec-axis findings are excluded from this count and it is not a detail. A spec finding's evidence is the spec document or issue, which is outside the diff in the `issue` and `pr-body` cases and may well be inside it for a `file` source (a design doc committed alongside its implementation). Either way the exclusion holds: counting spec findings would satisfy this check on most reviews where the axis ran and quietly disable it.
 
@@ -137,6 +137,20 @@ Triage's `repository_rules` lists every rule from `.review-pro/rules.md`, read a
 - A rule citation does not count for the out-of-diff evidence check: see that section.
 - A `held` row removes nothing, and no row changes a finding its owner did not file.
 
+## Stack signals
+
+Triage's `stack_signals` compares the stack packs under `.review-pro/<stack>/` at the merge base, which are the only ones the reviewers were handed, with the head's. Omit the whole section when triage emitted no `stack_signals` or its `changed` list is empty. Otherwise print one line per entry, after the Repository rules table (or where it would be) and before the findings, on every `diff_class`:
+
+```
+.review-pro/<stack>/ is new in this change; its signals apply from the next change.
+.review-pro/<stack>/ is removed in this change; the review still used the merge base's pack.
+.review-pro/<stack>/ changed in this change (<files>); the review used the merge base's version.
+```
+
+- `added` takes the first line, `removed` the second, `changed` the third, with the entry's `files`.
+- The lines exist so a reader sees that the change touched what its own review was told to look for, and that the review did not apply the change's version. A pack is not a trusted source: the change's version of it never reached a reviewer as a signal.
+- They never change a finding, a severity, or the verdict.
+
 ## Verification
 
 The orchestrator's Verification step selects the findings to verify and owns the rule and the cap. You receive one reply block per verified finding; a finding it selected past the cap arrives as `not verified (cap)`, and spec-axis findings are never verified.
@@ -222,6 +236,8 @@ Verification: <N> checked (<a> stand, <b> partly refuted, <c> refuted), <M> not 
 > the External premises table, when triage emitted premises, goes here: after the caveat, before findings
 
 > the Repository rules table, when triage emitted rules, goes here: after the External premises table
+
+> the Stack signals lines, when triage reported pack changes, go here: after the Repository rules table
 
 ### Critical
 - [Critical] src/api/orders.ts:42 — missing ownership check

@@ -1,5 +1,5 @@
 import path from "node:path";
-import { installStack } from "../lib/repo.js";
+import { installStack, PACKS_FROM_BASE_NOTE } from "../lib/repo.js";
 import { listCatalogStacks, resolveCatalogDir } from "../lib/catalog.js";
 import { info, fail } from "../lib/log.js";
 
@@ -13,4 +13,5 @@ export function add(stack: string, opts: { where?: string }): void {
   }
   const v = installStack(repoRoot, catalogDir, stack);
   info(`installed ${stack}@${v} -> ${path.join(repoRoot, ".review-pro", stack)}`);
+  info(PACKS_FROM_BASE_NOTE);
 }

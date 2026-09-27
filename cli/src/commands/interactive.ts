@@ -1,7 +1,7 @@
 import path from "node:path";
 import { checkbox } from "@inquirer/prompts";
 import { listCatalogStacks, resolveCatalogDir } from "../lib/catalog.js";
-import { listInstalled, installStack } from "../lib/repo.js";
+import { listInstalled, installStack, PACKS_FROM_BASE_NOTE } from "../lib/repo.js";
 import { info, fail } from "../lib/log.js";
 
 export async function runInteractive(opts: { where?: string }): Promise<void> {
@@ -22,4 +22,5 @@ export async function runInteractive(opts: { where?: string }): Promise<void> {
     info(`installed ${s}@${v}`);
   }
   if (selected.length === 0) info("nothing selected");
+  else info(PACKS_FROM_BASE_NOTE);
 }

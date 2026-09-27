@@ -7,9 +7,12 @@
 #
 # Subcommands:
 #   prep [base]          print base, active stacks, changed files, full contents
-#   stacks               print active stacks (from .review-pro/)
-#   signals <reviewer>   print the concatenated .review-pro/<*>/<reviewer>.md packs
+#   stacks               print active stacks (from .review-pro/ at the merge base)
+#   signals <reviewer>   print the concatenated .review-pro/<*>/<reviewer>.md packs at the merge base
 #   diff [base]          print the diff vs base
+#
+# Packs come from the merge base, never the working tree, as a review reads them (ADR-0012):
+# a change cannot add or edit the pack its own review applies.
 set -uo pipefail
 TARGET="$(pwd)"
 
@@ -21,15 +24,16 @@ detect_base(){
   else echo HEAD; fi
 }
 
-# active stacks = installed packs under .review-pro/
-stacks_list(){
-  shopt -s nullglob
-  local m
-  for m in "$TARGET"/.review-pro/*/manifest.json; do basename "$(dirname "$m")"; done
-  shopt -u nullglob
-}
-
 base="$(detect_base)"
+# No merge base (no base branch, unrelated histories): no pack applies.
+mb="$(git -C "$TARGET" merge-base "$base" HEAD 2>/dev/null || true)"
+
+# active stacks = packs with a manifest.json under .review-pro/ at the merge base
+stacks_list(){
+  [[ -n "$mb" ]] || return 0
+  git -C "$TARGET" ls-tree -r --name-only --full-tree "$mb" -- .review-pro/ \
+    | sed -n 's#^\.review-pro/\([^/]*\)/manifest\.json$#\1#p'
+}
 
 case "$cmd" in
   stacks) stacks_list; exit 0 ;;
@@ -37,19 +41,17 @@ case "$cmd" in
   signals)
     [[ $# -ge 1 ]] || { echo "usage: review.sh signals <reviewer>" >&2; exit 2; }
     reviewer="$1"
-    shopt -s nullglob
-    for m in "$TARGET"/.review-pro/*/manifest.json; do
-      pack="$(dirname "$m")/$reviewer.md"
-      if [[ -f "$pack" ]]; then
-        echo "--- stack: $(basename "$(dirname "$m")") ($reviewer) ---"
-        cat "$pack"
+    for s in $(stacks_list); do
+      if git -C "$TARGET" cat-file -e "$mb:.review-pro/$s/$reviewer.md" 2>/dev/null; then
+        echo "--- stack: $s ($reviewer) ---"
+        git -C "$TARGET" show "$mb:.review-pro/$s/$reviewer.md"
         echo ""
       fi
     done
-    shopt -u nullglob
     exit 0 ;;
   prep)
-    echo "BASE: $base"
+    if [[ $# -ge 1 ]]; then mb="$(git -C "$TARGET" merge-base "$1" HEAD 2>/dev/null || true)"; fi
+    echo "BASE: ${1:-$base}"
     echo "ACTIVE_STACKS: $(stacks_list | tr '\n' ' ' | sed 's/ $//')"
     echo "CHANGED FILES:"
     files=()

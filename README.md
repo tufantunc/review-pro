@@ -77,7 +77,7 @@ flowchart TB
 ```
 
 - **Triage** classifies the diff, picks relevant reviewers, scopes context, emits a dispatch plan. A one-line CSS change does not wake the `db` reviewer.
-- **Fan-out** runs only the selected specialists in parallel; each applies its core rubric plus any stack signals from the repo's `.review-pro/`.
+- **Fan-out** runs only the selected specialists in parallel; each applies its core rubric plus any stack signals from the repo's `.review-pro/`, read at the merge base so a change cannot edit its own.
 - **Synthesis** dedups, weights, resolves conflicts by domain ownership, calibrates severity, reports self-reported file coverage, emits one verdict.
 - **Verification** runs one independent refuter per Medium+ code finding, at most 8 per review, between dedup and the verdict.
 

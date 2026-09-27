@@ -57,3 +57,24 @@ has not been re-measured.
 Revisit the merge-base rule only if a review mode appears with no base (a first commit, an
 orphan branch); revisit the cap if a larger corpus shows rule findings routinely deserve High
 and the owners' own rubrics miss them.
+
+## Amendment, 2026-09-28 (v1.5.0 release review)
+
+The release review read this decision together with ADR-0012 and found four joins neither PR
+had covered, all fixed before v1.5.0 shipped:
+
+- An edit to `.review-pro/rules.md` (changed, deleted or added) now dispatches `security` and
+  the owners of the rules that differ. Reading the merge base keeps a change from weakening its
+  own review, but a merged edit is what every later review applies, the reason ADR-0012 gave for
+  packs.
+- A finding *cites* the rules file when its `evidence_refs` names it or its own `file` is that
+  path, and every citing finding is capped at Medium, however it reaches the file. When its `file`
+  is the rules file, the verifier reads the lines it cites as the change's edit in the working tree
+  and any rule text it relies on at the merge base. (A first fix exempted findings located in the
+  file from the cap and from the base read; a re-review showed a rule violation can be located
+  there too, so the exemption reopened the attack.)
+- When dedup merges a rule finding with one that does not cite the rules, the result keeps the
+  higher of the other finding's severity and the rule finding's capped severity, so a nearby Low
+  cannot pull a rule violation below its own capped severity.
+- If `git merge-base` prints nothing, the review stops. `git show` with an empty revision reads
+  the index, which is the change's own copy of the rules and packs.

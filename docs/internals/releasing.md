@@ -33,7 +33,7 @@ Then the four plugin manifests, by hand, to the same value:
 - `.claude-plugin/marketplace.json`, **two** fields: the top-level `version` and `plugins[0].version`
 - `core/.claude-plugin/plugin.json`
 - `core/.codex-plugin/plugin.json`
-- `.cursor-plugin/plugin.json` (it ships with the repo and the npm package; it sat at `0.1.0` until v1.4.0 because this list missed it)
+- `.cursor-plugin/plugin.json` (it ships with the repo, where Cursor's `/add-plugin` reads it, not in the npm package; it sat at `0.1.0` until v1.4.0 because this list missed it)
 
 The validator will fail if any of the six disagree, so this is checked, not trusted.
 

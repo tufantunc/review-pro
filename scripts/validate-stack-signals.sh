@@ -92,17 +92,25 @@ if [[ -f "$ORCH_MD" ]]; then
   anchor_has 'stack signals step 1 read from the merge base' \
     || add_error "review-pro/SKILL.md: the inline review no longer applies the merge base's stack signals - the inline path could read the change's own pack"
   anchor_line "$ORCH_MD" '`### Pack files`'
-  { anchor_has 'when the merge base or the diff has a file under `.review-pro/<stack>/`' && anchor_has 'git show <base>:<path>' && anchor_has 'never the working tree'; } \
+  { anchor_has 'when the merge base or the diff has a file under `.review-pro/<stack>/`' && anchor_has 'git show <merge-base>:<path>' && anchor_has 'never the working tree'; } \
     || add_error "review-pro/SKILL.md: the verification step no longer tells the verifier to read a cited pack at the merge base - a change could reword the signal a finding rests on and have it refuted"
   { anchor_has "unless the finding's \`file\` is that path" && anchor_has "while the finding's own \`file\` is the code under review"; } \
     || add_error "review-pro/SKILL.md: the verification step no longer exempts the finding's own pack file - a finding on a pack edit could never be refuted"
   # Position keys the data line (round 2): the real Stack signals section must come before the
   # changed files, or a forged heading inside them is the only one before them (round 3).
   sl=$(grep -nF -- '- `### Stack signals`:' "$ORCH_MD" | head -1 | cut -d: -f1)
-  cl=$(grep -nF -- '`### Changed file contents`:' "$ORCH_MD" | head -1 | cut -d: -f1)
+  cl=$(grep -nF -- '- `### Changed file contents`, always the **last** section' "$ORCH_MD" | head -1 | cut -d: -f1)
   # A missing line is reported by its own pin; this one judges the order of two present lines.
   { [[ -z "$sl" || -z "$cl" ]] || [[ "$sl" -lt "$cl" ]]; } \
     || add_error "review-pro/SKILL.md: the Stack signals section no longer comes before the changed files - a forged heading inside them could be the one the data line trusts"
+  # The data line makes everything under the changed files the change, so they close the prompt:
+  # an orchestrator section after them would be read as change content (v1.5.0 release review).
+  coll=$(grep -nE '^3\. \*\*Collect\*\* its structured finding blocks' "$ORCH_MD" | head -1 | cut -d: -f1)
+  if [[ -n "$sl" && -n "$cl" && -n "$coll" && "$sl" -lt "$cl" ]]; then
+    lastsec=$(awk -v a="$sl" -v b="$coll" 'NR>a && NR<b && /^   - `### /{n=NR} END{print n}' "$ORCH_MD")
+    [[ "$lastsec" == "$cl" ]] \
+      || add_error "review-pro/SKILL.md: the changed files are no longer the last prompt section - a section after them reads as change content, and a heading inside a changed file could pose as it"
+  fi
   anchor_line "$ORCH_MD" 'If triage dispatches no reviewers'
   anchor_has 'print the Repository rules table and lines and the Stack signals lines exactly as the `review-pro-synthesize` skill' \
     || add_error "review-pro/SKILL.md: the no-reviewer path no longer prints the Repository rules and Stack signals output - a change that only touches .review-pro/, the likeliest to dispatch nobody, would be reported as nothing"

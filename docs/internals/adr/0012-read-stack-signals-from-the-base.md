@@ -82,3 +82,11 @@ report says only whether the change edited it. Each of four rounds of this branc
 found that a fix had moved a problem rather than removed it (the base ref three times: to a tag,
 to the argument, to git's name lookup; the uncommitted state; the verifier's reading of packs), so
 a fifth reader will likely find more. The known limit no pin closes: a qualifier added in place to a pinned line still passes.
+
+## Amendment, 2026-09-28 (v1.5.0 release review)
+
+If `git merge-base` prints nothing, the review stops instead of reading packs: `git show` with an
+empty revision reads the index, the change's own copy. The orchestrator also sends
+`### Changed file contents` as the last section of every reviewer prompt, because the data line
+this ADR introduced makes everything under that heading the change; the sections other PRs added
+after it would otherwise have been read as change content. See ADR-0011's amendment for the rest.

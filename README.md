@@ -157,7 +157,7 @@ npx review-pro init                           # opencode (default)
 npx review-pro init --target claude-code      # or cursor | codex | all | auto
 ```
 
-Installs the review-pro core (skills + subagents) into the target platform's home from one canonical source. Codex agents are auto-transformed to TOML; the repo-root `.cursor-plugin/plugin.json` also lets Cursor `/add-plugin` it directly. Then `npx review-pro add <stack>` to install packs into `.review-pro/`, restart the tool, and invoke the **`review-pro`** skill.
+Installs the review-pro core (skills + subagents) into the target platform's home from one canonical source. Codex agents are auto-transformed to TOML; the repo-root `.cursor-plugin/plugin.json` also lets Cursor `/add-plugin` it directly. Then `npx review-pro add <stack>` to install packs into `.review-pro/`, commit them to your base branch, restart the tool, and invoke the **`review-pro`** skill. A review applies packs from the merge base, so a pack that is not committed there is reported, not applied.
 
 **Uninstall** the core with `npx review-pro uninstall --target <platform>` (removes agents + skills from the tool home; stack packs in `.review-pro/` are repo-local — see `npx review-pro remove`).
 
@@ -171,11 +171,13 @@ npx review-pro@latest update                     # refresh stack packs in .revie
 npx review-pro@latest doctor                     # show drift between installed and catalog
 ```
 
+An updated pack applies once it is committed to your base branch, because reviews read packs from the merge base.
+
 Claude Code plugin installs update with `claude plugin update review-pro` (restart the session afterwards). To hear about new releases, watch the repo: **Watch → Custom → Releases**.
 
 ## Stack packs (catalog)
 
-Packs add language/framework-specific signals to reviewers. Install into a repo with `npx review-pro add <stack>`. **Framework/domain packs compose on top of a language pack** (e.g. a Next.js repo activates `typescript-react` + `nextjs`).
+Packs add language/framework-specific signals to reviewers. Install into a repo with `npx review-pro add <stack>`, then commit `.review-pro/`: reviews read packs from the merge base, so a pack only in your working tree is reported, not applied. **Framework/domain packs compose on top of a language pack** (e.g. a Next.js repo activates `typescript-react` + `nextjs`).
 
 | Pack | Type | Reviewers | Composes on |
 |---|---|---:|---|

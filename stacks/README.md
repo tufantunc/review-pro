@@ -19,11 +19,13 @@ Stacks are installed **per repo** into `.review-pro/` — NOT bundled with the c
 ```
 
 At review time the orchestrator (`review-pro` skill) does everything natively with its own tools:
-1. `Glob .review-pro/*/manifest.json` → the repo's **active stacks**.
-2. For each dispatched reviewer, `Read .review-pro/<stack>/<reviewer>.md` (if present) → the reviewer's **stack signals**.
+1. Lists `.review-pro/*/manifest.json` **at the merge base** (`git ls-tree`) → the repo's **active stacks**.
+2. For each dispatched reviewer, reads `.review-pro/<stack>/<reviewer>.md` at the merge base (`git show`, if present) → the reviewer's **stack signals**.
 3. Passes those as a `### Stack signals` section to the reviewer subagent, which auto-loads its core skill and applies the stack signals on top.
 
-**No shell scripts, no env vars, no plugin-path resolution at review time.** If `.review-pro/` is empty, reviewers run core-only.
+**No shell scripts, no env vars, no plugin-path resolution at review time.** If the merge base has no packs, reviewers run core-only.
+
+Packs are read from the merge base, never the working tree, so a change cannot weaken its own review by adding, editing or removing a pack ([ADR-0012](../docs/internals/adr/0012-read-stack-signals-from-the-base.md)). A pack takes effect for changes whose merge base includes it: **commit `.review-pro/` to your base branch**. Until then the report says the pack is new in this change and applies from the next one, or, for a pack only in your working tree, that it is not committed. The report names every pack a change adds, edits or removes, and says when your base branch holds a newer pack than the one the review applied (rebase to review against it).
 
 ## Installing stacks
 

@@ -11,6 +11,6 @@
 - **dispatch plan** — triage's YAML output: active stacks + per-reviewer scoped context.
 - **scoped context** — the exact files/search results a reviewer receives (diff + changed files + reviewer-specific extras).
 - **effective rubric** — what a reviewer actually uses = core skill + active stack packs, composed by the orchestrator.
-- **stack pack** — a per-language/framework supplement that adds concrete signals/remedies to a core reviewer rubric.
+- **stack pack**: a per-language/framework supplement that adds concrete signals/remedies to a core reviewer rubric. Read from the merge base, like a repository rule, so a change cannot edit the pack its own review applies (ADR-0012).
 - **overlap_hints** — category roots attached to a finding so synthesis can collapse duplicates.
 - **base** — the diff base branch (default `main`, falling back to `master`).

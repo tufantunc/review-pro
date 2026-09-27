@@ -2,6 +2,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { parseManifest, type StackManifest } from "./manifest.js";
 
+/** Printed after any command that installs or changes a pack. A review reads packs from the
+ *  merge base, never the working tree (ADR-0012), so a pack installed here applies only once
+ *  it is committed to the base branch. */
+export const PACKS_FROM_BASE_NOTE =
+  "a review reads packs from the merge base: commit .review-pro/ to your base branch, and changes branched after that apply them.";
+
 export function reviewProDir(repoRoot: string): string {
   return path.join(repoRoot, ".review-pro");
 }

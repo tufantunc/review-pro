@@ -39,9 +39,9 @@ Stacks land in the reviewed repo's `.review-pro/`. See `stacks/README.md`.
 
 In opencode, open the repo you want to review (on the feature branch) and ask the session to review it — e.g. *"review this branch with review-pro"* or invoke the **`review-pro`** skill. The agent does everything with its own tools:
 
-1. **Prep** — runs `git diff`, reads changed files, Globs `.review-pro/*/manifest.json` for active stacks.
-2. **Triage** (inline) — dispatch plan: which reviewers + scoped context.
-3. **Fan-out** — for each reviewer, reads `.review-pro/<stack>/<reviewer>.md` pack files and passes them as `### Stack signals` to the `<reviewer>-reviewer` subagent (which auto-loads its core skill).
-4. **Synthesize** (inline) — one verdict + report.
+1. **Prep**: runs `git diff`, reads changed files, lists `.review-pro/*/manifest.json` at the merge base for active stacks.
+2. **Triage** (inline): a dispatch plan naming which reviewers run, with their scoped context.
+3. **Fan-out**: for each reviewer, reads `.review-pro/<stack>/<reviewer>.md` pack files at the merge base and passes them as `### Stack signals` to the `<reviewer>-reviewer` subagent (which auto-loads its core skill).
+4. **Synthesize** (inline): one verdict + report.
 
 No `REVIEW_PRO_ROOT`, no env vars, no user-run scripts at review time. (`scripts/review.sh` exists only as an optional debug/CI helper to inspect what review-pro sees.)

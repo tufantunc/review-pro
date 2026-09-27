@@ -48,6 +48,27 @@ export function assertNoTokens(rendered, lang, page) {
   }
 }
 
+// The landing demo is hand-written, so nothing ties its verdict label to the findings
+// shown under it. Hold it to the rule in core/shared/severity.md: any Critical or High
+// blocks, any Medium requests changes, anything else approves.
+const DEMO_VERDICT = { C: 'Block', H: 'Block', M: 'Request Changes', L: 'Approve', N: 'Approve' };
+const VERDICT_RANK = ['Approve', 'Request Changes', 'Block'];
+export function assertDemoVerdict(html, page) {
+  const label = html.match(/class="demo__verdict-label"[^>]*>\s*Verdict:\s*([^<]*?)\s*</);
+  if (!label) return; // this page has no demo
+  let expected = 'Approve';
+  let driver = null;
+  for (const [, sev] of html.matchAll(/class="demo__sev\b[^"]*">\[([A-Z])\]</g)) {
+    const v = DEMO_VERDICT[sev];
+    if (!v) throw new Error(`Demo verdict in ${page}: unknown severity [${sev}]`);
+    if (VERDICT_RANK.indexOf(v) > VERDICT_RANK.indexOf(expected)) [expected, driver] = [v, sev];
+  }
+  if (label[1].toLowerCase() !== expected.toLowerCase()) {
+    const why = driver ? `a [${driver}] finding` : 'no Medium or higher finding';
+    throw new Error(`Demo verdict in ${page} is "${label[1]}" with ${why}; expected "${expected}"`);
+  }
+}
+
 // Merge translator copy with computed (non-translated) keys for renderTemplate.
 const NOTO = {
   hi: '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600&display=swap">',
@@ -119,6 +140,7 @@ export function buildAll({ srcDir, outDir, langs = SUPPORTED }) {
       const ctx = buildContext({ lang: l, copy: copy[l], flags });
       const rendered = renderTemplate(tmpl, ctx);
       assertNoTokens(rendered, l, page);
+      assertDemoVerdict(rendered, `${l}/${page}`);
       const outPath = l === 'en' ? join(outDir, page) : join(outDir, l, page);
       mkdirSync(dirname(outPath), { recursive: true });
       writeFileSync(outPath, rendered);

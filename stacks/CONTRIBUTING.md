@@ -68,5 +68,5 @@ Severity lines refine the anchors in `core/skills/security/SKILL.md`; they do no
 
 1. `npm run build` (in `cli/`) bundles `stacks/` → `cli/catalog/`.
 2. `npx review-pro` (interactive) or `add <pack>` copies `stacks/<pack>/` into the user's repo `.review-pro/<pack>/`.
-3. At review time the orchestrator reads `.review-pro/<pack>/<reviewer>.md` and passes them to reviewers as `### Stack signals`.
+3. At review time the orchestrator reads `.review-pro/<pack>/<reviewer>.md` at the merge base (never the working tree) and passes them to reviewers as `### Stack signals`. A pack applies once it is on the user's base branch.
 4. `npx review-pro update` re-copies a pack only when its `manifest.json` `version` differs from the installed copy. **Any change to a pack file must bump that pack's `version`**, or existing installs keep the old content and `update` reports them as already latest. Nothing checks this yet.

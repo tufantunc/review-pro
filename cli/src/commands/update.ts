@@ -1,6 +1,6 @@
 import path from "node:path";
 import { readStackManifest, resolveCatalogDir } from "../lib/catalog.js";
-import { listInstalled, getInstalledManifest, installStack } from "../lib/repo.js";
+import { listInstalled, getInstalledManifest, installStack, PACKS_FROM_BASE_NOTE } from "../lib/repo.js";
 import { info } from "../lib/log.js";
 
 export function update(stack: string | undefined, opts: { where?: string }): void {
@@ -18,4 +18,5 @@ export function update(stack: string | undefined, opts: { where?: string }): voi
     changed++;
   }
   info(changed === 0 ? "nothing to update" : `${changed} stack(s) updated`);
+  if (changed > 0) info(PACKS_FROM_BASE_NOTE);
 }

@@ -55,6 +55,48 @@ out=$(cd "$R/sub" && bash "$REVIEW" stacks)
 if [[ "$out" == "node" ]]; then ok "stacks: same answer from a subdirectory"; else bad "stacks: from a subdirectory got '$out'"; fi
 rm -rf "$R"
 
+# A base named neither main nor master (a CI checkout with only remote refs looks the same): with
+# no base argument there is no merge base, so no pack applies, never the change's own.
+R=$(mktemp -d)
+g init -q -b trunk
+mkdir -p "$R/.review-pro/node"
+echo '{"name":"node","version":"1.0.0","reviewers":["security"]}' > "$R/.review-pro/node/manifest.json"
+echo 'TRUNK SIGNAL' > "$R/.review-pro/node/security.md"
+g add .; g commit -qm base
+g checkout -q -b feat
+mkdir -p "$R/.review-pro/evil"
+echo '{"name":"evil","version":"1.0.0","reviewers":["security"]}' > "$R/.review-pro/evil/manifest.json"
+echo 'EVIL SIGNAL' > "$R/.review-pro/evil/security.md"
+echo 'HEAD SIGNAL' > "$R/.review-pro/node/security.md"
+g add .; g commit -qm change
+out=$(cd "$R" && bash "$REVIEW" stacks); rc=$?
+if [[ "$rc" -eq 0 && -z "$out" ]]; then ok "no main or master: no stacks"; else bad "no main or master: stacks printed '$out' (rc=$rc)"; fi
+out=$(cd "$R" && bash "$REVIEW" signals security)
+if [[ -z "$out" ]]; then ok "no main or master: no signals"; else bad "no main or master: signals printed the change's packs"; fi
+out=$(cd "$R" && bash "$REVIEW" stacks trunk)
+if [[ "$out" == "node" ]]; then ok "stacks <base>: the named base's stacks"; else bad "stacks trunk: expected 'node', got '$out'"; fi
+out=$(cd "$R" && bash "$REVIEW" signals security trunk)
+if echo "$out" | grep -qxF 'TRUNK SIGNAL' && ! echo "$out" | grep -qF -e 'HEAD SIGNAL' -e 'EVIL SIGNAL'; then ok "signals <reviewer> <base>: only the named base's text"; else bad "signals security trunk: wrong text"; fi
+out=$(cd "$R" && bash "$REVIEW" prep trunk)
+if echo "$out" | grep -qxF 'ACTIVE_STACKS: node'; then ok "prep <base>: active stacks from the named base"; else bad "prep trunk: active stacks line wrong"; fi
+out=$(cd "$R" && bash "$REVIEW" prep)
+if echo "$out" | grep -qxF 'ACTIVE_STACKS: ' || echo "$out" | grep -qxF 'ACTIVE_STACKS:'; then ok "prep with no base: no active stacks"; else bad "prep with no base: active stacks printed"; fi
+rm -rf "$R"
+
+# Unrelated histories: an orphan branch has no merge base with main, so no pack applies.
+R=$(mktemp -d)
+g init -q -b main; echo x > "$R/a.txt"; g add .; g commit -qm base
+g checkout -q --orphan loose
+mkdir -p "$R/.review-pro/evil"
+echo '{"name":"evil","version":"1.0.0","reviewers":["security"]}' > "$R/.review-pro/evil/manifest.json"
+echo 'EVIL SIGNAL' > "$R/.review-pro/evil/security.md"
+g add .; g commit -qm orphan
+out=$(cd "$R" && bash "$REVIEW" stacks); rc=$?
+if [[ "$rc" -eq 0 && -z "$out" ]]; then ok "orphan branch: no stacks"; else bad "orphan branch: stacks printed '$out' (rc=$rc)"; fi
+out=$(cd "$R" && bash "$REVIEW" signals security)
+if [[ -z "$out" ]]; then ok "orphan branch: no signals"; else bad "orphan branch: signals printed the change's packs"; fi
+rm -rf "$R"
+
 echo "---"
 echo "pass=$pass fail=$fail"
 finished=1

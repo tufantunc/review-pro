@@ -25,7 +25,7 @@ At review time the orchestrator (`review-pro` skill) does everything natively wi
 
 **No shell scripts, no env vars, no plugin-path resolution at review time.** If the merge base has no packs, reviewers run core-only.
 
-Packs are read from the merge base, never the working tree, so a change cannot weaken its own review by adding, editing or removing a pack ([ADR-0012](../docs/internals/adr/0012-read-stack-signals-from-the-base.md)). A pack takes effect for changes whose merge base includes it: **commit `.review-pro/` to your base branch**. Until then the report says the pack is new in this change and applies from the next one, and the report names every pack file a change adds, edits or removes.
+Packs are read from the merge base, never the working tree, so a change cannot weaken its own review by adding, editing or removing a pack ([ADR-0012](../docs/internals/adr/0012-read-stack-signals-from-the-base.md)). A pack takes effect for changes whose merge base includes it: **commit `.review-pro/` to your base branch**. Until then the report says the pack is new in this change and applies from the next one, or, for a pack only in your working tree, that it is not committed. The report names every pack a change adds, edits or removes.
 
 ## Installing stacks
 

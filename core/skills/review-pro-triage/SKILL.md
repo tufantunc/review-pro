@@ -17,9 +17,9 @@ You are the orchestrator's first stage. You do NOT review code yourself. You pre
 1. **Gather** the diff and changed-file list (run git). Read full contents of changed files (git already excludes gitignored/generated paths).
 2. **Classify each changed file** into buckets: `backend | frontend | test | db-migration | config-infra | docs | build-deps`.
 3. **Detect active stacks** from the merge base, never the working tree: a pack changes what a reviewer looks for, so a change must not be able to add, edit or remove the pack its own review applies. Resolve the merge base with `git merge-base <base> HEAD`, the sha step 8 and the verifiers use. A pack file is a file at `.review-pro/<stack>/<file>`; `.review-pro/rules.md` is not one.
-   1. List the merge base's pack files with `git ls-tree -r --name-only <merge-base> -- .review-pro/`. Each `<stack>` whose `manifest.json` is on that list is a stack the user installed (via `npx review-pro`) and committed. These are the repo's `active_stacks`. (No auto-detection from `package.json`: stacks are explicitly installed per repo.) If there are none, `active_stacks: []` and reviewers run core-only.
-   2. List the head's pack files: every file of that form in the working tree, including untracked and ignored ones, because a pack installed and not yet committed must be reported, not silently skipped.
-   3. Compare the two lists. `git diff --name-status <merge-base> -- .review-pro/` names the tracked files that differ; a head file missing from the merge base's list is new. Group what differs by stack: `added` when only the head has the stack's `manifest.json`, `removed` when only the merge base has it, `changed` otherwise.
+   1. List the merge base's pack files with `git ls-tree -r --name-only --full-tree <merge-base> -- .review-pro/`, which lists the repository root's `.review-pro/` from any directory. Each `<stack>` whose `manifest.json` is on that list is a stack the user installed (via `npx review-pro`) and committed. These are the repo's `active_stacks`. (No auto-detection from `package.json`: stacks are explicitly installed per repo.) If there are none, `active_stacks: []` and reviewers run core-only.
+   2. List the head's pack files: every file of that form under the repository root (`git rev-parse --show-toplevel`) in the working tree, including untracked and ignored ones, because a pack installed and not yet committed must be reported, not silently skipped.
+   3. Compare the two lists. `git diff --name-status --no-renames <merge-base> -- ':/.review-pro/'` names the tracked files that differ, one path per line; a head file missing from the merge base's list is new. Group what differs by stack: `added` when only the head has the stack's `manifest.json` and `HEAD` has it committed (`git cat-file -e HEAD:.review-pro/<stack>/manifest.json`), `uncommitted` when only the working tree has it, untracked or ignored, `removed` when only the merge base has it, `changed` otherwise.
    4. Emit `stack_signals` when either list is non-empty, and nothing when both are empty: a repository without packs behaves exactly as before. Never read a head pack file as a signal. A pack file this change touched is a changed file like any other, reviewed as data.
 4. **Decide which reviewers to dispatch** using the signal map below. Be conservative: when relevance is uncertain, dispatch. Skipping a real issue is worse than paying for one extra subagent.
 5. **Classify the diff's weight** as `diff_class`: `trivial` if the changed-file set is docs-only (every file in the `docs` bucket) or the whole diff is a single file under ~20 changed lines; `substantive` otherwise. Emit it in the plan — Stage 3 reads it and must not re-derive it.
@@ -129,7 +129,7 @@ stack_signals:                        # omit the key when neither the merge base
   source: <merge-base sha>
   changed:                            # [] when every pack file matches the merge base
     - stack: <stack>
-      change: added | removed | changed
+      change: added | uncommitted | removed | changed
       files: [<file names under .review-pro/<stack>/ that differ>]
 dispatch:
   <reviewer>:

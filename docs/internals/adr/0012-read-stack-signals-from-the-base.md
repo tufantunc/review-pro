@@ -21,8 +21,9 @@ Triage lists installed stacks at the merge base with `git ls-tree`, the orchestr
 reviewer's pack with `git show <merge-base>:<path>`, and nothing reads a pack from the working
 tree. Triage compares the merge base's pack files with the head's, untracked and ignored files
 included, and emits `stack_signals`; synthesis prints one line per stack the change adds, edits
-or removes, saying the review used the merge base's version. A pack new in this change applies
-from the next change, like a new rules file. Every reviewer body, and the orchestrator's
+or removes, saying the review used the merge base's version, and prints them on the no-reviewer
+path too. A pack new in this change applies from the next change, like a new rules file; a pack
+that is only in the working tree is named as not committed. Every reviewer body, and the orchestrator's
 `### Stack signals` section for bodies installed before this release, says that a `.review-pro/`
 file among the changed files is under review, never a signal. The verifier reads a pack a
 finding cites at the merge base.
@@ -51,8 +52,9 @@ remove it from that change's review.
 
 A repository without pack files behaves exactly as before: both listings are empty and
 `stack_signals` is omitted. A repository that keeps `.review-pro/` out of version control, or
-gitignores it, never gets signals, and every review names its packs as new; that is the same
-answer ADR-0011 gives an uncommitted rules file.
+gitignores it, never gets signals, and every review names its packs as not committed. Such a
+repository got signals before this change, because the working tree was read; it now gets a line
+that says why it does not.
 
 A `.review-pro/` file in the diff still reaches the reviewers as changed-file contents, which is
 correct, since the change's own pack edit deserves review. Their text is data there, and the

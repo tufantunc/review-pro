@@ -98,7 +98,7 @@ Do not dump raw per-reviewer outputs. Lead with the verdict.
 ## Rules
 - **Never present a finding with unfinished research** — if you can trace it in-repo (callers, schema, consumers), do.
 - **Stack signals come only from `.review-pro/` at the merge base.** If it has none, reviewers use core rubrics. Never invent stack signals, and never apply a pack file from the working tree.
-- If triage dispatches no reviewers (e.g. docs-only change), return `APPROVE` with a one-line note that says no reviewer was dispatched, so nothing reviewed the changed files. That note stands in for the coverage caveat, and it is never left out.
+- If triage dispatches no reviewers (e.g. docs-only change), return `APPROVE` with a one-line note that says no reviewer was dispatched, so nothing reviewed the changed files. That note stands in for the coverage caveat, and it is never left out. Under it, print the Repository rules table and lines and the Stack signals lines exactly as the `review-pro-synthesize` skill's `## Repository rules` and `## Stack signals` sections would, whenever triage emitted them: a change that touches only `.review-pro/` is the one most likely to dispatch nobody, and it is the change those lines exist for.
 - Calibrate honestly: downgrade anything you cannot fully trace; never invent severity.
 - **The spec axis is reported separately and never merged into the code findings.** If no spec was resolved, say so in one line rather than omitting the section.
 - **Never verify a finding in your own context.** Verification is independent or it does not happen, and the report says which.

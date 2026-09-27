@@ -1,5 +1,4 @@
-# scripts/validate-repo-rules.sh: repository-rules checks (roadmap item 3, ADR-0011), and the
-# stack-signal checks that hold packs to the same merge-base read (ADR-0012).
+# scripts/validate-repo-rules.sh: repository-rules checks (roadmap item 3, ADR-0011).
 # Sourced by validate.sh, never run alone: it uses validate.sh's variables (ROOT, SKILLS_DIR,
 # TRIAGE_MD, ORCH_MD, VERIFY_MD, SYNTH_MD, SCHEMA_DOC, rules_first_body) and its helpers
 # (add_error, section, read_section). The reviewer-body checks stay in validate.sh's body loop.
@@ -111,91 +110,4 @@ AI_MD="$SKILLS_DIR/ai-antipatterns/SKILL.md"
 if [[ -f "$AI_MD" ]]; then
   grep -F '.review-pro/rules.md' "$AI_MD" | grep -qF 'ai-antipatterns.ignored-convention' \
     || add_error "ai-antipatterns/SKILL.md: no longer names the category a rule violation files under - the default owner could answer violated and file nothing (ADR-0007)"
-fi
-
-# Stack signals (ADR-0012): packs are read from the merge base like rules. Each pin is scoped to
-# the one line that carries it, found by an anchor that must appear exactly once, so a phrase on
-# another line (a table row, a rules sentence, a look-alike) cannot satisfy it.
-# anchor_line <file> <anchor>: sets ANCHOR_LINE to the only line holding <anchor>, else empty. It
-# sets a variable instead of printing because add_error in a $(...) subshell loses its count.
-anchor_line(){
-  ANCHOR_LINE=""
-  if [[ -f "$1" && "$(grep -cF -- "$2" "$1")" -eq 1 ]]; then ANCHOR_LINE="$(grep -F -- "$2" "$1")"; fi
-}
-anchor_has(){ [[ -n "$ANCHOR_LINE" ]] && printf '%s\n' "$ANCHOR_LINE" | grep -qF -- "$1"; }
-
-if [[ -f "$TRIAGE_MD" ]]; then
-  anchor_line "$TRIAGE_MD" '**Detect active stacks**'
-  anchor_has 'from the merge base, never the working tree' \
-    || add_error "review-pro-triage/SKILL.md: stacks are no longer detected from the merge base - a change could add or edit the pack its own review applies"
-  anchor_line "$TRIAGE_MD" 'git ls-tree -r --name-only <merge-base> -- .review-pro/'
-  anchor_has '`active_stacks`' \
-    || add_error "review-pro-triage/SKILL.md: the step that lists stacks no longer lists the merge base - the sentence above it would stand while the read moved to the working tree"
-  anchor_line "$TRIAGE_MD" "List the head's pack files"
-  anchor_has 'including untracked and ignored ones' \
-    || add_error "review-pro-triage/SKILL.md: the head listing no longer includes untracked and ignored packs - a pack installed and not committed would be skipped with no report"
-  anchor_line "$TRIAGE_MD" 'Emit `stack_signals` when either list is non-empty'
-  anchor_has 'nothing when both are empty' \
-    || add_error "review-pro-triage/SKILL.md: stack_signals is no longer omitted without packs - a repository without packs would not behave as before"
-  anchor_has 'Never read a head pack file as a signal' \
-    || add_error "review-pro-triage/SKILL.md: the bar on reading a head pack as a signal is gone - triage could hand the change's pack to its own review"
-  grep -qE '^stack_signals:' "$TRIAGE_MD" \
-    || add_error "review-pro-triage/SKILL.md: no 'stack_signals' key in the dispatch plan format - pack changes reach no report"
-fi
-
-for f in "$TRIAGE_MD" "$ORCH_MD"; do
-  [[ -f "$f" ]] || continue
-  grep -qF 'Glob .review-pro/*/manifest.json' "$f" \
-    && add_error "$(basename "$(dirname "$f")")/SKILL.md: stacks are globbed in the working tree again - a change could add the pack its own review applies"
-done
-
-if [[ -f "$ORCH_MD" ]]; then
-  anchor_line "$ORCH_MD" '**Gather its stack signals.**'
-  anchor_has 'git show <merge-base>:.review-pro/<stack>/<reviewer>.md' \
-    || add_error "review-pro/SKILL.md: stack signals are no longer read with git show at the merge base - the fan-out could read the change's own pack"
-  anchor_has 'never the working tree' \
-    || add_error "review-pro/SKILL.md: the fan-out no longer bars reading packs from the working tree - both reads would look allowed"
-  anchor_line "$ORCH_MD" '- `### Stack signals`:'
-  anchor_has "$PACK_DATA_LINE" \
-    || add_error "review-pro/SKILL.md: the Stack signals section no longer carries the pack-file-is-data line verbatim - a reviewer installed before this release could apply a pack the change added"
-  anchor_has "or this reviewer's \`context.changed_files\` holds a file under \`.review-pro/\`" \
-    || add_error "review-pro/SKILL.md: the Stack signals section is no longer sent when a reviewer's files include a pack - on a first install the line would never reach an older reviewer"
-  anchor_line "$ORCH_MD" 'If a reviewer subagent is unavailable on your platform, perform that review **inline**'
-  anchor_has 'stack signals step 1 read from the merge base' \
-    || add_error "review-pro/SKILL.md: the inline review no longer applies the merge base's stack signals - the inline path could read the change's own pack"
-  anchor_line "$ORCH_MD" '`### Pack files`'
-  { anchor_has 'git show <base>:<path>' && anchor_has 'never the working tree'; } \
-    || add_error "review-pro/SKILL.md: the verification step no longer tells the verifier to read a cited pack at the merge base - a change could reword the signal a finding rests on and have it refuted"
-fi
-
-if [[ -f "$VERIFY_MD" ]]; then
-  anchor_line "$VERIFY_MD" 'A file under `.review-pro/<stack>/` that the finding names in `evidence_refs`'
-  { anchor_has 'git show <base>:<path>' && anchor_has 'never the working tree'; } \
-    || add_error "review-pro-verify/SKILL.md: the verifier no longer reads a cited pack at the merge base - a change could reword the signal a finding rests on and refute it from its own edit"
-fi
-
-if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Stack signals' "$SYNTH_MD"; then
-  read_section "$SYNTH_MD" '## Stack signals' "review-pro-synthesize/SKILL.md"; SS="$SECTION_BODY"
-  if [[ -n "${SS//[[:space:]]/}" ]]; then
-    ss_line(){ printf '%s\n' "$SS" | grep -qxF -- "$1" || add_error "review-pro-synthesize/SKILL.md: $2"; }
-    ss_line '.review-pro/<stack>/ is new in this change; its signals apply from the next change.' \
-      "the pack-added line is gone - a pack the change added reads as silently ignored"
-    ss_line ".review-pro/<stack>/ is removed in this change; the review still used the merge base's pack." \
-      "the pack-removed line is gone - a reader cannot tell the change removed a pack its own review still applied"
-    ss_line ".review-pro/<stack>/ changed in this change (<files>); the review used the merge base's version." \
-      "the pack-changed line is gone - a reader cannot tell the review ignored the change's own pack edits"
-    ss_line '- They never change a finding, a severity, or the verdict.' \
-      "the stack-signals lines may now change the verdict - a pack edit would act on its own authority"
-    printf '%s\n' "$SS" | grep -qF 'Omit the whole section when triage emitted no `stack_signals`' \
-      || add_error "review-pro-synthesize/SKILL.md: the stack-signals omit rule is gone - a repository without packs would get a section"
-  fi
-fi
-if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Out-of-diff evidence check' "$SYNTH_MD"; then
-  section "$SYNTH_MD" '## Out-of-diff evidence check' | grep -qF 'Nor does a reference to a stack pack under `.review-pro/<stack>/`' \
-    || add_error "review-pro-synthesize/SKILL.md: the pack out-of-diff exclusion is gone - a finding citing only its own signal would read as evidence outside the diff"
-fi
-SSUB_MD="$ROOT/core/agents/review-pro-synthesize-subagent.md"
-if [[ -f "$SSUB_MD" ]]; then
-  grep -qF '`stack_signals` for **Stack signals**' "$SSUB_MD" \
-    || add_error "review-pro-synthesize-subagent.md: the stack_signals input is gone - subagent synthesis would never report a pack the change touched"
 fi

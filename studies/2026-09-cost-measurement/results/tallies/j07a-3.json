@@ -1,0 +1,75 @@
+{
+ "session": "350523ad-1fd9-4bcc-8acc-d671786e8f6d",
+ "model": "claude-opus-5-5",
+ "cwd": "/private/tmp/claude-501/-Users-tufantunc-Desktop-Projects-Personal-review-pro/99075928-604e-433b-bc82-95e9c121edc8/scratchpad/cost/work/t62/repo",
+ "duration_ms": 154055,
+ "wrapper_s": 155.0,
+ "num_turns": 2,
+ "cost_usd_list": 0.8547296,
+ "grand": {
+  "input_tokens": 14,
+  "cache_creation_input_tokens": 67132,
+  "cache_read_input_tokens": 198478,
+  "output_tokens": 18793
+ },
+ "modelUsage": {
+  "input_tokens": 14,
+  "cache_creation_input_tokens": 67132,
+  "cache_read_input_tokens": 198478,
+  "output_tokens": 18793
+ },
+ "check": "match",
+ "n_results": 1,
+ "sum_result_duration_ms": 154055,
+ "five_hour_util": [
+  0.23,
+  0.25,
+  0.26,
+  0.27
+ ],
+ "rows": [
+  {
+   "stage": "main: triage",
+   "agent": "orchestrator",
+   "n_msgs": 0,
+   "usage": {},
+   "wall_s": 0.0
+  },
+  {
+   "stage": "main: dispatch+merge",
+   "agent": "orchestrator",
+   "n_msgs": 2,
+   "usage": {
+    "input_tokens": 4,
+    "cache_creation_input_tokens": 34486,
+    "cache_read_input_tokens": 43820,
+    "output_tokens": 14510
+   },
+   "wall_s": 62.39999985694885
+  },
+  {
+   "stage": "main: synthesis",
+   "agent": "orchestrator",
+   "n_msgs": 0,
+   "usage": {},
+   "wall_s": 0.0
+  },
+  {
+   "stage": "reviewer",
+   "agent": "ai-antipatterns-reviewer",
+   "n_msgs": 5,
+   "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 32646,
+    "cache_read_input_tokens": 154658,
+    "output_tokens": 4283
+   },
+   "wall_s": 45.871999979019165,
+   "prompt_chars": 33316,
+   "first_input": 30063,
+   "reads": 0,
+   "reread_chars": 0
+  }
+ ],
+ "result_text": "- severity: Medium\n  category: ai-antipatterns.ignored-convention\n  file: cli/package.json\n  line: 3\n  title: The version went to 1.3.0 but .cursor-plugin/plugin.json was not changed and still says 0.1.0 (rule R3)\n  evidence: |\n    cli/package.json:3            \"version\": \"1.3.0\",\n    .cursor-plugin/plugin.json:4  \"version\": \"0.1.0\",\n  evidence_refs: [.cursor-plugin/plugin.json:4, .review-pro/rules.md:24, docs/internals/releasing.md:23, scripts/validate.sh:592]\n  impact: |\n    Rule R3 says a change to the `version` field of `cli/package.json` must be copied to the lockfile and to every plugin manifest. The rule's `then` list names `.cursor-plugin/plugin.json`, and its reason says: \"`.cursor-plugin/plugin.json` sat at 0.1.0 for seven releases\". This release changes the lockfile, marketplace.json and both core manifests, but not the Cursor manifest. Cursor users will still see 0.1.0 for this release.\n    Nothing catches this. The version check in `scripts/validate.sh` only looks at marketplace.json, `core/.claude-plugin/plugin.json`, `core/.codex-plugin/plugin.json` and the lockfile (`for rel in (\"core/.claude-plugin/plugin.json\", \"core/.codex-plugin/plugin.json\")`). It never reads `.cursor-plugin/plugin.json`, so the check passes.\n    The rewritten release doc repeats the gap. In `docs/internals/releasing.md:23` step 1 says \"Five fields across four files\" and lists only the three manifests besides cli/. The table row \"All five version fields agree\" also claims that coverage. Both conflict with the rule's file list. The deleted RELEASING.md said `.cursor-plugin/plugin.json` \"carries its own independent version\". This change removes that sentence but does not replace it with the rule's requirement, so the release checklist still leaves the file out.\n  remedy: Set `.cursor-plugin/plugin.json` `version` to `1.3.0`. Change step 1 of `docs/internals/releasing.md` to \"six fields across five files\" and add the Cursor manifest to the list. Also consider adding `.cursor-plugin/plugin.json` to the `for rel in (...)` tuple in `scripts/validate.sh`, so the guard in the release doc's table actually covers it.\n  confidence: high\n  overlap_hints: [correctness.side-effect, craft.boundary]\n\n- severity: Nitpick\n  category: ai-antipatterns.ignored-convention\n  file: .github/workflows/ci.yml\n  line: 61\n  title: The comment copied from publish.yml says this non-blocking scan \"decides whether a release is blocked\"\n  evidence: |\n          # is blocked belongs in this file where a change to it is reviewable.\n          grype-version: v0.118.0\n          sbom: cli/sbom-ci.cdx.json\n          fail-build: false\n  impact: The five-line comment is copied word for word from publish.yml. In ci.yml the step has `fail-build: false`, and the step's own header comment says \"non-blocking here because a PR is not a publish ... The blocking copy lives in publish.yml\". Here \"this file\" means ci.yml, which blocks nothing, so the comment is wrong in this spot. The real reason to pin in ci.yml is to keep the PR scan on the same grype version as the gate.\n  remedy: Replace the ci.yml comment with one line, such as \"# Same grype as publish.yml's gate; keep the two in step.\" Keep the full explanation in publish.yml only.\n  confidence: medium\n  overlap_hints: [craft.comments, dry.canonical-helper]\n\n## Repository rules\n- rule: R3\n  outcome: violated\n  because: cli/package.json changed to 1.3.0 and every listed file was updated except .cursor-plugin/plugin.json, which is still 0.1.0.\n  evidence: .cursor-plugin/plugin.json:4 `\"version\": \"0.1.0\",` vs cli/package.json:3 `\"version\": \"1.3.0\",`\n  finding: ai-antipatterns.ignored-convention\n\n## Files examined\nexamined: [.claude-plugin/marketplace.json, .github/workflows/ci.yml, .github/workflows/publish.yml, CONTRIBUTING.md, RELEASING.md, cli/package-lock.json, cli/package.json, core/.claude-plugin/plugin.json, core/.codex-plugin/plugin.json, docs/internals/releasing.md]\nnot_examined: []"
+}

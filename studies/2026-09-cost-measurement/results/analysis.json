@@ -1,0 +1,105 @@
+{
+ "c77": {
+  "case": "c77",
+  "total": 724056,
+  "wall_s": 136.0,
+  "turns_main": 4,
+  "shares": {
+   "reviewer": 0.435576806213884,
+   "main: dispatch+merge": 0.3186120963019435,
+   "main: triage": 0.21129719248234943,
+   "auxiliary model": 0.03451390500182306,
+   "main: synthesis": 0.0
+  },
+  "reviewers": 3,
+  "code_reviewers": 2,
+  "verifiers": 0,
+  "reread_share": 0.0,
+  "fixed_share": 0.5836287422871311,
+  "reviewer_share": 0.435576806213884,
+  "verify_share": 0.0,
+  "main_share": 0.5299092887842929,
+  "waiting_share": 0.12784646491431603,
+  "waiting_turns": 2,
+  "check": "match",
+  "prompt_chars": {
+   "spec-reviewer": 1008,
+   "correctness-reviewer": 1872,
+   "ai-antipatterns-reviewer": 1430
+  },
+  "fires": [
+   "S-overhead"
+  ]
+ },
+ "c39": {
+  "case": "c39",
+  "total": 2416576,
+  "wall_s": 247.0,
+  "turns_main": 8,
+  "shares": {
+   "main: dispatch+merge": 0.34027400752138565,
+   "reviewer": 0.33920224317381287,
+   "main: synthesis": 0.14232782250589263,
+   "main: triage": 0.10538464339627639,
+   "verify": 0.07281128340263249
+  },
+  "reviewers": 7,
+  "code_reviewers": 6,
+  "verifiers": 2,
+  "reread_share": 0.1349249798976921,
+  "fixed_share": 0.5720774958887799,
+  "reviewer_share": 0.33920224317381287,
+  "verify_share": 0.07281128340263249,
+  "main_share": 0.5879864734235547,
+  "waiting_share": 0.1564660081040282,
+  "waiting_turns": 5,
+  "check": "delta out=+815",
+  "prompt_chars": {
+   "craft-reviewer": 1170,
+   "performance-reviewer": 1402,
+   "tests-reviewer": 1478,
+   "correctness-reviewer": 1914,
+   "api-contract-reviewer": 1976,
+   "spec-reviewer": 1012,
+   "ai-antipatterns-reviewer": 2037
+  },
+  "fires": [
+   "S-overhead"
+  ]
+ },
+ "c53": {
+  "case": "c53",
+  "total": 2315577,
+  "wall_s": 234.0,
+  "turns_main": 9,
+  "shares": {
+   "reviewer": 0.4038539854213442,
+   "main: dispatch+merge": 0.25417077471403454,
+   "main: synthesis": 0.15272953566216974,
+   "main: triage": 0.14160790161588235,
+   "verify": 0.04763780258656913
+  },
+  "reviewers": 6,
+  "code_reviewers": 5,
+  "verifiers": 2,
+  "reread_share": 0.005895709799033733,
+  "fixed_share": 0.4987491378434591,
+  "reviewer_share": 0.4038539854213442,
+  "verify_share": 0.04763780258656913,
+  "main_share": 0.5485082119920867,
+  "waiting_share": 0.1986856839569576,
+  "waiting_turns": 6,
+  "check": "match",
+  "prompt_chars": {
+   "craft-reviewer": 1150,
+   "ai-antipatterns-reviewer": 3614,
+   "tests-reviewer": 1244,
+   "dry-reviewer": 1190,
+   "spec-reviewer": 1150,
+   "correctness-reviewer": 1843
+  },
+  "fires": [
+   "S-overhead"
+  ]
+ }
+}

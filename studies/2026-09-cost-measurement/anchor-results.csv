@@ -1,0 +1,21 @@
+source,file,line,category,class,distance,note
+c39-ai-antipatterns-reviewer,cli/src/lib/agents.ts,19,ai-antipatterns.hallucination,EXACT,0,
+c39-ai-antipatterns-reviewer,cli/src/lib/agents.ts,1,ai-antipatterns.ignored-convention,NOWHERE,,
+c39-api-contract-reviewer,cli/src/lib/catalog.ts,22,api-contract.breaking,EXACT,0,
+c39-craft-reviewer,scripts/build-site.js,73,craft.code-judo,EXACT,0,
+c39-craft-reviewer,cli/src/lib/catalog.ts,22,craft.abstraction,EXACT,0,
+c39-craft-reviewer,cli/src/lib/agents.ts,1,craft.abstraction,NEAR,1,nearest match line 2
+c39-tests-reviewer,scripts/build-site.js,86,tests.coverage,EXACT,0,
+c39-tests-reviewer,scripts/build-site.js,84,tests.coverage,ELSEWHERE,8,nearest match line 76
+c53-ai-antipatterns-reviewer,cli/package-lock.json,1018,ai-antipatterns.unreviewed-bump,ELSEWHERE,8,nearest match line 1010
+c53-ai-antipatterns-reviewer,cli/vitest.config.ts,3,ai-antipatterns.invented-config,EXACT,0,
+c53-correctness-reviewer,cli/src/lib/doctor.ts,34,correctness.logic,EXACT,0,
+c53-correctness-reviewer,cli/src/lib/doctor.ts,40,correctness.logic,EXACT,0,
+c53-correctness-reviewer,cli/package-lock.json,1015,correctness.devex,BASE,,a71df5d09d90a301cf30d3b5c58c280394872b99:cli/package-lock.json
+c53-craft-reviewer,cli/src/lib/doctor.ts,48,craft.code-judo,EXACT,0,
+c53-dry-reviewer,cli/src/lib/doctor.ts,32,dry.duplication,EXACT,0,
+c53-dry-reviewer,cli/src/lib/doctor.ts,55,dry.copy-paste,EXACT,0,
+c53-tests-reviewer,cli/src/lib/doctor.ts,54,tests.coverage,EXACT,0,
+c53-tests-reviewer,cli/src/lib/doctor.ts,27,tests.assertion,NEAR,1,nearest match line 26
+c53-tests-reviewer,cli/vitest.config.ts,8,tests.coverage,EXACT,0,
+c77-ai-antipatterns-reviewer,docs/internals/releasing.md,134,ai-antipatterns.hallucination,EXACT,0,

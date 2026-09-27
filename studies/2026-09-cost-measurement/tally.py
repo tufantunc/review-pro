@@ -77,7 +77,9 @@ def main():
     run = sys.argv[1]
     stream = load(os.path.join(run, "stream.jsonl"))
     init = next(e for e in stream if e.get("type") == "system" and e.get("subtype") == "init")
-    result = next((e for e in stream if e.get("type") == "result"), {})
+    result_events = [e for e in stream if e.get("type") == "result"]
+    # a turn ends at each background-agent notification; the last result carries the report
+    result = result_events[-1] if result_events else {}
     limits = [e["rate_limit_info"] for e in stream if e.get("type") == "rate_limit_event"]
     sid = init["session_id"]
     main_path = glob.glob(os.path.expanduser(f"~/.claude/projects/*/{sid}.jsonl"))[0]
@@ -93,6 +95,26 @@ def main():
         if stage == "dispatch+merge" and any(x == "review-pro-verify-subagent" for x in types):
             stage = "synthesis"
         stages[stage].append(m)
+
+    # main thread, cut into turns: each background-agent notification opens a new turn, which
+    # re-reads the whole orchestrator context. A waiting turn is a notification turn, not the last,
+    # that dispatches nothing: it only acknowledges one result.
+    turns, cur, seen = [], None, set()
+    for e in load(main_path):
+        if e.get("type") == "user":
+            c = e["message"]["content"]
+            s = c if isinstance(c, str) else " ".join(b.get("text", "") for b in c if b.get("type") == "text")
+            if cur is None or "<task-notification>" in s:
+                cur = {"notification": cur is not None, "msgs": 0, "tokens": 0, "dispatches": 0}
+                turns.append(cur)
+        elif e.get("type") == "assistant" and cur is not None and e["message"]["id"] not in seen:
+            seen.add(e["message"]["id"])
+            cur["msgs"] += 1
+            cur["tokens"] += total(e["message"].get("usage") or {})
+        if e.get("type") == "assistant" and cur is not None:
+            cur["dispatches"] += sum(1 for b in e["message"].get("content", []) if b.get("type") == "tool_use" and b.get("name") in ("Agent", "Task"))
+    for i, tn in enumerate(turns):
+        tn["waiting"] = tn["notification"] and tn["dispatches"] == 0 and i < len(turns) - 1
 
     rows = []
     for name, ms in stages.items():
@@ -144,22 +166,32 @@ def main():
                      "first_input": first_in, "reads": len(reads), "reread_chars": reread})
     rows += subs
 
+    # modelUsage per model: the session model's must equal the transcripts. Any other model (Haiku,
+    # which summarises WebFetch and WebSearch results) is not in the transcripts; it is its own row.
+    mu, aux = {}, {}
+    for model, m in (result.get("modelUsage") or {}).items():
+        dst = mu if model == init.get("model") else aux
+        for a, b in (("inputTokens", "input_tokens"), ("cacheCreationInputTokens", "cache_creation_input_tokens"),
+                     ("cacheReadInputTokens", "cache_read_input_tokens"), ("outputTokens", "output_tokens")):
+            dst[b] = dst.get(b, 0) + m.get(a, 0)
+    opus = {}
+    for r in rows:
+        add(opus, r["usage"])
+    if aux:
+        rows.append({"stage": "auxiliary model", "agent": "haiku (web tool summaries)", "n_msgs": 0, "usage": aux, "wall_s": 0.0})
     grand = {}
     for r in rows:
         add(grand, r["usage"])
-    mu = {}
-    for m in (result.get("modelUsage") or {}).values():
-        for a, b in (("inputTokens", "input_tokens"), ("cacheCreationInputTokens", "cache_creation_input_tokens"),
-                     ("cacheReadInputTokens", "cache_read_input_tokens"), ("outputTokens", "output_tokens")):
-            mu[b] = mu.get(b, 0) + m.get(a, 0)
     start = float(open(os.path.join(run, "start")).read()) if os.path.exists(os.path.join(run, "start")) else None
     end = float(open(os.path.join(run, "end")).read()) if os.path.exists(os.path.join(run, "end")) else None
     summary = {"session": sid, "model": init.get("model"), "cwd": init.get("cwd"), "duration_ms": result.get("duration_ms"),
                "wrapper_s": (end - start) if start and end else None, "num_turns": result.get("num_turns"),
                "cost_usd_list": result.get("total_cost_usd"), "grand": grand, "modelUsage": mu,
-               "check": "match" if all(grand.get(k, 0) == mu.get(k, 0) for k in KEYS) else "MISMATCH",
+               "check": "match" if all(opus.get(k, 0) == mu.get(k, 0) for k in KEYS) else
+                        "delta " + " ".join(f"{SHORT[k]}={mu.get(k, 0) - opus.get(k, 0):+d}" for k in KEYS if mu.get(k, 0) != opus.get(k, 0)),
+               "n_results": len(result_events), "sum_result_duration_ms": sum(e.get("duration_ms") or 0 for e in result_events),
                "five_hour_util": [l.get("unifiedWindows", {}).get("five_hour", {}).get("utilization") for l in limits],
-               "rows": rows, "result_text": result.get("result", "")}
+               "rows": rows, "turns": turns, "result_text": result.get("result", "")}
     json.dump(summary, open(os.path.join(run, "tally.json"), "w"), indent=1)
     with open(os.path.join(run, "report.md"), "w") as fh:
         fh.write(summary["result_text"] or "")

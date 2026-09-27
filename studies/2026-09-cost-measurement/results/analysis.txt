@@ -1,0 +1,17 @@
+== c77: total 0.72M  wall 136s  main turns 4  check match
+   shares: reviewer 44%, main: dispatch+merge 32%, main: triage 21%, auxiliary model 3%, main: synthesis 0%
+   reviewers 3 (code 2), verifiers 0; reviewer share 44%, main share 53%, verify share 0%; re-read 0%, fixed overhead 58%
+   post hoc: 2 waiting turns in the main thread, 13% of the total
+   stage rules firing: ['S-overhead']
+== c39: total 2.42M  wall 247s  main turns 8  check delta out=+815
+   shares: main: dispatch+merge 34%, reviewer 34%, main: synthesis 14%, main: triage 11%, verify 7%
+   reviewers 7 (code 6), verifiers 2; reviewer share 34%, main share 59%, verify share 7%; re-read 13%, fixed overhead 57%
+   post hoc: 5 waiting turns in the main thread, 16% of the total
+   stage rules firing: ['S-overhead']
+== c53: total 2.32M  wall 234s  main turns 9  check match
+   shares: reviewer 40%, main: dispatch+merge 25%, main: synthesis 15%, main: triage 14%, verify 5%
+   reviewers 6 (code 5), verifiers 2; reviewer share 40%, main share 55%, verify share 5%; re-read 1%, fixed overhead 50%
+   post hoc: 6 waiting turns in the main thread, 20% of the total
+   stage rules firing: ['S-overhead']
+R-flat: c77/c53 = 31% (>= 25%?), c39/c53 = 104% (>= 50%?) -> fires
+R-cheap: c77 0.72M <= 0.7M, c39 2.42M <= 1.5M, no stage rule on c53 -> does not hold

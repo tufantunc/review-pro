@@ -1,0 +1,16 @@
+t62	R3	AGREE	when_matched same
+t71	R2	AGREE	when_matched same
+t71	R4	AGREE	when_matched same
+t71	R5	AGREE	when_matched same
+v71-nomanifest	R2	AGREE	when_matched same
+v71-nomanifest	R4	AGREE	when_matched same
+v71-nomanifest	R5	AGREE	when_matched same
+v-newpack	R2	AGREE	when_matched same
+v-newpack-manifest	R2	AGREE	when_matched same
+v-notarget	R4	AGREE	when_matched same
+v-notarget	R5	AGREE	when_matched same
+v-schema	R4	AGREE	when_matched same
+v-schema	R5	AGREE	when_matched same
+v-schema	R7	AGREE	when_matched same
+v-docsrc	R1	AGREE	when_matched same
+agree 15/15 rule rows

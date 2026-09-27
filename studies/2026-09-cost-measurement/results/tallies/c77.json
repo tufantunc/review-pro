@@ -1,0 +1,152 @@
+{
+ "session": "48ed5d35-9bf8-4006-82a0-ac584932625a",
+ "model": "claude-opus-5-5",
+ "cwd": "/private/tmp/claude-501/-Users-tufantunc-Desktop-Projects-Personal-review-pro/99075928-604e-433b-bc82-95e9c121edc8/scratchpad/cost/work/c77/repo",
+ "duration_ms": 17053,
+ "wrapper_s": 136.0,
+ "num_turns": 1,
+ "cost_usd_list": 1.1115228000000001,
+ "grand": {
+  "input_tokens": 24230,
+  "cache_creation_input_tokens": 107326,
+  "cache_read_input_tokens": 576919,
+  "output_tokens": 15581
+ },
+ "modelUsage": {
+  "input_tokens": 50,
+  "cache_creation_input_tokens": 107326,
+  "cache_read_input_tokens": 576919,
+  "output_tokens": 14771
+ },
+ "check": "match",
+ "n_results": 4,
+ "sum_result_duration_ms": 71975,
+ "five_hour_util": [
+  0.19,
+  0.2
+ ],
+ "rows": [
+  {
+   "stage": "main: triage",
+   "agent": "orchestrator",
+   "n_msgs": 5,
+   "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 30034,
+    "cache_read_input_tokens": 121096,
+    "output_tokens": 1851
+   },
+   "wall_s": 24.098999977111816
+  },
+  {
+   "stage": "main: dispatch+merge",
+   "agent": "orchestrator",
+   "n_msgs": 5,
+   "usage": {
+    "input_tokens": 16,
+    "cache_creation_input_tokens": 8519,
+    "cache_read_input_tokens": 218504,
+    "output_tokens": 3654
+   },
+   "wall_s": 105.00500011444092
+  },
+  {
+   "stage": "main: synthesis",
+   "agent": "orchestrator",
+   "n_msgs": 0,
+   "usage": {},
+   "wall_s": 0.0
+  },
+  {
+   "stage": "reviewer",
+   "agent": "spec-reviewer",
+   "n_msgs": 2,
+   "usage": {
+    "input_tokens": 4,
+    "cache_creation_input_tokens": 12203,
+    "cache_read_input_tokens": 18608,
+    "output_tokens": 918
+   },
+   "wall_s": 8.160999774932861,
+   "prompt_chars": 1008,
+   "first_input": 13893,
+   "reads": 0,
+   "reread_chars": 0
+  },
+  {
+   "stage": "reviewer",
+   "agent": "correctness-reviewer",
+   "n_msgs": 2,
+   "usage": {
+    "input_tokens": 4,
+    "cache_creation_input_tokens": 26752,
+    "cache_read_input_tokens": 15880,
+    "output_tokens": 3541
+   },
+   "wall_s": 35.81099987030029,
+   "prompt_chars": 1872,
+   "first_input": 15882,
+   "reads": 0,
+   "reread_chars": 0
+  },
+  {
+   "stage": "reviewer",
+   "agent": "ai-antipatterns-reviewer",
+   "n_msgs": 8,
+   "usage": {
+    "input_tokens": 16,
+    "cache_creation_input_tokens": 29818,
+    "cache_read_input_tokens": 202831,
+    "output_tokens": 4807
+   },
+   "wall_s": 67.45800018310547,
+   "prompt_chars": 1430,
+   "first_input": 16102,
+   "reads": 0,
+   "reread_chars": 0
+  },
+  {
+   "stage": "auxiliary model",
+   "agent": "haiku (web tool summaries)",
+   "n_msgs": 0,
+   "usage": {
+    "input_tokens": 24180,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "output_tokens": 810
+   },
+   "wall_s": 0.0
+  }
+ ],
+ "turns": [
+  {
+   "notification": false,
+   "msgs": 7,
+   "tokens": 240454,
+   "dispatches": 3,
+   "waiting": false
+  },
+  {
+   "notification": true,
+   "msgs": 1,
+   "tokens": 45578,
+   "dispatches": 0,
+   "waiting": true
+  },
+  {
+   "notification": true,
+   "msgs": 1,
+   "tokens": 46990,
+   "dispatches": 0,
+   "waiting": true
+  },
+  {
+   "notification": true,
+   "msgs": 1,
+   "tokens": 50662,
+   "dispatches": 0,
+   "waiting": false
+  }
+ ],
+ "result_text": "## Verdict: APPROVE\n\nSpec: measured against the PR body in `pr-body.md` (provided as the argument)\n\nVerification: 0 checked, 0 not checked. No code finding was Medium or above, so none were eligible. Spec findings are not verified.\n\nRepository rules: `.review-pro/rules.md` (read at the merge base, `c708639`) has no rule that matches `docs/internals/releasing.md`, so no rule was judged.\n\nThis change is docs only (one file, `docs/internals/releasing.md`). Three reviewers ran: correctness, ai-antipatterns and spec. Every instruction in the new E404 section held when checked against `.github/workflows/publish.yml`:\n- **Release and SBOM:** \"Create GitHub Release\" runs after Publish in the same job (`publish.yml:94-107`). `sbom` and `sbom-assets` are separate jobs that depend on it (`:118`, `:189`), so `--failed` reruns them.\n- **Rerun command:** its flags all exist, including `databaseId` as a `--json` field.\n- **Same tag:** the only trigger is `push: tags: ['v*']` (`:5-7`), so rerunning from the same tag is correct.\n- **Cross-reference:** \"step 7\" does point at \"Verify what actually shipped\" (`releasing.md:98`).\n\n### Low\n- [Low] `docs/internals/releasing.md:134`: the edited token step still offers \"a classic Automation token\", which npm no longer issues.\n  impact: The diff adds \"Granular tokens expire\" to this line, so a classic token now reads as the option that doesn't expire. The new E404 section also sends readers back here (\"see One-time setup\", line 141). According to GitHub's npm changelog entries of 2025-11-05 and 2025-12-09, npm disabled creating classic tokens and then revoked all existing ones. Granular tokens with write permission are capped at 90 days and default to 7. A maintainer who tries to avoid the next E404 by picking a classic token will find the option gone, and the text never mentions the 90-day cap or the 7-day default. The damage is small, because the reader ends up on the granular path either way.\n  remedy: Drop \"or a classic Automation token\". State that a write-enabled granular token lasts at most 90 days and defaults to 7, so the expiry has to be set when the token is created. Optionally, mention npm trusted publishing (OIDC) as the way to stop rotating tokens.\n  flagged by: ai-antipatterns\n  verification: not selected (Low)\n  note: this finding rests on npm's public changelog, not on anything in the repo. The \"93 days earlier\" in line 139 is consistent with the 90-day cap.\n\n### Refuted in verification\nNone.\n\n## Spec (measured against the PR body)\n\nNo mismatch against the PR body. The diff covers every requirement it names:\n- the E404-on-PUT diagnosis and its cause, the expired token (93 days old), which npm reports as a 404;\n- the recovery: rotate the token, then `gh run rerun --failed` from the same tag;\n- the note in one-time setup that granular tokens expire;\n- docs only, with no release.\n\nThe extra material (the verify step, the provenance note, the expiry-date advice) stays within the area the PR body describes, so it is not scope creep."
+}

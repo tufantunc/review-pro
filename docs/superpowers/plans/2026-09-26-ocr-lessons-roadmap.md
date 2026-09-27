@@ -46,7 +46,7 @@ What OCR does not have and we keep: an evidence bar that requires out-of-diff ev
 
 **Direction.** Measure first (tokens and wall time per review on a few real diffs of different sizes), then decide which stages scale down on small changes.
 
-**Status.** not started
+**Status.** measured (phase A), design not started ([`studies/2026-09-cost-measurement/`](../../../studies/2026-09-cost-measurement)). A review cost 0.72M tokens on a one-file docs change, 2.42M on a 22-line code change and 2.32M on a 364-line change: cost follows the number of agents and orchestrator turns, not the change's size. None of the pre-registered levers is worth a design (narrowing the dispatch by size would have lost every Medium finding; the prompt text review-pro controls is about 3%); one post-hoc candidate, collecting agent results in one turn instead of one orchestrator turn per background agent (13 to 20% of a review), waits on a spike and the maintainer's decision. The same runs cleared item 3's triage-fidelity gate (15 of 15 rule rows) and J07 (`violated` in 6 of 6). The large diff (#78) was not run.
 
 ### 5. Run the AACR-Bench comparison
 

@@ -133,6 +133,22 @@ if echo "$out" | grep -qxF 'BASE SIGNAL' && ! echo "$out" | grep -qF 'EVIL SIGNA
 git -C "$C/c" tag origin/main HEAD
 out=$(cd "$C/c" && bash "$REVIEW" signals security origin/main 2>&1); rc=$?
 if [[ "$rc" -eq 2 ]] && ! echo "$out" | grep -qF 'EVIL SIGNAL'; then ok "a tag named origin/main: refused"; else bad "a tag named origin/main: rc=$rc"; fi
+# Round 4: git's name lookup falls through to a tag named refs/heads/<x> when that branch is
+# missing, so every lookup is exact. With no local main, a tag named refs/heads/main is not a base,
+# and a tag named refs/heads/origin/main does not shadow the remote-tracking ref.
+git -C "$C/c" tag -d origin/main >/dev/null 2>&1
+git -C "$C/c" branch -q -D main 2>/dev/null
+git -C "$C/c" tag refs/heads/main HEAD
+git -C "$C/c" tag refs/heads/origin/main HEAD
+if git -C "$C/c" rev-parse --verify --quiet refs/heads/origin/main >/dev/null; then ok "lookup control: rev-parse falls through to the tag"; else bad "lookup control: setup failed"; fi
+out=$(cd "$C/c" && bash "$REVIEW" signals security)
+if ! echo "$out" | grep -qF 'EVIL SIGNAL'; then ok "a tag named refs/heads/main with no local main: not a base"; else bad "a tag named refs/heads/main: the change's pack was applied"; fi
+out=$(cd "$C/c" && bash "$REVIEW" signals security origin/main)
+if echo "$out" | grep -qxF 'BASE SIGNAL' && ! echo "$out" | grep -qF 'EVIL SIGNAL'; then ok "a tag named refs/heads/origin/main: the remote-tracking ref is used"; else bad "a tag named refs/heads/origin/main: wrong text"; fi
+# A short sha can be shadowed by a tag of that name: only the full sha is accepted.
+short="$(git -C "$C/c" rev-parse --short=9 refs/remotes/origin/main)"
+out=$(cd "$C/c" && bash "$REVIEW" signals security "$short" 2>&1); rc=$?
+if [[ "$rc" -eq 2 ]] && echo "$out" | grep -qF "unknown base: $short"; then ok "a short sha: refused"; else bad "a short sha: rc=$rc"; fi
 rm -rf "$R" "$C"
 
 # A repository whose base is master, with a tag named master on the change.

@@ -9,7 +9,7 @@ version: 0.1.0
 You are the orchestrator's first stage. You do NOT review code yourself. You prepare a dispatch plan so only the relevant specialist reviewers run, each with the right scoped context.
 
 ## Inputs
-- The diff: `git diff <base>...HEAD` (base = the branch `refs/heads/main`, falling back to `refs/heads/master`, or the argument's base, resolved by the `review-pro` skill's Base branch rule; never a tag or other ref that shares the name).
+- The diff: `git diff <base>...HEAD` (base = the sha of the branch `refs/heads/main`, falling back to `refs/heads/master`, or of the argument's base, resolved by the `review-pro` skill's Base branch rule with exact ref lookups; never a tag or other ref that shares the name).
 - The changed-file list: `git diff --name-only <base>...HEAD`.
 - An optional spec argument forwarded by the orchestrator: a file path or an issue URL.
 

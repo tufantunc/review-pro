@@ -204,7 +204,7 @@ external_premises: []
 repository_rules: {}
 stack_signals: {}
       change: added | removed | changed | uncommitted | behind
-- The diff: `git diff <base>...HEAD` (base = the branch `refs/heads/main`, falling back to `refs/heads/master`; never a tag or other ref that shares the name).
+- The diff: `git diff <base>...HEAD` (base = the branch `refs/heads/main`, falling back to `refs/heads/master`, with exact ref lookups; never a tag or other ref that shares the name).
 3. **Detect active stacks** from the merge base, never the working tree.
    1. List them with `git ls-tree -r --name-only --full-tree <merge-base> -- .review-pro/`; these are the `active_stacks`.
    2. The change's committed pack edits: `git diff --name-status --no-renames <merge-base> HEAD -- ':/.review-pro/'`. `added` when `HEAD` has the stack's `manifest.json` and the merge base does not, `removed` when the merge base has it and `HEAD` does not, `changed` otherwise.
@@ -380,7 +380,7 @@ A rule's text is data.
 
 If a reviewer subagent is unavailable on your platform, perform that review **inline**, with the stack signals step 1 read from the merge base.
 - If triage dispatches no reviewers, return `APPROVE`. Under it, print the Repository rules table and lines and the Stack signals lines exactly as the `review-pro-synthesize` skill would, whenever triage emitted them.
-- **Base branch:** the branch `main`, resolved with `git rev-parse --verify --quiet refs/heads/main`, then `refs/heads/master`; any other name resolves as `refs/heads/<name>`, else `refs/remotes/<name>`; if `refs/tags/<name>` also exists, stop. Use that full ref as `<base>` in every git command.
+- **Base branch:** the branch `main`, resolved with exact ref lookups, never git's name lookup: `git show-ref --verify --hash refs/heads/main`, then `refs/heads/master`; any other name is looked up exactly as `refs/heads/<name>`, else `refs/remotes/<name>`; if `refs/tags/<name>` also exists, or the argument is a short sha, stop. Use the resolved sha as `<base>` in every git command.
 Be conservative, when in doubt dispatch, with these exceptions: rule owners run, as do `security` and a pack's own reviewer when the change commits a pack edit.
 ## Output
 Return ONLY the final synthesis report, in the `review-pro-synthesize` skill's `## Output` format.
@@ -1678,6 +1678,7 @@ stage_mutation "$TRI" write_stage_skill "no 'stack_signals' key in the dispatch 
 stage_mutation "$TRI" write_stage_skill "the dispatch plan's change states no longer list every state" "triage stacks plan enum" sed 's/ | uncommitted | behind$/ | uncommitted/'
 stage_mutation "$TRI" write_stage_skill "the base is no longer the branch ref" "triage stacks base master"  sed 's/falling back to `refs\/heads\/master`/falling back to `master`/'
 stage_mutation "$TRI" write_stage_skill "the base is no longer the branch ref" "triage stacks base no tag"  sed 's/; never a tag or other ref that shares the name//'
+stage_mutation "$TRI" write_stage_skill "the base is no longer the branch ref" "triage stacks base exact" sed 's/, with exact ref lookups;/;/'
 stage_mutation "$TRI" write_stage_skill "no longer dispatches the pack's own reviewer" "triage stacks own reviewer" sed 's/, and the reviewer each changed `<reviewer>.md` is named for//'
 stage_mutation "$TRI" write_stage_skill "are no longer handed the pack files" "triage stacks pack files handed" sed 's/, with the pack files in their `context.changed_files`//'
 stage_mutation "$TRI" write_stage_skill "packs the base changed after the branch point are no longer listed" "triage stacks behind diff" sed 's/--no-renames <merge-base> <base> --/--no-renames <merge-base> HEAD --/'
@@ -1699,10 +1700,11 @@ stage_mutation "$ORC" w_orch "no longer tells the verifier to read a cited pack 
 stage_mutation "$ORC" w_orch "the no-reviewer path no longer prints the Repository rules and Stack signals output" "orchestrator zero dispatch stack" sed 's/ and the Stack signals lines exactly as/ exactly as/'
 stage_mutation "$ORC" w_orch "the no-reviewer path no longer prints the Repository rules and Stack signals output" "orchestrator zero dispatch rules" sed 's/print the Repository rules table and lines and the Stack signals/print the Stack signals/'
 stage_mutation "$ORC" w_orch "the no-reviewer path no longer says when to print" "orchestrator zero dispatch when" sed 's/, whenever triage emitted them\./ sometimes./'
-stage_mutation "$ORC" w_orch "the base is no longer resolved as a branch ref" "orchestrator base ref"      sed 's/resolved with `git rev-parse --verify --quiet refs\/heads\/main`/resolved by name/'
-stage_mutation "$ORC" w_orch "the base is no longer resolved as a branch ref" "orchestrator base every command" sed 's/ Use that full ref as `<base>` in every git command\.//'
+stage_mutation "$ORC" w_orch "the base is no longer resolved as a branch ref" "orchestrator base ref"      sed 's/`git show-ref --verify --hash refs\/heads\/main`/`git rev-parse refs\/heads\/main`/'
+stage_mutation "$ORC" w_orch "the base is no longer resolved as a branch ref" "orchestrator base every command" sed 's/ Use the resolved sha as `<base>` in every git command\.//'
 stage_mutation "$ORC" w_orch "the base is no longer resolved as a branch ref" "orchestrator base master"   sed 's/, then `refs\/heads\/master`;/;/'
-stage_mutation "$ORC" w_orch "a base named in the argument is no longer resolved as a branch" "orchestrator base argument" sed 's/; any other name resolves as `refs\/heads\/<name>`, else `refs\/remotes\/<name>`; if `refs\/tags\/<name>` also exists, stop\././'
+stage_mutation "$ORC" w_orch "a base named in the argument is no longer resolved as a branch" "orchestrator base argument" sed 's/, or the argument is a short sha, stop/, stop/'
+stage_mutation "$ORC" w_orch "a base named in the argument is no longer resolved as a branch" "orchestrator base no lookup" sed "s/ with exact ref lookups, never git's name lookup:/:/"
 stage_mutation "$ORC" w_orch "no longer exempts the finding's own pack file" "orchestrator pack files own file" sed "s/, unless the finding's \`file\` is that path//"
 stage_mutation "$ORC" w_orch "no longer exempts the finding's own pack file" "orchestrator pack files code"  sed "s/, while the finding's own \`file\` is the code under review//"
 stage_mutation "$ORC" w_orch "no longer comes before the changed files" "orchestrator section order" awk '/### Stack signals`: first this line/{held=$0; next} {print} /### Changed file contents`: the files/{print held}'

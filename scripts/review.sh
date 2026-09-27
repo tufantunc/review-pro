@@ -15,38 +15,41 @@
 # a change cannot add or edit the pack its own review applies. With no main or master and no
 # [base] argument there is no merge base, and no pack applies: pass the base (origin/main in a CI
 # checkout) to see what a review would apply. A [base] resolves as the orchestrator's Base branch
-# rule says: a full ref or a commit sha as given, else refs/heads/<name>, else refs/remotes/<name>;
-# a name that is also a tag is refused.
+# rule says: a full ref that exists exactly or a full 40-character sha, else refs/heads/<name>,
+# else refs/remotes/<name>; a name that is also a tag, or a short sha, is refused.
 set -uo pipefail
 TARGET="$(pwd)"
 
 cmd="${1:-prep}"; shift || true
 
-# The base is a branch, never a tag or other ref of the same name: git prefers a tag named
-# main over the branch, and a change could push one pointing at its own commit.
-detect_base(){
-  if git -C "$TARGET" rev-parse --verify --quiet refs/heads/main >/dev/null; then echo refs/heads/main
-  elif git -C "$TARGET" rev-parse --verify --quiet refs/heads/master >/dev/null; then echo refs/heads/master
-  fi
-}
+# The base resolves to a commit sha through exact ref lookups, never git's name lookup: that
+# lookup tries refs/tags/<name> before the branch, and even `rev-parse refs/heads/x` falls through
+# to a tag named refs/heads/x when the branch is missing, so a change could push a tag that makes
+# the merge base its own commit. exact <full ref>: its sha, only if that exact ref exists.
+exact(){ git -C "$TARGET" show-ref --verify --hash "$1" 2>/dev/null; }
+detect_base(){ exact refs/heads/main || exact refs/heads/master || true; }
 
 base="$(detect_base)"
-# resolve_ref <name>: the full ref or sha a [base] argument names. Never by bare name: git prefers
-# refs/tags/<name> over the branch, and a change could push a tag named main or origin/main at its
-# own commit. Unknown or ambiguous exits 2 (the callers propagate it out of the $(...)): a typo, or
-# an unfetched origin/main, must not read as a base without packs.
+# resolve_ref <name>: the sha a [base] argument names. A full ref must exist exactly; a sha must be
+# the full 40 characters (a short one can be shadowed by a tag of that name); any other name is
+# refs/heads/<name>, else refs/remotes/<name>, and refused when refs/tags/<name> exists. Unknown or
+# ambiguous exits 2 (the callers propagate it out of the $(...)): a typo, or an unfetched
+# origin/main, must not read as a base without packs.
 resolve_ref(){
-  local n="$1" r
+  local n="$1" r sha
   case "$n" in
-    refs/*) git -C "$TARGET" rev-parse --verify --quiet "$n^{commit}" >/dev/null && { echo "$n"; return 0; } ;;
+    refs/*) sha="$(exact "$n")" && { echo "$sha"; return 0; } ;;
     *)
-      if [[ "$n" =~ ^[0-9a-f]{7,40}$ ]] && git -C "$TARGET" cat-file -e "$n^{commit}" 2>/dev/null; then echo "$n"; return 0; fi
-      if git -C "$TARGET" show-ref --verify --quiet "refs/tags/$n"; then
-        echo "ambiguous base: $n is also a tag; pass the full ref (refs/heads/$n or refs/remotes/$n)" >&2; exit 2
-      fi
-      for r in "refs/heads/$n" "refs/remotes/$n"; do
-        git -C "$TARGET" rev-parse --verify --quiet "$r^{commit}" >/dev/null && { echo "$r"; return 0; }
-      done ;;
+      if [[ "$n" =~ ^[0-9a-f]{40}$ ]]; then
+        git -C "$TARGET" cat-file -e "$n^{commit}" 2>/dev/null && { echo "$n"; return 0; }
+      else
+        if exact "refs/tags/$n" >/dev/null; then
+          echo "ambiguous base: $n is also a tag; pass the full ref (refs/heads/$n or refs/remotes/$n)" >&2; exit 2
+        fi
+        for r in "refs/heads/$n" "refs/remotes/$n"; do
+          sha="$(exact "$r")" && { echo "$sha"; return 0; }
+        done
+      fi ;;
   esac
   echo "unknown base: $n" >&2; exit 2
 }

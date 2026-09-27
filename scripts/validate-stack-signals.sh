@@ -55,7 +55,7 @@ if [[ -f "$TRIAGE_MD" ]]; then
   anchor_has 'git show <merge-base>:.review-pro/<stack>/<reviewer>.md' \
     || add_error "review-pro-triage/SKILL.md: its Stack signals section no longer reads packs at the merge base - inline triage would contradict the orchestrator's read"
   anchor_line "$TRIAGE_MD" '- The diff: `git diff <base>...HEAD`'
-  { anchor_has 'refs/heads/main' && anchor_has 'refs/heads/master' && anchor_has 'never a tag or other ref that shares the name'; } \
+  { anchor_has 'refs/heads/main' && anchor_has 'refs/heads/master' && anchor_has 'with exact ref lookups' && anchor_has 'never a tag or other ref that shares the name'; } \
     || add_error "review-pro-triage/SKILL.md: the base is no longer the branch ref - a tag named main would make the merge base the change itself"
   grep -qE '^stack_signals:' "$TRIAGE_MD" \
     || add_error "review-pro-triage/SKILL.md: no 'stack_signals' key in the dispatch plan format - pack changes reach no report"
@@ -69,9 +69,9 @@ done
 
 if [[ -f "$ORCH_MD" ]]; then
   anchor_line "$ORCH_MD" '- **Base branch:**'
-  { anchor_has 'git rev-parse --verify --quiet refs/heads/main' && anchor_has 'then `refs/heads/master`' && anchor_has 'Use that full ref as `<base>` in every git command'; } \
+  { anchor_has 'git show-ref --verify --hash refs/heads/main' && anchor_has 'then `refs/heads/master`' && anchor_has 'Use the resolved sha as `<base>` in every git command'; } \
     || add_error "review-pro/SKILL.md: the base is no longer resolved as a branch ref - a tag named main would make the merge base the change itself, and its packs and rules would apply"
-  anchor_has 'any other name resolves as `refs/heads/<name>`, else `refs/remotes/<name>`; if `refs/tags/<name>` also exists, stop' \
+  { anchor_has 'never git'"'"'s name lookup' && anchor_has 'any other name is looked up exactly as `refs/heads/<name>`, else `refs/remotes/<name>`; if `refs/tags/<name>` also exists, or the argument is a short sha, stop'; } \
     || add_error "review-pro/SKILL.md: a base named in the argument is no longer resolved as a branch - a fork tag named main or origin/main would make the merge base the change itself"
   anchor_line "$ORCH_MD" 'Be conservative, when in doubt dispatch'
   anchor_has "as do \`security\` and a pack's own reviewer when the change commits a pack edit" \

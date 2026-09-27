@@ -20,9 +20,11 @@ signal refines the rubric itself.
 Triage lists installed stacks at the merge base with `git ls-tree`, the orchestrator reads each
 reviewer's pack with `git show <merge-base>:<path>`, and nothing reads a pack from the working
 tree. The base is the branch `refs/heads/main` (or `master`), and a base named in the argument
-resolves as `refs/heads/<name>` or `refs/remotes/<name>`, refused when a tag shares the name:
-git prefers a tag named `main` or `origin/main`, and a change could push one at its own commit.
-That protects ADR-0011's rules too. Triage emits `stack_signals` in two layers: what the change commits
+is `refs/heads/<name>` or `refs/remotes/<name>`, refused when a tag shares the name; each is
+resolved to a sha with exact lookups (`git show-ref --verify`), and a sha must be full. git's
+name lookup prefers a tag named `main` or `origin/main`, and falls through from `refs/heads/x` to a
+tag named `refs/heads/x` when that branch is missing, so a change could push a tag at its own
+commit and become its own merge base. That protects ADR-0011's rules too. Triage emits `stack_signals` in two layers: what the change commits
 (`added`, `removed`, `changed`, from the merge base to `HEAD`) and what is only in the working tree
 (`uncommitted`), plus what the base branch changed after the branch point (`behind`), since the
 author chooses the branch point and the review applies the older pack. Synthesis prints one line per entry, saying the review used the merge base's
@@ -76,7 +78,7 @@ line every body carries is the only defense against a reviewer that treats it as
 it is not measured. Revisit with ADR-0011's condition: a review mode with no merge base.
 
 `.review-pro/rules.md` has the same branch-point property and no `behind` line yet; ADR-0011's
-report says only whether the change edited it. Three rounds of this branch's own review each found
-that a fix had moved a problem rather than removed it (the base ref twice: to a tag, then to the
-argument; the uncommitted state; the verifier's reading of packs), so a fourth reader will likely
-find more. The known limit no pin closes: a qualifier added in place to a pinned line still passes.
+report says only whether the change edited it. Each of four rounds of this branch's own review
+found that a fix had moved a problem rather than removed it (the base ref three times: to a tag,
+to the argument, to git's name lookup; the uncommitted state; the verifier's reading of packs), so
+a fifth reader will likely find more. The known limit no pin closes: a qualifier added in place to a pinned line still passes.

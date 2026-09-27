@@ -76,7 +76,7 @@ for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
     req=""
     case "$name" in
       review-pro-triage)     req=$'## Steps\n## Signal map (non-exhaustive)\n## Dispatch plan format\n## Output discipline' ;;
-      review-pro-synthesize) req=$'## Steps\n## Out-of-diff evidence check\n## Coverage\n## Spec axis\n## Verification\n## Conflict ownership\n## Output' ;;
+      review-pro-synthesize) req=$'## Steps\n## Out-of-diff evidence check\n## Coverage\n## Repository rules\n## Spec axis\n## Verification\n## Conflict ownership\n## Output' ;;
       review-pro-verify)     req=$'## Role\n## Inputs\n## How to work\n## Verdicts\n## Rules\n## Output' ;;
     esac
     if [[ -n "$req" ]]; then
@@ -135,6 +135,18 @@ examined: [<path>, ...]
 not_examined:
   - file: <path>
     reason: <why, one line>'
+# Repository rules (roadmap item 3): the block an owner answers in, held here once like the
+# Files examined block and required verbatim in every copy.
+RULES_BLOCK='## Repository rules
+- rule: <id>
+  outcome: violated | held
+  because: <one line>
+  evidence: <path:line, or a quoted diff line>
+  finding: <category>        # only when violated'
+has_rules_block(){
+  [[ "$(cat "$1")" == *"$RULES_BLOCK"* ]] \
+    || add_error "$2: its Repository rules block differs from the canonical one in validate.sh - synthesis reads an owner's answer by those exact keys"
+}
 has_canonical_block(){
   [[ "$(cat "$1")" == *"$FILES_EXAMINED_BLOCK"* ]] \
     || add_error "$2: its Files examined block format differs from the canonical one in validate.sh - synthesis reads the block by those exact keys"
@@ -169,6 +181,17 @@ for body in "$ROOT"/core/agents/*-reviewer.md; do
   section "$body" '## Final reminder' | grep -qF '## Files examined' \
     || add_error "$b: the Final reminder does not name the '## Files examined' block - its terminal restatement tells the reviewer to return findings only"
   has_canonical_block "$body" "$b"
+  # Repository rules: the section a running reviewer obeys when a rule is handed to it.
+  [[ -n "$(section "$body" '## Repository rules')" ]] \
+    || add_error "$b: no '## Repository rules' section - a rule handed to this reviewer arrives with no instruction to treat it as data"
+  has_rules_block "$body" "$b"
+  section "$body" '## Final reminder' | grep -qF '## Repository rules' \
+    || add_error "$b: the Final reminder does not name the '## Repository rules' block - its terminal restatement leaves the answer out"
+  rsum="$(section "$body" '## Repository rules' | cksum)"
+  if [[ -z "${rules_first_sum:-}" ]]; then rules_first_sum="$rsum"; rules_first_body="$b"
+  elif [[ "$rsum" != "$rules_first_sum" ]]; then
+    add_error "$b: its '## Repository rules' section differs from $rules_first_body - the copies have drifted and owners get different contracts"
+  fi
   # ADR-0001's guards catch deletion, not divergence (#44). The section is one text
   # duplicated twelve times, so hold every copy to the first one byte for byte.
   sum="$(section "$body" '## Files examined' | cksum)"
@@ -181,6 +204,8 @@ if [[ -f "$SCHEMA_DOC" ]]; then
   { [[ -n "$(section "$SCHEMA_DOC" '## Files examined')" ]] && grep -qF 'exactly once' "$SCHEMA_DOC"; } \
     || add_error "core/shared/output-schema.md: the Files examined block is gone - rubric readers and the inline path lose the coverage contract"
   has_canonical_block "$SCHEMA_DOC" "core/shared/output-schema.md"
+  has_rules_block "$SCHEMA_DOC" "core/shared/output-schema.md"
+
 fi
 
 # Pointer resolution: rubrics reference `shared/<file>.md` relative to the skills
@@ -368,6 +393,8 @@ SSUB="$ROOT/core/agents/review-pro-synthesize-subagent.md"
 if [[ -f "$SSUB" ]]; then
   { grep -qF '`## Files examined` block' "$SSUB" && grep -qF '`context.changed_files`' "$SSUB"; } \
     || add_error "review-pro-synthesize-subagent.md: the coverage inputs are gone - subagent synthesis would report every file not reported"
+  { grep -qF '`repository_rules`' "$SSUB" && grep -qF '`## Repository rules` block' "$SSUB"; } \
+    || add_error "review-pro-synthesize-subagent.md: the rules inputs are gone - subagent synthesis would report every rule not reported"
 fi
 # Verification. The asymmetry is the whole safety argument of ADR-0009: one wrong
 # refutation must not ship a blocker, and an unchecked finding must not read as checked.
@@ -429,7 +456,7 @@ if [[ -f "$VERIFY_MD" ]]; then
     || add_error "review-pro-verify/SKILL.md: the defect_stands rule is gone - the verifier is never told when the defect falls"
   grep -qF 'never settles a claim' "$VERIFY_MD" \
     || add_error "review-pro-verify/SKILL.md: the author's-claim rule is gone - a PR description could be cited as the contradiction"
-  grep -qF 'git show <base>:' "$VERIFY_MD" \
+  grep -F 'A file the diff deletes' "$VERIFY_MD" | grep -qF 'git show <base>:' \
     || add_error "review-pro-verify/SKILL.md: the deleted-file rule is gone - a finding in a file the diff removes could not be re-read"
   grep -qF "not the finding's title" "$VERIFY_MD" \
     || add_error "review-pro-verify/SKILL.md: the harm-not-title rule is gone - a finding whose title is literally true but whose harm is false would keep its severity (contract run 1)"
@@ -901,6 +928,21 @@ sys.exit(1 if bad else 0)
 PYROOTS
 fi
 
+
+# Repository rules (roadmap item 3): the triage, orchestrator, verifier, synthesis, schema and
+# owner-rubric checks live in their own file, sourced so they share add_error and the helpers.
+RR_SH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/validate-repo-rules.sh"
+if [[ -f "$RR_SH" ]]; then
+  source "$RR_SH"
+else
+  add_error "validate-repo-rules.sh could not be sourced - every repository-rules check is off"
+fi
+
+# A repository's own .review-pro/rules.md (roadmap item 3), held to the format triage reads.
+# The check lives in its own script so it can run on any repository's rules file.
+if command -v python3 >/dev/null 2>&1 && [[ -f "$ROOT/.review-pro/rules.md" ]] && [[ -f "$MANIFEST" ]]; then
+  python3 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/check-rules-file.py" "$ROOT" || errors=$((errors+1))
+fi
 
 [[ "$errors" -eq 0 ]] && { echo "OK: all artifacts valid"; exit 0; }
 exit 1

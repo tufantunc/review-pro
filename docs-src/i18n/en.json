@@ -76,7 +76,7 @@
   "docs.manual.ol2": "<strong>Stack packs</strong> — copy <code>stacks/&lt;pack&gt;/</code> into the reviewed repo’s <code>.review-pro/&lt;pack&gt;/</code>.",
   "docs.manual.note": "The CLI just automates these copies (plus the Codex <code>.md</code>→<code>.toml</code> transform and version tracking). Manual and CLI installs are equivalent.",
   "docs.stacks.h2": "Stack packs",
-  "docs.stacks.p": "Packs layer language/framework-specific signals onto the reviewers at review time. Install the ones a repo uses into its <code>.review-pro/</code>. Framework/domain packs compose on top of a language pack.",
+  "docs.stacks.p": "Packs layer language/framework-specific signals onto the reviewers at review time. Install the ones a repo uses into its <code>.review-pro/</code>. Framework/domain packs compose on top of a language pack. Beside the packs, a repository can keep its own <code>.review-pro/rules.md</code>: rules such as “when X changes, Y must change too”, which every review reads from the merge base and reports rule by rule.",
   "docs.stacks.catalog": "Catalog (16): <code>python</code> · <code>go</code> · <code>rust</code> · <code>typescript-react</code> · <code>node</code> · <code>php</code> · <code>dotnet</code> · <code>kotlin</code> · <code>swift</code> · <code>flutter</code> · <code>capacitor</code> · <code>nextjs</code> · <code>tanstack-start</code> · <code>react-native</code> · <code>wordpress</code> · <code>ai-ml</code>. Examples: a Next.js repo activates <code>typescript-react</code> + <code>nextjs</code>; an LLM app activates <code>python</code> + <code>ai-ml</code>.",
   "docs.commands.h2": "Commands",
   "docs.commands.th1": "Command",

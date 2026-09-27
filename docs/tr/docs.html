@@ -207,7 +207,7 @@ mkdir -p .review-pro &amp;&amp; cp -R stacks/python .review-pro/python</code></p
     <p class="note">CLI yalnızca bu kopyaları otomatikleştirir (artı Codex <code>.md</code>→<code>.toml</code> dönüşümü ve sürüm takibi). El ile ve CLI kurulumları eşdeğerdir.</p>
 
     <h2 id="stack-packs">Yığın paketleri</h2>
-    <p>Paketler, inceleme sırasında inceleyicilere dile/çerçeveye özgü sinyalleri katmanlar. Bir deponun kullandığı paketleri kendi <code>.review-pro/</code> klasörüne kur. Çerçeve/alan paketleri bir dil paketinin üzerine eklenir.</p>
+    <p>Paketler, inceleme sırasında inceleyicilere dile/çerçeveye özgü sinyalleri katmanlar. Bir deponun kullandığı paketleri kendi <code>.review-pro/</code> klasörüne kur. Çerçeve/alan paketleri bir dil paketinin üzerine eklenir. Paketlerin yanında bir depo kendi <code>.review-pro/rules.md</code> dosyasını tutabilir: “X değişirse Y de değişmeli” gibi kurallar; her inceleme bunları birleştirme tabanından okur ve kural kural raporlar.</p>
     <pre class="cmd"><code>npx review-pro                <span class="cmt"># interactive multi-select</span>
 npx review-pro add python     <span class="cmt"># one pack, CI-safe</span>
 npx review-pro list           <span class="cmt"># catalog + installed + drift</span></code></pre>

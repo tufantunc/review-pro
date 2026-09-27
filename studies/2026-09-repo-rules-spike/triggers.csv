@@ -1,0 +1,74 @@
+pr,commit,title,rule,binding,status,missing,when_files
+2,cb51e4e85,chore(deps-dev): bump the dev-dependencies group in /cli wit,C3,,triggered,.claude-plugin/marketplace.json core/.claude-plugin/plugin.json core/.codex-plugin/plugin.json .cursor-plugin/plugin.json,cli/package.json
+4,b5c3b00c9,chore(deps): bump commander from 12.1.0 to 15.0.0 in /cli,C3,,triggered,.claude-plugin/marketplace.json core/.claude-plugin/plugin.json core/.codex-plugin/plugin.json .cursor-plugin/plugin.json,cli/package.json
+6,baa43915d,chore(deps): bump @inquirer/prompts from 7.10.1 to 8.5.2 in ,C3,,triggered,.claude-plugin/marketplace.json core/.claude-plugin/plugin.json core/.codex-plugin/plugin.json .cursor-plugin/plugin.json,cli/package.json
+9,646a0074d,feat(site): add the Claude Code marketplace install path (7 ,C1,,held-by-file,,docs-src/docs.html docs-src/i18n/de.json docs-src/i18n/en.json docs-src/i18n/fr.json ...
+15,d1c82addb,release: v0.5.0,C3,,triggered,cli/package-lock.json core/.codex-plugin/plugin.json .cursor-plugin/plugin.json,cli/package.json
+16,26341fedc,"docs(discoverability): value-first README, when-to-use, upda",C3,,triggered,cli/package-lock.json .claude-plugin/marketplace.json core/.claude-plugin/plugin.json core/.codex-plugin/plugin.json .cursor-plugin/plugin.json,cli/package.json
+22,ca4d061c1,chore(deps-dev): bump @types/node from 26.1.2 to 26.2.0 in /,C3,,triggered,.claude-plugin/marketplace.json core/.claude-plugin/plugin.json core/.codex-plugin/plugin.json .cursor-plugin/plugin.json,cli/package.json
+24,484b0cdb5,"feat(reviewers): evidence-bar rule, out-of-diff tripwire, en",C4,,triggered,docs/llms.txt,core/agents/a11y-reviewer.md core/agents/ai-antipatterns-reviewer.md core/agents/api-contract-reviewer.md core/agents/backend-reviewer.md ...
+24,484b0cdb5,"feat(reviewers): evidence-bar rule, out-of-diff tripwire, en",C5,,triggered,cli/README.md,core/agents/a11y-reviewer.md core/agents/ai-antipatterns-reviewer.md core/agents/api-contract-reviewer.md core/agents/backend-reviewer.md ...
+24,484b0cdb5,"feat(reviewers): evidence-bar rule, out-of-diff tripwire, en",C7,,held-by-file,,core/shared/output-schema.md
+24,484b0cdb5,"feat(reviewers): evidence-bar rule, out-of-diff tripwire, en",P1,,triggered,core/shared/severity.md,core/skills/review-pro-synthesize/SKILL.md
+26,742540273,release: v0.6.0,C3,,triggered,cli/package-lock.json core/.codex-plugin/plugin.json .cursor-plugin/plugin.json,cli/package.json
+29,974061e45,"feat(reviewers): add the Spec axis, a thirteenth reviewer th",C1,,held-by-file,,docs-src/i18n/de.json docs-src/i18n/en.json docs-src/i18n/fr.json docs-src/i18n/hi.json ...
+29,974061e45,"feat(reviewers): add the Spec axis, a thirteenth reviewer th",C3,,triggered,cli/package-lock.json .claude-plugin/marketplace.json core/.claude-plugin/plugin.json core/.codex-plugin/plugin.json .cursor-plugin/plugin.json,cli/package.json
+29,974061e45,"feat(reviewers): add the Spec axis, a thirteenth reviewer th",C4,,held-by-file,,core/agents/review-pro-synthesize-subagent.md core/agents/review-pro-triage-subagent.md core/agents/spec-reviewer.md core/shared/context-policy.md ...
+29,974061e45,"feat(reviewers): add the Spec axis, a thirteenth reviewer th",C5,,held-by-file,,core/agents/review-pro-synthesize-subagent.md core/agents/review-pro-triage-subagent.md core/agents/spec-reviewer.md core/shared/context-policy.md ...
+29,974061e45,"feat(reviewers): add the Spec axis, a thirteenth reviewer th",C6,,held-by-file,,manifest.json
+29,974061e45,"feat(reviewers): add the Spec axis, a thirteenth reviewer th",C7,,held-by-file,,core/shared/output-schema.md
+29,974061e45,"feat(reviewers): add the Spec axis, a thirteenth reviewer th",P1,,triggered,core/shared/severity.md,core/skills/review-pro-synthesize/SKILL.md
+32,42ccdad7c,release: v0.7.0,C3,,triggered,cli/package-lock.json core/.codex-plugin/plugin.json .cursor-plugin/plugin.json,cli/package.json
+34,4e43e4d51,fix(deps): override esbuild past GHSA-g7r4-m6w7-qqqr,C3,,triggered,.claude-plugin/marketplace.json core/.claude-plugin/plugin.json core/.codex-plugin/plugin.json .cursor-plugin/plugin.json,cli/package.json
+35,740f57a68,"feat: make a skills-only install self-sufficient, and add th",C4,,triggered,docs/llms.txt,core/skills/review-pro-synthesize/SKILL.md
+35,740f57a68,"feat: make a skills-only install self-sufficient, and add th",C5,,triggered,cli/README.md,core/skills/review-pro-synthesize/SKILL.md
+35,740f57a68,"feat: make a skills-only install self-sufficient, and add th",P1,,triggered,core/shared/severity.md,core/skills/review-pro-synthesize/SKILL.md
+36,d7489fdcb,release: v1.0.0,C3,,triggered,cli/package-lock.json .cursor-plugin/plugin.json,cli/package.json
+43,6412498ca,feat: verify external premises automatically (#13),C3,,triggered,cli/package-lock.json .cursor-plugin/plugin.json,cli/package.json
+43,6412498ca,feat: verify external premises automatically (#13),C4,,held-by-file,,core/agents/ai-antipatterns-reviewer.md core/agents/api-contract-reviewer.md core/agents/correctness-reviewer.md core/shared/context-policy.md ...
+43,6412498ca,feat: verify external premises automatically (#13),C5,,held-by-file,,core/agents/ai-antipatterns-reviewer.md core/agents/api-contract-reviewer.md core/agents/correctness-reviewer.md core/shared/context-policy.md ...
+43,6412498ca,feat: verify external premises automatically (#13),P1,,triggered,core/shared/severity.md,core/skills/review-pro-synthesize/SKILL.md
+45,d59ba6094,"feat: adopt the approval standard, lockfile review, and name",C3,,triggered,cli/package-lock.json .cursor-plugin/plugin.json,cli/package.json
+45,d59ba6094,"feat: adopt the approval standard, lockfile review, and name",C4,,triggered,docs/llms.txt,core/skills/ai-antipatterns/SKILL.md core/skills/api-contract/SKILL.md core/skills/craft/SKILL.md core/skills/review-pro-synthesize/SKILL.md
+45,d59ba6094,"feat: adopt the approval standard, lockfile review, and name",C5,,triggered,cli/README.md,core/skills/ai-antipatterns/SKILL.md core/skills/api-contract/SKILL.md core/skills/craft/SKILL.md core/skills/review-pro-synthesize/SKILL.md
+45,d59ba6094,"feat: adopt the approval standard, lockfile review, and name",P1,,triggered,core/shared/severity.md,core/skills/review-pro-synthesize/SKILL.md
+50,4315bf74c,refactor: one closed subcategory list per reviewer (#44),C4,,triggered,docs/llms.txt,core/agents/a11y-reviewer.md core/agents/ai-antipatterns-reviewer.md core/agents/api-contract-reviewer.md core/agents/backend-reviewer.md ...
+50,4315bf74c,refactor: one closed subcategory list per reviewer (#44),C5,,triggered,cli/README.md,core/agents/a11y-reviewer.md core/agents/ai-antipatterns-reviewer.md core/agents/api-contract-reviewer.md core/agents/backend-reviewer.md ...
+50,4315bf74c,refactor: one closed subcategory list per reviewer (#44),C7,,held-by-file,,core/shared/output-schema.md
+53,0bef451ec,refactor(cli): decompose diagnose to cut cognitive complexit,C3,,triggered,.claude-plugin/marketplace.json core/.claude-plugin/plugin.json core/.codex-plugin/plugin.json .cursor-plugin/plugin.json,cli/package.json
+61,568672b67,feat: complete the closed category lists (ADR-0007),C4,,triggered,docs/llms.txt,core/skills/ai-antipatterns/SKILL.md core/skills/api-contract/SKILL.md core/skills/security/SKILL.md
+61,568672b67,feat: complete the closed category lists (ADR-0007),C5,,triggered,cli/README.md,core/skills/ai-antipatterns/SKILL.md core/skills/api-contract/SKILL.md core/skills/security/SKILL.md
+62,9c50836a7,release: v1.3.0,C3,,triggered,.cursor-plugin/plugin.json,cli/package.json
+63,575f504f4,chore(deps-dev): bump the dev-dependencies group in /cli wit,C3,,triggered,.claude-plugin/marketplace.json core/.claude-plugin/plugin.json core/.codex-plugin/plugin.json .cursor-plugin/plugin.json,cli/package.json
+71,72712f698,feat(security): calibrate severity and sharpen the security ,C2,ai-ml,held-by-file,,stacks/ai-ml/security.md
+71,72712f698,feat(security): calibrate severity and sharpen the security ,C2,capacitor,held-by-file,,stacks/capacitor/security.md
+71,72712f698,feat(security): calibrate severity and sharpen the security ,C2,dotnet,held-by-file,,stacks/dotnet/security.md
+71,72712f698,feat(security): calibrate severity and sharpen the security ,C2,go,held-by-file,,stacks/go/security.md
+71,72712f698,feat(security): calibrate severity and sharpen the security ,C2,node,held-by-file,,stacks/node/security.md
+71,72712f698,feat(security): calibrate severity and sharpen the security ,C2,php,held-by-file,,stacks/php/security.md
+71,72712f698,feat(security): calibrate severity and sharpen the security ,C2,python,held-by-file,,stacks/python/security.md
+71,72712f698,feat(security): calibrate severity and sharpen the security ,C2,rust,held-by-file,,stacks/rust/security.md
+71,72712f698,feat(security): calibrate severity and sharpen the security ,C2,swift,held-by-file,,stacks/swift/security.md
+71,72712f698,feat(security): calibrate severity and sharpen the security ,C2,typescript-react,held-by-file,,stacks/typescript-react/security.md
+71,72712f698,feat(security): calibrate severity and sharpen the security ,C2,wordpress,held-by-file,,stacks/wordpress/security.md
+71,72712f698,feat(security): calibrate severity and sharpen the security ,C4,,triggered,docs/llms.txt,core/skills/security/SKILL.md
+71,72712f698,feat(security): calibrate severity and sharpen the security ,C5,,triggered,cli/README.md,core/skills/security/SKILL.md
+74,8649dad1c,feat: verify each Medium+ finding by trying to refute it (AD,C4,,triggered,docs/llms.txt,core/agents/review-pro-synthesize-subagent.md core/agents/review-pro-verify-subagent.md core/skills/review-pro-synthesize/SKILL.md core/skills/review-pro-verify/SKILL.md ...
+74,8649dad1c,feat: verify each Medium+ finding by trying to refute it (AD,C5,,triggered,cli/README.md,core/agents/review-pro-synthesize-subagent.md core/agents/review-pro-verify-subagent.md core/skills/review-pro-synthesize/SKILL.md core/skills/review-pro-verify/SKILL.md ...
+74,8649dad1c,feat: verify each Medium+ finding by trying to refute it (AD,C6,,triggered,docs/llms.txt cli/README.md cli/package.json CONTRIBUTING.md docs-src/i18n/*.json,manifest.json
+74,8649dad1c,feat: verify each Medium+ finding by trying to refute it (AD,P1,,triggered,core/shared/severity.md,core/skills/review-pro-synthesize/SKILL.md
+75,4f750ddc4,fix(verify): clear the Lows deferred from the #74 review,C4,,triggered,docs/llms.txt,core/agents/review-pro-synthesize-subagent.md core/skills/review-pro-synthesize/SKILL.md core/skills/review-pro-verify/SKILL.md core/skills/review-pro/SKILL.md
+75,4f750ddc4,fix(verify): clear the Lows deferred from the #74 review,C5,,triggered,cli/README.md,core/agents/review-pro-synthesize-subagent.md core/skills/review-pro-synthesize/SKILL.md core/skills/review-pro-verify/SKILL.md core/skills/review-pro/SKILL.md
+75,4f750ddc4,fix(verify): clear the Lows deferred from the #74 review,P1,,triggered,core/shared/severity.md,core/skills/review-pro-synthesize/SKILL.md
+76,4fd2c6f2c,release: v1.4.0,C3,,held-by-file,,cli/package.json
+76,4fd2c6f2c,release: v1.4.0,C4,,held-by-file,,core/shared/severity.md core/skills/review-pro-synthesize/SKILL.md
+76,4fd2c6f2c,release: v1.4.0,C5,,held-by-file,,core/shared/severity.md core/skills/review-pro-synthesize/SKILL.md
+76,4fd2c6f2c,release: v1.4.0,P1,,held-by-file,,core/skills/review-pro-synthesize/SKILL.md
+78,0d0cc7c2b,"feat: coverage accounting, report which files the review rea",C1,,held-by-file,,docs-src/i18n/de.json docs-src/i18n/en.json docs-src/i18n/fr.json docs-src/i18n/hi.json ...
+78,0d0cc7c2b,"feat: coverage accounting, report which files the review rea",C4,,held-by-file,,core/agents/a11y-reviewer.md core/agents/ai-antipatterns-reviewer.md core/agents/api-contract-reviewer.md core/agents/backend-reviewer.md ...
+78,0d0cc7c2b,"feat: coverage accounting, report which files the review rea",C5,,held-by-file,,core/agents/a11y-reviewer.md core/agents/ai-antipatterns-reviewer.md core/agents/api-contract-reviewer.md core/agents/backend-reviewer.md ...
+78,0d0cc7c2b,"feat: coverage accounting, report which files the review rea",C7,,held-by-file,,core/shared/output-schema.md
+78,0d0cc7c2b,"feat: coverage accounting, report which files the review rea",P1,,triggered,core/shared/severity.md,core/skills/review-pro-synthesize/SKILL.md
+79,2b9641e64,"docs: item 2 measured, not built; clear the #78 coverage Low",C4,,triggered,docs/llms.txt,core/skills/review-pro-synthesize/SKILL.md
+79,2b9641e64,"docs: item 2 measured, not built; clear the #78 coverage Low",C5,,triggered,cli/README.md,core/skills/review-pro-synthesize/SKILL.md
+79,2b9641e64,"docs: item 2 measured, not built; clear the #78 coverage Low",P1,,triggered,core/shared/severity.md,core/skills/review-pro-synthesize/SKILL.md

@@ -47,7 +47,7 @@ npm test          # vitest
 ## Before you open a PR
 
 ```bash
-./scripts/validate.sh          # frontmatter, sections, manifest, cross-references
+./scripts/validate.sh          # frontmatter, sections, manifest, cross-references, .review-pro/rules.md format
 bash scripts/validate.test.sh  # validator's own tests
 cd cli && npm test             # CLI tests
 ```

@@ -75,7 +75,7 @@ npx review-pro uninstall --target opencode   # or claude-code | codex | all | au
 
 Add `-y` to skip the confirmation prompt (CI).
 
-Stack packs (`.review-pro/`) live in your repo and are **not** touched — remove them with `npx review-pro remove <stack>` or `rm -rf .review-pro`. Cursor manages its own plugins: run `/remove-plugin review-pro` in Cursor.
+Stack packs (`.review-pro/`) live in your repo and are **not** touched — remove one with `npx review-pro remove <stack>`. Do not delete the whole folder: it can also hold your repository's own `.review-pro/rules.md`, the rules every review checks (see the [repository README](https://github.com/tufantunc/review-pro#repository-rules)). Cursor manages its own plugins: run `/remove-plugin review-pro` in Cursor.
 
 ## Requirements & license
 

@@ -25,7 +25,7 @@ node dist/cli.js init
 npx review-pro uninstall --target opencode   # removes core skills + agents from $OPENCODE_HOME
 ```
 
-Mirrors `init`'s `--target` logic (`all` / `auto` / comma-list). Removes every `core/skills/<name>/` and `core/agents/*.md` `init` copied into `$OPENCODE_HOME`; leaves your own skills/agents and the `skills/`/`agents/` dirs themselves untouched. Stack packs (`.review-pro/`) are repo-local — `npx review-pro remove <stack>` or `rm -rf .review-pro`.
+Mirrors `init`'s `--target` logic (`all` / `auto` / comma-list). Removes every `core/skills/<name>/` and `core/agents/*.md` `init` copied into `$OPENCODE_HOME`; leaves your own skills/agents and the `skills/`/`agents/` dirs themselves untouched. Stack packs (`.review-pro/`) are repo-local: remove one with `npx review-pro remove <stack>`, not by deleting the folder, which can also hold the repository's own `.review-pro/rules.md`.
 
 ## Install stacks (per repo)
 

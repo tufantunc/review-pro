@@ -209,7 +209,7 @@ mkdir -p .review-pro &amp;&amp; cp -R stacks/python .review-pro/python</code></p
     <p class="note">CLI 只是自动化了这些复制（外加 Codex 的 <code>.md</code>→<code>.toml</code> 转换与版本追踪）。手动安装与 CLI 安装等价。</p>
 
     <h2 id="stack-packs">技术栈包</h2>
-    <p>技术栈包在审查时，把语言/框架相关的信号叠加到审查者之上。把仓库用到的包安装进其 <code>.review-pro/</code>。框架/领域包可在某个语言包之上组合。</p>
+    <p>技术栈包在审查时，把语言/框架相关的信号叠加到审查者之上。把仓库用到的包安装进其 <code>.review-pro/</code>。框架/领域包可在某个语言包之上组合。除技术栈包之外，仓库还可以维护自己的 <code>.review-pro/rules.md</code>：例如“X 改动时 Y 也必须改动”这样的规则，每次审查都会从合并基点读取，并逐条报告结果。</p>
     <pre class="cmd"><code>npx review-pro                <span class="cmt"># interactive multi-select</span>
 npx review-pro add python     <span class="cmt"># one pack, CI-safe</span>
 npx review-pro list           <span class="cmt"># catalog + installed + drift</span></code></pre>

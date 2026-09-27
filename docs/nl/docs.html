@@ -206,7 +206,7 @@ mkdir -p .review-pro &amp;&amp; cp -R stacks/python .review-pro/python</code></p
     <p class="note">De CLI automatiseert alleen deze kopieën (plus de Codex <code>.md</code>→<code>.toml</code>-transformatie en versie-tracking). Handmatige en CLI-installaties zijn equivalent.</p>
 
     <h2 id="stack-packs">Stack-pakketten</h2>
-    <p>Pakketten schakelen taal-/framework-specifieke signalen op de reviewers tijdens de review. Installeer de pakketten die een repo gebruikt in diens <code>.review-pro/</code>. Framework-/domein-pakketten combineren bovenop een taalpakket.</p>
+    <p>Pakketten schakelen taal-/framework-specifieke signalen op de reviewers tijdens de review. Installeer de pakketten die een repo gebruikt in diens <code>.review-pro/</code>. Framework-/domein-pakketten combineren bovenop een taalpakket. Naast de pakketten kan een repo een eigen <code>.review-pro/rules.md</code> bijhouden: regels als ‘als X verandert, moet Y ook veranderen’, die elke review uit de merge-basis leest en regel voor regel rapporteert.</p>
     <pre class="cmd"><code>npx review-pro                <span class="cmt"># interactive multi-select</span>
 npx review-pro add python     <span class="cmt"># one pack, CI-safe</span>
 npx review-pro list           <span class="cmt"># catalog + installed + drift</span></code></pre>

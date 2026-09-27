@@ -206,7 +206,7 @@ mkdir -p .review-pro &amp;&amp; cp -R stacks/python .review-pro/python</code></p
     <p class="note">La CLI se contente d'automatiser ces copies (plus la transformation Codex <code>.md</code>→<code>.toml</code> et le suivi de version). Les installations manuelle et par CLI sont équivalentes.</p>
 
     <h2 id="stack-packs">Packs de stack</h2>
-    <p>Les packs ajoutent aux relecteurs, au moment de la revue, des signaux propres au langage/framework. Installe ceux qu'un dépôt utilise dans son <code>.review-pro/</code>. Les packs de framework/domaine se composent sur un pack de langage.</p>
+    <p>Les packs ajoutent aux relecteurs, au moment de la revue, des signaux propres au langage/framework. Installe ceux qu'un dépôt utilise dans son <code>.review-pro/</code>. Les packs de framework/domaine se composent sur un pack de langage. À côté des packs, un dépôt peut tenir son propre <code>.review-pro/rules.md</code> : des règles comme « quand X change, Y doit changer aussi », que chaque revue lit depuis la base de fusion et rapporte règle par règle.</p>
     <pre class="cmd"><code>npx review-pro                <span class="cmt"># interactive multi-select</span>
 npx review-pro add python     <span class="cmt"># one pack, CI-safe</span>
 npx review-pro list           <span class="cmt"># catalog + installed + drift</span></code></pre>

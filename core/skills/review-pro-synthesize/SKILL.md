@@ -6,13 +6,13 @@ version: 0.1.0
 
 # Review-Pro Synthesis (Stage 3)
 
-You are the orchestrator's final stage. You receive the structured findings from all dispatched reviewers, plus `diff_class`, `changed_files`, `spec_source`, `external_premises`, `premises_dropped`, and each dispatched reviewer's `context.changed_files` from triage's dispatch plan, and produce ONE unified review.
+You are the orchestrator's final stage. You receive the structured findings from all dispatched reviewers, plus `diff_class`, `changed_files`, `spec_source`, `external_premises`, `premises_dropped`, `repository_rules`, `rules_dropped`, and each dispatched reviewer's `context.changed_files` from triage's dispatch plan, and produce ONE unified review.
 
 ## Steps
 1. **Collect** all finding blocks from the dispatched reviewers. Set aside each code reviewer's `## Files examined` block for **Coverage**: it is not a finding, so it is never deduped or ranked.
-2. **Dedup** by `(file, line±5, category-root, overlap_hints)`: the same issue flagged by multiple reviewers collapses into one.
+2. **Dedup** by `(file, line±5, category-root, overlap_hints)`: the same issue flagged by multiple reviewers collapses into one. A merge of a finding citing `.review-pro/rules.md` with one that does not drops the rules citation, so the Medium cap in Resolve conflicts never lowers evidence that stood without the rule.
 3. **Weight:** annotate a finding flagged by 2 or more reviewers "flagged by N reviewers". It is a note about coverage, not evidence: see `## Verification`.
-4. **Resolve conflicts** by ownership: the domain owner sets severity (see table).
+4. **Resolve conflicts** by ownership: the domain owner sets severity (see table). A finding citing `.review-pro/rules.md` is capped at Medium here, before verification selects anything: see `## Repository rules`.
 5. **Verification results**: the orchestrator verifies the merged Medium+ code findings at this point and hands you the results. Apply them as `## Verification` says before going on.
 6. **Calibrate severity:** enforce the anti-overreporting bar. Downgrade anything not fully traced to evidence. Never upgrade beyond what a specialist justified. A verified finding is not recalibrated: see `## Verification`.
 7. **Out-of-diff evidence check** (see below): a review-level confidence signal, not a per-finding gate.
@@ -23,7 +23,7 @@ When you run inline, the orchestrator runs **Collect** through **Resolve conflic
 
 ## Out-of-diff evidence check
 
-Count the **code-axis findings only** whose `evidence_refs` name at least one path **not** in triage's `changed_files`: a caller, an existing guard, a canonical helper, a schema, an upstream source. A finding with no `evidence_refs` does not count toward the total.
+Count the **code-axis findings only** whose `evidence_refs` name at least one path **not** in triage's `changed_files`: a caller, an existing guard, a canonical helper, a schema, an upstream source. A finding with no `evidence_refs` does not count toward the total. A reference to `.review-pro/rules.md` does not count toward it either: a rule is the maintainer's claim, not code the review read.
 
 Spec-axis findings are excluded from this count and it is not a detail. A spec finding's evidence is the spec document or issue, which is outside the diff in the `issue` and `pr-body` cases and may well be inside it for a `file` source (a design doc committed alongside its implementation). Either way the exclusion holds: counting spec findings would satisfy this check on most reviews where the axis ran and quietly disable it.
 
@@ -116,6 +116,27 @@ If triage reported a premise that appears in no reviewer's block, print the row 
 
 The out-of-diff evidence check needs no exception here. Its definition already counts an upstream source as out-of-diff evidence, and these are code-axis findings, so a premise finding satisfies the tripwire because the review genuinely left the diff.
 
+## Repository rules
+
+Triage's `repository_rules` lists every rule from `.review-pro/rules.md`, read at the merge base, that the change matched. Omit the whole section when triage emitted no `repository_rules`, and omit the table when `rows` is empty, keeping only the lines beneath it that apply. Otherwise print one table after the External premises table and before the findings: it is review-level context, like the premises.
+
+```
+### Repository rules (from .review-pro/rules.md at <merge-base sha>)
+| Rule | Matched | Owner | Outcome |
+```
+
+- One row per entry in `rows`. `Rule` is the id and the rule sentence; `Matched` is the matched files and, for a co-change rule, the expected files that did not change.
+- A `judge` row takes its outcome from its owner's `## Repository rules` block: `violated: <category>`, pointing at the finding filed with it, or `held: <because>`.
+- A `no-target` row reads `then paths not found at the merge base or in this change`: the rule can no longer fire and needs updating.
+- A `changed-alongside` row reads `changed alongside, not judged`: its expected files changed, and nobody checked that they changed enough.
+- A `judge` row that appears in no owner's block reads `not reported (<owner>)`. A missing report is never rendered as `held`: a rule routed to a reviewer that then said nothing is a contract violation, and it must not be the quietest line in the report.
+- Beneath the table, outside it, print `<n> rules dropped by triage's cap; never judged.` when `rules_dropped` is above zero.
+- Beneath the table, outside it, print `.review-pro/rules.md changed in this change; the review used the merge base's version.` when `file_changed` is `changed`.
+- When `file_changed` is `added`, print `.review-pro/rules.md is new in this change; its rules apply from the next change.` in place of the table.
+- A finding citing `.review-pro/rules.md` is capped at Medium in Resolve conflicts, before verification selects anything, so the verified-severity freeze never meets an uncapped rule finding: a rules file is not a trusted source, and a rule must not be able to block a change on its own authority. An owner whose own rubric justifies more files that as a separate finding without the rule citation. When dedup merges a finding citing `.review-pro/rules.md` with one that does not, the merged finding drops the rules citation (see Dedup) and keeps the severity of the one that does not.
+- A rule citation does not count for the out-of-diff evidence check: see that section.
+- A `held` row removes nothing, and no row changes a finding its owner did not file.
+
 ## Verification
 
 The orchestrator's Verification step selects the findings to verify and owns the rule and the cap. You receive one reply block per verified finding; a finding it selected past the cap arrives as `not verified (cap)`, and spec-axis findings are never verified.
@@ -199,6 +220,8 @@ Verification: <N> checked (<a> stand, <b> partly refuted, <c> refuted), <M> not 
 > the out-of-diff caveat, when it applies, goes here: after spec_source, before findings
 
 > the External premises table, when triage emitted premises, goes here: after the caveat, before findings
+
+> the Repository rules table, when triage emitted rules, goes here: after the External premises table
 
 ### Critical
 - [Critical] src/api/orders.ts:42 — missing ownership check

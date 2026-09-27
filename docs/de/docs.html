@@ -206,7 +206,7 @@ mkdir -p .review-pro &amp;&amp; cp -R stacks/python .review-pro/python</code></p
     <p class="note">Die CLI automatisiert nur diese Kopien (plus die Codex <code>.md</code>→<code>.toml</code>-Transformation und Versionsverfolgung). Manuelle und CLI-Installationen sind gleichwertig.</p>
 
     <h2 id="stack-packs">Stack-Pakete</h2>
-    <p>Pakete schichten sprach-/frameworkspezifische Signale zur Prüfzeit auf die Prüfer. Installiere die, die ein Repo nutzt, in dessen <code>.review-pro/</code>. Framework-/Domain-Pakete setzen auf einem Sprachpaket auf.</p>
+    <p>Pakete schichten sprach-/frameworkspezifische Signale zur Prüfzeit auf die Prüfer. Installiere die, die ein Repo nutzt, in dessen <code>.review-pro/</code>. Framework-/Domain-Pakete setzen auf einem Sprachpaket auf. Neben den Paketen kann ein Repo eine eigene <code>.review-pro/rules.md</code> führen: Regeln wie „wenn sich X ändert, muss sich auch Y ändern“, die jede Prüfung aus der Merge-Basis liest und Regel für Regel berichtet.</p>
     <pre class="cmd"><code>npx review-pro                <span class="cmt"># interactive multi-select</span>
 npx review-pro add python     <span class="cmt"># one pack, CI-safe</span>
 npx review-pro list           <span class="cmt"># catalog + installed + drift</span></code></pre>

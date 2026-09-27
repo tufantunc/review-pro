@@ -974,8 +974,9 @@ fi
 # validate-repo-rules.sh: repository rules (roadmap item 3, ADR-0011), the triage, orchestrator,
 # verifier, synthesis, schema and owner-rubric checks. validate-stack-signals.sh: stack packs read
 # from the merge base (ADR-0012), the triage, orchestrator, verifier and synthesis checks.
+# validate-dispatch.sh: the orchestrator starts every agent in one step (roadmap item 4).
 HERE_SH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-for part in "validate-repo-rules.sh:repository-rules" "validate-stack-signals.sh:stack-signals"; do
+for part in "validate-repo-rules.sh:repository-rules" "validate-stack-signals.sh:stack-signals" "validate-dispatch.sh:dispatch"; do
   f="${part%%:*}"
   if [[ -f "$HERE_SH/$f" ]]; then
     source "$HERE_SH/$f"

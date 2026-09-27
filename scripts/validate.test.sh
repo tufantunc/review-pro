@@ -341,8 +341,10 @@ description: "orchestrator"
 # Review-Pro
 Dedup the spec pool on the quoted requirement.
 ### External premises
-Invoke one `review-pro-verify-subagent` per selected finding.
+2. **Invoke the `<reviewer>-reviewer` subagents**, every reviewer in the plan, all in one step: in parallel if your platform allows, else sequentially. Wait until every one has returned before you go on, and do not run them as background tasks that each report back on their own: every separate return starts a new turn that re-reads your whole context. Each prompt contains:
+2. **Invoke one `review-pro-verify-subagent` per selected finding**, all in one step: in parallel if your platform allows, else sequentially. Wait until every one has returned before you go on, and do not run them as background tasks that each report back on their own: every separate return starts a new turn that re-reads your whole context. Its prompt contains:
 `### Diff`: first line `base: <sha>`.
+Collect each `review-pro-verify-subagent` reply.
 The sha is the merge base, from `git merge-base <base> HEAD`.
 `### Written by`: the reviewer that wrote it. Never how many reviewers flagged it.
 If the verify subagent is unavailable, do **not** verify inline.
@@ -1387,6 +1389,12 @@ stage_mutation "$ORC" w_orch "the base line is gone"               "orchestrator
 stage_mutation "$ORC" w_orch "the base is not the merge base"       "orchestrator merge-base"         grep -vF 'git merge-base <base> HEAD'
 stage_mutation "$ORC" w_orch "re-runs the merge after verification" "orchestrator re-merge"           sed 's/calibrate and emit the verdict/dedup, calibrate and emit the verdict/'
 stage_mutation "$ORC" w_orch "a numbered reference to a review-pro-synthesize step" "orchestrator numbered synthesize step" sed 's/skill from \*\*Verification results\*\*/skill from step 5/'
+# Dispatch in one step, never as background tasks that each return on their own (roadmap item 4).
+stage_mutation "$ORC" w_orch "the reviewer dispatch no longer starts every agent in one step" "orchestrator reviewer one-step" sed 's/subagents\*\*, every reviewer in the plan, all in one step: .* Each prompt contains:/subagent** - in parallel\/background if your platform allows, else sequentially. Its prompt contains:/'
+stage_mutation "$ORC" w_orch "the verifier dispatch no longer starts every agent in one step" "orchestrator verifier one-step" sed 's/per selected finding\*\*, all in one step: .* Its prompt contains:/per selected finding**, in parallel if your platform allows, else sequentially. Its prompt contains:/'
+stage_mutation "$ORC" w_orch "asks for background dispatch" "orchestrator background dispatch" sed 's/whole context\. Each prompt contains:/whole context. Run them in the background. Each prompt contains:/'
+stage_mutation "$ORC" w_orch "the reviewer dispatch line is gone" "orchestrator reviewer dispatch line" grep -vF '**Invoke the `<reviewer>-reviewer` subagent'
+stage_mutation "$ORC" w_orch "the verifier dispatch line is gone" "orchestrator verifier dispatch line" grep -vF '**Invoke one `review-pro-verify-subagent` per selected finding**'
 rm -rf "$T"
 
 # Case AQ: the shared verdict table. It is the copy the README points readers to and the
@@ -1688,7 +1696,10 @@ out=$(bash "$V/validate.sh" "$T" 2>&1); rc=$?
 if [[ "$rc" -ne 0 ]] && echo "$out" | grep -q "validate-stack-signals.sh could not be sourced" && ! echo "$out" | grep -q "^OK:"; then ok "missing stack-signals file fails the run"; else bad "missing stack-signals file does not fail the run (rc=$rc)"; fi
 cp "$(dirname "$VALIDATE")/validate-stack-signals.sh" "$V/"
 out=$(bash "$V/validate.sh" "$T" 2>&1); rc=$?
-if [[ "$rc" -eq 0 ]]; then ok "BD control: the same tree passes with both files present"; else bad "BD control: the same tree fails with both files present (rc=$rc)"; fi
+if [[ "$rc" -ne 0 ]] && echo "$out" | grep -q "validate-dispatch.sh could not be sourced" && ! echo "$out" | grep -q "^OK:"; then ok "missing dispatch file fails the run"; else bad "missing dispatch file does not fail the run (rc=$rc)"; fi
+cp "$(dirname "$VALIDATE")/validate-dispatch.sh" "$V/"
+out=$(bash "$V/validate.sh" "$T" 2>&1); rc=$?
+if [[ "$rc" -eq 0 ]]; then ok "BD control: the same tree passes with every file present"; else bad "BD control: the same tree fails with every file present (rc=$rc)"; fi
 # An empty canonical line would make the orchestrator pins on it pass vacuously.
 sed "s/^PACK_DATA_LINE='.*'$/PACK_DATA_LINE=''/" "$V/validate.sh" > "$V/v2.sh"; mv "$V/v2.sh" "$V/validate.sh"
 out=$(bash "$V/validate.sh" "$T" 2>&1); rc=$?

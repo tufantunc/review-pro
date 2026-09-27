@@ -1,0 +1,10 @@
+== c39: total 1.95M  wall 327s  main turns 1  check match
+   shares: reviewer 64%, main: triage 15%, main: synthesis 8%, main: dispatch+merge 6%, verify 5%, auxiliary model 2%
+   reviewers 7 (code 6), verifiers 1; reviewer share 64%, main share 28%, verify share 5%; re-read 0%, fixed overhead 62%
+   post hoc: 0 waiting turns in the main thread, 0% of the total
+   stage rules firing: ['S-dispatch', 'S-overhead']
+== c53: total 2.29M  wall 345s  main turns 1  check match
+   shares: reviewer 63%, main: triage 11%, verify 9%, main: dispatch+merge 9%, main: synthesis 8%
+   reviewers 7 (code 6), verifiers 3; reviewer share 63%, main share 28%, verify share 9%; re-read 0%, fixed overhead 52%
+   post hoc: 0 waiting turns in the main thread, 0% of the total
+   stage rules firing: ['S-dispatch', 'S-overhead']

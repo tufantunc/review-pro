@@ -88,4 +88,4 @@ Stack packs (`.review-pro/`) live in your repo and are **not** touched — remov
 
 `security` · `correctness` · `craft` · `ai-antipatterns` · `dry` · `performance` · `backend` · `frontend` · `a11y` · `db` · `api-contract` · `tests` · `spec`
 
-The **`ai-antipatterns`** reviewer is first-class: hallucinated APIs/symbols/imports, invented config/env keys, needless dependencies, and ignored existing helpers — the failure modes that come from code being written by an agent rather than a person.
+The **`ai-antipatterns`** reviewer is first-class. It owns the failure modes that come from code being written by an agent rather than a person: ignored existing helpers, needless dependencies, invented config/env keys, and hallucinated APIs/symbols/imports.

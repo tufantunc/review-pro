@@ -1,6 +1,6 @@
 ---
 name: ai-antipatterns
-description: "Audit for AI-written-code anti-patterns: hallucinated APIs/symbols/imports, invented config/env keys, needless dependencies, over-engineering, ignored existing conventions/helpers. Use for AI code review, hallucination check, over-engineering or ignored-conventions audit of a diff."
+description: "Audit for AI-written-code anti-patterns: ignored existing conventions/helpers, needless dependencies, over-engineering, invented config/env keys, hallucinated APIs/symbols/imports. Use for AI code review, ignored-conventions, over-engineering or hallucination audit of a diff."
 version: 0.1.0
 ---
 

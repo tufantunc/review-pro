@@ -1,0 +1,81 @@
+{
+ "label": "P3-a2-probe",
+ "exit": 0,
+ "agents": [
+  "a11y-reviewer",
+  "ai-antipatterns-reviewer",
+  "api-contract-reviewer",
+  "backend-reviewer",
+  "claude",
+  "correctness-reviewer",
+  "craft-reviewer",
+  "db-reviewer",
+  "dry-reviewer",
+  "Explore",
+  "frontend-reviewer",
+  "general-purpose",
+  "performance-reviewer",
+  "Plan",
+  "review-pro-synthesize-subagent",
+  "review-pro-triage-subagent",
+  "review-pro-verify-subagent",
+  "security-reviewer",
+  "spec-reviewer",
+  "statusline-setup",
+  "tests-reviewer"
+ ],
+ "skills": [
+  "a11y",
+  "ai-antipatterns",
+  "api-contract",
+  "backend",
+  "correctness",
+  "craft",
+  "db",
+  "dry",
+  "frontend",
+  "performance",
+  "review-pro",
+  "review-pro-synthesize",
+  "review-pro-triage",
+  "review-pro-verify",
+  "security",
+  "spec",
+  "tests",
+  "deep-research",
+  "design",
+  "design-sync",
+  "dataviz",
+  "update-config",
+  "verify",
+  "debug",
+  "code-review",
+  "simplify",
+  "batch",
+  "fewer-permission-prompts",
+  "doctor",
+  "loop",
+  "schedule",
+  "claude-api",
+  "workflow-authoring",
+  "run",
+  "run-skill-generator"
+ ],
+ "plugins": [
+  "agents-md",
+  "telemetry"
+ ],
+ "mcp_servers": [
+  {
+   "name": "findings",
+   "status": "connected",
+   "source": "dynamic"
+  }
+ ],
+ "permission_denials": [],
+ "result": "(1) One line starts with CANARY: `CANARY-A2-SKILL-PROJECT-v150-Q7`. Two lines contain \"all in one step\". In section 3: `2. **Invoke the `<reviewer>-reviewer` subagents**, every reviewer in the plan, all in one step: in parallel if your platform allows, else sequentially. Wait until every one has returned before you go on, and do not run them as background tasks that each report back on their own: every separate return starts a new turn that re-reads your whole context. Each prompt contains:` In section 4: `2. **Invoke one `review-pro-verify-subagent` per selected finding**, all in one step: in parallel if your platform allows, else sequentially. Wait until every one has returned before you go on, and do not run them as background tasks that each report back on their own: every separate return starts a new turn that re-reads your whole context. Its prompt contains:`\n(2) No. The exact phrase \"in parallel/background\" isn't there. The text only has \"in parallel if your platform allows\" and \"do not run them as background tasks\" as separate phrases.\n(3) The subagent's reply, verbatim: NONE. No line of my instructions starts with \"CANARY\". The string does appear once, at the end of the first line of my system prompt: `You are Claude Code, Anthropic's official CLI for Claude, running within the Claude Agent SDK.CANARY-A2-AGENT-PROJECT-v150-K4` The token on its own is `CANARY-A2-AGENT-PROJECT-v150-K4`.",
+ "mcp_partial": [
+  "stderr.txt",
+  "stream.jsonl"
+ ]
+}

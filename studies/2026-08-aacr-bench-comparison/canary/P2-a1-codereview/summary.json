@@ -1,0 +1,57 @@
+{
+ "label": "P2-a1-codereview",
+ "exit": 0,
+ "agents": [
+  "claude",
+  "Explore",
+  "general-purpose",
+  "Plan",
+  "statusline-setup"
+ ],
+ "skills": [
+  "deep-research",
+  "design",
+  "design-sync",
+  "dataviz",
+  "update-config",
+  "verify",
+  "debug",
+  "code-review",
+  "simplify",
+  "batch",
+  "fewer-permission-prompts",
+  "doctor",
+  "loop",
+  "schedule",
+  "claude-api",
+  "workflow-authoring",
+  "run",
+  "run-skill-generator"
+ ],
+ "plugins": [
+  "agents-md",
+  "telemetry"
+ ],
+ "mcp_servers": [
+  {
+   "name": "findings",
+   "status": "connected",
+   "source": "dynamic"
+  }
+ ],
+ "permission_denials": [
+  {
+   "tool_name": "Bash",
+   "tool_use_id": "toolu_01CaVsj7h654gMHw2RqhB4po",
+   "tool_input": {
+    "command": "git diff eeabb70e628e07fe60a42f6de1963c6eb6a1988d...4916b3a21a4b7135b65daf4268d9232ced7d6707 && git ls-files && find . -name CLAUDE.md -not -path './.git/*'; ls ~/.claude/CLAUDE.md 2>/dev/null",
+    "description": "Show diff and list files"
+   }
+  }
+ ],
+ "result": "I found 5 issues in the one changed file, `calc.py`. The main one is an off-by-one in `total()`: it never adds the first element, and `mean()` inherits that. This review ran without a verification pass, as the recipe specifies. No CLAUDE.md applies to this repo, and nothing else in it calls `total` or `mean`.\n\n```json\n[\n  {\n    \"file\": \"calc.py\",\n    \"line\": 3,\n    \"summary\": \"total() loops over range(1, len(items)), so it always skips items[0] and returns the wrong sum.\",\n    \"failure_scenario\": \"total([5, 1, 2]) returns 3 instead of 8; total([7]) returns 0 instead of 7.\"\n  },\n  {\n    \"file\": \"calc.py\",\n    \"line\": 8,\n    \"summary\": \"mean() uses the broken total(), so every result is too small by items[0]/len(items).\",\n    \"failure_scenario\": \"mean([10, 20, 30]) returns 50/3 \u2248 16.67 instead of 20.0; mean([4]) returns 0.0 instead of 4.0.\"\n  },\n  {\n    \"file\": \"calc.py\",\n    \"line\": 8,\n    \"summary\": \"mean() raises ZeroDivisionError on an empty sequence and has no guard or clear error for it.\",\n    \"failure_scenario\": \"mean([]) raises an uncaught ZeroDivisionError, which crashes any caller that averages an empty result set.\"\n  },\n  {\n    \"file\": \"calc.py\",\n    \"line\": 3,\n    \"summary\": \"The rewrite drops support for arbitrary iterables: the old `for i in items` worked on any iterable, but the new code needs len() and indexing.\",\n    \"failure_scenario\": \"total(x for x in data) raises TypeError: object of type 'generator' has no len(); total({1, 2, 3}) raises TypeError: 'set' object is not subscriptable. Both worked before this change.\"\n  },\n  {\n    \"file\": \"calc.py\",\n    \"line\": 1,\n    \"summary\": \"total() and mean() hand-roll what the builtin sum() and statistics.mean() already do.\",\n    \"failure_scenario\": \"The manual index loop is exactly where the off-by-one crept in. `return sum(items)` and `statistics.mean(items)` (which raises a clear StatisticsError on empty input) remove both the bug and the extra code.\"\n  }\n]\n```",
+ "mcp_partial": [
+  "stderr.txt",
+  "stream.jsonl"
+ ]
+}

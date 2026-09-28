@@ -1,0 +1,48 @@
+{
+ "label": "P1-a1-probe",
+ "exit": 0,
+ "agents": [
+  "claude",
+  "Explore",
+  "general-purpose",
+  "Plan",
+  "statusline-setup"
+ ],
+ "skills": [
+  "deep-research",
+  "design",
+  "design-sync",
+  "dataviz",
+  "update-config",
+  "verify",
+  "debug",
+  "code-review",
+  "simplify",
+  "batch",
+  "fewer-permission-prompts",
+  "doctor",
+  "loop",
+  "schedule",
+  "claude-api",
+  "workflow-authoring",
+  "run",
+  "run-skill-generator"
+ ],
+ "plugins": [
+  "agents-md",
+  "telemetry"
+ ],
+ "mcp_servers": [
+  {
+   "name": "findings",
+   "status": "connected",
+   "source": "dynamic"
+  }
+ ],
+ "permission_denials": [],
+ "result": "(1) The Skill tool returned an error: `<tool_use_error>Unknown skill: review-pro</tool_use_error>`\n\n(2) The Agent tool returned an error: `Agent type 'correctness-reviewer' not found. Available agents: claude, Explore, general-purpose, Plan, statusline-setup`\n\n(3) No.\n\n(4) No.",
+ "mcp_partial": [
+  "stderr.txt",
+  "stream.jsonl"
+ ]
+}

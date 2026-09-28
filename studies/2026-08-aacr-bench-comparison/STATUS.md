@@ -46,7 +46,7 @@ Read this first if you pick the study up. Updated at every gate and at the end o
 findings MCP server (connected), and `/code-review`, whose findings arrived through the framework's
 stdout-JSON path.
 
-**Adapter freeze: not ready,** for the same reasons. The freeze fills Amendment 2 item 12.
+**Adapter freeze: not ready,** for the same reasons. The freeze fills Amendment 2 item 13.
 
 ## Run log
 

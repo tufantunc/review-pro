@@ -2,6 +2,20 @@
 
 Read this first if you pick the study up. Updated at every gate and at the end of every run day.
 
+## 2026-09-30, after gate 2 decision 1: Amendment 3 committed; waiting on the go-ahead
+
+- **Amendment 3 committed.** `Bash(git ls-tree:*)` is in both arms' allowlist. Fork
+  `32d213c`; `git ls-tree` runs, and `git -C` and `gh` stay denied, checked with the pinned
+  binary.
+- **Duration estimate for the scored run,** 27 instances, from the smoke's measured wall time
+  including preparation: A1 97 s and A2 349 s per instance.
+  - **Review stage:** A1 about 45 to 65 min, A2 about 2.6 to 3.9 h. The high ends allow for the
+    smoke's small changes: the sample's median is 77 lines, against the smoke's 12 to 142.
+  - **Judge:** about 400 requests at about 7 s, 45 to 60 min.
+  - **Total machine time:** about 4.5 to 6 h.
+  - **Subscription load:** about 90 points of a five-hour window, so two sittings.
+- **Waiting on:** the maintainer's go-ahead for the scored run.
+
 ## 2026-09-30: gate 2 (smoke done, waiting on the maintainer before the scored run)
 
 **Freeze.** Fork `e899595` (Amendment 2 item 13, committed `8cb26e9`). Since the freeze, one

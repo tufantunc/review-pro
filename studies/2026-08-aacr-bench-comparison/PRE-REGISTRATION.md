@@ -623,6 +623,38 @@ run. The fork diff from `73e9b3f` is published.
 **Observed at freeze.** Claude Code auto-allows read-only shell commands such as `ls` in both arms,
 beyond the git allowlist. `gh`, WebFetch and WebSearch were confirmed denied.
 
+## Amendment 3, 2026-09-30: `git ls-tree` in both arms' allowlist
+
+Made after the smoke run and before any scored run, by the maintainer's decision at gate 2. It
+changes one thing, the same way for both arms. The hypotheses, endpoints, sample, judge, test and
+every other item of Amendment 2 stand.
+
+**The change.** `Bash(git ls-tree:*)` is added to Amendment 2 item 5's read-only git allowlist, in
+both arms.
+
+**Why.** In the smoke run, review-pro v1.5.0's own stack-signal step ran
+`git ls-tree -r --name-only <merge-base> .review-pro`, which reads the merge base's pack files
+(ADR-0012). It was denied, because the registered list lacked that read-only command. A1 made no
+such call. `git ls-tree` reads only objects already in the isolated instance repository, which
+holds nothing after head.
+
+**What stays closed.** `git -C <path>`, which the smoke also saw denied. Allowing it would let a
+session point git at the framework's clone cache, whose history runs past head. `gh`, WebFetch
+and WebSearch stay unavailable too (item 5).
+
+**Checked 2026-09-30** with the pinned 2.1.283 binary and the new list: `git ls-tree` ran;
+`git -C <path> log` and `gh --version` were denied.
+
+**Freeze table update (item 13).**
+
+| | |
+|---|---|
+| Fork commit | `32d213cf645bae4ae748922e74aedcb6960c5077`. On top of `e899595` it adds `b1c5283`, the post-smoke parse fallback (plumbing, published), and this amendment's allowlist change |
+| `study_isolation.py` | `1f9a888b9db59ef1e44e98cfaa803595e45ae2925bda60be6e79973143862444` |
+| `reviewers/claude_reviewpro.py` | `9169b536875f9613b4cffd0171c6320f8896f763ac4ca6c2a3efa74488e8ffaf` (`b1c5283`) |
+
+Every other file keeps its item 13 sha256.
+
 ## Conflict of interest
 
 The study author maintains review-pro. Same posture as the pilot: pre-committed

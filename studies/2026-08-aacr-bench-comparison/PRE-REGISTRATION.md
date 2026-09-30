@@ -572,14 +572,56 @@ things are checked there:
 The result is published before the smoke run. An instance that fails is an infrastructure
 failure and is logged. It is not re-sampled.
 
-### 13. Filled at freeze (before the smoke run)
+### 13. Filled at freeze (before the smoke run), 2026-09-30
 
 | Component | Pin |
 |---|---|
-| Fork branch + commit | `feat/review-pro-reviewer` @ *(at freeze)* |
-| Adapter file sha256s | *(at freeze)*. Files: `reviewers/claude_reviewpro.py`, `reviewers/claude.py`, `study_isolation.py` (the flags, the allowlist, the isolated instance repository with its leak and merge-base checks, transcript preservation), `tools/check_isolation.py` (item 12), `mcp_finding_server.py`, `hooks/on_stop_failure.py`, `config.py`, `pipeline.py`, `repo_utils.py`, `evaluate.py`, `judge.py`, `schema.py`, `converters/aacr_bench.py` |
+| Fork branch + commit | `tufantunc/aacr-bench` `feat/review-pro-reviewer` @ `e899595e2ebaf6fa05a7c7b79e6f574aaed60888` |
+| Claude Code binary, both arms | `2.1.283`, run from `evaluation/bin/claude-2.1.283` (sha256 `d8cb1e5c79684cc12a8bfc813e3a2073406921b6245744b3009be3ab5651d21e`, checked at start), named by `CLAUDE_BIN` in `tools/study_env.sh`. The CLI on `PATH` had updated itself to 2.1.285 on 2026-09-30, so the pinned binary is copied out of reach of the updater |
+| review-pro tarball | `evaluation/vendor/review-pro-1.5.0.tgz` (sha256 `291c90c396c68a78e1a78c79800dc580dda156bcad5054a299c530a6c4b9a716`; npm integrity as in item 1, checked before every run and every install) |
 | Sample file | `data/aacr_bench.jsonl` sha256 `a8bfbc86644c60243f43cf8f8ac0c603fb00837e16e8dc78e6b8491fb9c79455` |
-| Judge model id + endpoint | `glm-5.3` @ `https://api.z.ai/api/coding/paas/v4` (confirmed once the key is rotated) |
+| Logged infrastructure failures, skipped in both arms | `study_infra_failures.json`: #5, #13, #19 (`INFRA-FAILURES.md`) |
+| Judge model id + endpoint | `glm-5.3` @ `https://api.z.ai/api/coding/paas/v4`, confirmed by the one-pair probe before gate 2 |
+
+Adapter file sha256s, under `evaluation/`:
+
+| File | sha256 |
+|---|---|
+| `reviewers/claude_reviewpro.py` | `b3ddc75532f558e88b1d29634f0153dd9226ae56a2e993f9c6fe504e134ab0d9` |
+| `reviewers/claude.py` | `61942121fe98311695bb90dbbd5f782440a4e78f4447ba2f9fdc70a139249f0a` |
+| `study_isolation.py` | `2cae31a410882bc2ba78fb9901348f4e95bc7767fa34014dc25309d1e4ab132c` |
+| `tools/check_isolation.py` | `6bacb1e95385d4ab78f9095230b829607f8d887f3cbf4832425dbd7af5bfaeb6` |
+| `tools/study_env.sh` | `3ba28026f40621392e6988169b24a7ccdf9fa66b7984390b032464432e7fc44a` |
+| `study_infra_failures.json` | `2cdfdfa41c7ea397a01bffb50069518259866798b00f80f1d9e2dc1cfadb098c` |
+| `mcp_finding_server.py` | `328ef85186711c6b5a9c39771de6de47557254a262393b7967e6aac359c34b4e` |
+| `hooks/on_stop_failure.py` | `7c3157f70c54e3838cb87596385d1ed680bc5b40ad1c60c51310df53c83469b5` |
+| `config.py` | `d0ea689bb925187729bcd16e236c61dd565f850eefe57c268f9768d68130b79c` |
+| `pipeline.py` | `f31a10d30a5dd1c8d8fa74e58a340c66ad57c7dc5e12a7b41945c9b64d21a17e` |
+| `repo_utils.py` | `25ba5dc1933f7e3ececd27b1500179748c4d29e82e4ce46715b58b35216d2b09` |
+| `evaluate.py` | `4560edb9e0cb9bbe8978250c2f817ffd02743f1579f9273d54b17169b1a939a1` |
+| `judge.py` | `c5305284ae895d7d184a181bc3eb1ba6c3aee1d163cf37435138cd3dd7af663a` |
+| `schema.py` | `55310e814bbb649170a17acd5f76889ff032b81ce9722f5f3c26e04a809cb68f` |
+| `converters/aacr_bench.py` | `ff91d08efbfc72ad39d7b863eebeecb9bc653ab4f46dfed7ab1352fc479582d3` |
+
+**Plumbing between this amendment's lock (`4cfb950`) and the freeze.** All of it predates the smoke
+run. The fork diff from `73e9b3f` is published.
+- `433c304`:
+  - the shared `study_isolation.py`: flags, the allowlist, the isolated instance repository with
+    its checks, transcripts;
+  - A2's install from the tarball, its prompt and its report parse;
+  - `evaluate.py`'s `review-pro` mapping and the fail-fast on a silent mock judge;
+  - serial runs keep the seed order. Before this, the pipeline grouped instances by repository
+    even at concurrency 1, which would have broken the prefix rule;
+  - `tools/check_isolation.py`, and the parser tests.
+- `05aee87`: the cache's network fetch is skipped when both commits are cached, and a shallow
+  isolated repository is rejected.
+- `e899595`:
+  - the logged infrastructure failures are skipped in every arm;
+  - the pinned Claude Code binary;
+  - the tarball is checked before the first instance.
+
+**Observed at freeze.** Claude Code auto-allows read-only shell commands such as `ls` in both arms,
+beyond the git allowlist. `gh`, WebFetch and WebSearch were confirmed denied.
 
 ## Conflict of interest
 

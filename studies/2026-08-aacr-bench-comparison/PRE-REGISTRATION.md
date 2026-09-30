@@ -655,6 +655,33 @@ and WebSearch stay unavailable too (item 5).
 
 Every other file keeps its item 13 sha256.
 
+## Amendment 4, 2026-09-30: one post-hoc sensitivity analysis, fixed before any scored evaluation
+
+Recorded during the scored run, after A1's sitting 1 and before the judge has scored any scored
+output. It adds one sensitivity analysis and changes nothing else: every endpoint, test and
+threshold is computed as registered, and this analysis never replaces them.
+
+**What happened.** On instance #6 (`microsoft__typescript-go@b970689`), A1's `/code-review` wrote
+10 findings in a fenced JSON list with one syntax error: `"line": 5067",`, a stray quote. The
+framework's own A1 parser needs valid JSON, so it stored the answer as raw text, and the
+instance scores zero generated findings for A1.
+
+This is the unmodified framework reviewer's own behaviour, not an infrastructure failure. So the
+instance is not re-run, and its registered score stands. #6 has no repo-context reference, so the
+primary test is unaffected. The secondary endpoints include it.
+
+**The analysis, labelled post hoc, secondary to the secondaries.** When an arm's finding list fails
+strict parsing because of one syntax error, a copy with only that error corrected is scored.
+Every endpoint is reported a second time with that copy in place of the empty list.
+- **Scope:** both arms, every instance.
+- **Rule:** the correction is the smallest edit that makes the list parse. It is published with
+  the instance id.
+
+**Asymmetry, stated.** A2's own fallback parser (Amendment 2 item 6, fixed before the freeze)
+reads review-pro's markdown report leniently. A1's framework parser is strict JSON. That is a
+difference in robustness between the arms, against A1. #6 is the first case where it mattered,
+and the write-up lists it as a limitation.
+
 ## Conflict of interest
 
 The study author maintains review-pro. Same posture as the pilot: pre-committed

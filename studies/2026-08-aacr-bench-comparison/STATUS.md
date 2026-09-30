@@ -200,7 +200,11 @@ stdout-JSON path.
 failures and skipped, so 13 reviews per arm):
 - A1 (`claude`) started 2026-09-30, the first scored run. Fork `32d213c`; the log is
   `evaluation/results/aacr_bench/_study/phase1-s1-claude.log`.
-- A2 on the same block comes next, then sitting 2 (instances 16 to 30), then the evaluation.
+- **A1 sitting 1 done,** 19:06 to 19:32: 13 reviews, all with exit 0, 6.53M tokens.
+  - #6's answer had one JSON syntax error, so it scores zero findings as registered. That
+    triggered Amendment 4, the maintainer's decision (a): a post-hoc sensitivity analysis.
+- **A2 sitting 1 started** 2026-09-30, right after. Its log is `phase1-s1-review-pro.log`.
+- **Next:** sitting 2 (instances 16 to 30), then the evaluation.
 - To resume after an interruption, run the same command with the same `--run-id phase1`:
 
 ```

@@ -196,5 +196,22 @@ stdout-JSON path.
 
 ## Run log
 
+**Scored run `phase1`, sitting 1** (instances 1 to 15 of the seed order; #5 and #13 are logged
+failures and skipped, so 13 reviews per arm):
+- A1 (`claude`) started 2026-09-30, the first scored run. Fork `32d213c`; the log is
+  `evaluation/results/aacr_bench/_study/phase1-s1-claude.log`.
+- A2 on the same block comes next, then sitting 2 (instances 16 to 30), then the evaluation.
+- To resume after an interruption, run the same command with the same `--run-id phase1`:
+
+```
+set -a && source .env && source tools/study_env.sh && set +a
+caffeinate -is .venv/bin/python -m pipeline run --stage review --reviewer <claude|review-pro> \
+  --dataset data/aacr_bench.jsonl --run-id phase1 --limit <15 for sitting 1, 30 for sitting 2> \
+  --timeout-minutes 45
+```
+
+  Existing result files are skipped; resume never re-reviews. Only a logged infrastructure
+  failure is re-run, in both arms (registration, Amendment 1).
+
 No review has run under this registration. The only earlier result file is the failed August A2
 smoke attempt (`Not logged in`), in the fork's `results/aacr_bench/review-pro/smoke/`.

@@ -1,0 +1,24 @@
+[18:31:12] $ git update-ref refs/study-tmp/head 6217b0c46176fa51196d862e02e1b3722eefa4de  (cwd=repo/vllm-project__vllm)
+[18:31:12] $ git update-ref refs/study-tmp/base f4962a6d55a340ebb569d377c842deff7611d8f7  (cwd=repo/vllm-project__vllm)
+[18:31:12] $ git init -q  (cwd=/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/work/vllm-project__vllm@6217b0c)
+[18:31:12] $ git config gc.auto 0  (cwd=/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/work/vllm-project__vllm@6217b0c)
+[18:31:12] $ git fetch -q --no-tags --no-write-fetch-head file:///Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/repo/vllm-project__vllm refs/study-tmp/head:refs/heads/pr-head refs/study-tmp/base:refs/heads/pr-base  (cwd=/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/work/vllm-project__vllm@6217b0c)
+[18:31:13] $ git update-ref -d refs/study-tmp/head  (cwd=repo/vllm-project__vllm)
+[18:31:13] $ git update-ref -d refs/study-tmp/base  (cwd=repo/vllm-project__vllm)
+[18:31:13] $ git checkout -q pr-head  (cwd=/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/work/vllm-project__vllm@6217b0c)
+[18:31:13] $ git reflog expire --expire=now --all  (cwd=/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/work/vllm-project__vllm@6217b0c)
+[18:31:13] $ git merge-base f4962a6d55a340ebb569d377c842deff7611d8f7 6217b0c46176fa51196d862e02e1b3722eefa4de  (cwd=/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/work/vllm-project__vllm@6217b0c)
+[18:31:13] $ git rev-parse --verify --quiet refs/remotes/origin/HEAD^{commit}  (cwd=repo/vllm-project__vllm)
+[18:31:13] $ git cat-file -e 027b6f3a22f40b057474f053278e6323d81462b9^{commit}  (cwd=/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/work/vllm-project__vllm@6217b0c)
+[18:31:13] isolated repo ready: /Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/work/vllm-project__vllm@6217b0c (merge base f4962a6d55a3, leak check: 027b6f3a22f4 absent)
+Instance #1 vllm-project__vllm@6217b0c  head 6217b0c46176fa51196d862e02e1b3722eefa4de
+Cache (the framework's full clone): origin/HEAD = 027b6f3a22f40b057474f053278e6323d81462b9, 12829 commits after head reachable there
+  cache: git cat-file -t 027b6f3a22f4 -> commit
+Isolated instance repository (what both arms review): /Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/work/vllm-project__vllm@6217b0c
+  refs: ['refs/heads/pr-base', 'refs/heads/pr-head']
+  remotes: ''; tags: ''
+  git show 027b6f3a22f4 -> fatal: bad object 027b6f3a22f40b057474f053278e6323d81462b9
+  git log --all -1 -> 6217b0c46176fa51196d862e02e1b3722eefa4de 2025-09-09 [P/D] MultiConnector supports shutdown
+  git rev-list --all | grep -c 027b6f3a22f4 -> 0
+  git cat-file --batch-all-objects | grep -c 027b6f3a22f4 -> 0
+  commits in isolated repo: 9221 vs cache: 24991

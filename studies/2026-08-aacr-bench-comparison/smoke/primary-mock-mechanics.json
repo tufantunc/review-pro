@@ -1,0 +1,57 @@
+{
+ "run_id": "smoke-amend2",
+ "rounds": {
+  "claude": 3,
+  "review-pro": 3
+ },
+ "instances_both_arms": 4,
+ "primary_rows": [
+  {
+   "instance_id": "elastic__elasticsearch@a6a4623",
+   "repo_refs": 2,
+   "a1": 0.0,
+   "a2": 0.0,
+   "delta": 0.0
+  },
+  {
+   "instance_id": "lvgl__lvgl@4a57db3",
+   "repo_refs": 2,
+   "a1": 0.0,
+   "a2": 0.0,
+   "delta": 0.0
+  }
+ ],
+ "primary": {
+  "n_instances": 2,
+  "n_zero_deltas": 2,
+  "mean_delta": 0.0
+ },
+ "descriptive_claude": {
+  "diff": {
+   "refs": 5,
+   "recall": 0.0
+  },
+  "file": {
+   "refs": 5,
+   "recall": 0.0
+  },
+  "repo": {
+   "refs": 4,
+   "recall": 0.0
+  }
+ },
+ "descriptive_review-pro": {
+  "diff": {
+   "refs": 5,
+   "recall": 0.0
+  },
+  "file": {
+   "refs": 5,
+   "recall": 0.0
+  },
+  "repo": {
+   "refs": 4,
+   "recall": 0.0
+  }
+ }
+}

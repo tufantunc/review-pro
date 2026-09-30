@@ -1,0 +1,149 @@
+{
+  "instance_id": "elastic__elasticsearch@a6a4623",
+  "repo": "elastic/elasticsearch",
+  "base_commit": "cc0e53e883ee7e0b136e58a0105103c1a7ffddf9",
+  "head_commit": "a6a4623f4a0216b515a8cb323110305504431459",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T15:18:40.622858+00:00",
+  "duration_seconds": 402.6,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java",
+      "line": 568,
+      "summary": "[High] max_analyzed_offset=-1 is sent to other nodes with no TransportVersion gate, and older nodes reject it while reading the request",
+      "failure_scenario": "Impact: -1 is only resolved to the index setting on the data node, so the coordinator writes the raw -1 with writeOptionalInt (line 212) whatever the receiver's version. An older node's StreamInput constructor (line 168) passes it through the old setter, which rejects values <= 0 (\"must be a positive integer\"). During a rolling upgrade, or a cross-cluster search that reaches an older cluster, shards on old nodes fail to read the request, so the search fails or returns partial results. Remedy: add a TransportVersion (and a node/cluster feature). In writeTo, when the receiver is older and the value is below 1, fail fast on the coordinator with a clear error, or resolve the value before sending. Let the REST layer refuse -1 until every node supports it."
+    },
+    {
+      "file": "server/src/test/java/org/elasticsearch/search/fetch/subphase/highlight/HighlightBuilderTests.java",
+      "line": 580,
+      "summary": "[High] testInvalidMaxAnalyzedOffset still draws from [-100, 0], which now includes two valid values (-1 and 0), so it fails randomly",
+      "failure_scenario": "Impact: the check is now `< -1`, so -1 and 0 parse without error. When the random seed draws either value (2 of 101, about 2% of runs), expectParseThrows gets no exception and the test fails, which makes CI flaky. Remedy: change the range to randomIntBetween(-100, -2). Add a positive test that -1 parses and round-trips, and assert on purpose what happens with 0."
+    },
+    {
+      "file": "rest-api-spec/src/yamlRestTest/resources/rest-api-spec/test/search.highlight/30_max_analyzed_offset.yml",
+      "line": 133,
+      "summary": "[Medium] The REST error message changed, but the YAML test asserting it is gated only on gte_v7.12.0 and has no rest-compat transform",
+      "failure_scenario": "Impact: qa/mixed-cluster runs the core rest-api-spec YAML suite (includeCore '*', and this test is not excluded) against clusters that include old nodes. When an old node parses the request it returns \"[max_analyzed_offset] must be a positive integer\", so the match on the new message fails depending on which node handled it. rest-api-spec/build.gradle also has no skipTest or replaceValueInMatch for the previous major's copy of this test. Remedy: add a cluster feature or capability for \"-1 accepted\" and gate the changed test on it. Add a yamlRestCompatTestTransform replaceValueInMatch or skipTest for the old test name, and add a gated YAML test that sends -1 successfully."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/lucene/search/uhighlight/QueryMaxAnalyzedOffset.java",
+      "line": 20,
+      "summary": "[Medium] QueryMaxAnalyzedOffset is a nullable int wrapper that removes no branching but changes six signatures, including a protected plugin hook",
+      "failure_scenario": "Impact: the class only swaps -1 for the index value when it is built, and create() still returns null for \"not set\". Every consumer (CustomFieldHighlighter, CustomUnifiedHighlighter, DefaultHighlighter, PlainHighlighter, AnnotatedTextHighlighter, tests) keeps the same null check and adds a .getNotNull() unwrap. It also changes the protected DefaultHighlighter.wrapAnalyzer(Analyzer, Integer) hook, so the annotated-text plugin and any third-party subclass must change, for no benefit. Remedy: resolve the sentinel once at DefaultHighlighter:125 and PlainHighlighter:111 with a static helper returning Integer (q != null && q < 0 ? indexMax : q), delete the class, and keep the Integer signatures. If a type is wanted, make it non-null with an explicit unbounded state and have it own wrap(Analyzer) and exceedsIndexLimit(...)."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java",
+      "line": 568,
+      "summary": "[Medium] Validation now accepts max_analyzed_offset=0 as well as -1, and 0 silently truncates highlighting at offset 0",
+      "failure_scenario": "Impact: the intent was to add only -1 as a sentinel, but moving the bound from <= 0 to < -1 also makes 0 valid. Before, 0 returned a 400 \"must be a positive integer\". Now QueryMaxAnalyzedOffset.create(0, idx) keeps 0, LimitTokenOffsetAnalyzer(analyzer, 0) and LimitedOffsetsEnum(off, 0) cut analysis off at offset 0, and the client gets empty or near-empty highlights with no error. (Verification: the sub-claim \"no test covers 0\" is wrong. HighlightBuilderTests:580 draws 0 and expects it to be rejected, so the test contradicts the code.) Remedy: reject 0 explicitly, e.g. `maxAnalyzedOffset != null && (maxAnalyzedOffset < -1 || maxAnalyzedOffset == 0)`, with the message \"must be a positive integer or -1\", and add a test that asserts 0 is rejected."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/PlainHighlighter.java",
+      "line": 111,
+      "summary": "[Medium] No test runs the plain highlighter with max_analyzed_offset = -1",
+      "failure_scenario": "Impact: the new IT testMaxQueryOffsetDefault sets no highlighter type, so it runs the unified highlighter, and the annotated-text test uses CustomUnifiedHighlighter. PlainHighlighter's -1 path (resolving -1, wrapping the analyzer, and the length check at line 126) runs in no test, so a regression there would go unnoticed. Remedy: add a YAML case to 30_max_analyzed_offset.yml that mirrors the \"plain ... max_analyzed_offset=20 should SUCCEED\" case with \"max_analyzed_offset\": -1 and asserts the truncated highlight. Or randomize the highlighter type (\"plain\"/\"unified\") in testMaxQueryOffsetDefault."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java",
+      "line": 564,
+      "summary": "[Low] The new -1 behaviour is missing from the reference docs and has no changelog entry",
+      "failure_scenario": "Impact: highlighting.asciidoc:261-269 still describes only a \"non-negative value\" and never mentions -1, and no docs/changelog/*.yaml entry was added even though the repo adds one for every user-visible change. Users and client generators (elasticsearch-specification, typed clients) cannot find the sentinel, and the changed error text goes unannounced. Remedy: add docs/changelog/<pr>.yaml (type: enhancement, area: Highlighting), document -1 as \"use index.highlight.max_analyzed_offset\" in highlighting.asciidoc, state whether 0 is allowed, and update the specification."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java",
+      "line": 564,
+      "summary": "[Low] The Javadoc, the validation and create() disagree about which negative values are valid",
+      "failure_scenario": "Impact: the Javadoc says any negative int falls back to the index value, and QueryMaxAnalyzedOffset.create handles any value < 0, but the builder rejects everything below -1. The Javadoc also calls 0 a valid \"non-negative\" value. A reader or maintainer relying on any one of these gets the contract wrong. Remedy: document exactly one sentinel (\"-1 means use the index setting\"), make create() check == -1, and make the Javadoc, the error message and the docs agree."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/DefaultHighlighter.java",
+      "line": 193,
+      "summary": "[Low] The protected, overridable wrapAnalyzer changed its parameter from Integer to QueryMaxAnalyzedOffset",
+      "failure_scenario": "Impact: third-party highlighter plugins that extend DefaultHighlighter (registered through SearchPlugin#getHighlighters) and override wrapAnalyzer(Analyzer, Integer) no longer compile. Only the in-repo AnnotatedTextHighlighter was updated. QueryMaxAnalyzedOffset is also public, not final, and has no equals or toString. Remedy: keep the Integer signature by resolving the value earlier, or accept the break and note it for plugin authors. Optionally make QueryMaxAnalyzedOffset a final record."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/lucene/search/uhighlight/QueryMaxAnalyzedOffset.java",
+      "line": 12,
+      "summary": "[Low] Request-level sentinel resolution sits in the Lucene uhighlight package, so PlainHighlighter now depends on it",
+      "failure_scenario": "Impact: swapping -1 for index.highlight.max_analyzed_offset is a search-request and index-settings concern that belongs in search.fetch.subphase.highlight, next to LimitTokenOffsetAnalyzer and the builder that validates -1. Putting it in the Lucene-extension package makes the plain highlighter, which has nothing to do with the unified highlighter, depend on uhighlight just for an int, and the Lucene-level classes see the sentinel concept. Remedy: resolve the value in search.fetch.subphase.highlight and pass only a resolved Integer or int down to the uhighlight classes."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/lucene/search/uhighlight/QueryMaxAnalyzedOffset.java",
+      "line": 15,
+      "summary": "[Low] Misleading getNotNull() accessor on a primitive, and a stale constructor comment",
+      "failure_scenario": "Impact: the constructor comment \"If we have a negative value, grab value for the actual maximum from the index\" describes logic that is in create() (line 24), not in the constructor, so readers look in the wrong place. getNotNull() returns an int that can never be null, which suggests a nullability contract that belongs to the reference holding the object. Remedy: move the comment to create() (or turn it into Javadoc there), rename getNotNull() to value(), and mark the class final."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/PlainHighlighter.java",
+      "line": 126,
+      "summary": "[Low] The \"query offset missing or above the index limit\" check is duplicated in PlainHighlighter and CustomUnifiedHighlighter",
+      "failure_scenario": "Impact: this diff had to edit both copies (PlainHighlighter:126 and CustomUnifiedHighlighter:128), and the error messages after them are nearly the same. A later change to this rule, such as treating \"equal to the index limit\" differently now that -1 resolves to exactly that value, could land in only one highlighter. Remedy: add a helper on QueryMaxAnalyzedOffset (e.g. static boolean exceedsIndexLimit(QueryMaxAnalyzedOffset q, int indexMax)) and call it from both places, optionally moving the shared exception message there too."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/PlainHighlighter.java",
+      "line": 249,
+      "summary": "[Low] Both wrapAnalyzer copies were rewritten for the new type instead of being merged into one",
+      "failure_scenario": "Impact: PlainHighlighter:249-251 and DefaultHighlighter:193-195 got the same signature and .getNotNull() edit, and AnnotatedTextHighlighterTests:121-122 repeats the wrapping by hand, so there are three places to keep in sync. Remedy: keep one static helper (e.g. in LimitTokenOffsetAnalyzer: static Analyzer wrap(Analyzer, QueryMaxAnalyzedOffset)), have DefaultHighlighter.wrapAnalyzer call it so the plugin override point stays, and delete PlainHighlighter's private copy."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/lucene/search/uhighlight/QueryMaxAnalyzedOffset.java",
+      "line": 20,
+      "summary": "[Low] The new QueryMaxAnalyzedOffset.create mapping is only tested indirectly, never in CustomUnifiedHighlighterTests",
+      "failure_scenario": "Impact: CustomUnifiedHighlighterTests' helper now goes through create() (line 160), but no test in that class passes -1. The -1 path in the core CustomUnifiedHighlighter is covered only by the annotated-text plugin test and one integration test, so a regression in the server module's unit tests would go unnoticed. Remedy: add a CustomUnifiedHighlighterTests case, next to the randomized queryMaxAnalyzedOffset test, that passes -1 with an ANALYSIS offset source and a field longer than maxAnalyzedOffset, and assert that no exception is thrown and the output is cut at the index limit."
+    }
+  ],
+  "result_text": "## Verdict: BLOCK (code)\n\nSpec: skipped, no spec found. `gh` was unavailable, so neither issue #112822 (named in the branch) nor the PR body could be read.\n\nCoverage (self-reported): 12 of 12 changed files examined by at least one reviewer.\n\nVerification: 6 checked (5 stand, 1 partly refuted, 0 refuted), 0 not checked. Spec findings are not verified.\n\nReviewers dispatched: correctness, api-contract, tests, backend, craft, dry, ai-antipatterns. There is no `.review-pro/` directory at merge base `d3f2956`, so no stack signals or repository rules applied. Each reviewer got the diff command and the list of changed files rather than the files pasted inline, and read the files from disk.\n\n### High\n- **[High] `server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java:568`: `-1` is sent to other nodes with no TransportVersion gate, and older nodes reject it while reading the request**\n  - **Impact:** `-1` is only turned into the index setting on the data node. The coordinator sends the raw `-1` with `writeOptionalInt` (line 212). An older node reads it through the stream constructor (line 168), which calls the old setter, and that setter rejects any value `<= 0`. During a rolling upgrade, or a cross-cluster search that reaches an older cluster, the shard requests fail.\n  - **Fix:** add a TransportVersion and a node feature. When the receiving node is older, fail fast on the coordinator (or resolve `-1` before sending), and have the REST layer refuse `-1` until every node supports it.\n  - flagged by 3 reviewers: api-contract, correctness, backend\n  - verification: verified. Not checked: whether the failure shows up as a shard failure or as a whole-request failure.\n- **[High] `server/src/test/java/org/elasticsearch/search/fetch/subphase/highlight/HighlightBuilderTests.java:580`: `testInvalidMaxAnalyzedOffset` still picks values from `[-100, 0]`, and two of them (`-1` and `0`) are now valid**\n  - **Impact:** about 2% of runs pick one of those two, get no exception, and fail, so CI becomes flaky.\n  - **Fix:** use `randomIntBetween(-100, -2)`. Add a test that `-1` parses and survives serialization, and decide explicitly what `0` should do.\n  - flagged by 2 reviewers: tests, correctness\n  - verification: verified\n\n### Medium\n- **[Medium] `rest-api-spec/.../search.highlight/30_max_analyzed_offset.yml:133`: the error message changed, but the test is still gated only on `gte_v7.12.0` and has no rest-compat transform**\n  - **Impact:** the `qa/mixed-cluster` suite runs this test. When an old node handles the request it returns the old message, so the test fails depending on which node answered.\n  - **Fix:** gate the test on a new feature or capability, add a `replaceValueInMatch` or `skipTest` for the old test name in the rest-compat config, and add a gated YAML test where `-1` succeeds.\n  - flagged by 3 reviewers: api-contract, correctness, tests\n  - verification: verified. Not checked: the previous major's copy of the test.\n- **[Medium] `server/src/main/java/org/elasticsearch/lucene/search/uhighlight/QueryMaxAnalyzedOffset.java:20`: the new class is a nullable int wrapper that removes no branching, yet it changes six signatures, including the protected `wrapAnalyzer` hook**\n  - **Impact:** every caller still needs a null check plus `.getNotNull()`, and the plugin override and any third-party subclass are forced to change.\n  - **Fix:** turn `-1` into the index value once, at `DefaultHighlighter:125` and `PlainHighlighter:111`, with a small helper that returns `Integer`, and delete the class. If a type is wanted, make it non-null and have it own the analyzer wrapping and the limit check.\n  - flagged by 2 reviewers: craft, ai-antipatterns\n  - verification: verified\n- **[Medium] `server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java:568`: validation now accepts `max_analyzed_offset: 0`, which silently cuts highlighting off at offset 0**\n  - **Impact:** a request that used to get a 400 error now succeeds with empty or nearly empty highlights.\n  - **Fix:** reject `0` explicitly (`< -1 || == 0`) with the message \"must be a positive integer or -1\", and add a test for it.\n  - flagged by 4 reviewers: api-contract, backend, correctness, tests\n  - verification: partly refuted. The claim that no test covers `0` is wrong: `HighlightBuilderTests.java:580` picks `0` and expects it to be rejected, so the test contradicts the code rather than being missing. The defect itself stands.\n- **[Medium] `server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/PlainHighlighter.java:111`: no test runs the plain highlighter with `-1`**\n  - **Impact:** the new integration test uses the default unified highlighter, so a regression in the plain highlighter's `-1` path would go unnoticed.\n  - **Fix:** add a plain-highlighter YAML case with `\"max_analyzed_offset\": -1`, or randomize the highlighter type in `testMaxQueryOffsetDefault`.\n  - flagged by: tests\n  - verification: verified. Not checked: the exact highlight output such a test should expect.\n\n### Low\n- **[Low] `AbstractHighlighterBuilder.java:564`: the new `-1` behaviour is missing from `highlighting.asciidoc:261-269` and has no `docs/changelog` entry.**\n  - **Fix:** add the changelog entry, document `-1` in the highlighting docs, and state whether `0` is allowed.\n  - flagged by: api-contract, ai-antipatterns, backend\n- **[Low] `AbstractHighlighterBuilder.java:564`: the Javadoc says any negative value falls back to the index setting, `create()` treats every `< 0` value that way, and validation allows only `-1`.**\n  - **Fix:** document a single sentinel (`-1`), check `== -1` in `create()`, and make the three agree.\n  - flagged by: ai-antipatterns, backend\n- **[Low] `DefaultHighlighter.java:193`: the protected `wrapAnalyzer(Analyzer, Integer)` changed signature, so third-party subclasses that override it no longer compile.**\n  - **Fix:** keep the `Integer` signature, or note the break for plugin authors.\n  - flagged by: api-contract\n- **[Low] `QueryMaxAnalyzedOffset.java:12`: the request-level `-1` handling sits in the Lucene `uhighlight` package, so `PlainHighlighter` now depends on that package.**\n  - **Fix:** resolve the value in `search.fetch.subphase.highlight` and pass a plain int down.\n  - flagged by: craft\n- **[Low] `QueryMaxAnalyzedOffset.java:15`: `getNotNull()` returns a primitive that can't be null, and the constructor comment describes logic that actually lives in `create()`.**\n  - **Fix:** rename it to `value()`, move the comment to `create()`, and make the class `final`.\n  - flagged by: craft, ai-antipatterns\n- **[Low] `PlainHighlighter.java:126`: the \"offset missing or above the index limit\" check is duplicated in `CustomUnifiedHighlighter.java:128`.**\n  - **Fix:** extract a shared `exceedsIndexLimit` helper.\n  - flagged by: dry\n- **[Low] `PlainHighlighter.java:249`: `wrapAnalyzer` is duplicated in `DefaultHighlighter.java:193` and repeated by hand in `AnnotatedTextHighlighterTests`.**\n  - **Fix:** keep one static helper and have both highlighters use it.\n  - flagged by: dry\n- **[Low] `QueryMaxAnalyzedOffset.java:20`: `create()` is only tested indirectly, and `CustomUnifiedHighlighterTests` has no case that passes `-1`.**\n  - **Fix:** add a `-1` case with an ANALYSIS offset source and a field longer than the index limit.\n  - flagged by: tests\n\n### Refuted in verification\nNone.\n\n## Spec\nSkipped, no spec found.\n\nAll 14 findings above were also recorded through the findings tool.",
+  "stderr": "",
+  "claude_duration_ms": 400826,
+  "claude_num_turns": 45,
+  "claude_cost_usd": 4.7958609999999995,
+  "claude_session_id": "97b3512d-2e26-4835-96ad-c3e176818e12",
+  "token_usage": {
+    "input_tokens": 166,
+    "output_tokens": 86665,
+    "cache_read_input_tokens": 2446660,
+    "cache_creation_input_tokens": 447478,
+    "total_tokens": 2980969,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 166,
+        "outputTokens": 86665,
+        "cacheReadInputTokens": 2446660,
+        "cacheCreationInputTokens": 447478,
+        "webSearchRequests": 0,
+        "costUSD": 4.7958609999999995,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 18485,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/smoke-amend2/transcripts/elastic__elasticsearch@a6a4623"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: cc0e53e883ee7e0b136e58a0105103c1a7ffddf9.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

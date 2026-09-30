@@ -1,0 +1,113 @@
+{
+  "instance_id": "lvgl__lvgl@4a57db3",
+  "repo": "lvgl/lvgl",
+  "base_commit": "d2ed41dda1618049a037df2639b9d28578847195",
+  "head_commit": "4a57db33476f1caf3e85726a6b1e189c68c1f36b",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T15:04:44.428432+00:00",
+  "duration_seconds": 402.58,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "src/draw/lv_draw_label.c",
+      "line": 215,
+      "summary": "[High] The EXPAND width branch does nothing, yet the change adds a new public field just to feed it; the NemaGFX copy still recomputes the size",
+      "failure_scenario": "Impact: In lv_draw_label_iterate_characters, w is only used as max_width for lv_text_get_next_line (lines 259/265/509). Under LV_TEXT_FLAG_EXPAND, that function returns early (src/misc/lv_text.c:336-344) without reading max_width, so both the old lv_text_get_size call and the new dsc->text_size.x read are unused. The change adds a public field to lv_draw_label_dsc_t, a field to lv_label_t and a store in lv_label_refr_text to feed a no-op, and lv_draw_nema_gfx_label.c:433-443 still calls lv_text_get_size on every draw. Remedy: replace the if/else with `int32_t w = lv_area_get_width(coords);` (with a comment that EXPAND/FIT are handled in lv_text_get_next_line), make the same change in the NemaGFX copy, and drop text_size from lv_draw_label_dsc_t. The label-side caching for the scroll branches can stay."
+    },
+    {
+      "file": "src/draw/lv_draw_label.c",
+      "line": 221,
+      "summary": "[High] No test covers the EXPAND branch that now depends on callers other than lv_label filling text_size (disputed: refuted in verification)",
+      "failure_scenario": "Impact (as filed): the roller (lv_roller.c:583), the one-line textarea placeholder (lv_textarea.c:1405) and table TEXT_CROP (lv_table.c:837) set EXPAND but leave text_size at {0,0} from lv_draw_label_dsc_init, which was claimed to misalign CENTER/RIGHT text with no test catching it. The verifier refuted this: alignment uses lv_area_get_width(coords), not w (lv_draw_label.c:283/290), and under EXPAND max_width is never read (lv_text.c:336-343). By rule, a refuted High stays as a disputed blocker. Remedy (as filed): add screenshot tests for EXPAND with non-left alignment outside lv_label (a centered one-line textarea placeholder, table TEXT_CROP centered and right-aligned, a direct lv_draw_label call with EXPAND, and re-enabling roller_1)."
+    },
+    {
+      "file": "src/draw/lv_draw_label.h",
+      "line": 38,
+      "summary": "[Medium] The new public text_size field in the generic draw descriptor has no stated contract, and only lv_label fills it",
+      "failure_scenario": "Impact: The doc comment (\"The size of the text\") does not say which max width or flags it was measured with, whether it is required, or that {0,0} means not provided. Textarea, table and roller set EXPAND but leave it zeroed, so third-party draw units, bindings or apps that read dsc->text_size get 0. It also leaks the label widget's cached state into the generic draw layer. Remedy: don't add the field, since the draw side never needs it. If it stays, document it precisely (read only under EXPAND, what it was measured with, {0,0} = not provided) and fall back to lv_text_get_size when it is zero."
+    },
+    {
+      "file": "src/widgets/label/lv_label_private.h",
+      "line": 54,
+      "summary": "[Medium] A second, undocumented text-size cache now sits next to the existing size_cache, with different semantics and invalidation",
+      "failure_scenario": "Impact: size_cache is filled lazily in GET_SELF_SIZE, uses LV_COORD_MAX or the content width with a max-height clamp, and is gated by invalid_size_cache. text_size is filled eagerly in lv_label_refr_text at the content width, with no flag and no doc comment. Maintainers have to work out which cache is valid when and at what width, and fixes to one measurement path (dots, max-width clamp, flags) won't reach the other. Remedy: keep one source of truth (e.g. extend the size_cache/invalid_size_cache mechanism), or at minimum document text_size (measured at content width with the label flags, before dots) in the same /**< */ style."
+    },
+    {
+      "file": "src/widgets/label/lv_label.c",
+      "line": 856,
+      "summary": "[Medium] The SCROLL/SCROLL_CIRCULAR alignment override now reads the cached size, and no test runs it with CENTER or RIGHT alignment",
+      "failure_scenario": "Impact: This branch used to measure with lv_text_get_size(..., LV_COORD_MAX, flag) on every draw and now trusts label->text_size from lv_label_refr_text. The only scroll tests (test_label.c:641-664, and test_label_long_mode_clip at 671) use left alignment, so a stale or wrong cached size would break the center/right→left fallback without failing any test. Remedy: add screenshot tests for SCROLL and SCROLL_CIRCULAR with CENTER and RIGHT alignment, at widths where the text overflows and where it fits, then change the text, font or letter spacing and screenshot again to check the refresh through STYLE_CHANGED."
+    },
+    {
+      "file": "src/draw/lv_draw_label.h",
+      "line": 39,
+      "summary": "[Low] text_size is inserted mid-struct, which shifts the offset of every later member (ABI change)",
+      "failure_scenario": "Impact: Inserting an 8-byte lv_point_t between text and font moves font, color, line_space, flag, hint and every later member. Binaries built against the old header (prebuilt draw-unit/GPU libraries, FFI bindings with a cached layout) read the wrong offsets, and positional aggregate initializers break. Remedy: if the field stays, put it at the end of the struct and mention the layout change in the changelog."
+    },
+    {
+      "file": "src/widgets/label/lv_label_private.h",
+      "line": 54,
+      "summary": "[Low] Each label now uses 8 more bytes of RAM, and each label draw descriptor/task 8 more",
+      "failure_scenario": "Impact: Every lv_label_t grows by 8 bytes (about 1.6 KB of heap for 200 labels on memory-constrained MCUs), and lv_draw_label_dsc_t grows by 8 bytes, which is copied into every label/letter draw task (lv_draw_label.c:192). Remedy: accept the cost, or carry only text_size.x in the draw descriptor, or nothing at all, since the draw side never uses it."
+    },
+    {
+      "file": "src/widgets/label/lv_label.c",
+      "line": 894,
+      "summary": "[Low] The vertical wrap-around redraw in SCROLL_CIRCULAR now uses the cached size, and no test reaches it",
+      "failure_scenario": "Impact: The second, vertical copy (size.y > height) now depends on the cached text_size.y. The existing SCROLL_CIRCULAR test is a single line with automatic height, so this branch never runs and a regression in the cached height would not be caught. Remedy: add a screenshot test with a fixed-height (e.g. 30 px) SCROLL_CIRCULAR label holding multi-line text, and advance time until the wrap-around copy is visible."
+    }
+  ],
+  "result_text": "The review verdict is **BLOCK**, but no reviewer found anything that changes what gets drawn. The block comes from two High findings that the skill's rules won't let me downgrade. I recorded all 8 findings in the final report with the report tool: 2 High, 3 Medium and 3 Low.\n\n**Why it blocks:**\n- **The first High is about code that does nothing (`src/draw/lv_draw_label.c:215`).** When `LV_TEXT_FLAG_EXPAND` is set, the width `w` is only passed to `lv_text_get_next_line`, which ignores it under that flag. So the old per-draw `lv_text_get_size` call was wasted work, and the new `text_size` value is just as unused. The simpler fix is `w = lv_area_get_width(coords)` everywhere, including the NemaGFX copy, and dropping the new public descriptor field. A verifier confirmed it. It's a maintainability issue, but a confirmed finding keeps the severity it was filed at.\n- **The second High (`lv_draw_label.c:221`) is disputed.** The tests reviewer said other widgets would now draw misaligned text. The verifier showed that's wrong: alignment uses the area width, not `w` (`lv_draw_label.c:283`, `:290`). The rules still count a refuted High as blocking until a person clears it.\n\n**Medium:**\n- The new public field `text_size` in `lv_draw_label.h:38` has no documented meaning, and only the label widget ever fills it in.\n- `lv_label_t` now has a second, undocumented text-size cache next to the existing `size_cache`.\n- No test runs the scroll-mode center/right alignment branch that now reads the cached size.\n\n**Low:**\n- The field is inserted mid-struct, which changes the binary layout for anything built against the old header.\n- Each label, and each queued label draw task, uses 8 more bytes of RAM.\n- No test reaches the vertical wrap-around redraw in circular scroll mode.\n\n**How the review ran:**\n- **Base:** the base commit `d2ed41dd` gives a merge base of `e1502972`, which is HEAD's parent, so the review covers only the last commit.\n- **Configuration:** the repo has no `.review-pro/` stack signals or rules at that merge base.\n- **Spec:** none was found, so there are no spec-axis findings.\n- **Reviewers and coverage:** six reviewers examined all 4 changed files.\n- **Verification:** 5 findings were checked independently; 4 were confirmed and 1 refuted.",
+  "stderr": "",
+  "claude_duration_ms": 401422,
+  "claude_num_turns": 37,
+  "claude_cost_usd": 4.1559222,
+  "claude_session_id": "f58b4bd5-dab1-4583-853b-6c8bc073edbe",
+  "token_usage": {
+    "input_tokens": 194,
+    "output_tokens": 77028,
+    "cache_read_input_tokens": 2757746,
+    "cache_creation_input_tokens": 363594,
+    "total_tokens": 3198562,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 194,
+        "outputTokens": 77028,
+        "cacheReadInputTokens": 2757746,
+        "cacheCreationInputTokens": 363594,
+        "webSearchRequests": 0,
+        "costUSD": 4.1559222,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 22618,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/smoke-amend2/transcripts/lvgl__lvgl@4a57db3"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: d2ed41dda1618049a037df2639b9d28578847195.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

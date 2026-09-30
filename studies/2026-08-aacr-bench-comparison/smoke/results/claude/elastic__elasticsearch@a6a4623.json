@@ -1,0 +1,119 @@
+{
+  "instance_id": "elastic__elasticsearch@a6a4623",
+  "repo": "elastic/elasticsearch",
+  "base_commit": "cc0e53e883ee7e0b136e58a0105103c1a7ffddf9",
+  "head_commit": "a6a4623f4a0216b515a8cb323110305504431459",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T15:01:00.145026+00:00",
+  "duration_seconds": 70.22,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "server/src/test/java/org/elasticsearch/search/fetch/subphase/highlight/HighlightBuilderTests.java",
+      "line": 580,
+      "summary": "testInvalidMaxAnalyzedOffset still picks a random value in [-100, 0] and expects a parse failure, but -1 and 0 are now valid, so the test fails intermittently.",
+      "failure_scenario": "When randomIntBetween(-100, 0) returns -1 or 0 (2 of 101 seeds), maxAnalyzedOffset() no longer throws. expectParseThrows then fails with 'expected XContentParseException', which shows up as a flaky CI failure that depends on the seed. The range should be randomIntBetween(-100, -2)."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java",
+      "line": 568,
+      "summary": "The check changed from `<= 0` to `< -1`, so 0 is now accepted as well as -1. This quietly lifts the old 'must be positive' rule for 0, and nothing handles 0 as a special case.",
+      "failure_scenario": "A request with max_analyzed_offset: 0 used to get a 400 error. Now it is accepted, and LimitTokenOffsetAnalyzer / LimitedOffsetsEnum are built with limit 0. The result is no highlight fragments and no error, which hides the mistake in the request. The check should probably reject 0 (for example `== 0 || < -1`)."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java",
+      "line": 168,
+      "summary": "The -1 value goes over the transport layer (writeOptionalInt/readOptionalInt) with no TransportVersion gate. Older nodes run the old `<= 0` check when they deserialize and throw.",
+      "failure_scenario": "In a mixed-version cluster during a rolling upgrade, a new coordinating node sends a shard request with max_analyzed_offset=-1 to an old data node. The old node's StreamInput constructor calls maxAnalyzedOffset(-1), which throws IllegalArgumentException('must be a positive integer'), so the search fails on those shards. The new value needs a version check, or should be resolved or removed before it is sent to older nodes."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/lucene/search/uhighlight/QueryMaxAnalyzedOffset.java",
+      "line": 20,
+      "summary": "The -1 sentinel is resolved separately in each highlighter (Default, Plain, Annotated) instead of once where the field options are built. Any other Highlighter implementation that reads fieldOptions().maxAnalyzedOffset() still sees the raw -1.",
+      "failure_scenario": "A plugin or x-pack highlighter that passes fieldOptions().maxAnalyzedOffset() straight to new LimitTokenOffsetAnalyzer(..., -1) or compares it to the index limit gets a negative limit. That means it either analyzes nothing or skips the length check. Resolving -1 to indexSettings.getHighlightMaxAnalyzedOffset() in HighlightBuilder/SearchHighlightContext when building FieldOptions would fix every consumer in one place."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/lucene/search/uhighlight/QueryMaxAnalyzedOffset.java",
+      "line": 12,
+      "summary": "The new wrapper class adds a nullable object that holds a single int, plus a getNotNull() accessor, but its only job is to resolve the sentinel. A static helper returning Integer would do the same with less code.",
+      "failure_scenario": "Every call site still has to null-check and then call getNotNull(), so the Integer-null handling is unchanged while the API now spans 12 files. `static Integer resolve(Integer q, int idx) { return q == null ? null : (q < 0 ? idx : q); }` would keep all the old Integer signatures and avoid the churn."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/lucene/search/uhighlight/QueryMaxAnalyzedOffset.java",
+      "line": 16,
+      "summary": "The comment 'If we have a negative value, grab value for the actual maximum from the index' sits in the private constructor, which just assigns the field. The logic it describes is in create(). Also, create() maps any negative value to the index limit, while validation only allows -1.",
+      "failure_scenario": "Readers or maintainers will look for sentinel handling in the constructor. If validation is ever relaxed or bypassed (for example a test calls create(-5, ...)), any negative value is silently treated as 'use the index value' instead of being rejected, which disagrees with the documented contract of -1 only."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java",
+      "line": 564,
+      "summary": "The Javadoc says a negative int means 'defaulting to index analyzed offset', but the validation right below rejects everything below -1.",
+      "failure_scenario": "Callers who trust the Javadoc pass -5 and get IllegalArgumentException('must be an integer >= -1'). The documentation should say -1 specifically."
+    },
+    {
+      "file": "docs/reference/search/search-your-data/highlighting.asciidoc",
+      "line": 261,
+      "summary": "The user-facing max_analyzed_offset docs were not updated to describe the new -1 value, and the diff adds no docs/changelog entry for this API change.",
+      "failure_scenario": "Users cannot find out that max_analyzed_offset: -1 means 'use index.highlight.max_analyzed_offset', and release notes will not mention the new REST API behavior."
+    },
+    {
+      "file": "server/src/test/java/org/elasticsearch/search/fetch/subphase/highlight/HighlightBuilderTests.java",
+      "line": 707,
+      "summary": "The random builder and the mutation code still generate maxAnalyzedOffset only in [1, 100], so the new -1 value is never tested for serialization, equality, or the FieldOptions merge.",
+      "failure_scenario": "A regression in how -1 is written, read, or merged from global into field options (SearchHighlightContext line 326) would not be caught by the randomized round-trip tests."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/lucene/search/uhighlight/CustomUnifiedHighlighter.java",
+      "line": 128,
+      "summary": "The length check compares the resolved queryMaxAnalyzedOffset against maxAnalyzedOffset, which is the same index value it was resolved from. For -1 the check is always false, so it depends on the resolved value, and that logic is repeated in PlainHighlighter.",
+      "failure_scenario": "PlainHighlighter line 126 and CustomUnifiedHighlighter line 128 both repeat `q == null || q.getNotNull() > maxAnalyzedOffset`. If only one copy is changed later, for example to change how the sentinel is handled, the two highlighter types will behave differently. A single helper such as `QueryMaxAnalyzedOffset.exceedsIndexLimit(q, idx)` would remove the duplication."
+    }
+  ],
+  "result_text": "```json\n[\n  {\n    \"file\": \"server/src/test/java/org/elasticsearch/search/fetch/subphase/highlight/HighlightBuilderTests.java\",\n    \"line\": 580,\n    \"summary\": \"testInvalidMaxAnalyzedOffset still picks a random value in [-100, 0] and expects a parse failure, but -1 and 0 are now valid, so the test fails intermittently.\",\n    \"failure_scenario\": \"When randomIntBetween(-100, 0) returns -1 or 0 (2 of 101 seeds), maxAnalyzedOffset() no longer throws. expectParseThrows then fails with 'expected XContentParseException', which shows up as a flaky CI failure that depends on the seed. The range should be randomIntBetween(-100, -2).\"\n  },\n  {\n    \"file\": \"server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java\",\n    \"line\": 568,\n    \"summary\": \"The check changed from `<= 0` to `< -1`, so 0 is now accepted as well as -1. This quietly lifts the old 'must be positive' rule for 0, and nothing handles 0 as a special case.\",\n    \"failure_scenario\": \"A request with max_analyzed_offset: 0 used to get a 400 error. Now it is accepted, and LimitTokenOffsetAnalyzer / LimitedOffsetsEnum are built with limit 0. The result is no highlight fragments and no error, which hides the mistake in the request. The check should probably reject 0 (for example `== 0 || < -1`).\"\n  },\n  {\n    \"file\": \"server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java\",\n    \"line\": 168,\n    \"summary\": \"The -1 value goes over the transport layer (writeOptionalInt/readOptionalInt) with no TransportVersion gate. Older nodes run the old `<= 0` check when they deserialize and throw.\",\n    \"failure_scenario\": \"In a mixed-version cluster during a rolling upgrade, a new coordinating node sends a shard request with max_analyzed_offset=-1 to an old data node. The old node's StreamInput constructor calls maxAnalyzedOffset(-1), which throws IllegalArgumentException('must be a positive integer'), so the search fails on those shards. The new value needs a version check, or should be resolved or removed before it is sent to older nodes.\"\n  },\n  {\n    \"file\": \"server/src/main/java/org/elasticsearch/lucene/search/uhighlight/QueryMaxAnalyzedOffset.java\",\n    \"line\": 20,\n    \"summary\": \"The -1 sentinel is resolved separately in each highlighter (Default, Plain, Annotated) instead of once where the field options are built. Any other Highlighter implementation that reads fieldOptions().maxAnalyzedOffset() still sees the raw -1.\",\n    \"failure_scenario\": \"A plugin or x-pack highlighter that passes fieldOptions().maxAnalyzedOffset() straight to new LimitTokenOffsetAnalyzer(..., -1) or compares it to the index limit gets a negative limit. That means it either analyzes nothing or skips the length check. Resolving -1 to indexSettings.getHighlightMaxAnalyzedOffset() in HighlightBuilder/SearchHighlightContext when building FieldOptions would fix every consumer in one place.\"\n  },\n  {\n    \"file\": \"server/src/main/java/org/elasticsearch/lucene/search/uhighlight/QueryMaxAnalyzedOffset.java\",\n    \"line\": 12,\n    \"summary\": \"The new wrapper class adds a nullable object that holds a single int, plus a getNotNull() accessor, but its only job is to resolve the sentinel. A static helper returning Integer would do the same with less code.\",\n    \"failure_scenario\": \"Every call site still has to null-check and then call getNotNull(), so the Integer-null handling is unchanged while the API now spans 12 files. `static Integer resolve(Integer q, int idx) { return q == null ? null : (q < 0 ? idx : q); }` would keep all the old Integer signatures and avoid the churn.\"\n  },\n  {\n    \"file\": \"server/src/main/java/org/elasticsearch/lucene/search/uhighlight/QueryMaxAnalyzedOffset.java\",\n    \"line\": 16,\n    \"summary\": \"The comment 'If we have a negative value, grab value for the actual maximum from the index' sits in the private constructor, which just assigns the field. The logic it describes is in create(). Also, create() maps any negative value to the index limit, while validation only allows -1.\",\n    \"failure_scenario\": \"Readers or maintainers will look for sentinel handling in the constructor. If validation is ever relaxed or bypassed (for example a test calls create(-5, ...)), any negative value is silently treated as 'use the index value' instead of being rejected, which disagrees with the documented contract of -1 only.\"\n  },\n  {\n    \"file\": \"server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java\",\n    \"line\": 564,\n    \"summary\": \"The Javadoc says a negative int means 'defaulting to index analyzed offset', but the validation right below rejects everything below -1.\",\n    \"failure_scenario\": \"Callers who trust the Javadoc pass -5 and get IllegalArgumentException('must be an integer >= -1'). The documentation should say -1 specifically.\"\n  },\n  {\n    \"file\": \"docs/reference/search/search-your-data/highlighting.asciidoc\",\n    \"line\": 261,\n    \"summary\": \"The user-facing max_analyzed_offset docs were not updated to describe the new -1 value, and the diff adds no docs/changelog entry for this API change.\",\n    \"failure_scenario\": \"Users cannot find out that max_analyzed_offset: -1 means 'use index.highlight.max_analyzed_offset', and release notes will not mention the new REST API behavior.\"\n  },\n  {\n    \"file\": \"server/src/test/java/org/elasticsearch/search/fetch/subphase/highlight/HighlightBuilderTests.java\",\n    \"line\": 707,\n    \"summary\": \"The random builder and the mutation code still generate maxAnalyzedOffset only in [1, 100], so the new -1 value is never tested for serialization, equality, or the FieldOptions merge.\",\n    \"failure_scenario\": \"A regression in how -1 is written, read, or merged from global into field options (SearchHighlightContext line 326) would not be caught by the randomized round-trip tests.\"\n  },\n  {\n    \"file\": \"server/src/main/java/org/elasticsearch/lucene/search/uhighlight/CustomUnifiedHighlighter.java\",\n    \"line\": 128,\n    \"summary\": \"The length check compares the resolved queryMaxAnalyzedOffset against maxAnalyzedOffset, which is the same index value it was resolved from. For -1 the check is always false, so it depends on the resolved value, and that logic is repeated in PlainHighlighter.\",\n    \"failure_scenario\": \"PlainHighlighter line 126 and CustomUnifiedHighlighter line 128 both repeat `q == null || q.getNotNull() > maxAnalyzedOffset`. If only one copy is changed later, for example to change how the sentinel is handled, the two highlighter types will behave differently. A single helper such as `QueryMaxAnalyzedOffset.exceedsIndexLimit(q, idx)` would remove the duplication.\"\n  }\n]\n```",
+  "stderr": "",
+  "claude_duration_ms": 68747,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.26452640000000005,
+  "claude_session_id": "dfeaac8a-8328-4a28-a46b-654b7e840258",
+  "token_usage": {
+    "input_tokens": 12,
+    "output_tokens": 5363,
+    "cache_read_input_tokens": 121592,
+    "cache_creation_input_tokens": 26580,
+    "total_tokens": 153547,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 12,
+        "outputTokens": 5363,
+        "cacheReadInputTokens": 121592,
+        "cacheCreationInputTokens": 26580,
+        "webSearchRequests": 0,
+        "costUSD": 0.26452640000000005,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 1348,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/smoke-amend2/transcripts/elastic__elasticsearch@a6a4623"
+  }
+}

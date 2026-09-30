@@ -2,6 +2,59 @@
 
 Read this first if you pick the study up. Updated at every gate and at the end of every run day.
 
+## 2026-09-30: gate 2 (smoke done, waiting on the maintainer before the scored run)
+
+**Freeze.** Fork `e899595` (Amendment 2 item 13, committed `8cb26e9`). Since the freeze, one
+plumbing change, parsing only and published: `b1c5283`. When the report tool gets no call, A2's
+report-parse fallback reads the `## Verdict` message from the transcript.
+
+**Smoke** (run id `smoke-amend2`, instances 1 to 5, both arms, mock judge; excluded from every
+metric; outputs in `smoke/`):
+- **Instances:** #5 was skipped as a logged failure in both arms; the other four were reviewed
+  in each arm, all with exit 0.
+- **Leak check:** every instance logged "leak check: <default-branch tip> absent".
+  `smoke/leak-proof.txt` shows it on #1: in the isolated repository, `git show` of the cache's
+  tip is a bad object, `git log --all` ends at head, and 9,221 commits against the cache's 24,991.
+- **A1:** 6, 10, 10 and 10 findings, all through the stdout-JSON path; `/code-review` never
+  called the report tool.
+- **A2:** 3, 8, 8 and 14 findings through the report tool. Each count equals its final report's
+  findings: 3 by parse of the final answer, and lvgl's 8 against the report in its transcript,
+  same (file, line) set.
+- **Effort and binary:** effort `high` on every message of every session; CLI 2.1.283 recorded
+  on every result.
+- **Denied tool calls.** A1 made 2 (grep, awk). A2 made 55 over four instances:
+  - `gh` 4 and WebFetch 2: ground-truth protection working;
+  - `git -C <path> ...` forms, which do not match the allowlist. That is also what keeps the
+    cache out of reach;
+  - `git ls-tree`, which v1.5.0's stack-signal step uses and the allowlist lacks;
+  - compound commands that contain a non-allowed part.
+- **Mock evaluation, 3 rounds:** 4 instances and 14 references per arm; 36 and 33 generated,
+  matching the result files. The judge ran 27 and 33 requests. The context join in `primary.py`
+  is exact on the 14.
+- **A2 stages** (`smoke/a2-stages.json`): triage 40 to 79 s; reviewers all concurrent, union 34 to
+  124 s; verifiers up to 4 concurrent, union 19 to 78 s; synthesis 50 to 170 s.
+- **Judge probe:** one fabricated pair (`canary/judge-probe.json`). `glm-5.3` at the z.ai
+  endpoint, not mock, answered "yes" in 6.6 s, and the key is absent from the response.
+
+**Cost of the smoke.**
+- **A1:** 0.77M tokens and 5.4 review-minutes for 4 instances, a mean of 0.19M and 81 s.
+- **A2:** 9.53M tokens and 21.7 minutes, a mean of 2.38M and 325 s.
+
+**Estimate for the scored run** (27 instances, both arms, three judge rounds):
+- **The smoke sits on the small side of the sample.** Its changes are 12 to 142 lines; the
+  sample's median is 77 and its maximum 894.
+- **Tokens:** A1 about 5M (range 3 to 12M), A2 about 65M (range 40 to 100M).
+- **Review time:** about 3.5 hours. Judge: about 400 requests, about 50 minutes.
+- **Subscription load, by roadmap item 4's calibration** (about 1.25 points of the five-hour
+  window per 1M tokens): about 85 points. Planned as two sittings.
+
+**Waiting on the maintainer:**
+1. **[DECISION] `git ls-tree`.** Add `Bash(git ls-tree:*)` to both arms' allowlist by a dated
+   Amendment 3 before the scored run, or keep item 5's list as registered. `git -C` stays out
+   either way, because it would reach the cache.
+2. **Approval of the scored run and its pacing.** Proposed: two sittings (instances 1 to 15,
+   then the rest, both arms each), same `--run-id`, under `caffeinate -is`.
+
 ## 2026-09-30: item 12 check complete, 3 infrastructure failures logged, waiting on the maintainer
 
 **Item 12 check (no LLM), all 30 instances:**

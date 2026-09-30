@@ -1,0 +1,201 @@
+{
+  "ex_info": {
+    "start_time": "2026-09-30T18:28:02.242254",
+    "results_dir": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/smoke-amend2",
+    "reviewer": "review-pro",
+    "line_k": 1,
+    "limit": null,
+    "missing_instance_ids": [
+      "astral-sh__uv@ed57db2"
+    ]
+  },
+  "summary": {
+    "total_instances": 5,
+    "candidate_instances": 5,
+    "evaluated_instances": 4,
+    "missing_instances": 1,
+    "expected_notes": 14,
+    "generated_notes": 33,
+    "matched_line_notes": 8,
+    "matched_semantic_notes": 0,
+    "semantic_match_rate": 0.0,
+    "line_match_rate": 0.242,
+    "semantic_recall_rate": 0.0,
+    "line_recall_rate": 0.571,
+    "semantic_f1": 0.0,
+    "line_f1": 0.34,
+    "total_duration_seconds": 1299.3,
+    "avg_duration_seconds": 324.82,
+    "total_input_tokens": 9293411,
+    "total_output_tokens": 237504,
+    "total_tokens": 9530915,
+    "avg_input_tokens": 2323353,
+    "avg_output_tokens": 59376
+  },
+  "eval_res": [
+    {
+      "instance_id": "vllm-project__vllm@6217b0c",
+      "repo": "vllm-project/vllm",
+      "comments": [
+        {
+          "note": "Redundant exception message in logger.exception call: the current implementation includes the exception string in the format specifier, but logger.exception automatically appends full exception details, causing duplication. Remove the `: %s` format specifier and `str(e)` argument.",
+          "path": "vllm/distributed/kv_transfer/kv_connector/v1/multi_connector.py",
+          "side": "right",
+          "from_line": 96,
+          "to_line": 97,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        }
+      ]
+    },
+    {
+      "instance_id": "lvgl__lvgl@4a57db3",
+      "repo": "lvgl/lvgl",
+      "comments": [
+        {
+          "note": "The change replaces dynamic text width calculation with a cached value (`dsc->text_size.x`), risking incorrect rendering if text updates occur without refreshing the cache. Ensure the cached dimensions remain consistent with the current text state.",
+          "path": "src/draw/lv_draw_label.c",
+          "side": "right",
+          "from_line": 220,
+          "to_line": 221,
+          "line_match": true,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "`label->text_size` is reused later for scroll alignment/scroll-circular logic, but it’s only updated in `lv_label_refr_text()`. If font/letter_space/line_space/flags/max_w or `label->text` change and `lv_label_refr_text()` is not called before `draw_main()`, `text_size` can become stale and cause wrong alignment/scroll behavior. Consider either recomputing size in the specific draw paths when needed, or ensure all setters that impact text metrics update `label->text_size` (or invalidate and trigger `lv_label_refr_text()`) before draw.",
+          "path": "src/widgets/label/lv_label.c",
+          "side": "right",
+          "from_line": 856,
+          "to_line": 856,
+          "line_match": true,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "`label->text_size` is updated here based on current `max_w` and flags. If other code paths compute size with a different `max_w` (e.g., `LV_COORD_MAX` used in scroll checks previously), reusing this cached value can change behavior. Verify that `label->text_size` is intended to represent the unbounded width (`LV_COORD_MAX`) size for scrolling decisions; otherwise consider caching both constrained and unconstrained sizes or keep the local `lv_text_get_size(... LV_COORD_MAX ...)` for scroll logic.",
+          "path": "src/widgets/label/lv_label.c",
+          "side": "right",
+          "from_line": 968,
+          "to_line": 968,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The newly added `text_size` struct member is uninitialized, risking undefined behavior if accessed before `lv_label_refr_text` sets it; initialize to `{0, 0}` during label creation.",
+          "path": "src/widgets/label/lv_label_private.h",
+          "side": "right",
+          "from_line": 54,
+          "to_line": 56,
+          "line_match": true,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The new text_size field is not consistently updated when the cache is invalidated. In LV_EVENT_GET_SELF_SIZE handler, when invalid_size_cache is true, only size_cache gets updated but text_size remains stale. This creates inconsistency between the two cached size fields.",
+          "path": "src/widgets/label/lv_label_private.h",
+          "side": "right",
+          "from_line": 54,
+          "to_line": 54,
+          "line_match": true,
+          "semantic_match": false,
+          "matched_note": ""
+        }
+      ]
+    },
+    {
+      "instance_id": "FreeCAD__FreeCAD@82fef4a",
+      "repo": "FreeCAD/FreeCAD",
+      "comments": [
+        {
+          "note": "Unnamed parameters in `NoOpEntityResolver::resolveEntity` trigger a linter warning; name the parameters and mark them as unused (e.g., with `[[maybe_unused]]` or a `(void)` cast) to resolve both the unnamed-parameter and unused-variable warnings.",
+          "path": "src/Base/Parameter.cpp",
+          "side": "right",
+          "from_line": 1866,
+          "to_line": 1866,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Double newline detected. The string \"\\n\" followed by \"\\n\" produces two consecutive newlines. Consider using a single \"\\n\" or std::endl for consistency with other error messages.\n\n```suggestion\n        std::cerr << \"An error occurred during parsing\\n\";\n```",
+          "path": "src/Base/Parameter.cpp",
+          "side": "right",
+          "from_line": 1911,
+          "to_line": 1911,
+          "line_match": true,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Replacing `std::endl` with `\\n` in error messages may delay critical error visibility due to lack of explicit flushing; revert to `std::endl` to guarantee immediate terminal output for error reporting.",
+          "path": "src/Base/Parameter.cpp",
+          "side": "right",
+          "from_line": 1913,
+          "to_line": 1913,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        }
+      ]
+    },
+    {
+      "instance_id": "elastic__elasticsearch@a6a4623",
+      "repo": "elastic/elasticsearch",
+      "comments": [
+        {
+          "note": "Minor clarity: `getNotNull()` is called after a null-check, but it returns a primitive `int` and can never be null. The name reads like it might perform a nullability check/throw. Consider renaming to something like `get()`/`value()`/`asInt()` (or at least aligning naming across usages) to reduce confusion for future readers.\n\n```suggestion\n            off = new LimitedOffsetsEnum(off, queryMaxAnalyzedOffset.value());\n```",
+          "path": "server/src/main/java/org/elasticsearch/lucene/search/uhighlight/CustomFieldHighlighter.java",
+          "side": "right",
+          "from_line": 116,
+          "to_line": 116,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "There appears to be a mismatch between the comment indicating special handling for negative values and the actual constructor implementation which directly assigns the value. Either the comment should be updated or the constructor should implement the described behavior.",
+          "path": "server/src/main/java/org/elasticsearch/lucene/search/uhighlight/QueryMaxAnalyzedOffset.java",
+          "side": "right",
+          "from_line": 15,
+          "to_line": 18,
+          "line_match": true,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Confusing method name: The name `getNotNull()` is misleading because: 1) It returns a primitive int which cannot be null anyway, 2) The QueryMaxAnalyzedOffset instance itself could be null (when `create` returns null), potentially causing NPE when calling this method, 3) The name doesn't clearly convey what value is being returned. Consider renaming to something more descriptive like `getValue()` or `getMaxAnalyzedOffset()`.",
+          "path": "server/src/main/java/org/elasticsearch/lucene/search/uhighlight/QueryMaxAnalyzedOffset.java",
+          "side": "right",
+          "from_line": 27,
+          "to_line": 29,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The current validation condition for `maxAnalyzedOffset` incorrectly allows 0, which is invalid as highlighting zero characters is nonsensical and may cause undefined behavior. The condition should reject 0 while permitting -1 (special default) and positive integers.",
+          "path": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java",
+          "side": "right",
+          "from_line": 568,
+          "to_line": 568,
+          "line_match": true,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "`QueryMaxAnalyzedOffset.create(...)` returns `null` when the query param is unset. That part is fine, but the current code mixes wrapper-vs-null semantics in a confusing way:\n\n- In the `if` guard, `queryMaxAnalyzedOffset == null || queryMaxAnalyzedOffset.getNotNull() > maxAnalyzedOffset` is logically equivalent to the previous Integer-based check, but it obscures intent and invites mistakes.\n- `wrapAnalyzer(...)` takes a `QueryMaxAnalyzedOffset` yet still checks for null; this is OK functionally, but the naming (`maxAnalyzedOffset`) suggests a primitive/int, and makes it easy to accidentally call `getNotNull()` without guarding in future edits.\n\nSuggestion: keep an `Integer` variable for the query param and only construct the wrapper when non-null (or rename the wrapper variable to `queryMaxAnalyzedOffsetWrapper` / `queryMaxOffset`), so nullability is obvious and `getNotNull()` is only used on a clearly non-null reference.\n\n```suggestion\n        final Integer queryMaxAnalyzedOffset = fieldContext.field.fieldOptions().maxAnalyzedOffset();\n        final QueryMaxAnalyzedOffset queryMaxAnalyzedOffsetWrapper = QueryMaxAnalyzedOffset.create(queryMaxAnalyzedOffset, maxAnalyzedOffset);\n        Analyzer analyzer = wrapAnalyzer(\n            context.getSearchExecutionContext().getIndexAnalyzer(f -> Lucene.KEYWORD_ANALYZER),\n            queryMaxAnalyzedOffsetWrapper\n        );\n```",
+          "path": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/PlainHighlighter.java",
+          "side": "right",
+          "from_line": 111,
+          "to_line": 118,
+          "line_match": true,
+          "semantic_match": false,
+          "matched_note": ""
+        }
+      ]
+    }
+  ]
+}

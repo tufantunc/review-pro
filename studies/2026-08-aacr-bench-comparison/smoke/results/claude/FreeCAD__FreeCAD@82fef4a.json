@@ -1,0 +1,119 @@
+{
+  "instance_id": "FreeCAD__FreeCAD@82fef4a",
+  "repo": "FreeCAD/FreeCAD",
+  "base_commit": "ab225f5672cbe45404299437d1613c308b68900b",
+  "head_commit": "82fef4a22503dd3affdd39e7120b6f71e9423f86",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T14:59:09.687815+00:00",
+  "duration_seconds": 79.71,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1868,
+      "summary": "NoOpEntityResolver::resolveEntity returns nullptr. In Xerces, nullptr means 'fall back to default resolution', so this resolver blocks nothing, and the comment 'Block all external entity resolution' is wrong. The only real protection is still setDisableDefaultEntityResolution(true).",
+      "failure_scenario": "If someone later removes or flips setDisableDefaultEntityResolution(true), for example to make schema loading work, a user.cfg with <!ENTITY x SYSTEM \"file:///etc/passwd\"> is resolved again even though the 'blocker' is still installed. The resolver gives false assurance. A real blocker has to return an empty MemBufInputSource or throw."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1915,
+      "summary": "The function sets errReporter but never checks errReporter->getSawErrors(). Errors that the handler reports, including fatal errors (where Xerces stops parsing and returns without throwing) and the new blocked-entity failures, are ignored. The partial DOM is adopted and the function returns 1 as if it succeeded.",
+      "failure_scenario": "Take a truncated or malformed user.cfg whose root and FCParamGroup 'Root' elements parse before the error. fatalError prints a message, parse() returns normally, errorsOccurred stays false, and the partial document is adopted. FreeCAD runs with silently lost parameters and later saves the truncated set back over the file."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1919,
+      "summary": "_pDocument = parser->adoptDocument() overwrites any existing document without deleting it, so every reload leaks the previous DOMDocument.",
+      "failure_scenario": "Application.cpp:3035, PreferencePackManager.cpp:127 and DlgRevertToBackupConfigImp call LoadDocument on a manager that already has a loaded document. Each call leaks the whole previous DOM tree, and _pGroupNode is repointed while existing ParameterGrp objects still refer to nodes of the old document."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1921,
+      "summary": "The throw paths after adoptDocument leave the manager inconsistent. _pDocument is set to the new document, but _pGroupNode still points into the previous document, or is null on first load.",
+      "failure_scenario": "Load a file whose root lacks FCParamGroup 'Root'. The code throws XMLBaseException after _pDocument has already been replaced. If a caller catches it, GetGroup and SaveDocument use a _pGroupNode that does not belong to _pDocument, or dereference a null _pGroupNode."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1915,
+      "summary": "The failure path returns 0 without creating a fallback document. If this was the first load, _pDocument and _pGroupNode stay null, and LoadOrCreateDocument ignores the return value.",
+      "failure_scenario": "user.cfg contains an XMLException-triggering encoding error. LoadOrCreateDocument(sFileName) calls LoadDocument, which returns 0, and LoadOrCreateDocument returns false ('loaded'). Later GetGroup or SaveDocument dereferences a null _pGroupNode or _pDocument and crashes."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1863,
+      "summary": "NoOpEntityResolver is a class with external linkage in the global namespace. It is not in an anonymous namespace or Base, which risks ODR clashes if another translation unit defines a class with the same name.",
+      "failure_scenario": "If another translation unit (for example a future hardening of ProjectFile.cpp or Reader3MF.cpp) defines its own NoOpEntityResolver with a different body, the vtables and inline members violate ODR. The linker can silently pick either one."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1887,
+      "summary": "The hardening is applied only to this parser. The other Xerces parsers are left without a resolver, so the fix is at the wrong altitude.",
+      "failure_scenario": "The CheckDocument parser (line 2091), ProjectFile.cpp:242, Metadata.cpp:144, Reader3MF.cpp:117 and AppCloud.cpp:823 still parse untrusted XML without this resolver. Some also lack setDisableDefaultEntityResolution. A shared helper in XMLTools (for example a makeSafeDOMParser that also installs a SecurityManager against entity-expansion bombs) would cover all of them, where this one-off class covers a single call site."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1879,
+      "summary": "Heap-allocating the parser, resolver and error reporter with make_unique is unnecessary. Plain stack objects would do the same job, as CheckDocument does at line 2091.",
+      "failure_scenario": "The three heap allocations add indirection and a destruction-order hazard. The unique_ptrs are destroyed in reverse order, so errReporter and entityBlocker are freed while the parser still holds raw pointers to them. The simpler form is `XercesDOMParser parser; NoOpEntityResolver resolver; DOMTreeErrorReporter errReporter;`."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1911,
+      "summary": "Swapping std::endl for \"\\n\" produced the leftover expression `\"An error occurred during parsing\\n \" << \"\\n\"`: a redundant second insertion that prints a trailing space and an extra blank line.",
+      "failure_scenario": "The output is 'An error occurred during parsing\\n \\n', with a stray space and a double newline. It is also inconsistent with the identical message at line 1856, which still uses std::endl. Merge it into a single string literal."
+    },
+    {
+      "file": "src/Base/PreCompiled.h",
+      "line": 107,
+      "summary": "The PR adds another xercesc include to a block that already includes SAXParseException.hpp twice (lines 106 and 108), and leaves the duplicate in place.",
+      "failure_scenario": "The duplicated precompiled-header include is harmless at compile time but adds maintenance noise. This touched block is the natural place to remove the duplicate SAXParseException include."
+    }
+  ],
+  "result_text": "```json\n[\n  {\n    \"file\": \"src/Base/Parameter.cpp\",\n    \"line\": 1868,\n    \"summary\": \"NoOpEntityResolver::resolveEntity returns nullptr. In Xerces, nullptr means 'fall back to default resolution', so this resolver blocks nothing, and the comment 'Block all external entity resolution' is wrong. The only real protection is still setDisableDefaultEntityResolution(true).\",\n    \"failure_scenario\": \"If someone later removes or flips setDisableDefaultEntityResolution(true), for example to make schema loading work, a user.cfg with <!ENTITY x SYSTEM \\\"file:///etc/passwd\\\"> is resolved again even though the 'blocker' is still installed. The resolver gives false assurance. A real blocker has to return an empty MemBufInputSource or throw.\"\n  },\n  {\n    \"file\": \"src/Base/Parameter.cpp\",\n    \"line\": 1915,\n    \"summary\": \"The function sets errReporter but never checks errReporter->getSawErrors(). Errors that the handler reports, including fatal errors (where Xerces stops parsing and returns without throwing) and the new blocked-entity failures, are ignored. The partial DOM is adopted and the function returns 1 as if it succeeded.\",\n    \"failure_scenario\": \"Take a truncated or malformed user.cfg whose root and FCParamGroup 'Root' elements parse before the error. fatalError prints a message, parse() returns normally, errorsOccurred stays false, and the partial document is adopted. FreeCAD runs with silently lost parameters and later saves the truncated set back over the file.\"\n  },\n  {\n    \"file\": \"src/Base/Parameter.cpp\",\n    \"line\": 1919,\n    \"summary\": \"_pDocument = parser->adoptDocument() overwrites any existing document without deleting it, so every reload leaks the previous DOMDocument.\",\n    \"failure_scenario\": \"Application.cpp:3035, PreferencePackManager.cpp:127 and DlgRevertToBackupConfigImp call LoadDocument on a manager that already has a loaded document. Each call leaks the whole previous DOM tree, and _pGroupNode is repointed while existing ParameterGrp objects still refer to nodes of the old document.\"\n  },\n  {\n    \"file\": \"src/Base/Parameter.cpp\",\n    \"line\": 1921,\n    \"summary\": \"The throw paths after adoptDocument leave the manager inconsistent. _pDocument is set to the new document, but _pGroupNode still points into the previous document, or is null on first load.\",\n    \"failure_scenario\": \"Load a file whose root lacks FCParamGroup 'Root'. The code throws XMLBaseException after _pDocument has already been replaced. If a caller catches it, GetGroup and SaveDocument use a _pGroupNode that does not belong to _pDocument, or dereference a null _pGroupNode.\"\n  },\n  {\n    \"file\": \"src/Base/Parameter.cpp\",\n    \"line\": 1915,\n    \"summary\": \"The failure path returns 0 without creating a fallback document. If this was the first load, _pDocument and _pGroupNode stay null, and LoadOrCreateDocument ignores the return value.\",\n    \"failure_scenario\": \"user.cfg contains an XMLException-triggering encoding error. LoadOrCreateDocument(sFileName) calls LoadDocument, which returns 0, and LoadOrCreateDocument returns false ('loaded'). Later GetGroup or SaveDocument dereferences a null _pGroupNode or _pDocument and crashes.\"\n  },\n  {\n    \"file\": \"src/Base/Parameter.cpp\",\n    \"line\": 1863,\n    \"summary\": \"NoOpEntityResolver is a class with external linkage in the global namespace. It is not in an anonymous namespace or Base, which risks ODR clashes if another translation unit defines a class with the same name.\",\n    \"failure_scenario\": \"If another translation unit (for example a future hardening of ProjectFile.cpp or Reader3MF.cpp) defines its own NoOpEntityResolver with a different body, the vtables and inline members violate ODR. The linker can silently pick either one.\"\n  },\n  {\n    \"file\": \"src/Base/Parameter.cpp\",\n    \"line\": 1887,\n    \"summary\": \"The hardening is applied only to this parser. The other Xerces parsers are left without a resolver, so the fix is at the wrong altitude.\",\n    \"failure_scenario\": \"The CheckDocument parser (line 2091), ProjectFile.cpp:242, Metadata.cpp:144, Reader3MF.cpp:117 and AppCloud.cpp:823 still parse untrusted XML without this resolver. Some also lack setDisableDefaultEntityResolution. A shared helper in XMLTools (for example a makeSafeDOMParser that also installs a SecurityManager against entity-expansion bombs) would cover all of them, where this one-off class covers a single call site.\"\n  },\n  {\n    \"file\": \"src/Base/Parameter.cpp\",\n    \"line\": 1879,\n    \"summary\": \"Heap-allocating the parser, resolver and error reporter with make_unique is unnecessary. Plain stack objects would do the same job, as CheckDocument does at line 2091.\",\n    \"failure_scenario\": \"The three heap allocations add indirection and a destruction-order hazard. The unique_ptrs are destroyed in reverse order, so errReporter and entityBlocker are freed while the parser still holds raw pointers to them. The simpler form is `XercesDOMParser parser; NoOpEntityResolver resolver; DOMTreeErrorReporter errReporter;`.\"\n  },\n  {\n    \"file\": \"src/Base/Parameter.cpp\",\n    \"line\": 1911,\n    \"summary\": \"Swapping std::endl for \\\"\\\\n\\\" produced the leftover expression `\\\"An error occurred during parsing\\\\n \\\" << \\\"\\\\n\\\"`: a redundant second insertion that prints a trailing space and an extra blank line.\",\n    \"failure_scenario\": \"The output is 'An error occurred during parsing\\\\n \\\\n', with a stray space and a double newline. It is also inconsistent with the identical message at line 1856, which still uses std::endl. Merge it into a single string literal.\"\n  },\n  {\n    \"file\": \"src/Base/PreCompiled.h\",\n    \"line\": 107,\n    \"summary\": \"The PR adds another xercesc include to a block that already includes SAXParseException.hpp twice (lines 106 and 108), and leaves the duplicate in place.\",\n    \"failure_scenario\": \"The duplicated precompiled-header include is harmless at compile time but adds maintenance noise. This touched block is the natural place to remove the duplicate SAXParseException include.\"\n  }\n]\n```",
+  "stderr": "",
+  "claude_duration_ms": 78284,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.21690640000000003,
+  "claude_session_id": "dfc5eeb7-0c21-4865-9102-1c8463ffd166",
+  "token_usage": {
+    "input_tokens": 10,
+    "output_tokens": 5193,
+    "cache_read_input_tokens": 81457,
+    "cache_creation_input_tokens": 19343,
+    "total_tokens": 106003,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 10,
+        "outputTokens": 5193,
+        "cacheReadInputTokens": 81457,
+        "cacheCreationInputTokens": 19343,
+        "webSearchRequests": 0,
+        "costUSD": 0.21690640000000003,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 2024,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/smoke-amend2/transcripts/FreeCAD__FreeCAD@82fef4a"
+  }
+}

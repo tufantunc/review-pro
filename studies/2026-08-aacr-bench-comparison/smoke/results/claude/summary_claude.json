@@ -1,0 +1,35 @@
+[
+  {
+    "instance_id": "astral-sh__uv@ed57db2",
+    "status": "infra_failure_skipped",
+    "reason": "head commit ed57db2b34c2 no longer exists on GitHub (not our ref; commits API 422)"
+  },
+  {
+    "instance_id": "vllm-project__vllm@6217b0c",
+    "status": "ok",
+    "exit_code": 0,
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/smoke-amend2/vllm-project__vllm@6217b0c.json",
+    "retry_exhausted": false
+  },
+  {
+    "instance_id": "lvgl__lvgl@4a57db3",
+    "status": "ok",
+    "exit_code": 0,
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/smoke-amend2/lvgl__lvgl@4a57db3.json",
+    "retry_exhausted": false
+  },
+  {
+    "instance_id": "FreeCAD__FreeCAD@82fef4a",
+    "status": "ok",
+    "exit_code": 0,
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/smoke-amend2/FreeCAD__FreeCAD@82fef4a.json",
+    "retry_exhausted": false
+  },
+  {
+    "instance_id": "elastic__elasticsearch@a6a4623",
+    "status": "ok",
+    "exit_code": 0,
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/smoke-amend2/elastic__elasticsearch@a6a4623.json",
+    "retry_exhausted": false
+  }
+]

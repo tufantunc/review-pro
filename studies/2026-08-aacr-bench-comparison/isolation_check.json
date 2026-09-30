@@ -1,0 +1,396 @@
+[
+ {
+  "instance_id": "vllm-project__vllm@6217b0c",
+  "base": "f4962a6d55a340ebb569d377c842deff7611d8f7",
+  "head": "6217b0c46176fa51196d862e02e1b3722eefa4de",
+  "ok": true,
+  "merge_base": "f4962a6d55a340ebb569d377c842deff7611d8f7",
+  "commits_isolated": 9221,
+  "commits_cache": 24991,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 2.5
+ },
+ {
+  "instance_id": "lvgl__lvgl@4a57db3",
+  "base": "d2ed41dda1618049a037df2639b9d28578847195",
+  "head": "4a57db33476f1caf3e85726a6b1e189c68c1f36b",
+  "ok": true,
+  "merge_base": "e150297232acb283717f5d22e49e39c80ebb5667",
+  "commits_isolated": 11225,
+  "commits_cache": 13852,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 5.3
+ },
+ {
+  "instance_id": "FreeCAD__FreeCAD@82fef4a",
+  "base": "ab225f5672cbe45404299437d1613c308b68900b",
+  "head": "82fef4a22503dd3affdd39e7120b6f71e9423f86",
+  "ok": true,
+  "merge_base": "f3e1e6cec065f0295e38d36a68e0390f1b977a32",
+  "commits_isolated": 42748,
+  "commits_cache": 51662,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 30.3
+ },
+ {
+  "instance_id": "elastic__elasticsearch@a6a4623",
+  "base": "cc0e53e883ee7e0b136e58a0105103c1a7ffddf9",
+  "head": "a6a4623f4a0216b515a8cb323110305504431459",
+  "ok": true,
+  "merge_base": "d3f2956116eea89543dc4979bd3cdfc5c54d8bd7",
+  "commits_isolated": 82477,
+  "commits_cache": 201170,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 37.1
+ },
+ {
+  "instance_id": "astral-sh__uv@ed57db2",
+  "base": "1fae8dbf1789717f45e82ea290c1c99642d05139",
+  "head": "ed57db2b34c2a7a955b2dc76583dce7ace02e628",
+  "ok": false,
+  "error": "commit ed57db2b34c2a7a955b2dc76583dce7ace02e628 unavailable after fetch: fatal: remote error: upload-pack: not our ref ed57db2b34c2a7a955b2dc76583dce7ace02e628",
+  "seconds": 5.0
+ },
+ {
+  "instance_id": "microsoft__typescript-go@b970689",
+  "base": "bc3195e0f2727d11a48ed9fc61f37a90c9b7deb4",
+  "head": "b970689fe86e0b6ef4f5285b18343ddf16b294eb",
+  "ok": true,
+  "merge_base": "d851a61fc472fd4e50f0d23b84bd6f102bec3a6e",
+  "commits_isolated": 587,
+  "commits_cache": 3083,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 17.3
+ },
+ {
+  "instance_id": "valkey-io__valkey@866fa4a",
+  "base": "23fb9f2b5162752fbf42d892c6ff311a346565b8",
+  "head": "866fa4a4c9635bae6f0a6b59a78954083ff5ff1a",
+  "ok": true,
+  "merge_base": "374718b2a365ca69f715d542709b7d71540b1387",
+  "commits_isolated": 13170,
+  "commits_cache": 22247,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 2.5
+ },
+ {
+  "instance_id": "microsoft__typescript-go@892b4a3",
+  "base": "a9efe52c52001ea5b49d2ae8d7b0fa32ec8339f3",
+  "head": "892b4a3f6b701352047ceb019fc0683ab1146bb3",
+  "ok": true,
+  "merge_base": "5e6bd1efcfb0020fc221d06492248db780d68eb1",
+  "commits_isolated": 912,
+  "commits_cache": 3080,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 19.0
+ },
+ {
+  "instance_id": "wavetermdev__waveterm@90a57d5",
+  "base": "286783fb8e71cec6d2294bd871e5ccf8c798c646",
+  "head": "90a57d552d15f1b2a4d92cdfc3a4308efcf5c57b",
+  "ok": true,
+  "merge_base": "900f4a3ff7574246b188a716f55afe65694d5c40",
+  "commits_isolated": 1760,
+  "commits_cache": 4542,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 0.7
+ },
+ {
+  "instance_id": "google-gemini__gemini-cli@c6e6248",
+  "base": "809b933d8150c29154062e4d596cd916258022fc",
+  "head": "c6e624883852318b71baa2a060c933bb5de591ef",
+  "ok": true,
+  "merge_base": "570b0086b606d2a6d55a2bdcd08b8a91c8092c8d",
+  "commits_isolated": 2546,
+  "commits_cache": 17272,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 1.0
+ },
+ {
+  "instance_id": "FreeCAD__FreeCAD@ec3da2e",
+  "base": "79008331b30d098b2c32e59752e24e0705b350bc",
+  "head": "ec3da2e93e3fd8f69f113ca14abf892dfb86c11b",
+  "ok": true,
+  "merge_base": "9a6a98f824436656cae242ae26b043f78411ebba",
+  "commits_isolated": 41163,
+  "commits_cache": 51666,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 27.2
+ },
+ {
+  "instance_id": "linera-io__linera-protocol@024925d",
+  "base": "c4a8ac301274ccdfc8d0fc87871d557534a8405f",
+  "head": "024925dfbeff5daaecdd2cd733cda2825eff1bb7",
+  "ok": true,
+  "merge_base": "73816f6f8c07708c474394c610f4f32f88be0e7b",
+  "commits_isolated": 3736,
+  "commits_cache": 7659,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 1.3
+ },
+ {
+  "instance_id": "comfyanonymous__ComfyUI@cfc3122",
+  "base": "a86aaa430183068e2a264495c802c81d05eb350a",
+  "head": "cfc312296c0b9f255bba6b4b2789ac7bbc66a7cb",
+  "ok": false,
+  "error": "commit cfc312296c0b9f255bba6b4b2789ac7bbc66a7cb unavailable after fetch: fatal: remote error: upload-pack: not our ref cfc312296c0b9f255bba6b4b2789ac7bbc66a7cb",
+  "seconds": 3.8
+ },
+ {
+  "instance_id": "ollama__ollama@b6002f6",
+  "base": "92b96d54efd6b49322b7cf046f9a0dc16b00cd0a",
+  "head": "b6002f6b6c69370f8c18a9e6c1cafa8463273a6b",
+  "ok": true,
+  "merge_base": "17a023f34b9ec81afd39aca36f3dcd488c4d48ea",
+  "commits_isolated": 4540,
+  "commits_cache": 7883,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 1.2
+ },
+ {
+  "instance_id": "mpv-player__mpv@dbd327d",
+  "base": "30869ddb904f800ad1b858ac99c5fb81690f0cb7",
+  "head": "dbd327d36fd0dc80ebd6e5517c102a92e31a0836",
+  "ok": true,
+  "merge_base": "5ba7ee513751dd005379a06fb627303e6fe1b3dd",
+  "commits_isolated": 53981,
+  "commits_cache": 56892,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 4.6
+ },
+ {
+  "instance_id": "microsoft__typescript-go@45c0de9",
+  "base": "af2ba7365ad3e2f572ddb95a439b0220eccc06b1",
+  "head": "45c0de96a08812aff07974b859bc2327e7fe25ed",
+  "ok": true,
+  "merge_base": "a06d95b0fe0346851ada34b05d1af901b2e28ab3",
+  "commits_isolated": 680,
+  "commits_cache": 3080,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 15.9
+ },
+ {
+  "instance_id": "elastic__elasticsearch@e38d20c",
+  "base": "078f7ff9f7134a9c3011106e7b742a9fd8f04d56",
+  "head": "e38d20c726cffb1ef9563d3146951a5356596464",
+  "ok": true,
+  "merge_base": "930b4ab9957ed4a6376bcac7ba17f7bb2e82d125",
+  "commits_isolated": 85725,
+  "commits_cache": 201169,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 38.2
+ },
+ {
+  "instance_id": "CherryHQ__cherry-studio@5644b00",
+  "base": "636c788e2ba413d21a5fd385c3ea4cc7e134e1be",
+  "head": "5644b00b87e07fa1acd84d4ec93f9f2fb1205090",
+  "ok": true,
+  "merge_base": "227ea3e39be11684d1720e9bf604539541f21a36",
+  "commits_isolated": 2514,
+  "commits_cache": 23281,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 1.0
+ },
+ {
+  "instance_id": "lvgl__lvgl@a0067e3",
+  "base": "5f41926f0414c02f70547c50329969f7fe6a4b8d",
+  "head": "a0067e3984cc95bb3ed0dce9abb664ee6a01a199",
+  "ok": true,
+  "merge_base": "3f13398673c810ce5b3f7b21a7b89753f5e9ba97",
+  "commits_isolated": 10872,
+  "commits_cache": 13852,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 4.6
+ },
+ {
+  "instance_id": "FreeCAD__FreeCAD@f8cd643",
+  "base": "730e07db5d2acafe7723eb89c83641375c375bc3",
+  "head": "f8cd64328c49510285490dfd9872253ce7a53040",
+  "ok": true,
+  "merge_base": "730e07db5d2acafe7723eb89c83641375c375bc3",
+  "commits_isolated": 42346,
+  "commits_cache": 51662,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 28.6
+ },
+ {
+  "instance_id": "browser-use__browser-use@aab7b3b",
+  "base": "515b94225aa86c40dc2c20034055ab8bcc88c6ae",
+  "head": "aab7b3bb54e2b15ee3b32ad7de74c91fc8b22f52",
+  "ok": true,
+  "merge_base": "01abdc414b4bea9da34d10c2fb5383c870396f50",
+  "commits_isolated": 1767,
+  "commits_cache": 12867,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 0.4
+ },
+ {
+  "instance_id": "facebook__react@b045f18",
+  "base": "99563e91736e9de473c4865d5cb6fd9eb1a26bcb",
+  "head": "b045f18e378341876ee69e729fc855cab501c3cd",
+  "ok": true,
+  "merge_base": "2980f27779cf37a9656b25418a3c5cfca989e244",
+  "commits_isolated": 20098,
+  "commits_cache": 35279,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 25.2
+ },
+ {
+  "instance_id": "valkey-io__valkey@36f37c0",
+  "base": "ea2e48a807e1d4a1a5a684a2a699eda1934a0c6f",
+  "head": "36f37c0bafa72c091a9a3725b9a026a056130892",
+  "ok": true,
+  "merge_base": "06990c2e6360c90e5e0b1b5aa4e7708b13955851",
+  "commits_isolated": 12996,
+  "commits_cache": 22247,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 2.4
+ },
+ {
+  "instance_id": "alibaba__spring-ai-alibaba@4bc7305",
+  "base": "71e7eeb27dfe42c5a805da413ef6e9faf84fe9d0",
+  "head": "4bc73055c7b33f53433d9725eab5010b85a59632",
+  "ok": true,
+  "merge_base": "d81ba177cc8b3da5f18190c18f2de55b80bb5895",
+  "commits_isolated": 2047,
+  "commits_cache": 3339,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 2.1
+ },
+ {
+  "instance_id": "infiniflow__ragflow@a63caa1",
+  "base": "0a42e5777eb966b26aaf8f2a7d593ae99a4aa87a",
+  "head": "a63caa1087852ada98964678be26b7c4d8363af6",
+  "ok": true,
+  "merge_base": "e2b66628f4728aeda0c1db5aa8e75d5d6729f3db",
+  "commits_isolated": 2706,
+  "commits_cache": 9744,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 1.8
+ },
+ {
+  "instance_id": "opencv__opencv@e3e45c8",
+  "base": "459bb12466abdade062607ae54f3267adaef8063",
+  "head": "e3e45c86baa3c51def49961f5d77201ee97e4385",
+  "ok": true,
+  "merge_base": "fe9405e8c0341f67da8d804494d642cf296899c8",
+  "commits_isolated": 34868,
+  "commits_cache": 38410,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 9.9
+ },
+ {
+  "instance_id": "dotnet__aspnetcore@8ac940f",
+  "base": "7ba02e8ac71eeba562476953d5ff6030b8eda765",
+  "head": "8ac940ff581aa344ab8f859874f6d4c0ecaec6b6",
+  "ok": true,
+  "merge_base": "3fe06183a8d3ef32de0d16863d232d5652b1fe9b",
+  "commits_isolated": 54454,
+  "commits_cache": 65237,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 12.5
+ },
+ {
+  "instance_id": "filamentphp__filament@d47632c",
+  "base": "ce4d9d08df41142ff219bb3dc44968084eaae0dc",
+  "head": "d47632c0583bac481d4ce7cc9b6b1711d0f8e0fc",
+  "ok": true,
+  "merge_base": "ce4d9d08df41142ff219bb3dc44968084eaae0dc",
+  "commits_isolated": 22873,
+  "commits_cache": 30856,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 6.0
+ },
+ {
+  "instance_id": "laravel__framework@180c25f",
+  "base": "2e5054a19ba55b335bf8df43a8ae7e032244f671",
+  "head": "180c25ff94ae2dff26d2ca5f8bf779af1e8fc8c2",
+  "ok": true,
+  "merge_base": "1472088e7026f8d87d3c38dfc1bc7e023329a039",
+  "commits_isolated": 38877,
+  "commits_cache": 43102,
+  "refs_isolated": [
+   "refs/heads/pr-base",
+   "refs/heads/pr-head"
+  ],
+  "seconds": 4.1
+ }
+]

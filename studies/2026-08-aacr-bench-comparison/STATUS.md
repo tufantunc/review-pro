@@ -30,8 +30,8 @@ The fork is not frozen yet.
 2. **Then the freeze** (Amendment 2 item 13), the smoke run (instances 1 to 5; #5 is logged, not
    reviewed), the judge probe, and gate 2.
 
-The two broken ClickHouse caches (`evaluation/repo/ClickHouse__ClickHouse` and `.new`) are left in
-place, unused.
+The two broken ClickHouse caches (`evaluation/repo/ClickHouse__ClickHouse` and `.new`, 6.1 GB)
+were deleted on the maintainer's instruction. The cache now holds the other 22 repositories.
 
 ## 2026-09-28, after gate 1: Amendment 2 committed, plumbing written, waiting on clones
 

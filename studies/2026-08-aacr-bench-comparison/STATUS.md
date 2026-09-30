@@ -204,6 +204,18 @@ failures and skipped, so 13 reviews per arm):
   - #6's answer had one JSON syntax error, so it scores zero findings as registered. That
     triggered Amendment 4, the maintainer's decision (a): a post-hoc sensitivity analysis.
 - **A2 sitting 1 started** 2026-09-30, right after. Its log is `phase1-s1-review-pro.log`.
+- **A2 sitting 1 was interrupted** at 2026-10-01 00:05:37.
+  - **Cause:** the orchestrating session's 30-minute limit on background commands stopped the
+    pipeline. Infrastructure, not the model or the benchmark.
+  - **Where:** 4 of 13 instances were done (#1 to #4). #6 (`microsoft__typescript-go@b970689`) had
+    run for about 9 minutes and wrote no result and no report-tool call.
+  - **Evidence:** its session transcript (`e929f90f`) is kept under
+    `evaluation/results/aacr_bench/_study/interrupted/`, and it is not scored.
+- **A2 resumed the same night,** with the same command and run id, now as a detached process
+  outside that limit.
+  - Resume skips the four finished instances and runs #6 from the start. That is the first
+    complete attempt for #6 in A2, not a re-review.
+  - A1 was not affected, and nothing is re-run in A1.
 - **Next:** sitting 2 (instances 16 to 30), then the evaluation.
 - To resume after an interruption, run the same command with the same `--run-id phase1`:
 

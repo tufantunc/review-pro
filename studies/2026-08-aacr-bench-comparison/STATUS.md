@@ -216,7 +216,16 @@ failures and skipped, so 13 reviews per arm):
   - Resume skips the four finished instances and runs #6 from the start. That is the first
     complete attempt for #6 in A2, not a re-review.
   - A1 was not affected, and nothing is re-run in A1.
-- **Next:** sitting 2 (instances 16 to 30), then the evaluation.
+- **A2 sitting 1 done** 2026-10-01 00:59:53: 13 reviews, all with exit 0, 47.3M tokens, 73
+  review-minutes.
+  - **Reported findings match the reports on every instance.** On 12 of 13 the report-tool
+    findings equal the transcript report's findings.
+  - **#7 valkey** is an APPROVE with 0 findings, taken through the report-parse fallback.
+  - **#6 printed no full report message.** Its 14 report-tool findings (2 High, 4 Medium, 6 Low,
+    2 Nitpick) equal the counts in the final answer.
+- **Sitting 1 is complete for both arms** (instances 1 to 15). A1 used 6.5M tokens, A2 47.3M:
+  3.6M per A2 instance, above the smoke's 2.4M.
+- **Next:** sitting 2 (instances 16 to 30; #19 is skipped as logged), then the evaluation.
 - To resume after an interruption, run the same command with the same `--run-id phase1`:
 
 ```

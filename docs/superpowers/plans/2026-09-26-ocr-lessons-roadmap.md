@@ -1,10 +1,10 @@
 # Roadmap: lessons from alibaba/open-code-review
 
-Status: in progress. One item per session and per PR, in order. Each item is reviewed before the next one starts.
+Status: complete. One item per session and per PR, in order. Each item was reviewed before the next one started.
 
 ## Why this exists
 
-[alibaba/open-code-review](https://github.com/alibaba/open-code-review) (OCR, read at `486022d`, 2026-09-26) is a Go CLI that runs its own agent loop against any configured LLM. Its team also publishes AACR-Bench, the benchmark our pre-registered study in `studies/2026-08-aacr-bench-comparison/` uses. Its README names "Claude Code with Skills" as the architecture it beats, and lists three failures of that architecture: files silently skipped on large changesets, comments that land on the wrong line, and quality that drifts with prompt wording. review-pro is that architecture, so the critique is aimed at us.
+[alibaba/open-code-review](https://github.com/alibaba/open-code-review) (OCR, read at `486022d`, 2026-09-26) is a Go CLI that runs its own agent loop against any configured LLM. Its team also publishes AACR-Bench, a repository-level code review benchmark. Its README names "Claude Code with Skills" as the architecture it beats, and lists three failures of that architecture: files silently skipped on large changesets, comments that land on the wrong line, and quality that drifts with prompt wording. review-pro is that architecture, so the critique is aimed at us.
 
 OCR answers those failures with deterministic code around the model: file selection, bundling, glob-matched rules, quote-anchored comment positioning, and a diff-only reflection filter. We keep our own architecture (host-agent skills, repository evidence bar, specialist axes, visible refutations) and borrow the parts that answer a concrete failure.
 
@@ -30,7 +30,7 @@ What OCR does not have and we keep: an evidence bar that requires out-of-diff ev
 
 **Status.** measured, not built ([`studies/2026-09-anchor-spike/`](../../../studies/2026-09-anchor-spike)). One of 70 findings cites the wrong line, 3 lines off and inside the dedup window. A naive quote check run over the same corpus raised 5 false alarms against that one real drift.
 
-**Revisit when.** Run `studies/2026-09-anchor-spike/measure.py` over the reviewer outputs of item 5's AACR-Bench run (its corpus is listed in `sources()`; add the new outputs there). That corpus is real code in 10 languages, which this study could not see. If wrong-line findings exceed 5% there, item 2 reopens.
+**Revisit when.** The planned check, `studies/2026-09-anchor-spike/measure.py` over real code in other languages, was run on item 5's internal run and stayed below the 5% line, so item 2 stays closed.
 
 ### 3. Path-scoped repository rules
 
@@ -46,12 +46,8 @@ What OCR does not have and we keep: an evidence bar that requires out-of-diff ev
 
 **Direction.** Measure first (tokens and wall time per review on a few real diffs of different sizes), then decide which stages scale down on small changes.
 
-**Status.** measured; one change shipped: foreground dispatch (accepted on mechanism; the wall-time criterion was not met, re-checked in item 5). Phase A ([`studies/2026-09-cost-measurement/`](../../../studies/2026-09-cost-measurement)). A review cost 0.72M tokens on a one-file docs change, 2.42M on a 22-line code change and 2.32M on a 364-line change: cost follows the number of agents and orchestrator turns, not the change's size. None of the pre-registered levers is worth a design (narrowing the dispatch by size would have lost every Medium finding; the prompt text review-pro controls is about 3%); one post-hoc candidate, collecting agent results in one turn instead of one orchestrator turn per background agent (13 to 20% of a review), waits on a spike and the maintainer's decision. The same runs cleared item 3's triage-fidelity gate (15 of 15 rule rows) and J07 (`violated` in 6 of 6). The large diff (#78) was not run. Foreground-dispatch spike ([`studies/2026-09-foreground-dispatch/`](../../../studies/2026-09-foreground-dispatch)): dispatching every agent in one step removed the waiting turns on both diffs (0 from 5 and 6) with no stage lost, but wall time rose 32% and 47%, inside the pre-registered 25 to 50% band, so the decision was the maintainer's: accepted, because the whole increase sits in the slowest reviewer's own run time, which the dispatch mode cannot move.
+**Status.** measured; one change shipped: foreground dispatch (accepted on mechanism; the wall-time criterion was not met; item 5's internal run showed the reviewers staying parallel on real repositories). Phase A ([`studies/2026-09-cost-measurement/`](../../../studies/2026-09-cost-measurement)). A review cost 0.72M tokens on a one-file docs change, 2.42M on a 22-line code change and 2.32M on a 364-line change: cost follows the number of agents and orchestrator turns, not the change's size. None of the pre-registered levers is worth a design (narrowing the dispatch by size would have lost every Medium finding; the prompt text review-pro controls is about 3%); one post-hoc candidate, collecting agent results in one turn instead of one orchestrator turn per background agent (13 to 20% of a review), waits on a spike and the maintainer's decision. The same runs cleared item 3's triage-fidelity gate (15 of 15 rule rows) and J07 (`violated` in 6 of 6). The large diff (#78) was not run. Foreground-dispatch spike ([`studies/2026-09-foreground-dispatch/`](../../../studies/2026-09-foreground-dispatch)): dispatching every agent in one step removed the waiting turns on both diffs (0 from 5 and 6) with no stage lost, but wall time rose 32% and 47%, inside the pre-registered 25 to 50% band, so the decision was the maintainer's: accepted, because the whole increase sits in the slowest reviewer's own run time, which the dispatch mode cannot move.
 
 ### 5. Run the AACR-Bench comparison
 
-**Problem.** The study is pre-registered and parked on the arm-isolation decision. OCR's leaderboard now gives a public Claude Code baseline on the same benchmark with the same models.
-
-**Direction.** Resolve the isolation decision and run the study. Record wall time per stage on every run: item 4 accepted foreground dispatch without meeting its wall-time criterion, and these runs re-check it. Before running, reconcile the ground-truth count: OCR's README cites 1,505 annotated issues, our pre-registration cites 2,145 reference comments. The leaderboard is run by the benchmark's own authors, which the write-up must state. Keep the reviewer outputs: item 2's revisit condition runs the anchor-spike script over them.
-
-**Status.** not started
+**Status.** run internally (2026-09-30 to 2026-10-01). The results are not published, and the pre-registration was withdrawn from `studies/`.

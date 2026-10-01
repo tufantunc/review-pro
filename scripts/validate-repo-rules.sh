@@ -1,7 +1,8 @@
 # scripts/validate-repo-rules.sh: repository-rules checks (roadmap item 3, ADR-0011).
 # Sourced by validate.sh, never run alone: it uses validate.sh's variables (ROOT, SKILLS_DIR,
 # TRIAGE_MD, ORCH_MD, VERIFY_MD, SYNTH_MD, SCHEMA_DOC, rules_first_body) and its helpers
-# (add_error, section, read_section). The reviewer-body checks stay in validate.sh's body loop.
+# (add_error, section, read_section, anchor_line, anchor_has). The reviewer-body checks stay in
+# validate.sh's body loop.
 
 if [[ -f "$TRIAGE_MD" ]]; then
   # Repository rules (roadmap item 3). Each pin is its own line in the triage step.
@@ -89,6 +90,14 @@ if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Repository rules' "$SYNTH_MD"; then
     grep -E '^2\. \*\*Dedup\*\*' "$SYNTH_MD" | grep -qF 'drops the rules citation' \
       || add_error "review-pro-synthesize/SKILL.md: Dedup no longer drops the rules citation - a finding with its own evidence, merged with a rule finding, would be capped at Medium"
     rr_pin "keeps the higher of the other finding's own severity and the rule finding's severity capped at Medium"  "the merged-severity rule is gone - a finding with its own evidence could lose its severity by merging with a rule finding"
+    # The working-tree-only plan has no rows, so its line survives the omitted table only by this
+    # clause (round 2). A missing omit line is the omit pin's error alone.
+    omitl="$(printf '%s\n' "$RR" | grep -F 'Omit the whole section when triage emitted no `repository_rules`')"
+    [[ -z "$omitl" ]] || printf '%s\n' "$omitl" | grep -qF 'omit the table when `rows` is empty, keeping only the lines beneath it that apply' \
+      || add_error "review-pro-synthesize/SKILL.md: the lines beneath an omitted rules table no longer print - a rules file only in the working tree has no rows, and its uncommitted line would be dropped"
+    # Line-scoped: the Stack signals pack line shares "has changes that are not committed".
+    printf '%s\n' "$RR" | grep -F '`.review-pro/rules.md has changes that are not committed; a review applies rules only once they are committed to the base branch.`' | grep -F 'when `uncommitted` is true' | grep -qF 'whatever `file_changed` says' \
+      || add_error "review-pro-synthesize/SKILL.md: the rules-uncommitted line is gone or narrowed - a rule the author wrote and did not commit reads as applied, or an uncommitted edit on top of a committed one goes unreported"
   fi
 fi
 # The rules cap runs before verification selects anything; after it, the verified-severity
@@ -148,4 +157,38 @@ SSUB_MD="$ROOT/core/agents/review-pro-synthesize-subagent.md"
 if [[ -f "$SSUB_MD" ]]; then
   grep -F '1. Receive' "$SSUB_MD" | grep -F '`external_premises`' | grep -qF '## Premise verification' \
     || add_error "review-pro-synthesize-subagent.md: no longer names the External premises inputs - subagent synthesis would drop the premises table, not-reported rows included"
+fi
+
+# Uncommitted rules (v1.5.0 release review, Low): an edit only in the working tree is reported,
+# never applied. Each pin is scoped to the one line that carries it. The line opens with "Rules
+# not committed:", not "What is not committed:", because the pack step's anchor on that phrase
+# must stay unique. A missing line is the first pin's error alone; the others judge a present line.
+if [[ -f "$TRIAGE_MD" ]]; then
+  anchor_line "$TRIAGE_MD" 'set `uncommitted: true`'
+  anchor_has "\`git diff --name-status --no-renames HEAD -- ':/.review-pro/rules.md'\`" \
+    || add_error "review-pro-triage/SKILL.md: staged and unstaged rules edits are no longer listed as uncommitted - a rule the author wrote and did not commit reads as applied"
+  if [[ -n "$ANCHOR_LINE" ]]; then
+    anchor_has "\`git ls-files --others --full-name -- ':/.review-pro/rules.md'\`" \
+      || add_error "review-pro-triage/SKILL.md: an untracked rules file is no longer listed - a rules file never committed gets no report line"
+    # Naming both reads is not enough: the flag must follow either one's output (round 1).
+    anchor_has 'When either lists the file, set `uncommitted: true`' \
+      || add_error "review-pro-triage/SKILL.md: uncommitted no longer follows either read - a rules file only ls-files lists, one never committed, gets no report line"
+    anchor_has 'never applied and never part of the change' \
+      || add_error "review-pro-triage/SKILL.md: an uncommitted rules edit may now be applied or reported as the change's - the working tree would steer the review"
+    anchor_has 'no row, no `file_changed` and no dispatch' \
+      || add_error "review-pro-triage/SKILL.md: an uncommitted rules edit may now change rows, file_changed or dispatch - the working tree would steer the review"
+  fi
+  anchor_line "$TRIAGE_MD" 'If neither copy exists, emit nothing when step 2 found nothing'
+  anchor_has 'and only `source: none`, `file_changed: none` and `uncommitted: true` when it did' \
+    || add_error "review-pro-triage/SKILL.md: a rules file only in the working tree emits nothing again - the report is silent about rules the author expects to apply"
+  # v1.0 is frozen: the field is an addition, optional, and absent from a repository without rules.
+  grep -qE '^  uncommitted: true +# optional; only when step 8 found ' "$TRIAGE_MD" \
+    || add_error "review-pro-triage/SKILL.md: the dispatch plan's repository_rules no longer carries uncommitted as an optional field - the plan cannot say the rules were not committed, or v1.0 plans without it read as invalid"
+  # The plan schema restates step 8.3; each comment is pinned on its own line so the copies cannot
+  # drift apart (round 2). A missing key line is the key pin's error alone.
+  ! grep -qE '^repository_rules:' "$TRIAGE_MD" \
+    || grep -E '^repository_rules:' "$TRIAGE_MD" | grep -qF 'and step 8 found nothing uncommitted' \
+    || add_error "review-pro-triage/SKILL.md: the plan schema may omit repository_rules for a rules file only in the working tree - it contradicts step 8.3 and the report goes silent"
+  grep -E '^  source: \.review-pro/rules\.md@' "$TRIAGE_MD" | grep -qF '# none: the merge base has no rules file' \
+    || add_error "review-pro-triage/SKILL.md: the plan's source comment no longer covers a rules file only in the working tree - source: none reads as only the head having one"
 fi

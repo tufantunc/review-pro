@@ -78,3 +78,15 @@ had covered, all fixed before v1.5.0 shipped:
   cannot pull a rule violation below its own capped severity.
 - If `git merge-base` prints nothing, the review stops. `git show` with an empty revision reads
   the index, which is the change's own copy of the rules and packs.
+
+## Amendment, 2026-10-01 (v1.5.0 release review, Lows)
+
+An edit to `.review-pro/rules.md` that is only in the working tree (staged, unstaged, or a file
+never committed) is now reported the way ADR-0012 reports an uncommitted pack: triage lists it
+with the same `git diff --name-status HEAD` and `git ls-files --others` reads, sets
+`uncommitted: true` under `repository_rules`, and synthesis prints a line saying rules apply only
+once committed to the base branch. Before, a rules file never committed produced no line at all,
+and an uncommitted edit to a committed file was indistinguishable from no edit. The edit is still
+never applied, never part of the change, and changes no row, `file_changed` or dispatch. The
+field is optional, so a v1.0 plan without it stays valid and a repository without the file emits
+nothing, as before.

@@ -344,7 +344,9 @@ if [[ -f "$SYNTH_MD" ]]; then
     || add_error "review-pro-synthesize/SKILL.md: no branch for the abstain token - an unmeasured axis would be reported as 'no mismatch'"
   grep -qF 'not on `(file, line)`' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the spec pool's dedup rule is gone - unattempted requirements would collapse into one finding"
-  grep -qF 'External premises' "$SYNTH_MD" \
+  # The ledger's own heading line, whole: the phrase alone is carried by prose that points at the
+  # table ("before the External premises table"), which kept this pin passing with the ledger gone.
+  grep -qxF '### External premises' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the external-premise ledger is gone - a reviewer's 'could not verify' statement dies before the report the reader actually reads"
   grep -qF 'not how the reviewer would have written it' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the approval standard is gone - verdicts drift from measuring code health to enforcing taste, and imperfect improvements start getting blocked"
@@ -406,7 +408,25 @@ if [[ -f "$SYNTH_MD" ]]; then
     elif ! [[ "$sp" -lt "$c" && "$c" -lt "$v" ]]; then
       add_error "review-pro-synthesize/SKILL.md: the Output template orders the header lines wrong - it must be Spec, Coverage, Verification"
     fi
+    # The template is the one copy of the report order (v1.5.0 release review, Low): the caveat
+    # follows the header lines and precedes the premises table. Order is judged only between
+    # present lines; a missing Verification line is the chain above's error.
+    ca="$(line_of '> the out-of-diff caveat')"; ep="$(line_of '> the External premises table')"
+    if [[ -z "$ca" ]]; then
+      add_error "review-pro-synthesize/SKILL.md: the Output template no longer places the out-of-diff caveat - the report order for it lives nowhere"
+    elif [[ -z "$ep" ]]; then
+      add_error "review-pro-synthesize/SKILL.md: the Output template no longer places the External premises table - the caveat's order against it can no longer be checked"
+    elif [[ ( -n "$v" && "$ca" -lt "$v" ) || "$ca" -gt "$ep" ]]; then
+      add_error "review-pro-synthesize/SKILL.md: the Output template places the out-of-diff caveat out of order - it goes after the Verification line and before the External premises table"
+    fi
   fi
+fi
+# The caveat's own section names the template as the source of its position and restates it; this
+# pin holds that restatement to the template's order (they disagreed through v1.5.0: "immediately
+# under the verdict").
+if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Out-of-diff evidence check' "$SYNTH_MD"; then
+  section "$SYNTH_MD" '## Out-of-diff evidence check' | grep -F 'that count is **zero**' | grep -qF 'where the `## Output` template places it, after the Verification line and before the External premises table' \
+    || add_error "review-pro-synthesize/SKILL.md: the out-of-diff caveat's placement no longer follows the Output template - two copies of the report order can drift apart"
 fi
 SSUB="$ROOT/core/agents/review-pro-synthesize-subagent.md"
 if [[ -f "$SSUB" ]]; then

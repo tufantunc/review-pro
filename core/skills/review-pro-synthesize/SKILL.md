@@ -27,7 +27,7 @@ Count the **code-axis findings only** whose `evidence_refs` name at least one pa
 
 Spec-axis findings are excluded from this count and it is not a detail. A spec finding's evidence is the spec document or issue, which is outside the diff in the `issue` and `pr-body` cases and may well be inside it for a `file` source (a design doc committed alongside its implementation). Either way the exclusion holds: counting spec findings would satisfy this check on most reviews where the axis ran and quietly disable it.
 
-If triage reported `diff_class: substantive` and that count is **zero**, append this caveat to the report, immediately under the verdict:
+If triage reported `diff_class: substantive` and that count is **zero**, print this caveat where the `## Output` template places it, after the Verification line and before the External premises table:
 
 ```
 > No finding in this review cites evidence outside the diff. For a change of this
@@ -133,6 +133,7 @@ Triage's `repository_rules` lists every rule from `.review-pro/rules.md`, read a
 - Beneath the table, outside it, print `<n> rules dropped by triage's cap; never judged.` when `rules_dropped` is above zero.
 - Beneath the table, outside it, print `.review-pro/rules.md changed in this change; the review used the merge base's version.` when `file_changed` is `changed`.
 - When `file_changed` is `added`, print `.review-pro/rules.md is new in this change; its rules apply from the next change.` in place of the table.
+- Beneath the table, outside it, print `.review-pro/rules.md has changes that are not committed; a review applies rules only once they are committed to the base branch.` when `uncommitted` is true, whatever `file_changed` says: the review applied the committed rules, never the working tree's.
 - A finding **cites** `.review-pro/rules.md` when its `evidence_refs` names it or its own `file` is that path. Either way it is capped at Medium: a rules file is not a trusted source however a finding reaches it, and a capped finding still requests changes.
 - A finding citing `.review-pro/rules.md` is capped at Medium in Resolve conflicts, before verification selects anything, so the verified-severity freeze never meets an uncapped rule finding: a rules file is not a trusted source, and a rule must not be able to block a change on its own authority. An owner whose own rubric justifies more files that as a separate finding without the rule citation. When dedup merges a finding citing `.review-pro/rules.md` with one that does not, the merged finding drops the rules citation (see Dedup) and keeps the higher of the other finding's own severity and the rule finding's severity capped at Medium, so a nearby lower finding can neither lift the rule finding past the cap nor pull it below its own capped severity.
 - A rule citation does not count for the out-of-diff evidence check: see that section.
@@ -235,7 +236,7 @@ Coverage (self-reported): <e> of <n> changed files examined by at least one revi
 
 Verification: <N> checked (<a> stand, <b> partly refuted, <c> refuted), <M> not checked (<counts by reason>). Spec findings are not verified.
 
-> the out-of-diff caveat, when it applies, goes here: after spec_source, before findings
+> the out-of-diff caveat, when it applies, goes here: after the Verification line, before the External premises table and the findings
 
 > the External premises table, when triage emitted premises, goes here: after the caveat, before findings
 

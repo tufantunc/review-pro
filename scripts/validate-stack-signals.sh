@@ -73,6 +73,8 @@ if [[ -f "$ORCH_MD" ]]; then
     || add_error "review-pro/SKILL.md: the base is no longer resolved as a branch ref - a tag named main would make the merge base the change itself, and its packs and rules would apply"
   { anchor_has 'never git'"'"'s name lookup' && anchor_has 'any other name is looked up exactly as `refs/heads/<name>`, else `refs/remotes/<name>`; if `refs/tags/<name>` also exists, or the argument is a short sha, stop'; } \
     || add_error "review-pro/SKILL.md: a base named in the argument is no longer resolved as a branch - a fork tag named main or origin/main would make the merge base the change itself"
+  anchor_has 'a full 40-character sha is used as given' \
+    || add_error "review-pro/SKILL.md: a sha in the argument is no longer required to be full - a short one is a name git resolves, and a tag can share it"
   anchor_line "$ORCH_MD" 'Be conservative, when in doubt dispatch'
   anchor_has "as do \`security\` and a pack's own reviewer when the change commits a pack edit" \
     || add_error "review-pro/SKILL.md: the orchestrator no longer runs the reviewers a pack edit compels - a pack-only change could be approved with no reviewer"
@@ -162,7 +164,7 @@ fi
 # The triage subagent body states the base itself (ADR-0001): the orchestrator runs triage inline
 # today, so this body governs only a triage invoked on its own, which has no Prep to lean on. It
 # takes a caller's full sha, else applies Prep's exact rule (v1.5.0 release review, Low). A missing
-# line is the first pin's error alone; the tag pin judges a present line.
+# line is the first pin's error alone; the other pins on it judge a present line.
 TSUB_MD="$ROOT/core/agents/review-pro-triage-subagent.md"
 if [[ -f "$TSUB_MD" ]]; then
   anchor_line "$TSUB_MD" '1. Gather the diff and changed files against `<base>`'
@@ -170,6 +172,11 @@ if [[ -f "$TSUB_MD" ]]; then
     || add_error "review-pro-triage-subagent.md: the base is no longer resolved with exact ref lookups - triage run on its own could take a tag named main as the base, and the merge base would be the change itself"
   [[ -z "$ANCHOR_LINE" ]] || anchor_has 'if `refs/tags/<name>` also exists, or it is a short sha, stop' \
     || add_error "review-pro-triage-subagent.md: a named base no longer refuses a tag that shares its name - a fork tag could make the merge base the change itself"
+  # The caller's sha and a named base are the other two ways in; each was unpinned (round 1).
+  [[ -z "$ANCHOR_LINE" ]] || { anchor_has 'the full 40-character base sha your caller passes' && anchor_has 'used as given'; } \
+    || add_error "review-pro-triage-subagent.md: the caller's base is no longer a full sha used as given - a bare name from the caller would go through git's name lookup, which prefers a tag"
+  [[ -z "$ANCHOR_LINE" ]] || anchor_has 'looked up exactly as `refs/heads/<name>`, else `refs/remotes/<name>`' \
+    || add_error "review-pro-triage-subagent.md: a named base is no longer looked up as an exact branch ref - git's name lookup would prefer a tag named like it"
   anchor_line "$TSUB_MD" 'Resolve the merge base once with `git merge-base <base> HEAD`'
   anchor_has 'If it prints nothing, stop' \
     || add_error "review-pro-triage-subagent.md: triage run on its own no longer stops when no merge base resolves - git show with an empty revision reads the change's own rules and packs"

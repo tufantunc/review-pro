@@ -91,8 +91,8 @@ if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Repository rules' "$SYNTH_MD"; then
       || add_error "review-pro-synthesize/SKILL.md: Dedup no longer drops the rules citation - a finding with its own evidence, merged with a rule finding, would be capped at Medium"
     rr_pin "keeps the higher of the other finding's own severity and the rule finding's severity capped at Medium"  "the merged-severity rule is gone - a finding with its own evidence could lose its severity by merging with a rule finding"
     # Line-scoped: the Stack signals pack line shares "has changes that are not committed".
-    printf '%s\n' "$RR" | grep -F '`.review-pro/rules.md has changes that are not committed; a review applies rules only once they are committed to the base branch.`' | grep -qF 'when `uncommitted` is true' \
-      || add_error "review-pro-synthesize/SKILL.md: the rules-uncommitted line is gone - a rule the author wrote and did not commit reads as applied"
+    printf '%s\n' "$RR" | grep -F '`.review-pro/rules.md has changes that are not committed; a review applies rules only once they are committed to the base branch.`' | grep -F 'when `uncommitted` is true' | grep -qF 'whatever `file_changed` says' \
+      || add_error "review-pro-synthesize/SKILL.md: the rules-uncommitted line is gone or narrowed - a rule the author wrote and did not commit reads as applied, or an uncommitted edit on top of a committed one goes unreported"
   fi
 fi
 # The rules cap runs before verification selects anything; after it, the verified-severity
@@ -165,6 +165,9 @@ if [[ -f "$TRIAGE_MD" ]]; then
   if [[ -n "$ANCHOR_LINE" ]]; then
     anchor_has "\`git ls-files --others --full-name -- ':/.review-pro/rules.md'\`" \
       || add_error "review-pro-triage/SKILL.md: an untracked rules file is no longer listed - a rules file never committed gets no report line"
+    # Naming both reads is not enough: the flag must follow either one's output (round 1).
+    anchor_has 'When either lists the file, set `uncommitted: true`' \
+      || add_error "review-pro-triage/SKILL.md: uncommitted no longer follows either read - a rules file only ls-files lists, one never committed, gets no report line"
     anchor_has 'never applied and never part of the change' \
       || add_error "review-pro-triage/SKILL.md: an uncommitted rules edit may now be applied or reported as the change's - the working tree would steer the review"
     anchor_has 'no row, no `file_changed` and no dispatch' \

@@ -120,7 +120,7 @@ premises_dropped: <n>                 # omit when zero
 repository_rules:                     # omit the key when neither the merge base nor the head has .review-pro/rules.md and step 8 found nothing uncommitted
   source: .review-pro/rules.md@<merge-base sha> | none   # none: the merge base has no rules file
   file_changed: none | changed | added
-  uncommitted: true                   # optional; only when the working tree's .review-pro/rules.md differs from HEAD's; omit otherwise
+  uncommitted: true                   # optional; only when step 8 found .review-pro/rules.md edited, deleted or untracked in the working tree; omit otherwise
   rows:
     - id: <rule id>
       line: <line of the rule heading at the merge base>

@@ -414,13 +414,16 @@ if [[ -f "$SYNTH_MD" ]]; then
     ca="$(line_of '> the out-of-diff caveat')"; ep="$(line_of '> the External premises table')"
     if [[ -z "$ca" ]]; then
       add_error "review-pro-synthesize/SKILL.md: the Output template no longer places the out-of-diff caveat - the report order for it lives nowhere"
+    elif [[ -z "$ep" ]]; then
+      add_error "review-pro-synthesize/SKILL.md: the Output template no longer places the External premises table - the caveat's order against it can no longer be checked"
     elif [[ ( -n "$v" && "$ca" -lt "$v" ) || ( -n "$ep" && "$ca" -gt "$ep" ) ]]; then
       add_error "review-pro-synthesize/SKILL.md: the Output template places the out-of-diff caveat out of order - it goes after the Verification line and before the External premises table"
     fi
   fi
 fi
-# The caveat's own section points at the template rather than restating a position, so the two
-# cannot disagree again (they did through v1.5.0: "immediately under the verdict").
+# The caveat's own section names the template as the source of its position and restates it; this
+# pin holds that restatement to the template's order (they disagreed through v1.5.0: "immediately
+# under the verdict").
 if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Out-of-diff evidence check' "$SYNTH_MD"; then
   section "$SYNTH_MD" '## Out-of-diff evidence check' | grep -F 'that count is **zero**' | grep -qF 'where the `## Output` template places it, after the Verification line and before the External premises table' \
     || add_error "review-pro-synthesize/SKILL.md: the out-of-diff caveat's placement no longer follows the Output template - two copies of the report order can drift apart"

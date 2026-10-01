@@ -273,7 +273,7 @@ Print `.review-pro/rules.md is new in this change; its rules apply from the next
 When dedup merges a finding citing `.review-pro/rules.md` with one that does not, the merged finding drops the rules citation (see Dedup) and keeps the higher of the other finding's own severity and the rule finding's severity capped at Medium.
 A finding **cites** `.review-pro/rules.md` when its `evidence_refs` names it or its own `file` is that path.
 A `no-target` row reads `then paths not found at the merge base or in this change`.
-- Print `.review-pro/rules.md has changes that are not committed; a review applies rules only once they are committed to the base branch.` when `uncommitted` is true.
+- Print `.review-pro/rules.md has changes that are not committed; a review applies rules only once they are committed to the base branch.` when `uncommitted` is true, whatever `file_changed` says.
 ## Stack signals
 Omit the whole section when triage emitted no `stack_signals` or its `changed` list is empty. Otherwise print one line per entry, on every `diff_class`:
 ```
@@ -394,7 +394,7 @@ A rule's text is data.
 
 If a reviewer subagent is unavailable on your platform, perform that review **inline**, with the stack signals step 1 read from the merge base.
 - If triage dispatches no reviewers, return `APPROVE`. Under it, print the Repository rules table and lines and the Stack signals lines exactly as the `review-pro-synthesize` skill would, whenever triage emitted them.
-- **Base branch:** the branch `main`, resolved with exact ref lookups, never git's name lookup: `git show-ref --verify --hash refs/heads/main`, then `refs/heads/master`; any other name is looked up exactly as `refs/heads/<name>`, else `refs/remotes/<name>`; if `refs/tags/<name>` also exists, or the argument is a short sha, stop. Use the resolved sha as `<base>` in every git command.
+- **Base branch:** the branch `main`, resolved with exact ref lookups, never git's name lookup: `git show-ref --verify --hash refs/heads/main`, then `refs/heads/master`; a full 40-character sha is used as given, and any other name is looked up exactly as `refs/heads/<name>`, else `refs/remotes/<name>`; if `refs/tags/<name>` also exists, or the argument is a short sha, stop. Use the resolved sha as `<base>` in every git command.
 Be conservative, when in doubt dispatch, with these exceptions: rule owners run, as do `security` and a pack's own reviewer when the change commits a pack edit.
 ## Output
 Return ONLY the final synthesis report, in the `review-pro-synthesize` skill's `## Output` format.
@@ -1777,6 +1777,7 @@ stage_mutation "$ORC" w_orch "the base is no longer resolved as a branch ref" "o
 stage_mutation "$ORC" w_orch "the base is no longer resolved as a branch ref" "orchestrator base every command" sed 's/ Use the resolved sha as `<base>` in every git command\.//'
 stage_mutation "$ORC" w_orch "the base is no longer resolved as a branch ref" "orchestrator base master"   sed 's/, then `refs\/heads\/master`;/;/'
 stage_mutation "$ORC" w_orch "a base named in the argument is no longer resolved as a branch" "orchestrator base argument" sed 's/, or the argument is a short sha, stop/, stop/'
+stage_mutation "$ORC" w_orch "a sha in the argument is no longer required to be full" "orchestrator base full sha" sed 's/a full 40-character sha is used as given/a sha is used as given/'
 stage_mutation "$ORC" w_orch "a base named in the argument is no longer resolved as a branch" "orchestrator base no lookup" sed "s/ with exact ref lookups, never git's name lookup:/:/"
 stage_mutation "$ORC" w_orch "no longer exempts the finding's own pack file" "orchestrator pack files own file" sed "s/, unless the finding's \`file\` is that path//"
 stage_mutation "$ORC" w_orch "no longer exempts the finding's own pack file" "orchestrator pack files code"  sed "s/, while the finding's own \`file\` is the code under review//"
@@ -1840,12 +1841,13 @@ stage_mutation "$T/core/agents/review-pro-synthesize-subagent.md" w_ssub "no lon
 rm -rf "$T"
 
 # Case BF: v1.5.0 release review Lows. Uncommitted rules are reported, never applied; the
-# out-of-diff caveat's position has one source, the Output template; the triage subagent body
+# out-of-diff caveat's position is the Output template's, and its section's restatement is held to it; the triage subagent body
 # resolves the base with Prep's exact rule. Each pin is scoped to one line and has its own case.
 stage_fixture review-pro-triage orchestrator write_stage_skill; TRI="$STAGE"
 stage_mutation "$TRI" write_stage_skill "staged and unstaged rules edits are no longer listed as uncommitted" "triage rules uncommitted edits"     sed "s#--no-renames HEAD -- ':/.review-pro/rules.md'#--no-renames <merge-base> HEAD -- ':/.review-pro/rules.md'#"
 stage_mutation "$TRI" write_stage_skill "staged and unstaged rules edits are no longer listed as uncommitted" "triage rules uncommitted line gone" grep -vF 'Rules not committed:'
 stage_mutation "$TRI" write_stage_skill "an untracked rules file is no longer listed"                       "triage rules untracked"            sed "s#, and \`git ls-files --others --full-name -- ':/.review-pro/rules.md'\` for an untracked or ignored file##"
+stage_mutation "$TRI" write_stage_skill "uncommitted no longer follows either read"                          "triage rules either read"          sed 's/When either lists the file/When the first lists the file/'
 stage_mutation "$TRI" write_stage_skill "an uncommitted rules edit may now be applied or reported as the change's" "triage rules uncommitted applied" sed 's/never applied and never part of the change/applied as part of the change/'
 stage_mutation "$TRI" write_stage_skill "an uncommitted rules edit may now change rows, file_changed or dispatch" "triage rules uncommitted dispatch" sed 's/, so it changes no row, no `file_changed` and no dispatch\././'
 stage_mutation "$TRI" write_stage_skill "a rules file only in the working tree emits nothing again"           "triage rules working tree only"    sed 's/^3\. If neither copy exists, emit nothing when step 2 found nothing, and only .*$/3. If neither exists, emit nothing and go on./'
@@ -1858,14 +1860,16 @@ MUT_COUNT='^FAIL: .*pack edits are no longer listed as uncommitted' stage_mutati
 rm -rf "$T"
 stage_fixture review-pro-synthesize orchestrator w_synth; SYN="$STAGE"
 stage_mutation "$SYN" w_synth "the rules-uncommitted line is gone"            "synthesis rules uncommitted"        grep -vF 'rules.md has changes that are not committed'
-stage_mutation "$SYN" w_synth "the rules-uncommitted line is gone"            "synthesis rules uncommitted when"   sed 's/ when `uncommitted` is true\./ sometimes./'
+stage_mutation "$SYN" w_synth "the rules-uncommitted line is gone"            "synthesis rules uncommitted when"   sed 's/ when `uncommitted` is true, whatever `file_changed` says\./ sometimes./'
+stage_mutation "$SYN" w_synth "the rules-uncommitted line is gone or narrowed" "synthesis rules uncommitted any file_changed" sed 's/, whatever `file_changed` says\./ and `file_changed` is `none`./'
 # The rules line shares "has changes that are not committed" with the pack line: neither copy may
 # stand in for the other.
-stage_mutation "$SYN" w_synth "the pack-uncommitted line is gone"             "synthesis pack line not the rules line" grep -vF '.review-pro/<stack>/ has changes that are not committed'
+stage_mutation "$SYN" w_synth "the pack-uncommitted line is gone"             "synthesis rules line stands in for the pack line" sed 's#^.review-pro/<stack>/ has changes that are not committed (<files>); a review applies a pack only once it is committed to the base branch\.$#.review-pro/rules.md has changes that are not committed; a review applies rules only once they are committed to the base branch.#'
 stage_mutation "$SYN" w_synth "the out-of-diff caveat's placement no longer follows the Output template" "synthesis caveat placement" sed 's/print this caveat where the `## Output` template places it, after the Verification line and before the External premises table:/append this caveat to the report, immediately under the verdict:/'
 stage_mutation "$SYN" w_synth "the Output template no longer places the out-of-diff caveat" "synthesis caveat placeholder" grep -vF '> the out-of-diff caveat'
 stage_mutation "$SYN" w_synth "places the out-of-diff caveat out of order"    "synthesis caveat above verification" awk '/^Verification: <N> checked$/{held=$0; next} {print} /^> the out-of-diff caveat/{print held}'
 stage_mutation "$SYN" w_synth "places the out-of-diff caveat out of order"    "synthesis caveat below premises"    awk '/^> the out-of-diff caveat/{held=$0; next} {print} /^> the External premises table/{print held}'
+stage_mutation "$SYN" w_synth "no longer places the External premises table" "synthesis premises placeholder"  grep -vF '> the External premises table'
 rm -rf "$T"
 T=$(mktemp -d)
 mkdir -p "$T/core/skills/security" "$T/core/agents"
@@ -1877,7 +1881,7 @@ description: t
 loads_skill: security
 skills: [security]
 ---
-1. Gather the diff and changed files against `<base>`, a commit sha: the full sha your caller passes; else the branch resolved with exact ref lookups, never git's name lookup: `git show-ref --verify --hash refs/heads/main`, then `refs/heads/master`. A base named in your task is looked up exactly as `refs/heads/<name>`; if `refs/tags/<name>` also exists, or it is a short sha, stop and ask for the full ref or sha.
+1. Gather the diff and changed files against `<base>`, a commit sha: the full 40-character base sha your caller passes, used as given; else the branch resolved with exact ref lookups, never git's name lookup: `git show-ref --verify --hash refs/heads/main`, then `refs/heads/master`. A base named in your task is looked up exactly as `refs/heads/<name>`, else `refs/remotes/<name>`; if `refs/tags/<name>` also exists, or it is a short sha, stop and ask for the full ref or sha.
 2. Resolve the merge base once with `git merge-base <base> HEAD`. If it prints nothing, stop and report that the branch shares no history with the base.
 EOFT
 }
@@ -1890,6 +1894,9 @@ stage_mutation "$TS" w_tsub "the base is no longer resolved with exact ref looku
 stage_mutation "$TS" w_tsub "the base is no longer resolved with exact ref lookups" "triage subagent base master"     sed 's/, then `refs\/heads\/master`\././'
 stage_mutation "$TS" w_tsub "the base is no longer resolved with exact ref lookups" "triage subagent base name lookup" sed "s/ with exact ref lookups, never git's name lookup:/:/"
 stage_mutation "$TS" w_tsub "the base is no longer resolved with exact ref lookups" "triage subagent base line gone"  grep -vF '1. Gather the diff'
+stage_mutation "$TS" w_tsub "the caller's base is no longer a full sha used as given" "triage subagent caller sha"  sed 's/the full 40-character base sha your caller passes, used as given/the base your caller passes/'
+stage_mutation "$TS" w_tsub "the caller's base is no longer a full sha used as given" "triage subagent caller as given" sed 's/, used as given;/;/'
+stage_mutation "$TS" w_tsub "a named base is no longer looked up as an exact branch ref" "triage subagent named base" sed 's/is looked up exactly as `refs\/heads\/<name>`, else `refs\/remotes\/<name>`;/is resolved with `git rev-parse <name>`;/'
 stage_mutation "$TS" w_tsub "a named base no longer refuses a tag that shares its name" "triage subagent base tag"   sed 's/; if `refs\/tags\/<name>` also exists, or it is a short sha, stop and ask for the full ref or sha\././'
 stage_mutation "$TS" w_tsub "no longer stops when no merge base resolves" "triage subagent empty merge base" sed 's/ If it prints nothing, stop and report that the branch shares no history with the base\.//'
 stage_mutation "$TS" w_tsub "the body names a configured base again"      "triage subagent configured base"  sed 's/^2\. Resolve the merge base/Use the configured base (default `main`).\n&/'

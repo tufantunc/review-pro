@@ -1,0 +1,119 @@
+{
+  "instance_id": "FreeCAD__FreeCAD@f8cd643",
+  "repo": "FreeCAD/FreeCAD",
+  "base_commit": "730e07db5d2acafe7723eb89c83641375c375bc3",
+  "head_commit": "f8cd64328c49510285490dfd9872253ce7a53040",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T01:17:39.863831+00:00",
+  "duration_seconds": 99.02,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "src/Mod/ReverseEngineering/App/AppReverseEngineering.cpp",
+      "line": 1002,
+      "summary": "A non-ASCII U+2026 '…' is put into a narrow C++ string literal in a developer log message. These three diffed files are the only .cpp files under src/ that contain this character, and no MSVC /utf-8 flag was found in the CMake config.",
+      "failure_scenario": "On MSVC without /utf-8, the source is read using the system code page. On CJK locales this triggers warning C4819 or misreads the bytes, and on Western consoles the log prints as 'module… done'. Grep or tooling that looks for the standard 'module... done' pattern, used by every other module (Mesh, the _TEMPLATE_ files, generated bindings), no longer matches."
+    },
+    {
+      "file": "src/Mod/ReverseEngineering/Gui/AppReverseEngineeringGui.cpp",
+      "line": 85,
+      "summary": "Same non-ASCII '…' in the GUI module's untranslated Console log string; it breaks consistency with every other module's 'Loading GUI of X module... done' log line.",
+      "failure_scenario": "On Windows MSVC builds in non-UTF-8 code pages, the startup log shows corrupted bytes. Report-view filters or scripts that match '... done' miss this module."
+    },
+    {
+      "file": "src/Mod/ReverseEngineering/Gui/Command.cpp",
+      "line": 71,
+      "summary": "Menu texts now use the Unicode '…' (Approximate B-Spline Curve…, Mesh Segmentation…, Poisson…, etc.), while about 99 other QT_TR_NOOP menu texts and about 75 .ui strings in the codebase use ASCII '...'. It also adds non-ASCII bytes to translatable literals in a file built without an explicit UTF-8 source flag.",
+      "failure_scenario": "On MSVC without /utf-8, the literal bytes may be re-encoded, so the QCoreApplication::translate lookup key no longer matches the lupdate-extracted UTF-8 key. The menu then shows untranslated or garbled text. Even when it builds cleanly, Reverse Engineering menus look different from every other workbench."
+    },
+    {
+      "file": "src/Mod/ReverseEngineering/Gui/Command.cpp",
+      "line": 538,
+      "summary": "The touched CmdMeshBoundary constructor still has a copy-paste error: sWhatsThis = \"Reen_Segmentation\" instead of \"Reen_MeshBoundary\".",
+      "failure_scenario": "Using What's This help on 'Wire From Mesh Boundary…' opens the help for the Mesh Segmentation command instead of this one."
+    },
+    {
+      "file": "src/Mod/ReverseEngineering/Gui/Command.cpp",
+      "line": 84,
+      "summary": "The reworded CmdApproxCurve and CmdPoissonReconstruction warnings (lines 84 and 615) are still translated under the 'Reen_ApproxSurface' context instead of their own command's context.",
+      "failure_scenario": "The 'Select a point cloud.' and 'Select a single point cloud.' strings appear in the .ts file under the Approximate Surface context. Translators get misleading context, and two commands sharing one key can collide or be mistranslated."
+    },
+    {
+      "file": "src/Mod/ReverseEngineering/Gui/Workbench.cpp",
+      "line": 53,
+      "summary": "The submenu was renamed to 'Surface Reconstruction', but the lupdate-only '#if 0' block registers only 'Reverse Engineering'. So 'Surface Reconstruction', 'Segmentation' and 'Approximation' are never extracted for translation in the 'Workbench' context.",
+      "failure_scenario": "In a non-English locale, the renamed submenu still shows the English 'Surface Reconstruction' because no translation entry is ever generated for it."
+    },
+    {
+      "file": "src/Mod/ReverseEngineering/Gui/SegmentationManual.ui",
+      "line": 14,
+      "summary": "The dialog title was changed to 'Manual Mesh Segmentation', but the command that opens it is now 'Manual Segmentation…'. The Segmentation.ui title 'Mesh Segmentation' and its menu text do match, so this one is the odd one out.",
+      "failure_scenario": "A user picks 'Manual Segmentation…' and gets a task panel with a different name. Docs and wiki searches for one title won't find the other."
+    },
+    {
+      "file": "src/Mod/ReverseEngineering/Gui/Command.cpp",
+      "line": 601,
+      "summary": "The tooltip change to verb form ('Approximates…', 'Creates…') was only partly applied. The Poisson ('Poisson surface reconstruction') and ViewTriangulation ('Triangulation of structured point clouds') tooltips were left as noun phrases. ViewTriangulation also repeats the literal in sStatusTip instead of using sStatusTip = sToolTipText like the other commands.",
+      "failure_scenario": "Tooltips in the same workbench end up in mixed styles, which defeats the commit's stated goal. The duplicated status-tip literal also has to be updated in two places next time."
+    },
+    {
+      "file": "src/Mod/ReverseEngineering/Gui/FitBSplineSurface.ui",
+      "line": 20,
+      "summary": "The group titles now say 'U-Direction' / 'V-Direction', but the checkbox in the same dialog (line 218) still says 'User-defined u/v directions' in lowercase.",
+      "failure_scenario": "The same dialog writes the parameter directions two different ways, which is the kind of inconsistency this commit was meant to remove."
+    },
+    {
+      "file": "src/Mod/ReverseEngineering/App/RegionGrowing.cpp",
+      "line": 108,
+      "summary": "The reworded exception 'Number of points does not match with number of normals' keeps the ungrammatical 'match with'. It is also an untranslated user-visible message, so the rewording reaches users only in English.",
+      "failure_scenario": "A Python caller passing mismatched normals sees 'does not match with', which reads badly. The edit changed the text without fixing the wording."
+    }
+  ],
+  "result_text": "The diff only changes UI and log strings, so none of the findings below would crash anything. The worst risk is that the new non-ASCII \"…\" characters may mis-encode on Windows builds. Ranked most-severe first:\n\n```json\n[\n  {\n    \"file\": \"src/Mod/ReverseEngineering/App/AppReverseEngineering.cpp\",\n    \"line\": 1002,\n    \"summary\": \"A non-ASCII U+2026 '…' is put into a narrow C++ string literal in a developer log message. These three diffed files are the only .cpp files under src/ that contain this character, and no MSVC /utf-8 flag was found in the CMake config.\",\n    \"failure_scenario\": \"On MSVC without /utf-8, the source is read using the system code page. On CJK locales this triggers warning C4819 or misreads the bytes, and on Western consoles the log prints as 'module… done'. Grep or tooling that looks for the standard 'module... done' pattern, used by every other module (Mesh, the _TEMPLATE_ files, generated bindings), no longer matches.\"\n  },\n  {\n    \"file\": \"src/Mod/ReverseEngineering/Gui/AppReverseEngineeringGui.cpp\",\n    \"line\": 85,\n    \"summary\": \"Same non-ASCII '…' in the GUI module's untranslated Console log string; it breaks consistency with every other module's 'Loading GUI of X module... done' log line.\",\n    \"failure_scenario\": \"On Windows MSVC builds in non-UTF-8 code pages, the startup log shows corrupted bytes. Report-view filters or scripts that match '... done' miss this module.\"\n  },\n  {\n    \"file\": \"src/Mod/ReverseEngineering/Gui/Command.cpp\",\n    \"line\": 71,\n    \"summary\": \"Menu texts now use the Unicode '…' (Approximate B-Spline Curve…, Mesh Segmentation…, Poisson…, etc.), while about 99 other QT_TR_NOOP menu texts and about 75 .ui strings in the codebase use ASCII '...'. It also adds non-ASCII bytes to translatable literals in a file built without an explicit UTF-8 source flag.\",\n    \"failure_scenario\": \"On MSVC without /utf-8, the literal bytes may be re-encoded, so the QCoreApplication::translate lookup key no longer matches the lupdate-extracted UTF-8 key. The menu then shows untranslated or garbled text. Even when it builds cleanly, Reverse Engineering menus look different from every other workbench.\"\n  },\n  {\n    \"file\": \"src/Mod/ReverseEngineering/Gui/Command.cpp\",\n    \"line\": 538,\n    \"summary\": \"The touched CmdMeshBoundary constructor still has a copy-paste error: sWhatsThis = \\\"Reen_Segmentation\\\" instead of \\\"Reen_MeshBoundary\\\".\",\n    \"failure_scenario\": \"Using What's This help on 'Wire From Mesh Boundary…' opens the help for the Mesh Segmentation command instead of this one.\"\n  },\n  {\n    \"file\": \"src/Mod/ReverseEngineering/Gui/Command.cpp\",\n    \"line\": 84,\n    \"summary\": \"The reworded CmdApproxCurve and CmdPoissonReconstruction warnings (lines 84 and 615) are still translated under the 'Reen_ApproxSurface' context instead of their own command's context.\",\n    \"failure_scenario\": \"The 'Select a point cloud.' and 'Select a single point cloud.' strings appear in the .ts file under the Approximate Surface context. Translators get misleading context, and two commands sharing one key can collide or be mistranslated.\"\n  },\n  {\n    \"file\": \"src/Mod/ReverseEngineering/Gui/Workbench.cpp\",\n    \"line\": 53,\n    \"summary\": \"The submenu was renamed to 'Surface Reconstruction', but the lupdate-only '#if 0' block registers only 'Reverse Engineering'. So 'Surface Reconstruction', 'Segmentation' and 'Approximation' are never extracted for translation in the 'Workbench' context.\",\n    \"failure_scenario\": \"In a non-English locale, the renamed submenu still shows the English 'Surface Reconstruction' because no translation entry is ever generated for it.\"\n  },\n  {\n    \"file\": \"src/Mod/ReverseEngineering/Gui/SegmentationManual.ui\",\n    \"line\": 14,\n    \"summary\": \"The dialog title was changed to 'Manual Mesh Segmentation', but the command that opens it is now 'Manual Segmentation…'. The Segmentation.ui title 'Mesh Segmentation' and its menu text do match, so this one is the odd one out.\",\n    \"failure_scenario\": \"A user picks 'Manual Segmentation…' and gets a task panel with a different name. Docs and wiki searches for one title won't find the other.\"\n  },\n  {\n    \"file\": \"src/Mod/ReverseEngineering/Gui/Command.cpp\",\n    \"line\": 601,\n    \"summary\": \"The tooltip change to verb form ('Approximates…', 'Creates…') was only partly applied. The Poisson ('Poisson surface reconstruction') and ViewTriangulation ('Triangulation of structured point clouds') tooltips were left as noun phrases. ViewTriangulation also repeats the literal in sStatusTip instead of using sStatusTip = sToolTipText like the other commands.\",\n    \"failure_scenario\": \"Tooltips in the same workbench end up in mixed styles, which defeats the commit's stated goal. The duplicated status-tip literal also has to be updated in two places next time.\"\n  },\n  {\n    \"file\": \"src/Mod/ReverseEngineering/Gui/FitBSplineSurface.ui\",\n    \"line\": 20,\n    \"summary\": \"The group titles now say 'U-Direction' / 'V-Direction', but the checkbox in the same dialog (line 218) still says 'User-defined u/v directions' in lowercase.\",\n    \"failure_scenario\": \"The same dialog writes the parameter directions two different ways, which is the kind of inconsistency this commit was meant to remove.\"\n  },\n  {\n    \"file\": \"src/Mod/ReverseEngineering/App/RegionGrowing.cpp\",\n    \"line\": 108,\n    \"summary\": \"The reworded exception 'Number of points does not match with number of normals' keeps the ungrammatical 'match with'. It is also an untranslated user-visible message, so the rewording reaches users only in English.\",\n    \"failure_scenario\": \"A Python caller passing mismatched normals sees 'does not match with', which reads badly. The edit changed the text without fixing the wording.\"\n  }\n]\n```",
+  "stderr": "",
+  "claude_duration_ms": 97609,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.3530154,
+  "claude_session_id": "ba216acc-2b6d-4a81-9060-d17b8918a052",
+  "token_usage": {
+    "input_tokens": 24,
+    "output_tokens": 7386,
+    "cache_read_input_tokens": 299872,
+    "cache_creation_input_tokens": 29045,
+    "total_tokens": 336327,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 24,
+        "outputTokens": 7386,
+        "cacheReadInputTokens": 299872,
+        "cacheCreationInputTokens": 29045,
+        "webSearchRequests": 0,
+        "costUSD": 0.3530154,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 2137,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/phase1/transcripts/FreeCAD__FreeCAD@f8cd643"
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "instance_id": "elastic__elasticsearch@a6a4623",
+  "repo": "elastic/elasticsearch",
+  "base_commit": "cc0e53e883ee7e0b136e58a0105103c1a7ffddf9",
+  "head_commit": "a6a4623f4a0216b515a8cb323110305504431459",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T16:11:41.282909+00:00",
+  "duration_seconds": 57.78,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "server/src/test/java/org/elasticsearch/search/fetch/subphase/highlight/HighlightBuilderTests.java",
+      "line": 580,
+      "summary": "testInvalidMaxAnalyzedOffset still picks from randomIntBetween(-100, 0), but -1 and 0 are now valid values, so the expected parse exception is sometimes not thrown.",
+      "failure_scenario": "When the random value is -1 or 0 (about 2 in 101 runs), the builder accepts it, expectParseThrows fails, and the test becomes flaky in CI. The range should be randomIntBetween(-100, -2) or similar."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java",
+      "line": 168,
+      "summary": "The new values -1 and 0 are sent over the wire with no TransportVersion check, and older nodes run the old validation (<= 0 throws) inside readFrom when they deserialize.",
+      "failure_scenario": "In a mixed-version cluster (for example during a rolling upgrade), an upgraded coordinating node sends a shard search request with max_analyzed_offset=-1 to an old data node. The old node's StreamInput constructor calls maxAnalyzedOffset(-1), throws IllegalArgumentException('must be a positive integer'), and the shard requests fail instead of falling back to the index setting."
+    },
+    {
+      "file": "rest-api-spec/src/yamlRestTest/resources/rest-api-spec/test/search.highlight/30_max_analyzed_offset.yml",
+      "line": 133,
+      "summary": "The expected error message changed to 'must be an integer >= -1', but the test is still gated only on cluster_features gte_v7.12.0, with no new feature or capability for the new message.",
+      "failure_scenario": "BWC and mixed-cluster YAML runs against older nodes return '[max_analyzed_offset] must be a positive integer', so the match assertion fails. There is also no YAML test for the new -1 behaviour behind a capability."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java",
+      "line": 568,
+      "summary": "Changing the check from `<= 0` to `< -1` makes max_analyzed_offset=0 valid, a behaviour change that looks unintended (the feature only needs -1).",
+      "failure_scenario": "A request with max_analyzed_offset=0, rejected with 400 before, is now accepted. LimitTokenOffsetAnalyzer(0) then keeps only tokens starting at offset 0, and the index-limit check (0 > max is false) is skipped, so users silently get truncated or empty highlights instead of an error."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java",
+      "line": 564,
+      "summary": "The Javadoc says any 'negative int' defaults to the index offset, but validation rejects everything below -1; QueryMaxAnalyzedOffset.create also maps any `< 0` to the index value, so the three places disagree.",
+      "failure_scenario": "Callers relying on the Javadoc pass -5 and get IllegalArgumentException. The mismatch also hides that 0 is now accepted as 'non-negative'."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/lucene/search/uhighlight/QueryMaxAnalyzedOffset.java",
+      "line": 16,
+      "summary": "The constructor comment says 'If we have a negative value, grab value ... from the index', but the constructor only assigns the field; the substitution happens in create().",
+      "failure_scenario": "A maintainer reads the comment, assumes the constructor normalises negatives, and adds another factory path that passes -1 straight through. LimitTokenOffsetAnalyzer(-1) would then drop every token."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/lucene/search/uhighlight/CustomUnifiedHighlighter.java",
+      "line": 145,
+      "summary": "The error text (here and in PlainHighlighter) still tells users only to set max_analyzed_offset to a value below the index setting, and doesn't mention the new -1 option that is the simplest fix.",
+      "failure_scenario": "A user hits the 'exceeds the [index.highlight.max_analyzed_offset] limit' error and has to guess a number, even though -1 would automatically truncate at the index limit."
+    },
+    {
+      "file": "docs/reference/search/search-your-data/highlighting.asciidoc",
+      "line": 1,
+      "summary": "The public API contract changes (-1 means 'use the index setting', 0 is now accepted), but neither the highlighting docs nor a docs/changelog entry are updated.",
+      "failure_scenario": "The documentation still says max_analyzed_offset must be a positive integer, so users never find the -1 option and the release notes leave out a user-visible API change."
+    }
+  ],
+  "result_text": "Eight findings from the `cc0e53e...a6a4623` diff. The top two break things: randomized test failures and mixed-version cluster failures. Nothing was verified, per the review contract. None of the eight is a CLAUDE.md violation: the user-level file only covers tooling workflow, and this repo has no CLAUDE.md of its own.\n\n```json\n[\n  {\n    \"file\": \"server/src/test/java/org/elasticsearch/search/fetch/subphase/highlight/HighlightBuilderTests.java\",\n    \"line\": 580,\n    \"summary\": \"testInvalidMaxAnalyzedOffset still picks from randomIntBetween(-100, 0), but -1 and 0 are now valid values, so the expected parse exception is sometimes not thrown.\",\n    \"failure_scenario\": \"When the random value is -1 or 0 (about 2 in 101 runs), the builder accepts it, expectParseThrows fails, and the test becomes flaky in CI. The range should be randomIntBetween(-100, -2) or similar.\"\n  },\n  {\n    \"file\": \"server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java\",\n    \"line\": 168,\n    \"summary\": \"The new values -1 and 0 are sent over the wire with no TransportVersion check, and older nodes run the old validation (<= 0 throws) inside readFrom when they deserialize.\",\n    \"failure_scenario\": \"In a mixed-version cluster (for example during a rolling upgrade), an upgraded coordinating node sends a shard search request with max_analyzed_offset=-1 to an old data node. The old node's StreamInput constructor calls maxAnalyzedOffset(-1), throws IllegalArgumentException('must be a positive integer'), and the shard requests fail instead of falling back to the index setting.\"\n  },\n  {\n    \"file\": \"rest-api-spec/src/yamlRestTest/resources/rest-api-spec/test/search.highlight/30_max_analyzed_offset.yml\",\n    \"line\": 133,\n    \"summary\": \"The expected error message changed to 'must be an integer >= -1', but the test is still gated only on cluster_features gte_v7.12.0, with no new feature or capability for the new message.\",\n    \"failure_scenario\": \"BWC and mixed-cluster YAML runs against older nodes return '[max_analyzed_offset] must be a positive integer', so the match assertion fails. There is also no YAML test for the new -1 behaviour behind a capability.\"\n  },\n  {\n    \"file\": \"server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java\",\n    \"line\": 568,\n    \"summary\": \"Changing the check from `<= 0` to `< -1` makes max_analyzed_offset=0 valid, a behaviour change that looks unintended (the feature only needs -1).\",\n    \"failure_scenario\": \"A request with max_analyzed_offset=0, rejected with 400 before, is now accepted. LimitTokenOffsetAnalyzer(0) then keeps only tokens starting at offset 0, and the index-limit check (0 > max is false) is skipped, so users silently get truncated or empty highlights instead of an error.\"\n  },\n  {\n    \"file\": \"server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java\",\n    \"line\": 564,\n    \"summary\": \"The Javadoc says any 'negative int' defaults to the index offset, but validation rejects everything below -1; QueryMaxAnalyzedOffset.create also maps any `< 0` to the index value, so the three places disagree.\",\n    \"failure_scenario\": \"Callers relying on the Javadoc pass -5 and get IllegalArgumentException. The mismatch also hides that 0 is now accepted as 'non-negative'.\"\n  },\n  {\n    \"file\": \"server/src/main/java/org/elasticsearch/lucene/search/uhighlight/QueryMaxAnalyzedOffset.java\",\n    \"line\": 16,\n    \"summary\": \"The constructor comment says 'If we have a negative value, grab value ... from the index', but the constructor only assigns the field; the substitution happens in create().\",\n    \"failure_scenario\": \"A maintainer reads the comment, assumes the constructor normalises negatives, and adds another factory path that passes -1 straight through. LimitTokenOffsetAnalyzer(-1) would then drop every token.\"\n  },\n  {\n    \"file\": \"server/src/main/java/org/elasticsearch/lucene/search/uhighlight/CustomUnifiedHighlighter.java\",\n    \"line\": 145,\n    \"summary\": \"The error text (here and in PlainHighlighter) still tells users only to set max_analyzed_offset to a value below the index setting, and doesn't mention the new -1 option that is the simplest fix.\",\n    \"failure_scenario\": \"A user hits the 'exceeds the [index.highlight.max_analyzed_offset] limit' error and has to guess a number, even though -1 would automatically truncate at the index limit.\"\n  },\n  {\n    \"file\": \"docs/reference/search/search-your-data/highlighting.asciidoc\",\n    \"line\": 1,\n    \"summary\": \"The public API contract changes (-1 means 'use the index setting', 0 is now accepted), but neither the highlighting docs nor a docs/changelog entry are updated.\",\n    \"failure_scenario\": \"The documentation still says max_analyzed_offset must be a positive integer, so users never find the -1 option and the release notes leave out a user-visible API change.\"\n  }\n]\n```",
+  "stderr": "",
+  "claude_duration_ms": 56407,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.29499820000000004,
+  "claude_session_id": "e39f5346-1767-4f43-adcf-24a57dcfbf54",
+  "token_usage": {
+    "input_tokens": 16,
+    "output_tokens": 5169,
+    "cache_read_input_tokens": 185896,
+    "cache_creation_input_tokens": 30875,
+    "total_tokens": 221956,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 16,
+        "outputTokens": 5169,
+        "cacheReadInputTokens": 185896,
+        "cacheCreationInputTokens": 30875,
+        "webSearchRequests": 0,
+        "costUSD": 0.29499820000000004,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 1586,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/phase1/transcripts/elastic__elasticsearch@a6a4623"
+  }
+}

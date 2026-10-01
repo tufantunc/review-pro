@@ -1,0 +1,107 @@
+{
+  "instance_id": "facebook__react@b045f18",
+  "repo": "facebook/react",
+  "base_commit": "99563e91736e9de473c4865d5cb6fd9eb1a26bcb",
+  "head_commit": "b045f18e378341876ee69e729fc855cab501c3cd",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T01:20:33.888077+00:00",
+  "duration_seconds": 189.86,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "packages/react-devtools-shared/src/backend/fiber/renderer.js",
+      "line": 149,
+      "summary": "DevTools backend imports the ActivityComponent tag directly from react-reconciler/src/ReactWorkTags instead of destructuring it from the version-specific ReactTypeOfWork map, so the per-version ActivityComponent entries (31 / -1) are dead and the constant is hardcoded to the current repo's value.",
+      "failure_scenario": "DevTools attaches to a React build whose tag numbering differs from the bundled reconciler (an older/newer renderer, or a later tag renumbering). getDisplayNameForFiber and shouldFilterFiber match tag 31 no matter which version is running, so fibers that aren't Activity can be labelled 'Activity' and filtered out of the tree, and real Activity fibers can be missed. This breaks the 'copied from React repo, add version guards' contract of getInternalReactConstants."
+    },
+    {
+      "file": "packages/react-devtools-shared/src/backend/fiber/renderer.js",
+      "line": 389,
+      "summary": "ActivityComponent: 31 is placed in the gt(version, '17.0.1') branch without a version guard, so every React 18.x/19.0 renderer is reported as having an Activity tag 31 that doesn't exist there.",
+      "failure_scenario": "Once the map value is actually consumed (the intended fix for the import above), any React 18/19.0 fiber with tag 31 would be treated as Activity. The entry should be guarded to the version that introduced the tag, or marked Experimental like the other entries."
+    },
+    {
+      "file": "packages/react-devtools-shared/src/backend/fiber/renderer.js",
+      "line": 631,
+      "summary": "getDisplayNameForFiber and shouldFilterFiber use the module-level imported ActivityComponent while the attach() / getInternalReactConstants destructuring blocks never pull ActivityComponent out of ReactTypeOfWork, so the two tag sources can silently disagree.",
+      "failure_scenario": "A later change adds ActivityComponent to the destructuring in only one of the two scopes. One function then shadows the import with the version-map value and the other keeps the hardcoded 31, which gives inconsistent filtering and naming for the same fiber."
+    },
+    {
+      "file": "packages/shared/getComponentNameFromType.js",
+      "line": 84,
+      "summary": "The new REACT_ACTIVITY_TYPE symbol isn't handled in getComponentNameFromType, even though getComponentNameFromFiber now returns 'Activity' for the fiber tag.",
+      "failure_scenario": "Code that names an element from its type (Fizz/Flight warnings, owner names, DEV messages) gets null for <unstable_Activity>, while fiber-based naming says 'Activity'. Diagnostics show an unnamed or missing component name."
+    },
+    {
+      "file": "packages/shared/ReactSerializationErrors.js",
+      "line": 133,
+      "summary": "describeElementType doesn't recognize REACT_ACTIVITY_TYPE (it had also never handled the old offscreen symbol), so Activity elements aren't named in Flight serialization error messages.",
+      "failure_scenario": "A Server Component passes a non-serializable prop inside an <Activity> tree. The error's JSX description renders the Activity element as an unknown/'Unknown' type instead of <Activity>."
+    },
+    {
+      "file": "packages/react-reconciler/src/ReactFiberComponentStack.js",
+      "line": 48,
+      "summary": "There is now a dedicated ActivityComponent tag, but no built-in component-stack frame for it in ReactFiberComponentStack, DevToolsFiberComponentStack, ReactComponentStackFrame or ReactFizzComponentStack.",
+      "failure_scenario": "An error thrown inside <Activity> produces a component stack with no 'at Activity' frame (and Fizz stacks likewise). That is inconsistent with Suspense/SuspenseList/ViewTransition and with getComponentNameFromFiber returning 'Activity'."
+    },
+    {
+      "file": "packages/react-devtools-shared/src/utils.js",
+      "line": 742,
+      "summary": "getDisplayNameForReactElement and the typeOf switch in DevTools utils (and typeOf in react-is) don't handle REACT_ACTIVITY_TYPE.",
+      "failure_scenario": "Inspecting a prop or state value that holds an <unstable_Activity> element shows 'NotImplementedInDevtools' instead of 'Activity', and ReactIs.typeOf(<Activity/>) returns undefined."
+    },
+    {
+      "file": "packages/react-reconciler/src/ReactFiberBeginWork.js",
+      "line": 885,
+      "summary": "updateActivityComponent repeats the same ref/child/return assignment and return in both the mount and update branches, and passes renderLanes to mountWorkInProgressOffscreenFiber, which ignores it.",
+      "failure_scenario": "Maintenance cost: the four duplicated lines can drift (for example, a fix to ref forwarding applied to one branch only). Simpler form: compute primaryChildFragment via current === null ? mount(...) : update(current.child, ...), then do the ref/child/return assignment once."
+    }
+  ],
+  "result_text": "I found 8 issues in this diff. The most serious are in the DevTools backend: it imports the work-tag constant straight from the reconciler instead of using the version map. The rest are places that still don't recognize the new `REACT_ACTIVITY_TYPE` symbol, plus two smaller cleanups. Per the no-verify instruction, none of these were run against tests.\n\n```json\n[\n  {\n    \"file\": \"packages/react-devtools-shared/src/backend/fiber/renderer.js\",\n    \"line\": 149,\n    \"summary\": \"DevTools backend imports the ActivityComponent tag directly from react-reconciler/src/ReactWorkTags instead of destructuring it from the version-specific ReactTypeOfWork map, so the per-version ActivityComponent entries (31 / -1) are dead and the constant is hardcoded to the current repo's value.\",\n    \"failure_scenario\": \"DevTools attaches to a React build whose tag numbering differs from the bundled reconciler (an older/newer renderer, or a later tag renumbering). getDisplayNameForFiber and shouldFilterFiber match tag 31 no matter which version is running, so fibers that aren't Activity can be labelled 'Activity' and filtered out of the tree, and real Activity fibers can be missed. This breaks the 'copied from React repo, add version guards' contract of getInternalReactConstants.\"\n  },\n  {\n    \"file\": \"packages/react-devtools-shared/src/backend/fiber/renderer.js\",\n    \"line\": 389,\n    \"summary\": \"ActivityComponent: 31 is placed in the gt(version, '17.0.1') branch without a version guard, so every React 18.x/19.0 renderer is reported as having an Activity tag 31 that doesn't exist there.\",\n    \"failure_scenario\": \"Once the map value is actually consumed (the intended fix for the import above), any React 18/19.0 fiber with tag 31 would be treated as Activity. The entry should be guarded to the version that introduced the tag, or marked Experimental like the other entries.\"\n  },\n  {\n    \"file\": \"packages/react-devtools-shared/src/backend/fiber/renderer.js\",\n    \"line\": 631,\n    \"summary\": \"getDisplayNameForFiber and shouldFilterFiber use the module-level imported ActivityComponent while the attach() / getInternalReactConstants destructuring blocks never pull ActivityComponent out of ReactTypeOfWork, so the two tag sources can silently disagree.\",\n    \"failure_scenario\": \"A later change adds ActivityComponent to the destructuring in only one of the two scopes. One function then shadows the import with the version-map value and the other keeps the hardcoded 31, which gives inconsistent filtering and naming for the same fiber.\"\n  },\n  {\n    \"file\": \"packages/shared/getComponentNameFromType.js\",\n    \"line\": 84,\n    \"summary\": \"The new REACT_ACTIVITY_TYPE symbol isn't handled in getComponentNameFromType, even though getComponentNameFromFiber now returns 'Activity' for the fiber tag.\",\n    \"failure_scenario\": \"Code that names an element from its type (Fizz/Flight warnings, owner names, DEV messages) gets null for <unstable_Activity>, while fiber-based naming says 'Activity'. Diagnostics show an unnamed or missing component name.\"\n  },\n  {\n    \"file\": \"packages/shared/ReactSerializationErrors.js\",\n    \"line\": 133,\n    \"summary\": \"describeElementType doesn't recognize REACT_ACTIVITY_TYPE (it had also never handled the old offscreen symbol), so Activity elements aren't named in Flight serialization error messages.\",\n    \"failure_scenario\": \"A Server Component passes a non-serializable prop inside an <Activity> tree. The error's JSX description renders the Activity element as an unknown/'Unknown' type instead of <Activity>.\"\n  },\n  {\n    \"file\": \"packages/react-reconciler/src/ReactFiberComponentStack.js\",\n    \"line\": 48,\n    \"summary\": \"There is now a dedicated ActivityComponent tag, but no built-in component-stack frame for it in ReactFiberComponentStack, DevToolsFiberComponentStack, ReactComponentStackFrame or ReactFizzComponentStack.\",\n    \"failure_scenario\": \"An error thrown inside <Activity> produces a component stack with no 'at Activity' frame (and Fizz stacks likewise). That is inconsistent with Suspense/SuspenseList/ViewTransition and with getComponentNameFromFiber returning 'Activity'.\"\n  },\n  {\n    \"file\": \"packages/react-devtools-shared/src/utils.js\",\n    \"line\": 742,\n    \"summary\": \"getDisplayNameForReactElement and the typeOf switch in DevTools utils (and typeOf in react-is) don't handle REACT_ACTIVITY_TYPE.\",\n    \"failure_scenario\": \"Inspecting a prop or state value that holds an <unstable_Activity> element shows 'NotImplementedInDevtools' instead of 'Activity', and ReactIs.typeOf(<Activity/>) returns undefined.\"\n  },\n  {\n    \"file\": \"packages/react-reconciler/src/ReactFiberBeginWork.js\",\n    \"line\": 885,\n    \"summary\": \"updateActivityComponent repeats the same ref/child/return assignment and return in both the mount and update branches, and passes renderLanes to mountWorkInProgressOffscreenFiber, which ignores it.\",\n    \"failure_scenario\": \"Maintenance cost: the four duplicated lines can drift (for example, a fix to ref forwarding applied to one branch only). Simpler form: compute primaryChildFragment via current === null ? mount(...) : update(current.child, ...), then do the ref/child/return assignment once.\"\n  }\n]\n```\n\nNo CLAUDE.md rule was violated: the repo has no CLAUDE.md, and the user-level one only covers waiting on runtime conditions and CodeGraph usage.",
+  "stderr": "",
+  "claude_duration_ms": 188672,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.5572114,
+  "claude_session_id": "eaef6f7a-3b6e-459e-852c-13828c996608",
+  "token_usage": {
+    "input_tokens": 32,
+    "output_tokens": 13329,
+    "cache_read_input_tokens": 481167,
+    "cache_creation_input_tokens": 38854,
+    "total_tokens": 533382,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 32,
+        "outputTokens": 13329,
+        "cacheReadInputTokens": 481167,
+        "cacheCreationInputTokens": 38854,
+        "webSearchRequests": 0,
+        "costUSD": 0.5572114,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 7745,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/phase1/transcripts/facebook__react@b045f18"
+  }
+}

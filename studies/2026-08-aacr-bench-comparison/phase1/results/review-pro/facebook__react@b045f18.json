@@ -1,0 +1,101 @@
+{
+  "instance_id": "facebook__react@b045f18",
+  "repo": "facebook/react",
+  "base_commit": "99563e91736e9de473c4865d5cb6fd9eb1a26bcb",
+  "head_commit": "b045f18e378341876ee69e729fc855cab501c3cd",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T02:13:24.362321+00:00",
+  "duration_seconds": 429.17,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "packages/react-devtools-shared/src/backend/fiber/renderer.js",
+      "line": 149,
+      "summary": "[Medium] DevTools reads ActivityComponent from the reconciler's tag constant instead of the version-keyed ReactTypeOfWork map",
+      "failure_scenario": "Impact: getDisplayNameForFiber (~631) and shouldFilterFiber (~1491) both match the hardcoded 31 imported from react-reconciler/src/ReactWorkTags, whatever React version is attached. That makes the new WorkTagMap entries (31 for the newest version, -1 for older ones) dead code. It is also the first runtime value import from react-reconciler in the DevTools backend; every other import from it is type-only. If tag 31 is ever renumbered or reused, DevTools will misname or wrongly filter fibers for that version, and editing the per-version map will not fix it. Remedy: remove the import and add ActivityComponent to both `const {...} = ReactTypeOfWork` destructurings (in getInternalReactConstants and in attach), next to ViewTransitionComponent."
+    },
+    {
+      "file": "packages/react-devtools-shared/src/backend/fiber/renderer.js",
+      "line": 1491,
+      "summary": "[Medium] No DevTools test checks that the new Activity fiber is hidden and its children still show",
+      "failure_scenario": "Impact: every <Activity> now creates an extra fiber with tag 31 that DevTools must filter out, but no DevTools test renders unstable_Activity. The only Offscreen matches in the tests are lane labels in preprocessData-test.js and TimelineProfiler-test.js. If the Activity wrapper started appearing in the component tree, or its children were dropped, no test would catch it. The new 'Activity' display-name case is also never run. Remedy: add a store-test.js case gated on enableActivity that renders <Activity mode=\"visible\"><Child /></Activity> and asserts <Child> appears directly under its parent with no Activity or Offscreen node, plus a mode=\"hidden\" case."
+    },
+    {
+      "file": "packages/react-reconciler/src/ReactFiberBeginWork.js",
+      "line": 885,
+      "summary": "[Medium] updateActivityComponent's mount and update branches repeat the same wiring code",
+      "failure_scenario": "Impact: the two branches differ only in how the Offscreen child is created. The ref, child and return wiring and the return statement are copied word for word, and the name primaryChildFragment comes from Suspense, which has a fallback sibling that Activity does not. A later change to the wiring, such as resetting sibling or flags the way updateSuspensePrimaryChildren does, has to be made in both places and the copies can drift apart. Remedy: branch only to create the child, e.g. `const child = current === null ? mountWorkInProgressOffscreenFiber(offscreenChildProps, mode, renderLanes) : updateWorkInProgressOffscreenFiber((current.child: any), offscreenChildProps);`, then do the ref/child/return wiring once and return it."
+    },
+    {
+      "file": "packages/react-reconciler/src/ReactFiber.js",
+      "line": 881,
+      "summary": "[Low] Activity's public props are typed with Offscreen's internal OffscreenProps type",
+      "failure_scenario": "Impact: createFiberFromActivity declares its props as OffscreenProps, an internal type marked \"TODO: Pick an API before exposing the Offscreen type\". That type includes the internal mode 'unstable-defer-without-hiding', and updateActivityComponent passes it straight through. So the public <Activity> contract is tied to Offscreen internals, and changing Offscreen's props would silently change Activity's. This is not a regression; createFiberFromLegacyHidden also uses OffscreenProps. The function is also missing the blank line that separates the other createFiberFrom* helpers. Remedy: define an ActivityProps type (mode?: 'hidden' | 'visible' | null | void, children) in ReactFiberActivityComponent.js, use it in createFiberFromActivity, map it to OffscreenProps explicitly in updateActivityComponent, and add the blank line."
+    },
+    {
+      "file": "packages/react-reconciler/src/ReactFiberBeginWork.js",
+      "line": 904,
+      "summary": "[Low] No test covers the ref being copied to the Offscreen child when the ref changes on an update",
+      "failure_scenario": "Impact: the ref tests in Activity-test.js only check the mount path. None re-renders with a different ref or with the ref removed, and none checks that the ref is cleared on unmount. If the update branch stopped copying workInProgress.ref to the Offscreen child, the old ref would stay attached and the new one would never be set, and no test would fail. Remedy: in Activity-test.js, render <Activity ref={refA}>, re-render with ref={refB} and assert refA.current === null and refB.current is the Offscreen instance (has attach/detach), then render null and assert refB.current === null."
+    },
+    {
+      "file": "packages/shared/isValidElementType.js",
+      "line": 54,
+      "summary": "[Low] No direct test checks that the new Activity symbol counts as a valid element type",
+      "failure_scenario": "Impact: unstable_Activity is now Symbol.for('react.activity'), and this new clause is the only reason it still passes isValidElementType. ReactIs-test.js does not cover Activity, and under owner-stack configs nothing exercises this line, so removing or breaking it would go unnoticed. Remedy: add a ReactIs-test.js case gated on enableActivity asserting ReactIs.isValidElementType(React.unstable_Activity) === true, and optionally that React.unstable_Activity === Symbol.for('react.activity') to pin the public symbol change."
+    }
+  ],
+  "result_text": "## Verdict: REQUEST CHANGES (code)\n\nSpec: skipped, no spec found.\n\nCoverage (self-reported): 11 of 11 changed files examined by at least one reviewer.\n\nVerification: 3 checked (3 stand, 0 partly refuted, 0 refuted), 0 not checked. Spec findings are not verified.\n\nBase `99563e9`, merge base `2980f27`. There are no `.review-pro/` stack packs and no `rules.md` at the merge base, so the reviewers used only their core rubrics. Reviewers dispatched: correctness, api-contract, craft, dry, ai-antipatterns, tests. Every changed file was given to the reviewers as a path to read from the working tree (which matches HEAD) rather than pasted in, because the files are very large. api-contract said it read only the diff and nearby lines in most files.\n\n### Medium\n- **[Medium] `packages/react-devtools-shared/src/backend/fiber/renderer.js:149`: DevTools reads `ActivityComponent` from the reconciler's tag constant instead of its own per-version tag map (`ReactTypeOfWork`)**\n  - **Impact:** both `getDisplayNameForFiber` (:631) and `shouldFilterFiber` (:1491) use the fixed value 31 imported from `react-reconciler/src/ReactWorkTags`, whatever React version is attached. So the new `WorkTagMap` entries (31, and -1 for older versions) are never read. This is also the first runtime value the DevTools backend imports from the reconciler; every other import from it is type-only. Nothing is wrong today, but if tag 31 is ever renumbered or reused, DevTools will misname or wrongly filter fibers.\n  - **Remedy:** remove the import and add `ActivityComponent` to both `ReactTypeOfWork` destructurings, in `getInternalReactConstants` and in `attach`, the way `ViewTransitionComponent` is handled.\n  - flagged by: api-contract, craft, dry, ai-antipatterns, correctness\n  - verification: verified, unchecked: whether a future React version renumbers or reuses tag 31.\n- **[Medium] `packages/react-devtools-shared/src/backend/fiber/renderer.js:1491`: no DevTools test checks that the new Activity fiber is hidden and its children still show**\n  - **Impact:** every `<Activity>` now adds a tag-31 fiber, but no DevTools test renders `unstable_Activity`. If the wrapper showed up in the tree, or its children disappeared, no test would catch it. The `'Activity'` display-name case is never run either.\n  - **Remedy:** add a `store-test.js` case for `mode=\"visible\"` and one for `mode=\"hidden\"`.\n  - flagged by: tests\n  - verification: verified, unchecked: whether the suggested snapshot passes as written.\n- **[Medium] `packages/react-reconciler/src/ReactFiberBeginWork.js:885`: the mount and update branches of `updateActivityComponent` repeat the same wiring code**\n  - **Impact:** the branches differ only in how the child fiber is created. The `ref`/`child`/`return` assignments and the return statement are copied in both. The name `primaryChildFragment` comes from the Suspense code and doesn't fit a single Offscreen child. A later wiring change has to be made twice and the copies can drift.\n  - **Remedy:** use the branch only to create the child, then wire it once.\n  - flagged by: craft, dry, ai-antipatterns\n  - verification: verified, unchecked: whether future edits actually drift.\n  - noticed (not reviewed): `mountWorkInProgressOffscreenFiber` ignores its `renderLanes` argument and uses `NoLanes`.\n\n### Low\n- **[Low] `packages/react-reconciler/src/ReactFiber.js:881`: Activity's public props are typed with Offscreen's internal `OffscreenProps`**\n  - **Impact:** that type includes the internal mode `'unstable-defer-without-hiding'`, so changing Offscreen's props would quietly change Activity's contract. `createFiberFromLegacyHidden` already does the same thing, so this follows existing code. The blank line between `createFiberFrom*` functions is also missing here.\n  - **Remedy:** add an `ActivityProps` type, map it to `OffscreenProps` explicitly, and add the blank line.\n  - flagged by: craft, api-contract\n- **[Low] `packages/react-reconciler/src/ReactFiberBeginWork.js:904`: no test covers copying the ref to the Offscreen child when the ref changes on an update, or clearing it on unmount**\n  - **Remedy:** in `Activity-test.js`, render with `refA`, re-render with `refB`, then render `null`, asserting the ref values at each step.\n  - flagged by: tests\n- **[Low] `packages/shared/isValidElementType.js:54`: no test checks that `REACT_ACTIVITY_TYPE` counts as a valid element type**\n  - **Remedy:** add a `ReactIs-test.js` case that `isValidElementType(React.unstable_Activity)` is true, and optionally pin `unstable_Activity === Symbol.for('react.activity')`.\n  - flagged by: tests\n\n### Refuted in verification\nNone.\n\n## Spec\nSkipped, no spec found: the commit message cites no issue, there are no `docs/`, `specs/` or `.scratch/` directories, and the `gh pr view` lookup was blocked by the permission prompt.\n\nAll 6 findings were sent to the findings tool.",
+  "stderr": "",
+  "claude_duration_ms": 428084,
+  "claude_num_turns": 31,
+  "claude_cost_usd": 4.341483599999999,
+  "claude_session_id": "d2228d77-5433-444f-829c-2ed84e527a29",
+  "token_usage": {
+    "input_tokens": 198,
+    "output_tokens": 83540,
+    "cache_read_input_tokens": 3483173,
+    "cache_creation_input_tokens": 347633,
+    "total_tokens": 3914544,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 198,
+        "outputTokens": 83540,
+        "cacheReadInputTokens": 3483173,
+        "cacheCreationInputTokens": 347633,
+        "webSearchRequests": 0,
+        "costUSD": 4.341483599999999,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 31096,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/facebook__react@b045f18"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: 99563e91736e9de473c4865d5cb6fd9eb1a26bcb.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

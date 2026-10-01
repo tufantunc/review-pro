@@ -1,0 +1,107 @@
+{
+  "instance_id": "lvgl__lvgl@4a57db3",
+  "repo": "lvgl/lvgl",
+  "base_commit": "d2ed41dda1618049a037df2639b9d28578847195",
+  "head_commit": "4a57db33476f1caf3e85726a6b1e189c68c1f36b",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T16:07:23.812859+00:00",
+  "duration_seconds": 119.02,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "src/widgets/label/lv_label.c",
+      "line": 894,
+      "summary": "SCROLL_CIRCULAR drawing and the SCROLL/CIRCULAR CENTER/RIGHT-to-LEFT align override now use the cached label->text_size instead of measuring the current text at draw time, so the value goes stale whenever the text changes without going through lv_label_refr_text.",
+      "failure_scenario": "A label uses lv_label_set_text_static(buf) in LV_LABEL_LONG_MODE_SCROLL_CIRCULAR. The app edits buf in place and calls lv_obj_invalidate(). draw_main still uses the old size.x, so the repeated copy is drawn at the wrong ofs_x (overlapping, or leaving a gap), and the 'size.x > width' checks that pick the alignment and decide whether to draw the circular copies give the wrong answer. The old code re-measured on every draw and handled this case correctly."
+    },
+    {
+      "file": "src/draw/lv_draw_label.h",
+      "line": 39,
+      "summary": "The new public field lv_draw_label_dsc_t.text_size, documented only as 'The size of the text', is filled in by lv_label alone. Every other producer leaves it at {0,0} from lv_draw_label_dsc_init. Even lv_label fills it with a size wrapped at the pre-resize content width.",
+      "failure_scenario": "The table (CELL_CTRL_TEXT_CROP), roller, textarea placeholder, scale, buttonmatrix, span and user lv_draw_label calls all pass text_size = {0,0}, some with LV_TEXT_FLAG_EXPAND set. A custom or third-party draw unit, or a future change in lv_draw_label_iterate_characters, that reads dsc->text_size gets width 0. That would, for example, break alignment or line breaking. For a WRAP label, the field holds the wrapped size computed before lv_obj_refresh_self_size, not the size actually drawn."
+    },
+    {
+      "file": "src/draw/lv_draw_label.h",
+      "line": 38,
+      "summary": "The new field is inserted in the middle of the public lv_draw_label_dsc_t (right after `text`), which shifts the offset of every later member and breaks ABI and positional initialization.",
+      "failure_scenario": "Prebuilt draw units or libraries, MicroPython/other bindings generated against the old layout, and any positional/aggregate initializer of lv_draw_label_dsc_t now read font/color/etc. from the wrong offsets. The result is garbage fonts/colors or a crash dereferencing `font`. Appending the field at the end would avoid this."
+    },
+    {
+      "file": "src/draw/lv_draw_label.c",
+      "line": 221,
+      "summary": "Altitude: the removed lv_text_get_size call was dead work to begin with. When LV_TEXT_FLAG_EXPAND is set, lv_text_get_next_line returns early without using max_width (lv_text.c:336), so `w` never matters in this branch. The root-cause fix is to delete the measurement and use w = LV_COORD_MAX, not to add a cached size to a public draw descriptor.",
+      "failure_scenario": "The PR adds a new public struct field, a new per-object field and state-sync code in lv_label_refr_text just to feed a value the callee ignores. That enlarges the API surface and the staleness risk (see findings 1 and 2) for no gain over a one-line removal that would also speed up table, roller and textarea draws."
+    },
+    {
+      "file": "src/draw/nema_gfx/lv_draw_nema_gfx_label.c",
+      "line": 439,
+      "summary": "The NemaGFX backend keeps its own copy of the EXPAND branch and still calls lv_text_get_size(..., LV_COORD_MAX, ...) for every label draw, so the optimization is missing there and the two copies have diverged.",
+      "failure_scenario": "On NemaGFX targets every EXPAND label draw still does a full-text measurement, so the performance fix has no effect there. The duplicated logic now differs from lv_draw_label_iterate_characters (dsc->text_size vs a recomputed size), which is a maintenance hazard."
+    },
+    {
+      "file": "src/widgets/label/lv_label_private.h",
+      "line": 54,
+      "summary": "label->text_size duplicates the existing label->size_cache, which already caches lv_text_get_size for the same text, font and flags. The new field adds a second, differently computed cache that has to be kept in sync.",
+      "failure_scenario": "Two caches of nearly the same quantity are refreshed at different times (text_size eagerly in refr_text, size_cache lazily in GET_SELF_SIZE with a different max width and a max_height clamp). Every lv_label instance also gets 8 more bytes, which adds up on RAM-constrained targets with many labels."
+    },
+    {
+      "file": "src/widgets/label/lv_label.c",
+      "line": 968,
+      "summary": "In lv_label_refr_text the local `size` and `label->text_size` hold the same value. text_size is measured after lv_label_revert_dots but before the dots are applied and before lv_obj_refresh_self_size, so in DOTS/WRAP mode it describes neither the drawn text nor the final width.",
+      "failure_scenario": "In DOTS mode, draw_main passes label_draw_dsc.text_size from the original un-truncated text, but the text actually drawn is the dotted one. If refresh_self_size changes the width, the measurement used the old max_w. Anyone who later relies on dsc->text_size for these modes gets the wrong dimensions."
+    },
+    {
+      "file": "src/draw/lv_draw_label.c",
+      "line": 193,
+      "summary": "Adding 8 bytes to lv_draw_label_dsc_t grows every label draw task, because lv_draw_label and lv_draw_character lv_memcpy the whole descriptor into each task. Only one producer uses the field.",
+      "failure_scenario": "Screens with many labels or characters allocate and copy extra bytes per draw task every frame on memory- and bandwidth-limited MCUs. Most of those tasks carry text_size = {0,0} because they don't come from lv_label."
+    }
+  ],
+  "result_text": "```json\n[\n  {\n    \"file\": \"src/widgets/label/lv_label.c\",\n    \"line\": 894,\n    \"summary\": \"SCROLL_CIRCULAR drawing and the SCROLL/CIRCULAR CENTER/RIGHT-to-LEFT align override now use the cached label->text_size instead of measuring the current text at draw time, so the value goes stale whenever the text changes without going through lv_label_refr_text.\",\n    \"failure_scenario\": \"A label uses lv_label_set_text_static(buf) in LV_LABEL_LONG_MODE_SCROLL_CIRCULAR. The app edits buf in place and calls lv_obj_invalidate(). draw_main still uses the old size.x, so the repeated copy is drawn at the wrong ofs_x (overlapping, or leaving a gap), and the 'size.x > width' checks that pick the alignment and decide whether to draw the circular copies give the wrong answer. The old code re-measured on every draw and handled this case correctly.\"\n  },\n  {\n    \"file\": \"src/draw/lv_draw_label.h\",\n    \"line\": 39,\n    \"summary\": \"The new public field lv_draw_label_dsc_t.text_size, documented only as 'The size of the text', is filled in by lv_label alone. Every other producer leaves it at {0,0} from lv_draw_label_dsc_init. Even lv_label fills it with a size wrapped at the pre-resize content width.\",\n    \"failure_scenario\": \"The table (CELL_CTRL_TEXT_CROP), roller, textarea placeholder, scale, buttonmatrix, span and user lv_draw_label calls all pass text_size = {0,0}, some with LV_TEXT_FLAG_EXPAND set. A custom or third-party draw unit, or a future change in lv_draw_label_iterate_characters, that reads dsc->text_size gets width 0. That would, for example, break alignment or line breaking. For a WRAP label, the field holds the wrapped size computed before lv_obj_refresh_self_size, not the size actually drawn.\"\n  },\n  {\n    \"file\": \"src/draw/lv_draw_label.h\",\n    \"line\": 38,\n    \"summary\": \"The new field is inserted in the middle of the public lv_draw_label_dsc_t (right after `text`), which shifts the offset of every later member and breaks ABI and positional initialization.\",\n    \"failure_scenario\": \"Prebuilt draw units or libraries, MicroPython/other bindings generated against the old layout, and any positional/aggregate initializer of lv_draw_label_dsc_t now read font/color/etc. from the wrong offsets. The result is garbage fonts/colors or a crash dereferencing `font`. Appending the field at the end would avoid this.\"\n  },\n  {\n    \"file\": \"src/draw/lv_draw_label.c\",\n    \"line\": 221,\n    \"summary\": \"Altitude: the removed lv_text_get_size call was dead work to begin with. When LV_TEXT_FLAG_EXPAND is set, lv_text_get_next_line returns early without using max_width (lv_text.c:336), so `w` never matters in this branch. The root-cause fix is to delete the measurement and use w = LV_COORD_MAX, not to add a cached size to a public draw descriptor.\",\n    \"failure_scenario\": \"The PR adds a new public struct field, a new per-object field and state-sync code in lv_label_refr_text just to feed a value the callee ignores. That enlarges the API surface and the staleness risk (see findings 1 and 2) for no gain over a one-line removal that would also speed up table, roller and textarea draws.\"\n  },\n  {\n    \"file\": \"src/draw/nema_gfx/lv_draw_nema_gfx_label.c\",\n    \"line\": 439,\n    \"summary\": \"The NemaGFX backend keeps its own copy of the EXPAND branch and still calls lv_text_get_size(..., LV_COORD_MAX, ...) for every label draw, so the optimization is missing there and the two copies have diverged.\",\n    \"failure_scenario\": \"On NemaGFX targets every EXPAND label draw still does a full-text measurement, so the performance fix has no effect there. The duplicated logic now differs from lv_draw_label_iterate_characters (dsc->text_size vs a recomputed size), which is a maintenance hazard.\"\n  },\n  {\n    \"file\": \"src/widgets/label/lv_label_private.h\",\n    \"line\": 54,\n    \"summary\": \"label->text_size duplicates the existing label->size_cache, which already caches lv_text_get_size for the same text, font and flags. The new field adds a second, differently computed cache that has to be kept in sync.\",\n    \"failure_scenario\": \"Two caches of nearly the same quantity are refreshed at different times (text_size eagerly in refr_text, size_cache lazily in GET_SELF_SIZE with a different max width and a max_height clamp). Every lv_label instance also gets 8 more bytes, which adds up on RAM-constrained targets with many labels.\"\n  },\n  {\n    \"file\": \"src/widgets/label/lv_label.c\",\n    \"line\": 968,\n    \"summary\": \"In lv_label_refr_text the local `size` and `label->text_size` hold the same value. text_size is measured after lv_label_revert_dots but before the dots are applied and before lv_obj_refresh_self_size, so in DOTS/WRAP mode it describes neither the drawn text nor the final width.\",\n    \"failure_scenario\": \"In DOTS mode, draw_main passes label_draw_dsc.text_size from the original un-truncated text, but the text actually drawn is the dotted one. If refresh_self_size changes the width, the measurement used the old max_w. Anyone who later relies on dsc->text_size for these modes gets the wrong dimensions.\"\n  },\n  {\n    \"file\": \"src/draw/lv_draw_label.c\",\n    \"line\": 193,\n    \"summary\": \"Adding 8 bytes to lv_draw_label_dsc_t grows every label draw task, because lv_draw_label and lv_draw_character lv_memcpy the whole descriptor into each task. Only one producer uses the field.\",\n    \"failure_scenario\": \"Screens with many labels or characters allocate and copy extra bytes per draw task every frame on memory- and bandwidth-limited MCUs. Most of those tasks carry text_size = {0,0} because they don't come from lv_label.\"\n  }\n]\n```",
+  "stderr": "",
+  "claude_duration_ms": 117864,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.4771546,
+  "claude_session_id": "308a6185-f775-4aa6-8621-6c2ab541cb54",
+  "token_usage": {
+    "input_tokens": 22,
+    "output_tokens": 10064,
+    "cache_read_input_tokens": 327633,
+    "cache_creation_input_tokens": 42052,
+    "total_tokens": 379771,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 22,
+        "outputTokens": 10064,
+        "cacheReadInputTokens": 327633,
+        "cacheCreationInputTokens": 42052,
+        "webSearchRequests": 0,
+        "costUSD": 0.4771546,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 5782,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/phase1/transcripts/lvgl__lvgl@4a57db3"
+  }
+}

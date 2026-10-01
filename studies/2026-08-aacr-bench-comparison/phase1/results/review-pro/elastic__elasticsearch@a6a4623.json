@@ -1,0 +1,119 @@
+{
+  "instance_id": "elastic__elasticsearch@a6a4623",
+  "repo": "elastic/elasticsearch",
+  "base_commit": "cc0e53e883ee7e0b136e58a0105103c1a7ffddf9",
+  "head_commit": "a6a4623f4a0216b515a8cb323110305504431459",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T20:51:06.928241+00:00",
+  "duration_seconds": 336.24,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java",
+      "line": 568,
+      "summary": "[High] -1 and 0 are now accepted and sent to other nodes with no TransportVersion check, so older data nodes can't read the request",
+      "failure_scenario": "writeTo writes maxAnalyzedOffset with writeOptionalInt for every stream version, and readFrom passes it back through the setter. During a rolling upgrade, a new coordinating node accepts max_analyzed_offset:-1 (or 0). An old data node's setter still rejects values <= 0 (\"must be a positive integer\"), so it fails while reading the shard request, and the user gets shard failures instead of a clean 400. Remedy: add a new TransportVersion; when the receiving node is older and the value is <= 0, fail with a clear error, or reject -1 at the coordinator until every node supports it."
+    },
+    {
+      "file": "server/src/test/java/org/elasticsearch/search/fetch/subphase/highlight/HighlightBuilderTests.java",
+      "line": 580,
+      "summary": "[High] testInvalidMaxAnalyzedOffset still picks values that are now valid, so it fails at random",
+      "failure_scenario": "The test uses randomIntBetween(-100, 0) and expects a parse exception, but the validator now rejects only values < -1. When the seed picks -1 or 0 (about 2 in 101 seeds), the parse succeeds, expectParseThrows fails, and CI fails depending on the seed. Remedy: use randomIntBetween(-100, -2) and add a positive test that -1 parses and survives a serialization round-trip."
+    },
+    {
+      "file": "rest-api-spec/src/yamlRestTest/resources/rest-api-spec/test/search.highlight/30_max_analyzed_offset.yml",
+      "line": 133,
+      "summary": "[Medium] The REST error message changed, but the compat suite has no skipTest and mixed clusters have no version gate",
+      "failure_scenario": "The test is gated only on gte_v7.12.0. qa/mixed-cluster runs all core yaml tests and doesn't exclude this one. When an old node handles the request, it returns \"must be a positive integer\" and the new match fails. rest-api-spec/build.gradle has no skipTest or replaceValueInMatch for the previous version's copy of the test in the compat suite. BWC CI breaks. Remedy: add task.skipTest or replaceValueInMatch in rest-api-spec/build.gradle, and gate the changed test (plus a new -1 test) on a new cluster feature or search capability, or keep an error message both versions produce."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/lucene/search/uhighlight/QueryMaxAnalyzedOffset.java",
+      "line": 12,
+      "summary": "[Medium] The new QueryMaxAnalyzedOffset wrapper can itself be null, so it guarantees nothing and forces signature changes in 5 files, including a protected extension point",
+      "failure_scenario": "create() returns null, so every caller keeps its null check and then unwraps with the oddly named getNotNull(). The class has no behaviour of its own. The signature change to the protected DefaultHighlighter.wrapAnalyzer breaks any subclass that overrides wrapAnalyzer(Analyzer, Integer). The constructor comment describes logic that lives in create(). Remedy: resolve -1 to the index value once, as an Integer, where the options are read, and keep the Integer signatures. Or make it a record that owns the \"exceeds the index limit\" check, with a value() accessor and the comment moved to create()."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java",
+      "line": 568,
+      "summary": "[Medium] Validation now accepts max_analyzed_offset: 0, not just the new -1 value",
+      "failure_scenario": "max_analyzed_offset: 0 used to get a 400. It is now accepted over REST and between nodes, and QueryMaxAnalyzedOffset.create passes it through unchanged. That gives LimitTokenOffsetAnalyzer(..., 0) / LimitedOffsetsEnum(off, 0) and skips the \"field too long\" check, so highlighting is silently cut off after offset 0. (Verification: a match at offset 0 can still be highlighted, so highlights are not always empty.) Remedy: accept only -1 or positive values, update the error message and javadoc, and add an explicit test for 0."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/PlainHighlighter.java",
+      "line": 126,
+      "summary": "[Medium] No test covers -1 on the plain highlighter, or on the unified highlighter for fields without offsets",
+      "failure_scenario": "The only end-to-end test, HighlighterSearchIT.testMaxQueryOffsetDefault, uses a mapping with index_options: offsets and the default unified highlighter. It never reaches the OffsetSource.ANALYSIS check in CustomUnifiedHighlighter, and no test sends -1 through PlainHighlighter. A regression in the main use case (a long field without offsets plus -1) would go unnoticed. Remedy: add yaml or IT cases with max_analyzed_offset=-1 on a field without offsets, for both the plain and unified highlighters, gated on the new feature."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java",
+      "line": 564,
+      "summary": "[Low] The javadoc, validator and resolver disagree about the -1 value, and the user docs and changelog weren't updated",
+      "failure_scenario": "The javadoc says \"a negative int\" means use the index setting, and create() treats any value < 0 that way, but the validator allows only -1. The javadoc also calls null \"unknown\", and there is no named constant. highlighting.asciidoc:261 doesn't mention -1 and there is no changelog entry, so users can't find the feature. Remedy: add a named constant (USE_INDEX_MAX_ANALYZED_OFFSET = -1) and resolve with ==; describe the three states exactly in the javadoc; document -1 in highlighting.asciidoc and add a docs/changelog entry."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/PlainHighlighter.java",
+      "line": 126,
+      "summary": "[Low] The \"query limit unset or above the index limit\" check is duplicated in CustomUnifiedHighlighter",
+      "failure_scenario": "The condition (queryMaxAnalyzedOffset == null || queryMaxAnalyzedOffset.getNotNull() > maxAnalyzedOffset) appears in PlainHighlighter:126 and CustomUnifiedHighlighter:128, and this change had to rewrite both copies the same way. Future changes to the -1 rule need two edits and can drift apart. Remedy: put a single method such as exceedsIndexLimit(indexMax) on QueryMaxAnalyzedOffset (or a static helper) and call it from both places."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/PlainHighlighter.java",
+      "line": 249,
+      "summary": "[Low] PlainHighlighter.wrapAnalyzer is the same as DefaultHighlighter.wrapAnalyzer, and this change edited both the same way",
+      "failure_scenario": "Both wrapAnalyzer methods wrap the analyzer in LimitTokenOffsetAnalyzer(analyzer, maxAnalyzedOffset.getNotNull()) when the offset is non-null. This change had to edit both copies the same way, and any future change to how the limit is applied needs the same double edit. Remedy: keep one static helper (for example on LimitTokenOffsetAnalyzer) and have both places delegate to it; DefaultHighlighter's protected hook stays overridable."
+    }
+  ],
+  "result_text": "The review verdict is **BLOCK**, driven by two High findings:\n\n- **Mixed-version clusters:** the value `-1` (and now `0`) is sent between nodes with no TransportVersion check. During a rolling upgrade, older data nodes reject it while reading the shard request, so searches fail with shard errors instead of a clean 400.\n- **Flaky test:** `HighlightBuilderTests.testInvalidMaxAnalyzedOffset` still picks from [-100, 0]. `-1` and `0` are now valid, so the test fails on about 2 in 101 seeds.\n\nThe full report above also has 4 Medium and 3 Low findings. All 9 have been sent to the findings tool.\n\nVerification: all 6 Medium-or-higher findings went to independent verifiers. 5 held up fully. The \"0 is now accepted\" finding held up in part: highlighting is cut off after offset 0 rather than always empty, and an existing test does draw 0 but expects it to be rejected. Nothing was refuted. There's no spec section because I couldn't look up the PR (the `gh` call needed an approval that wasn't given).\n\nTwo places I departed from the procedure:\n- I couldn't save the diff to a temp file, so reviewers and verifiers got the file list and ran `git diff` themselves instead of getting the diff pasted into their prompts.\n- The repo has no `.review-pro` packs or rules, so every reviewer used only its core rubric.",
+  "stderr": "",
+  "claude_duration_ms": 334662,
+  "claude_num_turns": 38,
+  "claude_cost_usd": 4.570370600000001,
+  "claude_session_id": "19a9d36e-6e15-42bb-81e5-f501c35dc19f",
+  "token_usage": {
+    "input_tokens": 154,
+    "output_tokens": 84539,
+    "cache_read_input_tokens": 2181528,
+    "cache_creation_input_tokens": 426687,
+    "total_tokens": 2692908,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 154,
+        "outputTokens": 84539,
+        "cacheReadInputTokens": 2181528,
+        "cacheCreationInputTokens": 426687,
+        "webSearchRequests": 0,
+        "costUSD": 4.570370600000001,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 19241,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/elastic__elasticsearch@a6a4623"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: cc0e53e883ee7e0b136e58a0105103c1a7ffddf9.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

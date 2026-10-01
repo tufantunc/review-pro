@@ -1,0 +1,119 @@
+{
+  "instance_id": "microsoft__typescript-go@892b4a3",
+  "repo": "microsoft/typescript-go",
+  "base_commit": "a9efe52c52001ea5b49d2ae8d7b0fa32ec8339f3",
+  "head_commit": "892b4a3f6b701352047ceb019fc0683ab1146bb3",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T16:21:25.869602+00:00",
+  "duration_seconds": 64.23,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "internal/fourslash/_scripts/convertFourslash.mts",
+      "line": 27,
+      "summary": "getManualTests() calls readFileSync on manualTests.txt, but this commit doesn't add that file and there is no existence check, so the converter crashes.",
+      "failure_scenario": "On a fresh checkout, or in the CI job that runs `npm run updatefailing`, convertFourslash's main() throws ENOENT on internal/fourslash/_scripts/manualTests.txt. This happens right after outputDir has been wiped, so tests/gen is left empty and CI fails. makeManual.mts handles the missing file with existsSync, but this function does not."
+    },
+    {
+      "file": "internal/fourslash/_scripts/makeManual.mts",
+      "line": 42,
+      "summary": "manualTests.txt matches the root .gitignore rule `*.txt`, and only failingTests.txt has a `!` exception, so the list makeManual writes is never committed.",
+      "failure_scenario": "A developer runs `npm run makemanual` and commits. manualTests.txt is ignored and left out of the commit. On other machines and in CI, convertFourslash either crashes (no file) or regenerates the test into tests/gen, which duplicates the manual copy. A `!internal/fourslash/_scripts/manualTests.txt` line needs to be added to .gitignore."
+    },
+    {
+      "file": "internal/fourslash/_scripts/makeManual.mts",
+      "line": 18,
+      "summary": "makeManual uses one argument both as the gen filename (`foo_test.go`) and as the entry saved to manualTests.txt, but convertFourslash compares entries against the capitalized test name (`Foo`), so the skip never matches.",
+      "failure_scenario": "`npm run makemanual foo_test.go` moves the file and records `foo_test.go`. convertFourslash then checks `manualTests.has(\"Foo\")`, gets false, and regenerates gen/foo_test.go. Both gen and manual now define `TestFoo` in `package fourslash_test`. Passing `Foo` or `TestFoo` instead fails at the existsSync check because no gen file has that name."
+    },
+    {
+      "file": "internal/fourslash/_scripts/makeManual.mts",
+      "line": 30,
+      "summary": "Moved tests go into tests/manual, but util_test.go, which defines helpers like ptrTo and defaultCommitCharacters, is only copied into tests/gen, so manual tests that use those helpers don't compile.",
+      "failure_scenario": "About 600 generated tests reference ptrTo or other helpers from util_test.go. Moving any of them into tests/manual gives `undefined: ptrTo` when building ./internal/fourslash/tests/manual, because generateHelperFile only writes to outputDir."
+    },
+    {
+      "file": "internal/fourslash/_scripts/convertFourslash.mts",
+      "line": 70,
+      "summary": "Manual tests are dropped from both the generation step and updateFailing's `go test ./internal/fourslash/tests/gen` run, so they are never re-checked and their failing-test entries disappear.",
+      "failure_scenario": "A manual test that was listed in failingTests.txt keeps its baked-in t.Skip() forever. updateFailing rewrites failingTests.txt using only gen results, so the entry is lost, and a manual test that later starts failing or passing is never recorded."
+    },
+    {
+      "file": "internal/fourslash/_scripts/makeManual.mts",
+      "line": 12,
+      "summary": "Running makemanual with no argument exits with status 1 and prints nothing, not even a usage message.",
+      "failure_scenario": "`npm run makemanual` fails silently with a nonzero exit, and the user gets no hint about which argument to pass (a filename or a test name)."
+    },
+    {
+      "file": "internal/fourslash/_scripts/makeManual.mts",
+      "line": 31,
+      "summary": "The file is renamed before manualTests.txt is read and written, so a failure in that step leaves the test moved but unlisted.",
+      "failure_scenario": "If the read or write of manualTests.txt throws (for example a permission error), the test is already in tests/manual but not in the list. The next convertFourslash run regenerates it in gen, which creates a duplicate TestX."
+    },
+    {
+      "file": "internal/fourslash/_scripts/convertFourslash.mts",
+      "line": 76,
+      "summary": "The new `if (testContent)` guard is dead code because generateGoTest always returns a non-empty template string.",
+      "failure_scenario": "The check suggests generateGoTest can return an empty value, which can't happen. This misleads readers, so it should be removed."
+    },
+    {
+      "file": "internal/fourslash/_scripts/convertFourslash.mts",
+      "line": 26,
+      "summary": "getManualTests copies the parsing in getFailingTests, and the capitalized testName computation copies the one in generateGoTest (line 946).",
+      "failure_scenario": "The name normalization now lives in two places, and the manual list and failing list use different formats (failing entries drop a `Test` prefix, manual entries don't). This is easy to get out of sync, as the makeManual mismatch shows. A shared list-reader and a shared goTestName(test) helper would remove the duplication."
+    },
+    {
+      "file": "internal/fourslash/_scripts/makeManual.mts",
+      "line": 17,
+      "summary": "`testFileName = testName` is a redundant alias, the template literal around it does nothing, and the `existsSync` check before `mkdirSync({recursive:true})` is unnecessary.",
+      "failure_scenario": "This is redundant code, and the alias hides that the argument is really expected to be a filename, not a test name, which contributes to the naming mismatch above."
+    }
+  ],
+  "result_text": "```json\n[\n  {\n    \"file\": \"internal/fourslash/_scripts/convertFourslash.mts\",\n    \"line\": 27,\n    \"summary\": \"getManualTests() calls readFileSync on manualTests.txt, but this commit doesn't add that file and there is no existence check, so the converter crashes.\",\n    \"failure_scenario\": \"On a fresh checkout, or in the CI job that runs `npm run updatefailing`, convertFourslash's main() throws ENOENT on internal/fourslash/_scripts/manualTests.txt. This happens right after outputDir has been wiped, so tests/gen is left empty and CI fails. makeManual.mts handles the missing file with existsSync, but this function does not.\"\n  },\n  {\n    \"file\": \"internal/fourslash/_scripts/makeManual.mts\",\n    \"line\": 42,\n    \"summary\": \"manualTests.txt matches the root .gitignore rule `*.txt`, and only failingTests.txt has a `!` exception, so the list makeManual writes is never committed.\",\n    \"failure_scenario\": \"A developer runs `npm run makemanual` and commits. manualTests.txt is ignored and left out of the commit. On other machines and in CI, convertFourslash either crashes (no file) or regenerates the test into tests/gen, which duplicates the manual copy. A `!internal/fourslash/_scripts/manualTests.txt` line needs to be added to .gitignore.\"\n  },\n  {\n    \"file\": \"internal/fourslash/_scripts/makeManual.mts\",\n    \"line\": 18,\n    \"summary\": \"makeManual uses one argument both as the gen filename (`foo_test.go`) and as the entry saved to manualTests.txt, but convertFourslash compares entries against the capitalized test name (`Foo`), so the skip never matches.\",\n    \"failure_scenario\": \"`npm run makemanual foo_test.go` moves the file and records `foo_test.go`. convertFourslash then checks `manualTests.has(\\\"Foo\\\")`, gets false, and regenerates gen/foo_test.go. Both gen and manual now define `TestFoo` in `package fourslash_test`. Passing `Foo` or `TestFoo` instead fails at the existsSync check because no gen file has that name.\"\n  },\n  {\n    \"file\": \"internal/fourslash/_scripts/makeManual.mts\",\n    \"line\": 30,\n    \"summary\": \"Moved tests go into tests/manual, but util_test.go, which defines helpers like ptrTo and defaultCommitCharacters, is only copied into tests/gen, so manual tests that use those helpers don't compile.\",\n    \"failure_scenario\": \"About 600 generated tests reference ptrTo or other helpers from util_test.go. Moving any of them into tests/manual gives `undefined: ptrTo` when building ./internal/fourslash/tests/manual, because generateHelperFile only writes to outputDir.\"\n  },\n  {\n    \"file\": \"internal/fourslash/_scripts/convertFourslash.mts\",\n    \"line\": 70,\n    \"summary\": \"Manual tests are dropped from both the generation step and updateFailing's `go test ./internal/fourslash/tests/gen` run, so they are never re-checked and their failing-test entries disappear.\",\n    \"failure_scenario\": \"A manual test that was listed in failingTests.txt keeps its baked-in t.Skip() forever. updateFailing rewrites failingTests.txt using only gen results, so the entry is lost, and a manual test that later starts failing or passing is never recorded.\"\n  },\n  {\n    \"file\": \"internal/fourslash/_scripts/makeManual.mts\",\n    \"line\": 12,\n    \"summary\": \"Running makemanual with no argument exits with status 1 and prints nothing, not even a usage message.\",\n    \"failure_scenario\": \"`npm run makemanual` fails silently with a nonzero exit, and the user gets no hint about which argument to pass (a filename or a test name).\"\n  },\n  {\n    \"file\": \"internal/fourslash/_scripts/makeManual.mts\",\n    \"line\": 31,\n    \"summary\": \"The file is renamed before manualTests.txt is read and written, so a failure in that step leaves the test moved but unlisted.\",\n    \"failure_scenario\": \"If the read or write of manualTests.txt throws (for example a permission error), the test is already in tests/manual but not in the list. The next convertFourslash run regenerates it in gen, which creates a duplicate TestX.\"\n  },\n  {\n    \"file\": \"internal/fourslash/_scripts/convertFourslash.mts\",\n    \"line\": 76,\n    \"summary\": \"The new `if (testContent)` guard is dead code because generateGoTest always returns a non-empty template string.\",\n    \"failure_scenario\": \"The check suggests generateGoTest can return an empty value, which can't happen. This misleads readers, so it should be removed.\"\n  },\n  {\n    \"file\": \"internal/fourslash/_scripts/convertFourslash.mts\",\n    \"line\": 26,\n    \"summary\": \"getManualTests copies the parsing in getFailingTests, and the capitalized testName computation copies the one in generateGoTest (line 946).\",\n    \"failure_scenario\": \"The name normalization now lives in two places, and the manual list and failing list use different formats (failing entries drop a `Test` prefix, manual entries don't). This is easy to get out of sync, as the makeManual mismatch shows. A shared list-reader and a shared goTestName(test) helper would remove the duplication.\"\n  },\n  {\n    \"file\": \"internal/fourslash/_scripts/makeManual.mts\",\n    \"line\": 17,\n    \"summary\": \"`testFileName = testName` is a redundant alias, the template literal around it does nothing, and the `existsSync` check before `mkdirSync({recursive:true})` is unnecessary.\",\n    \"failure_scenario\": \"This is redundant code, and the alias hides that the argument is really expected to be a filename, not a test name, which contributes to the naming mismatch above.\"\n  }\n]\n```",
+  "stderr": "",
+  "claude_duration_ms": 62941,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.2056812,
+  "claude_session_id": "49ff1058-cc12-49ec-94a5-feaaf24dc8b7",
+  "token_usage": {
+    "input_tokens": 18,
+    "output_tokens": 4904,
+    "cache_read_input_tokens": 153746,
+    "cache_creation_input_tokens": 15356,
+    "total_tokens": 174024,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 18,
+        "outputTokens": 4904,
+        "cacheReadInputTokens": 153746,
+        "cacheCreationInputTokens": 15356,
+        "webSearchRequests": 0,
+        "costUSD": 0.2056812,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 1155,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/phase1/transcripts/microsoft__typescript-go@892b4a3"
+  }
+}

@@ -1,0 +1,113 @@
+{
+  "instance_id": "lvgl__lvgl@4a57db3",
+  "repo": "lvgl/lvgl",
+  "base_commit": "d2ed41dda1618049a037df2639b9d28578847195",
+  "head_commit": "4a57db33476f1caf3e85726a6b1e189c68c1f36b",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T20:37:28.491549+00:00",
+  "duration_seconds": 449.62,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "src/draw/lv_draw_label.c",
+      "line": 221,
+      "summary": "[High] New public text_size field feeds a width that lv_text_get_next_line ignores under EXPAND, so the field and branch can both be deleted",
+      "failure_scenario": "w in lv_draw_label_iterate_characters is only passed to lv_text_get_next_line (lines 259/265/509), which returns before reading max_width when LV_TEXT_FLAG_EXPAND/FIT is set (src/misc/lv_text.c:336-344). The old lv_text_get_size call was dead work; the PR replaced it with a widget-maintained cache exposed in public lv_draw_label_dsc_t, adding a public field, a producer obligation and a draw-layer dependency on widget state for a value that is thrown away. Remedy: set w = LV_COORD_MAX in the EXPAND branch (or drop the branch), remove text_size from lv_draw_label_dsc_t and the assignment at lv_label.c:826, apply the same to src/draw/nema_gfx/lv_draw_nema_gfx_label.c:433-443; keep draw_main's reuse of label->text_size."
+    },
+    {
+      "file": "src/draw/lv_draw_label.h",
+      "line": 39,
+      "summary": "[Medium] New public lv_draw_label_dsc_t.text_size exposes a label-private cache as an undocumented draw-descriptor field",
+      "failure_scenario": "The field has an unstated contract (\"The size of the text\" — actually lv_label's content-width measurement); only lv_label fills it, while table (lv_table.c:837), textarea (lv_textarea.c:1405), roller (lv_roller.c:583), lv_draw_character and user code leave it {0,0}; NemaGFX ignores it. If lv_text_get_next_line ever honours max_width under EXPAND, every non-label producer wraps at every character. It is inserted mid-struct between text and font, shifting offsets of a public struct, and is absent from draw_descriptors.rst. Remedy: delete the field; if a hint is needed, make it optional with a sentinel, document its measurement width, append it at the struct end, document it and honour it in NemaGFX too."
+    },
+    {
+      "file": "src/draw/lv_draw_label.c",
+      "line": 221,
+      "summary": "[Medium] EXPAND-width change applied to lv_draw_label_iterate_characters but not its NemaGFX copy; the two copies diverge",
+      "failure_scenario": "_draw_label_iterate_characters in src/draw/nema_gfx/lv_draw_nema_gfx_label.c:418-443 (called at :140) is a line-for-line copy that still calls lv_text_get_size under EXPAND; NemaGFX builds get none of the speed-up, the same descriptor is interpreted two ways, and future fixes must be made twice. Remedy: apply the same change at lv_draw_nema_gfx_label.c:437-443 (ideally w = LV_COORD_MAX in both), or have NemaGFX reuse lv_draw_label_iterate_characters via its glyph callback / a shared helper."
+    },
+    {
+      "file": "src/widgets/label/lv_label.c",
+      "line": 826,
+      "summary": "[Medium] No test checks the cached text_size is refreshed after a style change on a scrolling label",
+      "failure_scenario": "Draw now trusts label->text_size, updated only in lv_label_refr_text (via STYLE_CHANGED/SIZE_CHANGED); test_label_scroll_mid_update only changes text. A broken invalidation path would make the circular-copy offset and align override use a stale width while every screenshot passes. Remedy: in a scroll test, change letter_space or font on a SCROLL_CIRCULAR label and a center-aligned SCROLL label after the first screenshot, resize, and screenshot again."
+    },
+    {
+      "file": "src/widgets/label/lv_label.c",
+      "line": 854,
+      "summary": "[Medium] Scroll-mode center/right-align override now uses cached text_size, but its overflow path is untested",
+      "failure_scenario": "No test reaches the case where overflowing text in SCROLL/SCROLL_CIRCULAR forces CENTER/RIGHT to LEFT (only a short-text SCROLL_CIRCULAR+CENTER calendar header is drawn, test_calendar.c:174-180); a stale or zero text_size would skip the override and draw a scrolling center/right label misaligned with no screenshot catching it. Remedy: add screenshot tests with SCROLL and SCROLL_CIRCULAR labels set to LV_TEXT_ALIGN_CENTER and RIGHT with overflowing text, screenshots at t=0 and after lv_test_wait."
+    },
+    {
+      "file": "src/widgets/label/lv_label.c",
+      "line": 906,
+      "summary": "[Medium] Vertical circular re-draw offset (size.y > height) is not tested",
+      "failure_scenario": "The only SCROLL_CIRCULAR test (tests/src/test_cases/widgets/test_label.c:654-658) is a single-line label with only width fixed, so size.y > height never holds; the second copy's ofs_y now derived from cached text_size.y is never rendered under test, so a wrong cached height would misplace it unnoticed. Remedy: add a SCROLL_CIRCULAR label with multi-line text and a fixed height shorter than the text, screenshot at several lv_test_wait points."
+    },
+    {
+      "file": "src/draw/nema_gfx/lv_draw_nema_gfx_label.c",
+      "line": 440,
+      "summary": "[Low] NemaGFX backend still measures the whole text on every EXPAND draw task",
+      "failure_scenario": "On NemaGFX targets, a scrolling label of N characters split across T draw tasks still costs O(N·T) glyph-width lookups per frame for a result lv_text_get_next_line discards under EXPAND. Remedy: set w = LV_COORD_MAX under EXPAND here, as in the generic path."
+    },
+    {
+      "file": "src/widgets/label/lv_label_private.h",
+      "line": 54,
+      "summary": "[Low] Second, undocumented text-size cache added next to existing size_cache",
+      "failure_scenario": "lv_label_t now has two lv_point_t text-size caches: size_cache (lazy, self-size width, max-height clamp) and text_size (eager, content width in lv_label_refr_text). The new member lacks the /**< */ doc comment every other member has and nothing says which one draw/scroll code should read, so they can silently drift or be misused. Remedy: rename (e.g. refr_text_size), place it next to size_cache, and add a doc comment stating how it differs."
+    }
+  ],
+  "result_text": "The review's verdict is **BLOCK**. The draw code no longer needs to measure text width when `LV_TEXT_FLAG_EXPAND` is set, but the change passes it through a new public struct field instead of deleting the measurement. All 8 findings in the report above went to the findings tool, one call each.\n\n- **Base:** the base sha you gave isn't an ancestor of HEAD. The review therefore covers the one commit since their merge base, `e15029723`: `4a57db334`, the label perf change, touching 4 files.\n- **No real bug found:** the new field has no visible effect today. The width it supplies is thrown away whenever the EXPAND flag is set, so table, textarea and roller still draw correctly even though they leave it at zero.\n- **Why it blocks:** the one High finding is about design, not a bug. The change adds a public field (`text_size` in `lv_draw_label_dsc_t`) that only the label widget fills in, just to feed that unused width. The fix is to use `w = LV_COORD_MAX` in that branch and drop the field. The label widget's own reuse of its cached size in `draw_main` is a real saving and can stay.\n- **The other findings:**\n  - Medium: the field is undocumented and inserted mid-struct.\n  - Medium: the NemaGFX backend's copy of the same function wasn't updated.\n  - Medium: three test gaps for the cached size in scrolling labels.\n  - Low: the missed NemaGFX speed-up.\n  - Low: a second, undocumented size cache in `lv_label_t`.\n- **Verification:** an independent verifier checked the 6 findings rated Medium or higher. Five were confirmed. The fifth test-gap finding was partly refuted: a calendar test already covers a short, centred scrolling label, but the overflow case is still untested.\n- **Caveats:**\n  - The reviewers couldn't run `git diff` because it needed approval, so they read the four files as they are now rather than the diff itself.\n  - There was no spec to check against: the commit cites no issue, and `gh pr view` also needed approval.",
+  "stderr": "",
+  "claude_duration_ms": 448428,
+  "claude_num_turns": 46,
+  "claude_cost_usd": 5.526723400000002,
+  "claude_session_id": "0af55736-059a-4581-bc98-329a5321688d",
+  "token_usage": {
+    "input_tokens": 262,
+    "output_tokens": 98068,
+    "cache_read_input_tokens": 4199487,
+    "cache_creation_input_tokens": 475220,
+    "total_tokens": 4773037,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 262,
+        "outputTokens": 98068,
+        "cacheReadInputTokens": 4199487,
+        "cacheCreationInputTokens": 475220,
+        "webSearchRequests": 0,
+        "costUSD": 5.526723400000002,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 26165,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/lvgl__lvgl@4a57db3"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: d2ed41dda1618049a037df2639b9d28578847195.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "instance_id": "microsoft__typescript-go@b970689",
+  "repo": "microsoft/typescript-go",
+  "base_commit": "bc3195e0f2727d11a48ed9fc61f37a90c9b7deb4",
+  "head_commit": "b970689fe86e0b6ef4f5285b18343ddf16b294eb",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T16:12:55.422832+00:00",
+  "duration_seconds": 435.12,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "sensitivity_corrected (Amendment 4): one stray quote removed after 5067",
+  "review_output": [
+    {
+      "file": "internal/parser/reparser.go",
+      "line": 120,
+      "summary": "The reparser calls `importTag.ImportClause.Clone(...)` without a nil check, but `parseImportTag` gets its clause from `tryParseImportClause`, which returns nil for a side-effect or malformed `@import`.",
+      "failure_scenario": "A JS file containing `/** @import \"./foo\" */` (or `/** @import */`) gives a nil `ImportClause`; `(*Node)(nil).Clone` dereferences `n.data` and the parser panics. Any JS file with this comment crashes the compiler and the language server."
+    },
+    {
+      "file": "internal/ast/utilities.go",
+      "line": 2553,
+      "summary": "The PR deleted the `KindJSDocImportTag` branch of `ForEachDynamicImportOrRequireCall`, so @import specifiers now reach `file.Imports` only through `collectExternalModuleReferences`, which walks top-level `file.Statements` only.",
+      "failure_scenario": "`function outer(){ /** @import {X} from './x' */ /** @param {X} a */ function g(a){} }`: the synthetic `JSImportDeclaration` is flushed into `outer`'s body, not the file's statements. './x' is never added to `file.Imports` or resolved, so `X` fails to resolve. Before the PR this worked because the JSDoc walk found the tag anywhere in the file."
+    },
+    {
+      "file": "internal/checker/checker.go",
+      "line": 4922,
+      "summary": "`checkImportDeclaration` now also runs for `JSImportDeclaration`, and its `checkGrammarModuleElementContext` check reports an error for any @import that isn't at the top level. TypeScript accepts JSDoc @import anywhere (its `checkJSDocImportTag` only checks attributes).",
+      "failure_scenario": "An @import in a JSDoc comment inside a function or block body produces 'An import declaration can only be used at the top level of a module', and the check bails out before binding checks. `checkExternalImportOrExportDeclaration` would also report 'Import declarations in a namespace cannot reference a module'."
+    },
+    {
+      "file": "internal/parser/reparser.go",
+      "line": 126,
+      "summary": "The synthetic `JSImportDeclaration` is appended to `p.reparseList`, which `parseListIndex` flushes into whatever list is being parsed, not only statement lists.",
+      "failure_scenario": "`class C { /** @import {X} from './x' */ /** @type {X} */ x; }` or an object literal member with such a JSDoc puts an import declaration into `ClassDeclaration.Members` or the object literal's properties. The binder then declares `X` in the class member table, and the checker or emitter meets an import node in a member list (grammar errors or unhandled-kind panics)."
+    },
+    {
+      "file": "internal/ls/utilities.go",
+      "line": 23,
+      "summary": "The reparsed declaration shares `ModuleSpecifier`, `Attributes` and the clause's `NamedBindings`/`Name` with the `JSDocImportTag`. The binder's `setJSDocParents` (via `SetParentInChildren`) runs after the synthetic statement is bound and re-points those children's parents back to the tag. Meanwhile the PR removed the `KindJSDocImportTag` cases from `tryGetImportFromModuleSpecifier`, `GetExternalModuleName`, `Node.ModuleSpecifier` and `IsDefaultImport`.",
+      "failure_scenario": "After binding, the @import module specifier's parent is `JSDocImportTag`. `tryGetImportFromModuleSpecifier` returns nil (go-to-definition and references on the specifier break), and `getSymbolAtLocation`'s new `JSImportDeclaration` check never matches. `getTargetOfImportSpecifier`'s `node.Parent.Parent.Parent` can reach the tag and hit `panic(\"Unhandled case in getExternalModuleName\")`."
+    },
+    {
+      "file": "internal/ast/ast.go",
+      "line": 4056,
+      "summary": "`UpdateImportDeclaration` and `ImportDeclaration.Clone` always call `NewImportDeclaration`, so updating or cloning a `KindJSImportDeclaration` silently turns it into a real `KindImportDeclaration`. `ExportAssignment` gets this right by passing `node.Kind` to `newExportOrJSExportAssignment`.",
+      "failure_scenario": "Any visitor that rewrites a JS import (typeeraser or importelision call `UpdateImportDeclaration` when the clause changes) or clones it gets back a runtime import. The module transformers' `case KindJSImportDeclaration: node = nil` no longer applies, so a type-only JSDoc import can be emitted as `import`/`require`."
+    },
+    {
+      "file": "internal/checker/checker.go",
+      "line": 4933,
+      "summary": "The reparser forces `IsTypeOnly = true` on the clause and routes it through `checkGrammarImportClause`. That adds TS1363 for `@import Foo, { I } from \"./a\"`, which TypeScript accepts; the accepted baseline `importTag16.errors.txt` locks this in.",
+      "failure_scenario": "`/** @import Foo, { I } from \"./a\" */` now reports 'A type-only import can specify a default import or named bindings, but not both.' The same path also runs the JSON `type: json` attribute check (`isOnlyImportableAsDefault`) on type-only JSDoc imports under node16/nodenext."
+    },
+    {
+      "file": "internal/checker/checker.go",
+      "line": 5067,
+      "summary": "`checkImportAttributes` does not return after reporting the module-kind error (TypeScript returns there), so type-only JS imports now get both TS2823 and TS2857 on the same span.",
+      "failure_scenario": "With `module=es2015`, `/** @import { I } from './0' with { type: \"json\" } */` reports two errors at 1,30 where TypeScript reports one. The accepted diff `importTag15(module=es2015).errors.txt.diff` shows the extra TS2857."
+    },
+    {
+      "file": "testdata/baselines/reference/submodule/conformance/importTag3.types",
+      "line": 18,
+      "summary": "Types reached through a default @import now print as `default` instead of the local alias name, which diverges from TypeScript; the regression is accepted in `importTag3.types.diff` and `importTag16.types.diff`.",
+      "failure_scenario": "`/** @import Foo from './a' */ /** @param {Foo} foo */ function f(foo){}` shows `f : (foo: default) => void` in hover, quick info and declaration output, where TypeScript shows `(foo: Foo) => void`."
+    },
+    {
+      "file": "testdata/baselines/reference/submodule/conformance/importTag17.errors.txt",
+      "line": 1,
+      "summary": "@import now resolves modules but ignores the `resolution-mode` attribute, and the accepted baseline records the wrong resolution as correct.",
+      "failure_scenario": "`/** @import { Import } from 'foo' with { 'resolution-mode': 'import' } */` reports TS2305 'no exported member Import', and `Require` reports TS2749, where TypeScript resolves both and reports the return-type TS2322 errors. `importTag17.errors.txt.diff` was accepted with this divergence."
+    }
+  ],
+  "result_text": "I found 10 issues in this range, sorted most severe first. Two are crashes or likely crashes. Several others add errors TypeScript does not report, or change resolution results that the accepted baselines now lock in.\n\nI couldn't run the conformance tests because running them needed approval. So finding 5, the parent pointers being overwritten, is based on reading the code. It predicts a panic in `getTargetOfImportSpecifier` that the accepted named-import baselines (e.g. `importTag1.types`, which resolves `Foo` with no crash) don't show. Check it first. No CLAUDE.md rules apply to this code.\n\n```json\n[\n  {\n    \"file\": \"internal/parser/reparser.go\",\n    \"line\": 120,\n    \"summary\": \"The reparser calls `importTag.ImportClause.Clone(...)` without a nil check, but `parseImportTag` gets its clause from `tryParseImportClause`, which returns nil for a side-effect or malformed `@import`.\",\n    \"failure_scenario\": \"A JS file containing `/** @import \\\"./foo\\\" */` (or `/** @import */`) gives a nil `ImportClause`; `(*Node)(nil).Clone` dereferences `n.data` and the parser panics. Any JS file with this comment crashes the compiler and the language server.\"\n  },\n  {\n    \"file\": \"internal/ast/utilities.go\",\n    \"line\": 2553,\n    \"summary\": \"The PR deleted the `KindJSDocImportTag` branch of `ForEachDynamicImportOrRequireCall`, so @import specifiers now reach `file.Imports` only through `collectExternalModuleReferences`, which walks top-level `file.Statements` only.\",\n    \"failure_scenario\": \"`function outer(){ /** @import {X} from './x' */ /** @param {X} a */ function g(a){} }`: the synthetic `JSImportDeclaration` is flushed into `outer`'s body, not the file's statements. './x' is never added to `file.Imports` or resolved, so `X` fails to resolve. Before the PR this worked because the JSDoc walk found the tag anywhere in the file.\"\n  },\n  {\n    \"file\": \"internal/checker/checker.go\",\n    \"line\": 4922,\n    \"summary\": \"`checkImportDeclaration` now also runs for `JSImportDeclaration`, and its `checkGrammarModuleElementContext` check reports an error for any @import that isn't at the top level. TypeScript accepts JSDoc @import anywhere (its `checkJSDocImportTag` only checks attributes).\",\n    \"failure_scenario\": \"An @import in a JSDoc comment inside a function or block body produces 'An import declaration can only be used at the top level of a module', and the check bails out before binding checks. `checkExternalImportOrExportDeclaration` would also report 'Import declarations in a namespace cannot reference a module'.\"\n  },\n  {\n    \"file\": \"internal/parser/reparser.go\",\n    \"line\": 126,\n    \"summary\": \"The synthetic `JSImportDeclaration` is appended to `p.reparseList`, which `parseListIndex` flushes into whatever list is being parsed, not only statement lists.\",\n    \"failure_scenario\": \"`class C { /** @import {X} from './x' */ /** @type {X} */ x; }` or an object literal member with such a JSDoc puts an import declaration into `ClassDeclaration.Members` or the object literal's properties. The binder then declares `X` in the class member table, and the checker or emitter meets an import node in a member list (grammar errors or unhandled-kind panics).\"\n  },\n  {\n    \"file\": \"internal/ls/utilities.go\",\n    \"line\": 23,\n    \"summary\": \"The reparsed declaration shares `ModuleSpecifier`, `Attributes` and the clause's `NamedBindings`/`Name` with the `JSDocImportTag`. The binder's `setJSDocParents` (via `SetParentInChildren`) runs after the synthetic statement is bound and re-points those children's parents back to the tag. Meanwhile the PR removed the `KindJSDocImportTag` cases from `tryGetImportFromModuleSpecifier`, `GetExternalModuleName`, `Node.ModuleSpecifier` and `IsDefaultImport`.\",\n    \"failure_scenario\": \"After binding, the @import module specifier's parent is `JSDocImportTag`. `tryGetImportFromModuleSpecifier` returns nil (go-to-definition and references on the specifier break), and `getSymbolAtLocation`'s new `JSImportDeclaration` check never matches. `getTargetOfImportSpecifier`'s `node.Parent.Parent.Parent` can reach the tag and hit `panic(\\\"Unhandled case in getExternalModuleName\\\")`.\"\n  },\n  {\n    \"file\": \"internal/ast/ast.go\",\n    \"line\": 4056,\n    \"summary\": \"`UpdateImportDeclaration` and `ImportDeclaration.Clone` always call `NewImportDeclaration`, so updating or cloning a `KindJSImportDeclaration` silently turns it into a real `KindImportDeclaration`. `ExportAssignment` gets this right by passing `node.Kind` to `newExportOrJSExportAssignment`.\",\n    \"failure_scenario\": \"Any visitor that rewrites a JS import (typeeraser or importelision call `UpdateImportDeclaration` when the clause changes) or clones it gets back a runtime import. The module transformers' `case KindJSImportDeclaration: node = nil` no longer applies, so a type-only JSDoc import can be emitted as `import`/`require`.\"\n  },\n  {\n    \"file\": \"internal/checker/checker.go\",\n    \"line\": 4933,\n    \"summary\": \"The reparser forces `IsTypeOnly = true` on the clause and routes it through `checkGrammarImportClause`. That adds TS1363 for `@import Foo, { I } from \\\"./a\\\"`, which TypeScript accepts; the accepted baseline `importTag16.errors.txt` locks this in.\",\n    \"failure_scenario\": \"`/** @import Foo, { I } from \\\"./a\\\" */` now reports 'A type-only import can specify a default import or named bindings, but not both.' The same path also runs the JSON `type: json` attribute check (`isOnlyImportableAsDefault`) on type-only JSDoc imports under node16/nodenext.\"\n  },\n  {\n    \"file\": \"internal/checker/checker.go\",\n    \"line\": 5067\",\n    \"summary\": \"`checkImportAttributes` does not return after reporting the module-kind error (TypeScript returns there), so type-only JS imports now get both TS2823 and TS2857 on the same span.\",\n    \"failure_scenario\": \"With `module=es2015`, `/** @import { I } from './0' with { type: \\\"json\\\" } */` reports two errors at 1,30 where TypeScript reports one. The accepted diff `importTag15(module=es2015).errors.txt.diff` shows the extra TS2857.\"\n  },\n  {\n    \"file\": \"testdata/baselines/reference/submodule/conformance/importTag3.types\",\n    \"line\": 18,\n    \"summary\": \"Types reached through a default @import now print as `default` instead of the local alias name, which diverges from TypeScript; the regression is accepted in `importTag3.types.diff` and `importTag16.types.diff`.\",\n    \"failure_scenario\": \"`/** @import Foo from './a' */ /** @param {Foo} foo */ function f(foo){}` shows `f : (foo: default) => void` in hover, quick info and declaration output, where TypeScript shows `(foo: Foo) => void`.\"\n  },\n  {\n    \"file\": \"testdata/baselines/reference/submodule/conformance/importTag17.errors.txt\",\n    \"line\": 1,\n    \"summary\": \"@import now resolves modules but ignores the `resolution-mode` attribute, and the accepted baseline records the wrong resolution as correct.\",\n    \"failure_scenario\": \"`/** @import { Import } from 'foo' with { 'resolution-mode': 'import' } */` reports TS2305 'no exported member Import', and `Require` reports TS2749, where TypeScript resolves both and reports the return-type TS2322 errors. `importTag17.errors.txt.diff` was accepted with this divergence.\"\n  }\n]\n```",
+  "stderr": "",
+  "claude_duration_ms": 433644,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 1.7610194000000001,
+  "claude_session_id": "a8083ad1-cf54-43d7-af75-16ec8bff4144",
+  "token_usage": {
+    "input_tokens": 92,
+    "output_tokens": 34512,
+    "cache_read_input_tokens": 2970282,
+    "cache_creation_input_tokens": 95271,
+    "total_tokens": 3100157,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 92,
+        "outputTokens": 34512,
+        "cacheReadInputTokens": 2970282,
+        "cacheCreationInputTokens": 95271,
+        "webSearchRequests": 0,
+        "costUSD": 1.7610194000000001,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 21827,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/phase1/transcripts/microsoft__typescript-go@b970689"
+  }
+}

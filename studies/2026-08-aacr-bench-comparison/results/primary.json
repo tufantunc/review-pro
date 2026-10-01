@@ -1,0 +1,130 @@
+{
+ "run_id": "phase1",
+ "rounds": {
+  "claude": 3,
+  "review-pro": 3
+ },
+ "instances_both_arms": 27,
+ "primary_rows": [
+  {
+   "instance_id": "FreeCAD__FreeCAD@ec3da2e",
+   "repo_refs": 1,
+   "a1": 0.6666666666666666,
+   "a2": 0.0,
+   "delta": -0.6666666666666666
+  },
+  {
+   "instance_id": "alibaba__spring-ai-alibaba@4bc7305",
+   "repo_refs": 3,
+   "a1": 1.0,
+   "a2": 1.0,
+   "delta": 0.0
+  },
+  {
+   "instance_id": "dotnet__aspnetcore@8ac940f",
+   "repo_refs": 1,
+   "a1": 0.3333333333333333,
+   "a2": 0.0,
+   "delta": -0.3333333333333333
+  },
+  {
+   "instance_id": "elastic__elasticsearch@a6a4623",
+   "repo_refs": 2,
+   "a1": 0.0,
+   "a2": 0.0,
+   "delta": 0.0
+  },
+  {
+   "instance_id": "elastic__elasticsearch@e38d20c",
+   "repo_refs": 1,
+   "a1": 0.0,
+   "a2": 0.0,
+   "delta": 0.0
+  },
+  {
+   "instance_id": "facebook__react@b045f18",
+   "repo_refs": 4,
+   "a1": 0.0,
+   "a2": 0.5,
+   "delta": 0.5
+  },
+  {
+   "instance_id": "google-gemini__gemini-cli@c6e6248",
+   "repo_refs": 2,
+   "a1": 1.0,
+   "a2": 0.5,
+   "delta": -0.5
+  },
+  {
+   "instance_id": "laravel__framework@180c25f",
+   "repo_refs": 1,
+   "a1": 1.0,
+   "a2": 1.0,
+   "delta": 0.0
+  },
+  {
+   "instance_id": "linera-io__linera-protocol@024925d",
+   "repo_refs": 1,
+   "a1": 0.0,
+   "a2": 0.0,
+   "delta": 0.0
+  },
+  {
+   "instance_id": "lvgl__lvgl@4a57db3",
+   "repo_refs": 2,
+   "a1": 0.3333333333333333,
+   "a2": 0.0,
+   "delta": -0.3333333333333333
+  },
+  {
+   "instance_id": "microsoft__typescript-go@892b4a3",
+   "repo_refs": 1,
+   "a1": 0.3333333333333333,
+   "a2": 0.6666666666666666,
+   "delta": 0.3333333333333333
+  },
+  {
+   "instance_id": "mpv-player__mpv@dbd327d",
+   "repo_refs": 2,
+   "a1": 0.0,
+   "a2": 0.0,
+   "delta": 0.0
+  }
+ ],
+ "primary": {
+  "n_instances": 12,
+  "n_zero_deltas": 6,
+  "mean_delta": -0.08333333333333333,
+  "statistic": 6.5,
+  "p_value": 0.5625,
+  "alpha": 0.05
+ },
+ "descriptive_claude": {
+  "diff": {
+   "refs": 79,
+   "recall": 0.3670886075949367
+  },
+  "file": {
+   "refs": 67,
+   "recall": 0.38308457711442784
+  },
+  "repo": {
+   "refs": 21,
+   "recall": 0.38095238095238093
+  }
+ },
+ "descriptive_review-pro": {
+  "diff": {
+   "refs": 79,
+   "recall": 0.4050632911392405
+  },
+  "file": {
+   "refs": 67,
+   "recall": 0.4676616915422886
+  },
+  "repo": {
+   "refs": 21,
+   "recall": 0.36507936507936506
+  }
+ }
+}

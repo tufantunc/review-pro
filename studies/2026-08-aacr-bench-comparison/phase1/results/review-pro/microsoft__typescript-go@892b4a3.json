@@ -1,0 +1,125 @@
+{
+  "instance_id": "microsoft__typescript-go@892b4a3",
+  "repo": "microsoft/typescript-go",
+  "base_commit": "a9efe52c52001ea5b49d2ae8d7b0fa32ec8339f3",
+  "head_commit": "892b4a3f6b701352047ceb019fc0683ab1146bb3",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T21:21:27.967607+00:00",
+  "duration_seconds": 324.29,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "internal/fourslash/_scripts/convertFourslash.mts",
+      "line": 27,
+      "summary": "[High] convertfourslash and updatefailing crash with ENOENT: manualTests.txt is never created, and *.txt is gitignored",
+      "failure_scenario": "Impact: the change doesn't add manualTests.txt, and getManualTests() reads it with readFileSync and no existence check. By the time that read throws, main() has already deleted tests/gen, so `npm run convertfourslash` leaves the generated tests wiped. `npm run updatefailing` has also already emptied failingTests.txt (updateFailing.mts:10) before it crashes the same way. On top of that, .gitignore:176 ignores `*.txt` and only failingTests.txt is excepted (.gitignore:200), so a manualTests.txt that makemanual writes is silently left untracked. Remedy: commit an empty manualTests.txt, add `!internal/fourslash/_scripts/manualTests.txt` to .gitignore, and have getManualTests return an empty set when the file is missing, as makeManual.mts already does."
+    },
+    {
+      "file": "internal/fourslash/_scripts/makeManual.mts",
+      "line": 16,
+      "summary": "[High] makeManual writes a different name to manualTests.txt than convertFourslash looks up, so manual tests are never skipped",
+      "failure_scenario": "Impact: makeManual uses args[0] directly as the file name in tests/gen, with no suffix added. So only the full file name (e.g. `fooBar_test.go`) passes its existence check, and that exact string is what gets written to manualTests.txt. convertFourslash.mts:70-72 compares against the capitalized name with no suffix (`FooBar`). Passing `FooBar` makes makeManual fail with \"Test file not found\". Either way the skip never fires, and the next convertfourslash run regenerates the test in tests/gen next to the manual copy. The entry format also doesn't match failingTests.txt, which uses `TestXxx`. Remedy: pick one key format (e.g. `TestXxx`), have makeManual derive the gen file name from it, and compare using the same derivation in convertFourslash, reusing generateGoTest's name logic."
+    },
+    {
+      "file": "internal/fourslash/_scripts/makeManual.mts",
+      "line": 30,
+      "summary": "[High] Tests moved to tests/manual/ have no util_test.go helpers, so the manual package does not compile",
+      "failure_scenario": "Impact: generateHelperFile() copies util_test.go (ptrTo, defaultCommitCharacters, completionGlobals, ...) only into tests/gen. About 610 generated tests use these helpers. When makeManual moves one into tests/manual, that directory is its own Go package with no helper definitions, so `go test ./internal/fourslash/tests/manual` (and `./...`) fails with undefined identifiers. Remedy: also copy util_test.go into tests/manual in generateHelperFile() or makeManual, or move the helpers into a shared package both directories can import."
+    },
+    {
+      "file": "internal/fourslash/_scripts/makeManual.mts",
+      "line": 31,
+      "summary": "[Medium] A test skipped as failing keeps its t.Skip() after it moves to manual, and updatefailing never checks it again",
+      "failure_scenario": "Impact: makeManual moves the generated file unchanged, including any `t.Skip()` added for tests in failingTests.txt (convertFourslash.mts:968). updatefailing only runs `go test ./internal/fourslash/tests/gen` (updateFailing.mts:15), so nothing ever un-skips the manual test. It silently runs nothing while looking like coverage. Remedy: strip the generated t.Skip() when moving the file (or warn/refuse), or extend updateFailing to run tests/manual too."
+    },
+    {
+      "file": "internal/fourslash/_scripts/convertFourslash.mts",
+      "line": 26,
+      "summary": "[Medium] List-file parsing now exists three times, and the copies disagree on whether a missing file is allowed",
+      "failure_scenario": "Impact: the readFileSync/split/trim/filter pipeline is hand-written at convertFourslash.mts:22, convertFourslash.mts:27 and makeManual.mts:36, and the copies have already drifted: makeManual tolerates a missing file, getManualTests does not. makeManual.mts also re-declares the manualTests path and the gen/manual directory constants that convertFourslash.mts owns. Any change to the list format has to be made in three places. Remedy: export one `readTestList(path, transform?)` helper from convertFourslash.mts that returns an empty set for a missing file, build getFailingTests and getManualTests on it, and import it plus the path constants in makeManual.mts, the same way updateFailing.mts already imports from convertFourslash.mts."
+    },
+    {
+      "file": "internal/fourslash/_scripts/convertFourslash.mts",
+      "line": 70,
+      "summary": "[Low] Test-name capitalization is copied from generateGoTest",
+      "failure_scenario": "Impact: the key used to skip manual tests (line 70) and the one generateGoTest uses for the Test name and failing-test lookup (line 946) are computed separately. If one changes, manual skipping silently stops lining up with the generated names. Remedy: compute testName once (a getTestName/capitalize helper, or a field on GoTest) and pass it to generateGoTest."
+    },
+    {
+      "file": "internal/fourslash/_scripts/convertFourslash.mts",
+      "line": 76,
+      "summary": "[Low] Dead `if (testContent)` check on a function that always returns a non-empty string",
+      "failure_scenario": "Impact: generateGoTest (line 945) is typed to return string and always returns a non-empty template, so the new guard can never be false. It suggests a \"no output\" path that doesn't exist. Remedy: remove the `if (testContent)` wrapper and write the file unconditionally, as before."
+    },
+    {
+      "file": "internal/fourslash/_scripts/convertFourslash.mts",
+      "line": 44,
+      "summary": "[Low] convertfourslash creates tests/manual on every run although it never writes there",
+      "failure_scenario": "Impact: manualOutputDir is only ever passed to mkdirSync. convertFourslash neither writes to it nor formats it (gofumpt runs only on tests/gen), and makeManual already creates the directory itself, so two scripts now manage the same directory. Remedy: remove manualOutputDir and its mkdirSync from convertFourslash.mts, unless it's repurposed to copy util_test.go there (see the tests/manual helpers finding)."
+    },
+    {
+      "file": "internal/fourslash/_scripts/makeManual.mts",
+      "line": 12,
+      "summary": "[Low] makemanual with no argument exits 1 with no usage message",
+      "failure_scenario": "Impact: `npm run makemanual` with no argument fails with only npm's generic error and no hint about what to pass. Given the confusion over the name format, users are likely to guess wrong. Remedy: print a usage line, e.g. `console.error(\"Usage: npm run makemanual -- <testName>\")`, before process.exit(1)."
+    },
+    {
+      "file": "internal/fourslash/_scripts/makeManual.mts",
+      "line": 17,
+      "summary": "[Nitpick] Redundant alias, no-op template literal and redundant existsSync in makeManual",
+      "failure_scenario": "Impact: `testFileName` just copies `testName`, `${testFileName}` is the same string, and `mkdirSync(..., { recursive: true })` already does nothing when the directory exists, so the existsSync check adds noise. Remedy: use testName directly, drop the template literal, and call mkdirSync without the existsSync guard."
+    }
+  ],
+  "result_text": "## Verdict: BLOCK (code)\n\nSpec: skipped, no spec found.\n\nCoverage (self-reported): 3 of 3 changed files examined by at least one reviewer.\n\nVerification: 5 checked (4 stand, 1 partly refuted, 0 refuted), 0 not checked. Spec findings are not verified.\n\n### High\n- **[High] `internal/fourslash/_scripts/convertFourslash.mts:27`: `convertfourslash` and `updatefailing` crash because `manualTests.txt` doesn't exist, and `*.txt` files are gitignored**\n  - **Impact:** The change doesn't add `manualTests.txt`, and `getManualTests()` reads it with `readFileSync` without checking that it exists.\n    - Before that read throws, `main()` has already deleted `tests/gen`. So `npm run convertfourslash` leaves the generated tests wiped.\n    - `npm run updatefailing` has also already emptied `failingTests.txt` (`updateFailing.mts:10`) by the time it crashes.\n    - `.gitignore:176` ignores `*.txt`, and only `failingTests.txt` is re-included (`.gitignore:200`). So a `manualTests.txt` that `makemanual` creates is silently left out of git.\n  - **Remedy:** Commit an empty `manualTests.txt` and add `!internal/fourslash/_scripts/manualTests.txt` to `.gitignore`. Also make `getManualTests` return an empty set when the file is missing, as `makeManual.mts` already does.\n  - flagged by: correctness, ai-antipatterns\n  - verification: verified\n\n- **[High] `internal/fourslash/_scripts/makeManual.mts:16`: `makeManual` writes a different name to `manualTests.txt` than `convertFourslash` looks up, so manual tests are never skipped**\n  - **Impact:** The two scripts use different names for the same test.\n    - `makeManual` uses the argument as-is as a file name in `tests/gen`. Only the full file name (`fooBar_test.go`) passes its existence check, and that exact string goes into the list.\n    - `convertFourslash.mts:70` looks up the capitalized name with no suffix (`FooBar`). Passing `FooBar` to `makeManual` fails with \"Test file not found\".\n    - Either way the skip never happens. The next `convertfourslash` run regenerates the test in `tests/gen` next to the manual copy.\n    - The entry format also doesn't match `failingTests.txt`, which uses `TestXxx`.\n  - **Remedy:** Pick one name format for entries. Have `makeManual` work out the file name from it, and have `convertFourslash` compare using the same rule.\n  - flagged by: correctness, ai-antipatterns, craft, dry, tests\n  - verification: verified\n\n- **[High] `internal/fourslash/_scripts/makeManual.mts:30`: tests moved to `tests/manual/` lose the `util_test.go` helpers, so that package won't compile**\n  - **Impact:** `generateHelperFile()` copies `util_test.go` only into `tests/gen`.\n    - About 610 generated tests use its helpers (`ptrTo`, `completionGlobals`, `defaultCommitCharacters`).\n    - In Go, each directory is its own package. A moved test that uses these helpers breaks `go test ./internal/fourslash/tests/manual` and `./...`.\n  - **Remedy:** Also copy `util_test.go` into `tests/manual`, or move the helpers into a shared package both directories can import.\n  - flagged by: tests, correctness\n  - verification: verified. The verifier didn't run `go build`, so the compile failure itself is unchecked; it follows from Go's one-package-per-directory rule.\n\n### Medium\n- **[Medium] `internal/fourslash/_scripts/makeManual.mts:31`: a test skipped as failing keeps its `t.Skip()` after moving to manual, and `updatefailing` never checks it again**\n  - **Impact:** The file is moved unchanged, including any generated `t.Skip()`. `updatefailing` only runs `tests/gen`, so the manual test stays skipped and silently runs nothing.\n  - **Remedy:** Strip the generated `t.Skip()` when moving the file (or warn), or have `updateFailing` also run `tests/manual`.\n  - verification: partly refuted. The claim that the test's entry stays in `failingTests.txt` is false: `updateFailing.mts:10` clears the file and line 28 rebuilds it from `tests/gen` only. The core defect stands.\n\n- **[Medium] `internal/fourslash/_scripts/convertFourslash.mts:26`: the code that reads a list file now exists three times, and the copies disagree on whether a missing file is allowed**\n  - **Impact:** The copies are at `convertFourslash.mts:22` and `:27`, and `makeManual.mts:36`. `makeManual.mts` also redefines path constants that `convertFourslash.mts` already has, and the copies have already drifted apart.\n  - **Remedy:** Export one `readTestList(path, transform?)` helper that returns an empty set for a missing file, and import it in `makeManual.mts`. `updateFailing.mts` already imports from `convertFourslash.mts`, so this follows an existing pattern.\n  - flagged by: craft, dry, ai-antipatterns\n  - verification: verified\n\n### Low\n- **[Low] `convertFourslash.mts:70`: the test-name capitalization is copied from `generateGoTest` (line 946).** Remedy: compute the name once and pass it in. (craft, dry)\n- **[Low] `convertFourslash.mts:76`: the `if (testContent)` check can never be false**, because `generateGoTest` always returns a non-empty string. Remedy: remove the guard. (ai-antipatterns, craft)\n- **[Low] `convertFourslash.mts:44`: every run creates `tests/manual`, but `convertFourslash` never writes there.** Remedy: remove the `mkdirSync`, or use that directory to hold the helper copy. (ai-antipatterns, craft)\n- **[Low] `makeManual.mts:12`: running with no argument exits with code 1 and no message.** Remedy: print a usage line first. (correctness)\n\n### Nitpick\n- **[Nitpick] `makeManual.mts:17`: unnecessary code.** The `testFileName` alias just copies `testName`, the template literal changes nothing, and the `existsSync` check is unnecessary before `mkdirSync({recursive:true})`. (ai-antipatterns)\n\n### Refuted in verification\nNone.\n\n## Spec\nSkipped: no spec found. The commit message (\"adding manual tests list\") references no issue, and no PR body was available.\n\n---\nScope: I reviewed `892b4a3` against its merge base with the given base, `5e6bd1ef`. No `.review-pro/` packs or rules exist, so reviewers used their core rubrics only. I recorded all 10 findings through the findings report tool.",
+  "stderr": "",
+  "claude_duration_ms": 322929,
+  "claude_num_turns": 35,
+  "claude_cost_usd": 2.8224947999999994,
+  "claude_session_id": "2964f2f7-057b-4bbc-a566-25914d254355",
+  "token_usage": {
+    "input_tokens": 116,
+    "output_tokens": 53169,
+    "cache_read_input_tokens": 1491184,
+    "cache_creation_input_tokens": 246949,
+    "total_tokens": 1791418,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 116,
+        "outputTokens": 53169,
+        "cacheReadInputTokens": 1491184,
+        "cacheCreationInputTokens": 246949,
+        "webSearchRequests": 0,
+        "costUSD": 2.8224947999999994,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 12097,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/microsoft__typescript-go@892b4a3"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: a9efe52c52001ea5b49d2ae8d7b0fa32ec8339f3.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

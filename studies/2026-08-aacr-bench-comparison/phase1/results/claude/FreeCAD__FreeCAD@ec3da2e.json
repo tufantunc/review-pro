@@ -1,0 +1,107 @@
+{
+  "instance_id": "FreeCAD__FreeCAD@ec3da2e",
+  "repo": "FreeCAD/FreeCAD",
+  "base_commit": "79008331b30d098b2c32e59752e24e0705b350bc",
+  "head_commit": "ec3da2e93e3fd8f69f113ca14abf892dfb86c11b",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T16:26:08.054869+00:00",
+  "duration_seconds": 44.04,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "src/Mod/TechDraw/App/DrawViewPart.h",
+      "line": 242,
+      "summary": "The header declares isCosmeticVertex/isCosmeticEdge/isCenterLine as static and taking (App::DocumentObject* owner, std::string element), but DrawViewPart.cpp defines them as non-static members taking only (std::string element), so the signatures don't match.",
+      "failure_scenario": "Building TechDraw fails with 'no declaration matches bool TechDraw::DrawViewPart::isCosmeticVertex(std::string)' (and the same for isCosmeticEdge and isCenterLine). If only the definitions were fixed, the static versions would have no 'this' and so could not call getEdge()/getProjVertexByIndex()."
+    },
+    {
+      "file": "src/Mod/TechDraw/App/CosmeticExtension.cpp",
+      "line": 71,
+      "summary": "CosmeticExtension::deleteCosmeticElements still calls DU::isCosmeticVertex, DU::isCosmeticEdge and DU::isCenterLine, which this change removes from DrawUtil; the call sites were not moved to getOwner()->isCosmeticVertex(name) and so on.",
+      "failure_scenario": "CosmeticExtension.cpp fails to compile with 'isCosmeticVertex is not a member of TechDraw::DrawUtil' at lines 71, 77 and 78, which breaks the whole TechDraw App library."
+    },
+    {
+      "file": "src/Mod/TechDraw/App/CosmeticExtension.cpp",
+      "line": 73,
+      "summary": "In the caller of the moved function, getCosmeticVertexBySelection(name) can return nullptr but its result is dereferenced without a check (the edge branch just below does check).",
+      "failure_scenario": "A vertex is marked cosmetic but has no matching CosmeticVertex entry (for example stale geometry after a recompute, or a vertex created by another cosmetic source). vert is null and vert->getTagAsString() crashes FreeCAD when the user deletes the selection."
+    },
+    {
+      "file": "src/Mod/TechDraw/App/DrawViewPart.cpp",
+      "line": 1502,
+      "summary": "The new member functions are not const and take std::string by value, even though they only call the const accessors getEdge()/getProjVertexByIndex().",
+      "failure_scenario": "They cannot be called on a const DrawViewPart& (for example from toAppSpace-style helpers that take const DrawViewPart&), which invites const_cast. Every call also copies the string needlessly. They should be `bool isCosmeticVertex(const std::string& element) const` and so on."
+    },
+    {
+      "file": "src/Mod/TechDraw/App/DrawViewPart.cpp",
+      "line": 1504,
+      "summary": "isCosmeticVertex repeats the existing DrawViewPart::getVertex(std::string) (getIndexFromName followed by getProjVertexByIndex) instead of calling it.",
+      "failure_scenario": "The name-to-vertex lookup now exists in two places, so a future change to vertex naming or indexing must be made in both. The simpler form is `auto vertex = getVertex(element); return vertex && vertex->getCosmetic();`."
+    },
+    {
+      "file": "src/Mod/TechDraw/App/DrawViewPart.cpp",
+      "line": 1513,
+      "summary": "isCosmeticEdge and isCenterLine are copy-pasted bodies that differ only in the SourceType value, and each uses the verbose `if (cond) return true; return false;` pattern.",
+      "failure_scenario": "Duplicated logic that is harder to maintain. It could be one private helper, isCosmeticSource(element, SourceType), or at least `auto edge = getEdge(element); return edge && edge->source() == SourceType::CENTERLINE && edge->getCosmetic();`."
+    },
+    {
+      "file": "src/Mod/TechDraw/App/DrawViewPart.cpp",
+      "line": 1501,
+      "summary": "The comments still read 'true if owner->element is ...', but the owner parameter no longer exists now that these are members.",
+      "failure_scenario": "The stale comments point readers to a parameter that isn't there. They should say 'true if this view's element is ...'."
+    },
+    {
+      "file": "src/Mod/TechDraw/App/DrawViewPart.h",
+      "line": 242,
+      "summary": "The new geometry query declarations sit in the HLR/progress threading block (after waitingForResult/progressValueChanged) instead of next to the related getVertex/getEdge accessors around line 162.",
+      "failure_scenario": "Related element-query APIs end up scattered across the header, which makes them harder to find. The declarations belong with getVertex/getEdge/getFace."
+    }
+  ],
+  "result_text": "The change doesn't compile, for two reasons:\n\n1. **Header and definitions don't match.** `DrawViewPart.h` still declares the three functions as `static` and taking two arguments (`owner`, `element`). The new definitions in `DrawViewPart.cpp` are ordinary one-argument member functions, so the compiler finds no declaration to match them.\n2. **One caller was never updated.** `CosmeticExtension.cpp` (lines 71-78) still calls `DU::isCosmeticVertex`, `DU::isCosmeticEdge` and `DU::isCenterLine`. Those functions were deleted from DrawUtil, so the calls no longer resolve. It is the only caller.\n\nThe rest are cleanups plus one existing null dereference. No CLAUDE.md rule applies to these C++ changes.\n\n```json\n[\n  {\n    \"file\": \"src/Mod/TechDraw/App/DrawViewPart.h\",\n    \"line\": 242,\n    \"summary\": \"The header declares isCosmeticVertex/isCosmeticEdge/isCenterLine as static and taking (App::DocumentObject* owner, std::string element), but DrawViewPart.cpp defines them as non-static members taking only (std::string element), so the signatures don't match.\",\n    \"failure_scenario\": \"Building TechDraw fails with 'no declaration matches bool TechDraw::DrawViewPart::isCosmeticVertex(std::string)' (and the same for isCosmeticEdge and isCenterLine). If only the definitions were fixed, the static versions would have no 'this' and so could not call getEdge()/getProjVertexByIndex().\"\n  },\n  {\n    \"file\": \"src/Mod/TechDraw/App/CosmeticExtension.cpp\",\n    \"line\": 71,\n    \"summary\": \"CosmeticExtension::deleteCosmeticElements still calls DU::isCosmeticVertex, DU::isCosmeticEdge and DU::isCenterLine, which this change removes from DrawUtil; the call sites were not moved to getOwner()->isCosmeticVertex(name) and so on.\",\n    \"failure_scenario\": \"CosmeticExtension.cpp fails to compile with 'isCosmeticVertex is not a member of TechDraw::DrawUtil' at lines 71, 77 and 78, which breaks the whole TechDraw App library.\"\n  },\n  {\n    \"file\": \"src/Mod/TechDraw/App/CosmeticExtension.cpp\",\n    \"line\": 73,\n    \"summary\": \"In the caller of the moved function, getCosmeticVertexBySelection(name) can return nullptr but its result is dereferenced without a check (the edge branch just below does check).\",\n    \"failure_scenario\": \"A vertex is marked cosmetic but has no matching CosmeticVertex entry (for example stale geometry after a recompute, or a vertex created by another cosmetic source). vert is null and vert->getTagAsString() crashes FreeCAD when the user deletes the selection.\"\n  },\n  {\n    \"file\": \"src/Mod/TechDraw/App/DrawViewPart.cpp\",\n    \"line\": 1502,\n    \"summary\": \"The new member functions are not const and take std::string by value, even though they only call the const accessors getEdge()/getProjVertexByIndex().\",\n    \"failure_scenario\": \"They cannot be called on a const DrawViewPart& (for example from toAppSpace-style helpers that take const DrawViewPart&), which invites const_cast. Every call also copies the string needlessly. They should be `bool isCosmeticVertex(const std::string& element) const` and so on.\"\n  },\n  {\n    \"file\": \"src/Mod/TechDraw/App/DrawViewPart.cpp\",\n    \"line\": 1504,\n    \"summary\": \"isCosmeticVertex repeats the existing DrawViewPart::getVertex(std::string) (getIndexFromName followed by getProjVertexByIndex) instead of calling it.\",\n    \"failure_scenario\": \"The name-to-vertex lookup now exists in two places, so a future change to vertex naming or indexing must be made in both. The simpler form is `auto vertex = getVertex(element); return vertex && vertex->getCosmetic();`.\"\n  },\n  {\n    \"file\": \"src/Mod/TechDraw/App/DrawViewPart.cpp\",\n    \"line\": 1513,\n    \"summary\": \"isCosmeticEdge and isCenterLine are copy-pasted bodies that differ only in the SourceType value, and each uses the verbose `if (cond) return true; return false;` pattern.\",\n    \"failure_scenario\": \"Duplicated logic that is harder to maintain. It could be one private helper, isCosmeticSource(element, SourceType), or at least `auto edge = getEdge(element); return edge && edge->source() == SourceType::CENTERLINE && edge->getCosmetic();`.\"\n  },\n  {\n    \"file\": \"src/Mod/TechDraw/App/DrawViewPart.cpp\",\n    \"line\": 1501,\n    \"summary\": \"The comments still read 'true if owner->element is ...', but the owner parameter no longer exists now that these are members.\",\n    \"failure_scenario\": \"The stale comments point readers to a parameter that isn't there. They should say 'true if this view's element is ...'.\"\n  },\n  {\n    \"file\": \"src/Mod/TechDraw/App/DrawViewPart.h\",\n    \"line\": 242,\n    \"summary\": \"The new geometry query declarations sit in the HLR/progress threading block (after waitingForResult/progressValueChanged) instead of next to the related getVertex/getEdge accessors around line 162.\",\n    \"failure_scenario\": \"Related element-query APIs end up scattered across the header, which makes them harder to find. The declarations belong with getVertex/getEdge/getFace.\"\n  }\n]\n```",
+  "stderr": "",
+  "claude_duration_ms": 42979,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.17205740000000003,
+  "claude_session_id": "bb25c2ec-34c1-4165-aa35-a1bdb055e288",
+  "token_usage": {
+    "input_tokens": 12,
+    "output_tokens": 3895,
+    "cache_read_input_tokens": 89597,
+    "cache_creation_input_tokens": 15238,
+    "total_tokens": 108742,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 12,
+        "outputTokens": 3895,
+        "cacheReadInputTokens": 89597,
+        "cacheCreationInputTokens": 15238,
+        "webSearchRequests": 0,
+        "costUSD": 0.17205740000000003,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 674,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/phase1/transcripts/FreeCAD__FreeCAD@ec3da2e"
+  }
+}

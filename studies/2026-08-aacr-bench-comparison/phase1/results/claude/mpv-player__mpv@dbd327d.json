@@ -1,0 +1,95 @@
+{
+  "instance_id": "mpv-player__mpv@dbd327d",
+  "repo": "mpv-player/mpv",
+  "base_commit": "30869ddb904f800ad1b858ac99c5fb81690f0cb7",
+  "head_commit": "dbd327d36fd0dc80ebd6e5517c102a92e31a0836",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T16:31:09.778424+00:00",
+  "duration_seconds": 67.7,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "misc/random.c",
+      "line": 93,
+      "summary": "mp_rand_in_range32 relies only on mp_assert(min < max), which is compiled out under NDEBUG, so a bad call hangs forever or returns out-of-range values instead of failing.",
+      "failure_scenario": "Release build (NDEBUG), called with min == max: range = 0, mask = mp_round_next_power_of_2(0) - 1 = 0, so ret is always 0 and `0 >= 0` loops forever. With min > max, range wraps to a huge value and the function returns values outside [min, max). A future caller, such as a shuffle over a 1-entry sub-range, hangs the player. Use mp_require, or return min when range == 0."
+    },
+    {
+      "file": "misc/random.c",
+      "line": 55,
+      "summary": "When av_random_bytes fails, the seed is time ^ function address + stack address. Each call now builds a fresh generator, so back-to-back calls on the same thread can get identical seeds and identical sequences. Before, one shared state kept advancing.",
+      "failure_scenario": "On a platform with no working av_random_bytes and a coarse mp_raw_time_ns, two mp_mkostemps calls (or two playlist_shuffle calls) within one clock tick on the same thread get the same seed. They then produce the same template names or the same shuffle order, so mkostemps collides with EEXIST and has to retry, and 'shuffle' repeats the previous order."
+    },
+    {
+      "file": "misc/random.c",
+      "line": 49,
+      "summary": "In FUZZING builds every mp_rand_seed call is now forced to 42, so each call starts the same sequence from scratch. Before, one global state was seeded once and kept advancing.",
+      "failure_scenario": "Fuzzing build: every mp_mkostemps call makes the same filename sequence. With N existing temp files for the same prefix, each new call walks N EEXIST collisions before it succeeds. Repeated playlist_shuffle calls also always give the same permutation, which reduces fuzz coverage."
+    },
+    {
+      "file": "misc/io_utils.c",
+      "line": 43,
+      "summary": "mp_mkostemps now builds and seeds a full PRNG, including an av_random_bytes syscall, on every call. The existing comment says a plain counter would be enough.",
+      "failure_scenario": "Every temp-file save (mp_save_to_file, cache writes) pays for a getrandom or /dev/urandom read (or a BCrypt call on Windows) to produce 6 hex characters that only need to be unique. A counter-based name or a single process-wide state would avoid the extra syscall per call."
+    },
+    {
+      "file": "misc/random.h",
+      "line": 48,
+      "summary": "mp_rand_next_double has no remaining callers after the playlist shuffle switched to mp_rand_in_range32. It is dead API kept only through the signature change.",
+      "failure_scenario": "Unused exported function that still has to be maintained. It invites callers to go back to the biased `(size_t)(n * mp_rand_next_double())` pattern this PR just removed. Delete it, or document why it stays."
+    },
+    {
+      "file": "player/main.c",
+      "line": 33,
+      "summary": "The only use of misc/random.h in player/main.c (the mp_rand_seed(0) call) was removed, but the #include \"misc/random.h\" was left behind. osdep/io.c also includes it without using it.",
+      "failure_scenario": "Leftover includes: misc/random.h is now included where nothing from it is used, which adds rebuilds and false dependencies whenever random.h changes."
+    }
+  ],
+  "result_text": "I found 5 issues in the 4 commits. None of them breaks the code paths as they are called today. The shuffle rewrite is correct: `mp_rand_in_range32(n, num_entries)` always has `min < max` and matches the old swap range. Ranges above 2^31 are also handled, because `mp_round_next_power_of_2` returns 0 there, which gives a full 32-bit mask. No CLAUDE.md rules apply to this code: the user-level file only covers agent workflow, and the repo has none.\n\n```json\n[\n  {\n    \"file\": \"misc/random.c\",\n    \"line\": 93,\n    \"summary\": \"mp_rand_in_range32 relies only on mp_assert(min < max), which is compiled out under NDEBUG, so a bad call hangs forever or returns out-of-range values instead of failing.\",\n    \"failure_scenario\": \"Release build (NDEBUG), called with min == max: range = 0, mask = mp_round_next_power_of_2(0) - 1 = 0, so ret is always 0 and `0 >= 0` loops forever. With min > max, range wraps to a huge value and the function returns values outside [min, max). A future caller, such as a shuffle over a 1-entry sub-range, hangs the player. Use mp_require, or return min when range == 0.\"\n  },\n  {\n    \"file\": \"misc/random.c\",\n    \"line\": 55,\n    \"summary\": \"When av_random_bytes fails, the seed is time ^ function address + stack address. Each call now builds a fresh generator, so back-to-back calls on the same thread can get identical seeds and identical sequences. Before, one shared state kept advancing.\",\n    \"failure_scenario\": \"On a platform with no working av_random_bytes and a coarse mp_raw_time_ns, two mp_mkostemps calls (or two playlist_shuffle calls) within one clock tick on the same thread get the same seed. They then produce the same template names or the same shuffle order, so mkostemps collides with EEXIST and has to retry, and 'shuffle' repeats the previous order.\"\n  },\n  {\n    \"file\": \"misc/random.c\",\n    \"line\": 49,\n    \"summary\": \"In FUZZING builds every mp_rand_seed call is now forced to 42, so each call starts the same sequence from scratch. Before, one global state was seeded once and kept advancing.\",\n    \"failure_scenario\": \"Fuzzing build: every mp_mkostemps call makes the same filename sequence. With N existing temp files for the same prefix, each new call walks N EEXIST collisions before it succeeds. Repeated playlist_shuffle calls also always give the same permutation, which reduces fuzz coverage.\"\n  },\n  {\n    \"file\": \"misc/io_utils.c\",\n    \"line\": 43,\n    \"summary\": \"mp_mkostemps now builds and seeds a full PRNG, including an av_random_bytes syscall, on every call. The existing comment says a plain counter would be enough.\",\n    \"failure_scenario\": \"Every temp-file save (mp_save_to_file, cache writes) pays for a getrandom or /dev/urandom read (or a BCrypt call on Windows) to produce 6 hex characters that only need to be unique. A counter-based name or a single process-wide state would avoid the extra syscall per call.\"\n  },\n  {\n    \"file\": \"misc/random.h\",\n    \"line\": 48,\n    \"summary\": \"mp_rand_next_double has no remaining callers after the playlist shuffle switched to mp_rand_in_range32. It is dead API kept only through the signature change.\",\n    \"failure_scenario\": \"Unused exported function that still has to be maintained. It invites callers to go back to the biased `(size_t)(n * mp_rand_next_double())` pattern this PR just removed. Delete it, or document why it stays.\"\n  },\n  {\n    \"file\": \"player/main.c\",\n    \"line\": 33,\n    \"summary\": \"The only use of misc/random.h in player/main.c (the mp_rand_seed(0) call) was removed, but the #include \\\"misc/random.h\\\" was left behind. osdep/io.c also includes it without using it.\",\n    \"failure_scenario\": \"Leftover includes: misc/random.h is now included where nothing from it is used, which adds rebuilds and false dependencies whenever random.h changes.\"\n  }\n]\n```",
+  "stderr": "",
+  "claude_duration_ms": 66595,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.2604466,
+  "claude_session_id": "49dde386-f39a-4bbb-bb59-356019e06e55",
+  "token_usage": {
+    "input_tokens": 18,
+    "output_tokens": 5979,
+    "cache_read_input_tokens": 170973,
+    "cache_creation_input_tokens": 21320,
+    "total_tokens": 198290,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 18,
+        "outputTokens": 5979,
+        "cacheReadInputTokens": 170973,
+        "cacheCreationInputTokens": 21320,
+        "webSearchRequests": 0,
+        "costUSD": 0.2604466,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 2829,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/phase1/transcripts/mpv-player__mpv@dbd327d"
+  }
+}

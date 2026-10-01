@@ -1,0 +1,84 @@
+{
+ "run_id": "phase1",
+ "claude": {
+  "noise_rate": 0.7112135176651305,
+  "noise_rate_rounds": [
+   0.7096774193548387,
+   0.728110599078341,
+   0.695852534562212
+  ],
+  "semantic_precision": 0.2887,
+  "semantic_recall": 0.375,
+  "line_precision": 0.3243,
+  "line_recall": 0.421,
+  "generated": 217.0,
+  "expected": 167.0,
+  "evaluated_instances": 27.0,
+  "recall_by_category": {
+   "Code Defect": {
+    "refs": 86,
+    "recall": 0.3953488372093023
+   },
+   "Maintainability and Readability": {
+    "refs": 58,
+    "recall": 0.25862068965517243
+   },
+   "Performance": {
+    "refs": 13,
+    "recall": 0.5897435897435898
+   },
+   "Security Vulnerability": {
+    "refs": 10,
+    "recall": 0.6
+   }
+  },
+  "cost": {
+   "instances": 27,
+   "review_seconds": 2686.33,
+   "tokens": 9559059
+  }
+ },
+ "review-pro": {
+  "noise_rate": 0.7258687258687259,
+  "noise_rate_rounds": [
+   0.722007722007722,
+   0.7335907335907336,
+   0.722007722007722
+  ],
+  "semantic_precision": 0.274,
+  "semantic_recall": 0.425,
+  "line_precision": 0.2997,
+  "line_recall": 0.465,
+  "generated": 259.0,
+  "expected": 167.0,
+  "evaluated_instances": 27.0,
+  "recall_by_category": {
+   "Code Defect": {
+    "refs": 86,
+    "recall": 0.45348837209302323
+   },
+   "Maintainability and Readability": {
+    "refs": 58,
+    "recall": 0.3793103448275862
+   },
+   "Performance": {
+    "refs": 13,
+    "recall": 0.48717948717948717
+   },
+   "Security Vulnerability": {
+    "refs": 10,
+    "recall": 0.36666666666666664
+   }
+  },
+  "cost": {
+   "instances": 27,
+   "review_seconds": 9192.810000000001,
+   "tokens": 88409148
+  }
+ },
+ "h0_guard": {
+  "noise_A2_minus_A1_points": 1.4655208203595338,
+  "budget_points": 5,
+  "verdict": "within budget"
+ }
+}

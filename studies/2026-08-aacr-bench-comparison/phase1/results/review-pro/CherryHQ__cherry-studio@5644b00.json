@@ -1,0 +1,227 @@
+{
+  "instance_id": "CherryHQ__cherry-studio@5644b00",
+  "repo": "CherryHQ/cherry-studio",
+  "base_commit": "636c788e2ba413d21a5fd385c3ea4cc7e134e1be",
+  "head_commit": "5644b00b87e07fa1acd84d4ec93f9f2fb1205090",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T01:44:42.175551+00:00",
+  "duration_seconds": 543.7,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "src/renderer/src/middleware/convertLinksMiddleware.ts",
+      "line": 20,
+      "summary": "[Critical] convertLinks now runs on every OpenAI-compatible reply, never resets and never flushes, so it drops reply text and carries it into later replies",
+      "failure_scenario": "Before this change, convertLinks ran only when web search was on and was reset per reply. Now it runs on every text delta with resetCounter=false, and the TransformStream has no flush. Its module-level buffer holds back everything after any '[' that isn't a complete link (arr[0], [1, 2, 3], \"- [ ]\"). The reply then shows only \"Use a list: x = \", so TEXT_COMPLETE, content and processToolUses all get truncated text, and the stale tail leaks into the next reply. Fix: gate on web search and provider as before, keep per-stream converter state (reset on the first chunk, or use a factory), and add flush() to emit the remaining buffer."
+    },
+    {
+      "file": "src/renderer/src/middleware/convertLinksMiddleware.ts",
+      "line": 17,
+      "summary": "[High] Ordinary markdown links and images in every reply are rewritten as citation superscripts, which breaks images",
+      "failure_scenario": "With web search off, `See [the docs](https://x)` becomes `See the docs[<sup>1</sup>](https://x)`. `![logo](https://img.png)` becomes `!logo[<sup>1</sup>](https://img.png)`, so the image no longer renders. Link-like text in code blocks is rewritten too. Fix: apply convertLinks only when assistant.enableWebSearch is on, as the old code did."
+    },
+    {
+      "file": "src/renderer/src/middleware/convertLinksMiddleware.ts",
+      "line": 20,
+      "summary": "[High] convertLinks runs on every text token and its unbounded hold-back buffer makes total work O(n^2) in response length",
+      "failure_scenario": "After one unmatched '[' in a long code answer, every later token is appended to the module-level buffer, and each call rescans it (substring plus regex exec). That is O(n^2) work, run synchronously on the renderer thread, so long answers may stutter. Fix: gate the conversion as before (web search only), reset or keep state per stream, cap the hold-back length, and add flush."
+    },
+    {
+      "file": "src/renderer/src/middleware/extractReasoningMiddleware.ts",
+      "line": 80,
+      "summary": "[High] Streaming tag splitter across chunk boundaries has no tests",
+      "failure_scenario": "The stateful loop that routes <think> text to THINKING_DELTA or TEXT_DELTA is untested. A mis-split across chunks ('<th','ink>'), wrong separator prefixes, startWithReasoning, and dropped trailing partial tags (no flush; 'hello <' loses '<') would all ship unnoticed. Fix: add extractReasoningMiddleware.test.ts feeding ReadableStreams of chunks and asserting the exact {type,textDelta} sequences for those cases."
+    },
+    {
+      "file": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+      "line": 548,
+      "summary": "[High] Rewritten OpenAI streaming dispatch (reasoning, text, finish, BLOCK_COMPLETE) is untested",
+      "failure_scenario": "No test exercises processStream, so its behaviour changes ship unverified. BLOCK_COMPLETE now sits only in the finish case, the per-provider link converters and web-search gate are gone, and THINKING_COMPLETE ordering was rewritten. Fix: add an OpenAIProvider streaming test with mocked window.keyv that feeds ChatCompletionChunk iterables and asserts the ChunkType sequence: normal reasoning→content→finish, inline <think>, no finish_reason, and pause mid-stream."
+    },
+    {
+      "file": "src/renderer/src/middleware/convertLinksMiddleware.ts",
+      "line": 4,
+      "summary": "[Medium] A per-stream middleware factory wraps the module-global convertLinks state without resetting it; provider-specific converters are left with no production callers",
+      "failure_scenario": "linkCounter, buffer and urlToCounterMap live at module level and resetCounter is never passed, so link numbering and partial buffers leak across streams and recursive tool-call streams. convertLinksToOpenRouter/Zhipu/Hunyuan are now used only by tests. Fix: create converter state per stream (a createLinkConverter closure), or at least call convertLinks(text, true) on the first chunk. Then either carry the provider dispatch into the transform, or delete the orphaned converters and their tests."
+    },
+    {
+      "file": "src/renderer/src/middleware/convertLinksMiddleware.ts",
+      "line": 20,
+      "summary": "[Medium] convertLinksMiddleware has no test, including state carrying over between streams",
+      "failure_scenario": "Link numbering carried between completions, and a trailing partial link dropped at stream end, go undetected. linkConverter.test.ts calls convertLinks directly, so it can't catch either. Fix: add convertLinksMiddleware.test.ts covering single-stream conversion with pass-through of reasoning/finish chunks, two sequential streams (the second's first link is numbered 1), and a stream ending in 'see [exa' whose tail must reach the output."
+    },
+    {
+      "file": "src/renderer/src/middleware/extractReasoningMiddleware.ts",
+      "line": 21,
+      "summary": "[Medium] The new <think> extractor is another parser alongside thinkTagProcessor and inline <think> handling in OpenAIProvider",
+      "failure_scenario": "A tag-handling fix (whitespace, unclosed tags) lands in one of several parsers and not the others: the middleware, thinkTagProcessor in formats.ts, and the inline strips in summaries/summaryForSearch/translate (OpenAIProvider.ts:744-764, 816, 868). Outputs then diverge between chat and summaries. Verification partly refuted the claim that this change orphaned findThinkingProcessor (it was already dead at base). Fix: make one <think> parser canonical, route the other call sites through it, and drop the unused wrapGenerate."
+    },
+    {
+      "file": "src/renderer/src/utils/getPotentialIndex.ts",
+      "line": 7,
+      "summary": "[Medium] getPotentialStartIndex has no unit tests for its suffix/prefix branches",
+      "failure_scenario": "A regression in the empty-search, direct-hit, partial-suffix or no-match branches would mis-split reasoning without any test failing. Fix: add getPotentialIndex.test.ts with ('abc','')→null, ('a<think>b','<think>')→1, ('hello <thi','<think>')→6, ('hello','<think>')→null, ('<','<think>')→0."
+    },
+    {
+      "file": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+      "line": 64,
+      "summary": "[Medium] OpenAIStreamChunk uses `any` and passes the raw provider chunk through, so vendor parsing is split across two places",
+      "failure_scenario": "The finish case still reads raw citations/web_search/search_info/annotations from `chunk: any`, `lastUsage = usage` takes an unchecked any, and 'reasoning' chunks are enqueued into T without a check, so a chunk-shape change compiles silently. Fix: move web-search extraction into the normalizer as typed variants ({type:'web-search'; results; source}), type finishReason/usage (Usage), and drop the export."
+    },
+    {
+      "file": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+      "line": 502,
+      "summary": "[Medium] getAppropriateTag returns the same value on every branch; the 'reasoning' tag entry is never used",
+      "failure_scenario": "Readers assume per-model tag selection (a claude branch, a 'reasoning' tag) that does not exist. The function is also reallocated on every processStream call, and the GLM ###Response handling it seems to stand in for is gone. Fix: delete reasoningTags/getAppropriateTag and pass { tagName: 'think' } directly. If per-model tags are needed, add a typed map in config/models.ts."
+    },
+    {
+      "file": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+      "line": 534,
+      "summary": "[Medium] A copy of vercel/ai's wrapStream/doStream middleware protocol is rebuilt without the ai package, only to pipe one stream",
+      "failure_scenario": "Every stream goes async generator → ReadableStream → two TransformStreams → hand-written iterable, through fake doStream thunks and Record<string, any> rest plumbing. That adds indirection and two single-use adapters on the hot path, with no middleware runner in the repo. Fix: compose plain async-generator (or TransformStream) transforms directly, and delete utils/stream.ts and the doStream envelope."
+    },
+    {
+      "file": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+      "line": 544,
+      "summary": "[Medium] The provider-specific citation converters (Zhipu, Hunyuan, OpenRouter) are no longer called",
+      "failure_scenario": "With web search on, Zhipu [ref_N] markers appear raw, and Hunyuan [1](@ref) becomes 1[<sup>1</sup>](@ref) without the real URL from search_info.search_results. OpenRouter non-host links are now rewritten, and inline citations no longer match the LLM_WEB_SEARCH_COMPLETE results. Fix: restore the per-provider converter dispatch, gated on enableWebSearch, passing the model/provider and Hunyuan search results into the middleware."
+    },
+    {
+      "file": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+      "line": 639,
+      "summary": "[Medium] TEXT_COMPLETE, tool processing and BLOCK_COMPLETE now run only when a non-empty finish_reason arrives",
+      "failure_scenario": "A stream that ends without finish_reason (some OpenAI-compatible servers or proxies, or a clean cut-off), or one stopped by the CHAT_COMPLETION_PAUSED break, never emits BLOCK_COMPLETE. onComplete never fires, so the message's final status, usage and metrics are never set, and prompt-based MCP tool calls never run. Fix: move processToolUses and the BLOCK_COMPLETE emit back after the consume loop, and keep only usage/web-search capture in the finish case."
+    },
+    {
+      "file": "src/renderer/src/middleware/convertLinksMiddleware.ts",
+      "line": 4,
+      "summary": "[Low] Generic T extends { type: string } leaves out textDelta, so @ts-expect-error is needed (also extractReasoningMiddleware.ts:12/62)",
+      "failure_scenario": "The suppressions hide real type errors on those lines. A T without textDelta, or without a 'reasoning' member, compiles silently, and the generic is only ever instantiated with OpenAIStreamChunk. Fix: type the transforms against OpenAIStreamChunk or a discriminated union with textDelta, and remove both @ts-expect-error lines."
+    },
+    {
+      "file": "src/renderer/src/middleware/convertLinksMiddleware.ts",
+      "line": 4,
+      "summary": "[Low] Both middlewares copy the same wrapStream/TransformStream text-delta scaffolding and @ts-expect-error cast",
+      "failure_scenario": "A typing or pass-through fix in one middleware won't reach the other, and each new middleware copies the pattern again. Fix: extract a shared StreamMiddleware<T> type and TextDeltaChunk type plus a mapTextDelta(stream, fn) helper, so convertLinksMiddleware becomes a one-liner."
+    },
+    {
+      "file": "src/renderer/src/middleware/extractReasoningMiddleware.ts",
+      "line": 21,
+      "summary": "[Low] The copied wrapGenerate is never called",
+      "failure_scenario": "About 20 lines of untested vendored code (regex plus a backward splice loop) look like they handle non-streaming reasoning, but the non-streaming branch never uses them. Fix: delete wrapGenerate, or call a plain extractReasoning(text, tag) from the non-streaming path if that is wanted."
+    },
+    {
+      "file": "src/renderer/src/middleware/extractReasoningMiddleware.ts",
+      "line": 56,
+      "summary": "[Low] Reasoning transform has no flush, so a trailing partial tag prefix is dropped",
+      "failure_scenario": "A reply ending in '<' or '<th' (for example a code answer) has that suffix held in the buffer as a possible <think> prefix and never emitted, so content and TEXT_COMPLETE are truncated. Fix: add flush(controller) that publishes the remaining buffer as the current type."
+    },
+    {
+      "file": "src/renderer/src/providers/AiProvider/BaseProvider.ts",
+      "line": 238,
+      "summary": "[Low] handleThinkingTags removed but findThinkingProcessor and ThoughtProcessor helpers remain with zero callers",
+      "failure_scenario": "Readers see two competing reasoning-extraction mechanisms, and the protected API has no subclass caller. Verification showed these were already dead before this change. Fix: finish the migration by deleting findThinkingProcessor, thinkTagProcessor and glmZeroPreviewProcessor, or port GLM ###Thinking handling as a tag option of the new transform."
+    },
+    {
+      "file": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+      "line": 63,
+      "summary": "[Low] Leftover numbered step comments and an exported any-typed union",
+      "failure_scenario": "The step markers (1, 1, 2, 3, 5, with no 4) describe how the code was written, not what it does, and mislead readers. OpenAIStreamChunk is exported but used only in this file, with any fields even though Usage and the SDK chunk types are already imported. Fix: remove the narration, make the type module-private, and type usage/chunk/delta."
+    },
+    {
+      "file": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+      "line": 495,
+      "summary": "[Low] Seven loose timing/flag variables with overlapping guards",
+      "failure_scenario": "isFirstChunk overlaps the time_first_token_millsec === 0 check, and time_thinking_start duplicates time_first_token_millsec, so tracing the metrics means following several mutable variables across switch cases. Bugs in timing are easy to introduce. Fix: replace them with a createStreamMetrics(start) tracker exposing mark* methods and toMetrics()."
+    },
+    {
+      "file": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+      "line": 592,
+      "summary": "[Low] Redundant isEmpty(finishReason) check and shadowed currentTime in the finish case",
+      "failure_scenario": "The generator yields 'finish' only after the same !isEmpty check, so the guard is always true. The inner currentTime shadows the outer one. Both are dead or confusing leftovers that hide the real invariant. Fix: remove the guard and the inner currentTime."
+    },
+    {
+      "file": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+      "line": 598,
+      "summary": "[Low] The rewritten finish branch repeats the LLM_WEB_SEARCH_COMPLETE onChunk literal four times",
+      "failure_scenario": "Any change to the chunk shape or cast must be made in four places here plus GeminiProvider.ts:471, and one is easily missed. This was carried forward from before the change. Fix: add an emitWebSearch(results, source) helper, possibly a protected one on BaseProvider."
+    },
+    {
+      "file": "src/renderer/src/utils/stream.ts",
+      "line": 1,
+      "summary": "[Low] Stream adapters never cancel or return the upstream, so a consumer error leaves the OpenAI HTTP stream open",
+      "failure_scenario": "If onChunk or processToolUses throws inside the consume loop, the iterator has no return() to release the reader or cancel the stream, and the ReadableStream has no cancel() to call gen.return(). The SDK response stays open until the server closes it: one leaked connection per failed stream. Fix: add an iterator return() that calls reader.cancel()/releaseLock(), and cancel(){ return gen.return(undefined) } on the source, or use native ReadableStream async iteration."
+    },
+    {
+      "file": "src/renderer/src/utils/stream.ts",
+      "line": 14,
+      "summary": "[Low] readableStreamAsyncIterable and asyncGeneratorToReadableStream adapters are untested",
+      "failure_scenario": "Ordering, clean termination, error propagation and reader-lock release on break are unchecked, so a regression in the bridge from the OpenAI SDK to the middleware goes unnoticed. Fix: add stream.test.ts covering a [1,2,3] round trip, a throwing generator rejecting the for-await, and stream.locked after a break."
+    },
+    {
+      "file": "src/renderer/src/utils/linkConverter.ts",
+      "line": 6,
+      "summary": "[Low] urlToCounterMap and buffer are now app-lifetime state that is never reset",
+      "failure_scenario": "Every distinct URL from any OpenAI-compatible reply stays in urlToCounterMap for the whole session, and linkCounter keeps increasing. Memory grows slowly and state carries between conversations. Fix: keep converter state per stream inside wrapStream, or call convertLinks(text, true) on each stream's first text-delta."
+    },
+    {
+      "file": "src/renderer/src/middleware/extractReasoningMiddleware.ts",
+      "line": 3,
+      "summary": "[Nitpick] New top-level middleware/ directory for OpenAIProvider-only transforms, with a relative import instead of the @renderer alias",
+      "failure_scenario": "The directory name suggests an app-wide middleware layer that doesn't exist. The relative '../utils/getPotentialIndex' import breaks the @renderer alias convention the sibling file uses. Fix: move the files next to the providers (e.g. providers/AiProvider/streamTransforms/) and use @renderer/... imports."
+    }
+  ],
+  "result_text": "The review-pro verdict is **BLOCK**, on the code side alone. I sent all 27 findings in the report above to the report tool, one call each: 1 Critical, 4 High, 9 Medium, 12 Low and 1 Nitpick. The spec check was skipped because no spec was found, so there were no spec findings, and no finding was refuted.\n\n- **What blocks it:** the new `convertLinksMiddleware` calls the stateful `convertLinks` on every OpenAI-compatible reply. Before, it ran only with web search on and was reset at the start of each reply.\n  - Any stray `[` (for example `arr[0]`) holds back the rest of the reply, which is never shown and leaks into the next one.\n  - Normal markdown links and images get rewritten as citation numbers.\n  - The repeated rescanning costs O(n²) on long answers.\n- **Other key problems:** BLOCK_COMPLETE and tool calls now run only when the stream sends a `finish_reason`. The Zhipu, Hunyuan and OpenRouter citation converters are no longer called. None of the new streaming code has tests.\n- **Verification:** independent verifiers checked 8 of the 14 Medium-and-above findings, and 7 held up. For the eighth, they showed `findThinkingProcessor` and the helpers next to it were already unused before this change. The duplicate-parser finding itself still stands. The other 6 weren't checked because verification is capped at 8 per review.\n\nAll six changed files were read by at least one reviewer; this rests on the reviewers' own reports. Two things were unavailable: the PR description, because `gh` wasn't permitted, and a type check, because `node_modules` isn't installed.",
+  "stderr": "",
+  "claude_duration_ms": 542449,
+  "claude_num_turns": 59,
+  "claude_cost_usd": 6.521688999999999,
+  "claude_session_id": "d0c2970a-9760-455f-8e57-b841bc875500",
+  "token_usage": {
+    "input_tokens": 228,
+    "output_tokens": 125614,
+    "cache_read_input_tokens": 3768360,
+    "cache_creation_input_tokens": 576361,
+    "total_tokens": 4470563,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 228,
+        "outputTokens": 125614,
+        "cacheReadInputTokens": 3768360,
+        "cacheCreationInputTokens": 576361,
+        "webSearchRequests": 0,
+        "costUSD": 6.521688999999999,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 36270,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/CherryHQ__cherry-studio@5644b00"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: 636c788e2ba413d21a5fd385c3ea4cc7e134e1be.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "instance_id": "opencv__opencv@e3e45c8",
+  "repo": "opencv/opencv",
+  "base_commit": "459bb12466abdade062607ae54f3267adaef8063",
+  "head_commit": "e3e45c86baa3c51def49961f5d77201ee97e4385",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T01:27:27.249660+00:00",
+  "duration_seconds": 45.07,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "samples/cpp/tutorial_code/objectDetection/aruco_samples_utility.hpp",
+      "line": 35,
+      "summary": "The flags description written into `buf` by the updated snprintf call is never used: nothing writes it to the FileStorage, so this is dead work the PR polishes instead of removing or fixing.",
+      "failure_scenario": "Calibrating with e.g. CALIB_FIX_ASPECT_RATIO|CALIB_ZERO_TANGENT_DIST builds the string \"flags: +fix_aspectRatio+zero_tangent_dist\", which is then dropped; the saved YAML has only the raw integer `flags` and no readable comment. Either call `fs.writeComment(buf)` after the snprintf (the commented-out `cvWriteComment` in samples/cpp/calibration.cpp shows that was the intent) or delete the block."
+    },
+    {
+      "file": "samples/opengl/opengl_interop.cpp",
+      "line": 245,
+      "summary": "The Linux branch of print_info still calls `snprintf(buf, sizeof(buf)-1, ...)`, while the Windows branch was changed to `sizeof(buf)`, so the same function now uses two different size conventions for the same `char buf[256+1]`.",
+      "failure_scenario": "Maintenance cost: the `-1` and the `256+1` array size are leftovers from sprintf_s habits and wrongly suggest snprintf needs room reserved for the terminator. Use `sizeof(buf)` in both branches and declare `char buf[256]`."
+    },
+    {
+      "file": "samples/opengl/opengl_interop.cpp",
+      "line": 223,
+      "summary": "The `buf[0] = 0;` lines before each snprintf call (lines 223, 228, 233) are now redundant, because snprintf always writes a null-terminated string.",
+      "failure_scenario": "Three dead stores per frame in the render-info path, which make it look as if the formatting call might leave the buffer unterminated. Remove them."
+    },
+    {
+      "file": "samples/cpp/tutorial_code/ImgTrans/HoughLines_Demo.cpp",
+      "line": 75,
+      "summary": "snprintf copies a constant string with no format arguments into a 50-byte stack array, which needs no formatting at all.",
+      "failure_scenario": "A pointless buffer and copy, and a misleading pattern in tutorial code. Drop `edge_thresh_label[50]` and the snprintf and pass the literal straight to `createTrackbar(\"Edge Thres: input\", weighted_name, ...)`, or use a `const char*`."
+    }
+  ],
+  "result_text": "No correctness bugs found. The diff swaps `sprintf`/`sprintf_s` for `snprintf` in three sample files, and each new call is bounded by the real size of its own stack array. All four findings below are minor cleanups in the touched code.\n\n- **Overflow:** the strings that fill the buffers are far shorter than the buffers (1024 bytes in the aruco helper, 50 in HoughLines, 257 in the OpenGL sample).\n- **Windows build:** `snprintf` exists in MSVC 2015 and later, so dropping `sprintf_s` doesn't break the build on supported toolchains.\n- **Leftovers:** no plain `sprintf(` calls remain under `samples/` or `apps/`.\n- **CLAUDE.md:** the rules in `~/.claude/CLAUDE.md` (RuntimePulse, CodeGraph) don't apply to this change, and there is no repo-level CLAUDE.md.\n\n```json\n[\n  {\n    \"file\": \"samples/cpp/tutorial_code/objectDetection/aruco_samples_utility.hpp\",\n    \"line\": 35,\n    \"summary\": \"The flags description written into `buf` by the updated snprintf call is never used: nothing writes it to the FileStorage, so this is dead work the PR polishes instead of removing or fixing.\",\n    \"failure_scenario\": \"Calibrating with e.g. CALIB_FIX_ASPECT_RATIO|CALIB_ZERO_TANGENT_DIST builds the string \\\"flags: +fix_aspectRatio+zero_tangent_dist\\\", which is then dropped; the saved YAML has only the raw integer `flags` and no readable comment. Either call `fs.writeComment(buf)` after the snprintf (the commented-out `cvWriteComment` in samples/cpp/calibration.cpp shows that was the intent) or delete the block.\"\n  },\n  {\n    \"file\": \"samples/opengl/opengl_interop.cpp\",\n    \"line\": 245,\n    \"summary\": \"The Linux branch of print_info still calls `snprintf(buf, sizeof(buf)-1, ...)`, while the Windows branch was changed to `sizeof(buf)`, so the same function now uses two different size conventions for the same `char buf[256+1]`.\",\n    \"failure_scenario\": \"Maintenance cost: the `-1` and the `256+1` array size are leftovers from sprintf_s habits and wrongly suggest snprintf needs room reserved for the terminator. Use `sizeof(buf)` in both branches and declare `char buf[256]`.\"\n  },\n  {\n    \"file\": \"samples/opengl/opengl_interop.cpp\",\n    \"line\": 223,\n    \"summary\": \"The `buf[0] = 0;` lines before each snprintf call (lines 223, 228, 233) are now redundant, because snprintf always writes a null-terminated string.\",\n    \"failure_scenario\": \"Three dead stores per frame in the render-info path, which make it look as if the formatting call might leave the buffer unterminated. Remove them.\"\n  },\n  {\n    \"file\": \"samples/cpp/tutorial_code/ImgTrans/HoughLines_Demo.cpp\",\n    \"line\": 75,\n    \"summary\": \"snprintf copies a constant string with no format arguments into a 50-byte stack array, which needs no formatting at all.\",\n    \"failure_scenario\": \"A pointless buffer and copy, and a misleading pattern in tutorial code. Drop `edge_thresh_label[50]` and the snprintf and pass the literal straight to `createTrackbar(\\\"Edge Thres: input\\\", weighted_name, ...)`, or use a `const char*`.\"\n  }\n]\n```",
+  "stderr": "",
+  "claude_duration_ms": 43835,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.1389028,
+  "claude_session_id": "952df8ff-58d8-44ea-a069-a352430d5876",
+  "token_usage": {
+    "input_tokens": 10,
+    "output_tokens": 2960,
+    "cache_read_input_tokens": 73739,
+    "cache_creation_input_tokens": 12983,
+    "total_tokens": 89692,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 10,
+        "outputTokens": 2960,
+        "cacheReadInputTokens": 73739,
+        "cacheCreationInputTokens": 12983,
+        "webSearchRequests": 0,
+        "costUSD": 0.1389028,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 906,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/phase1/transcripts/opencv__opencv@e3e45c8"
+  }
+}

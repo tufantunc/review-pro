@@ -241,8 +241,18 @@ failures and skipped, so 13 reviews per arm):
     The fallback parser read only 3 of laravel's 11, because the report shortened repeated paths to
     `:<line>`. A parser limitation, recorded; the fallback was used only on #7 (APPROVE, 0
     findings), so no score depends on it.
-- **Next:** the scored evaluation (judge GLM-5.3, 3 rounds, both arms), on the maintainer's
-  go-ahead.
+- **Scored evaluation done** 2026-10-01 08:05 to 09:34: GLM-5.3, 3 rounds per arm, 0 judge call
+  errors (A1 234 requests, A2 257). The Amendment 4 sensitivity was scored separately (6
+  requests).
+- **Results in `RESULTS.md`.**
+  - H1 is not supported. On 12 paired instances the mean delta is −0.08, Wilcoxon two-sided
+    p = 0.56.
+  - H0-guard within budget, at +1.5 points.
+  - A2 recall overall 0.425 against 0.375, at 9.2× the tokens.
+- **Outputs** (without transcripts) are in `phase1/`.
+- **Open:** the session transcripts, 64 MB for A2 and 5 MB for A1, are too large for this
+  repository. Per the registration's "Where the work lives", they go to a release asset on the
+  fork, which waits on the maintainer.
 - To resume after an interruption, run the same command with the same `--run-id phase1`:
 
 ```

@@ -1,0 +1,89 @@
+{
+  "instance_id": "FreeCAD__FreeCAD@ec3da2e",
+  "repo": "FreeCAD/FreeCAD",
+  "base_commit": "79008331b30d098b2c32e59752e24e0705b350bc",
+  "head_commit": "ec3da2e93e3fd8f69f113ca14abf892dfb86c11b",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T21:40:33.660344+00:00",
+  "duration_seconds": 150.07,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "src/Mod/TechDraw/App/DrawViewPart.cpp",
+      "line": 1502,
+      "summary": "[Critical] The new definitions don't match the declarations in DrawViewPart.h, so TechDraw App won't compile",
+      "failure_scenario": "DrawViewPart.cpp defines isCosmeticVertex/isCosmeticEdge/isCenterLine(std::string) as non-static members with one argument, but DrawViewPart.h:242-244 declares only static two-argument (App::DocumentObject* owner, std::string) versions. Each definition fails with \"no declaration matches\". Adding static won't fix it because the bodies call the instance members getProjVertexByIndex/getEdge, so the TechDraw App library fails to build. Remedy: change DrawViewPart.h:242-244 to declare `bool isCosmeticVertex(const std::string& element) const;` (and the same for the other two), without static and the owner parameter, and make the .cpp definitions match."
+    },
+    {
+      "file": "src/Mod/TechDraw/App/DrawUtil.h",
+      "line": 252,
+      "summary": "[Critical] DrawUtil::isCosmeticVertex/isCosmeticEdge/isCenterLine were removed, but CosmeticExtension still calls them",
+      "failure_scenario": "CosmeticExtension::deleteCosmeticElements (CosmeticExtension.cpp:71, 77, 78) still calls DU::isCosmeticVertex(getOwner(), name), DU::isCosmeticEdge and DU::isCenterLine (DU = DrawUtil). These were deleted from DrawUtil, so CosmeticExtension.cpp fails to compile (\"no member named ... in DrawUtil\"), which breaks the only code that deletes cosmetic elements by selection. DrawUtil is exported (TechDrawExport), so external consumers break too, with no compatibility wrapper. Remedy: change the calls to getOwner()->isCosmeticVertex(name), getOwner()->isCosmeticEdge(name) and getOwner()->isCenterLine(name) (getOwner() returns DrawViewPart*) in the same commit as the header fix. Optionally, keep deprecated forwarding wrappers in DrawUtil for one release."
+    },
+    {
+      "file": "src/Mod/TechDraw/App/DrawViewPart.cpp",
+      "line": 1513,
+      "summary": "[Low] isCosmeticEdge and isCenterLine are the same code except for the SourceType",
+      "failure_scenario": "Two copies of the same check were moved as-is into an already large (~1,600-line) class. The only caller uses isCosmeticEdge(...) || isCenterLine(...), so getEdge runs twice on the same name. Both use `if (cond) return true; return false;`. Remedy: add a private helper `bool isCosmeticEdgeOfType(const std::string& element, SourceType type) const { auto edge = getEdge(element); return edge && edge->getCosmetic() && edge->source() == type; }`, make the two public functions one-line calls to it, and write the vertex check as `return vertex && vertex->getCosmetic();`."
+    },
+    {
+      "file": "src/Mod/TechDraw/App/DrawViewPart.cpp",
+      "line": 1501,
+      "summary": "[Nitpick] The moved comments still say \"owner->element\" after the owner parameter was dropped",
+      "failure_scenario": "The comments at DrawViewPart.cpp:1501, 1512 and 1522 were copied from the old DrawUtil static helpers and refer to an owner parameter that no longer exists, which misleads readers. Remedy: reword them to \"true if element of this view is a cosmetic vertex / edge / center line\", or remove them."
+    }
+  ],
+  "result_text": "The review's verdict is **BLOCK**: this branch won't compile. I recorded four findings with the report tool, two Critical, one Low and one Nitpick. None were refuted.\n\n**Critical (both confirmed by independent verifiers, and flagged by all four reviewers):**\n1. **Header and source don't match** (`src/Mod/TechDraw/App/DrawViewPart.cpp:1502`). The .cpp defines `isCosmeticVertex`, `isCosmeticEdge` and `isCenterLine` as regular member functions that take only `element`. `DrawViewPart.h:242-244` still declares them as `static` functions that also take `owner`. The last commit (\"Removed owner from function head\") changed the .cpp but not the header. Fix: declare them in the header as `bool isCosmeticVertex(const std::string& element) const;` and the same for the other two.\n2. **The one caller still uses the removed functions** (`src/Mod/TechDraw/App/DrawUtil.h:252`). `CosmeticExtension.cpp:71,77,78` still calls `DU::isCosmeticVertex(getOwner(), name)` and the other two, which no longer exist in `DrawUtil`. Fix: change the calls to `getOwner()->isCosmeticVertex(name)` and so on.\n\n**Minor:**\n- **Low** (`DrawViewPart.cpp:1513`): `isCosmeticEdge` and `isCenterLine` differ only in the edge type they check. The caller runs both, so the same edge is looked up twice. A shared private helper would fix both.\n- **Nitpick** (`DrawViewPart.cpp:1501`): the moved comments still say \"owner->element\", but there's no owner parameter anymore.\n\nNo spec or issue was found, so the change wasn't checked against its intended purpose. All four changed files were examined, but nothing was built: the compile failures are established by reading the code, not by running the compiler.",
+  "stderr": "",
+  "claude_duration_ms": 148873,
+  "claude_num_turns": 21,
+  "claude_cost_usd": 1.4260252000000002,
+  "claude_session_id": "3719e4d9-b729-4049-946d-577623b37310",
+  "token_usage": {
+    "input_tokens": 64,
+    "output_tokens": 24980,
+    "cache_read_input_tokens": 766771,
+    "cache_creation_input_tokens": 128607,
+    "total_tokens": 920422,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 64,
+        "outputTokens": 24980,
+        "cacheReadInputTokens": 766771,
+        "cacheCreationInputTokens": 128607,
+        "webSearchRequests": 0,
+        "costUSD": 1.4260252000000002,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 2640,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/FreeCAD__FreeCAD@ec3da2e"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: 79008331b30d098b2c32e59752e24e0705b350bc.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

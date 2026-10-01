@@ -1,0 +1,95 @@
+{
+  "instance_id": "valkey-io__valkey@36f37c0",
+  "repo": "valkey-io/valkey",
+  "base_commit": "ea2e48a807e1d4a1a5a684a2a699eda1934a0c6f",
+  "head_commit": "36f37c0bafa72c091a9a3725b9a026a056130892",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T01:23:46.331752+00:00",
+  "duration_seconds": 62.45,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "src/networking.c",
+      "line": 2774,
+      "summary": "The parenthesized `(\"fmt\", args...)` groups inside the ternary are comma-operator expressions, not argument lists, so in the non-redacted branch snprintf's format string becomes the last operand, `c->querybuf + sdslen(c->querybuf) - PROTO_DUMP_LEN/2`. That is attacker-controlled query-buffer data used as a format string, called with no arguments.",
+      "failure_scenario": "hide-user-data-from-log=no (the default), verbosity is verbose, or the client is the primary. A client sends 128 or more unparsable bytes ending in `%s%s%s%n...` (for example an invalid mbulk count followed by padding). setProtocolError then calls snprintf(buf, 256, <user bytes>), which reads garbage varargs or writes via %n: remote memory disclosure or corruption, or a crash."
+    },
+    {
+      "file": "src/networking.c",
+      "line": 2772,
+      "summary": "Same comma-operator bug in the redacted branch: the ternary's true operand evaluates to the size_t `sdslen(c->querybuf) - c->qb_pos`, which is converted to a pointer and passed as snprintf's format string.",
+      "failure_scenario": "hide-user-data-from-log=yes and a client triggers a protocol error with at least 128 bytes pending (for example a 200-byte invalid inline request). snprintf gets format pointer (char*)200 and the server segfaults. Turning redaction on gives a remote DoS."
+    },
+    {
+      "file": "src/networking.c",
+      "line": 2771,
+      "summary": "The ternary mixes an integer operand (size_t) with a pointer operand (char*), a pointer/integer type mismatch, and the left operands of the commas are discarded. The compiler warns (-Wunused-value, conditional type mismatch), but the build doesn't fail because WARN lacks -Werror, so the broken code ships silently.",
+      "failure_scenario": "Building with the default WARN=-Wall -W prints 'left-hand operand of comma expression has no effect' and 'pointer/integer type mismatch in conditional expression', yet the binary still builds with the broken format handling described above."
+    },
+    {
+      "file": "src/networking.c",
+      "line": 2771,
+      "summary": "Choosing between two complete format/argument sets with a ternary inside one snprintf call can't work in C. Use an explicit `if (server.hide_user_data_from_log) {...} else {...}` with a separate snprintf call in each branch, or check redaction once before the size branches.",
+      "failure_scenario": "As written, both branches are wrong (see the first two findings). A single redaction check before building `buf`, like showLatestBacklog and logStackContent do, would be correct and simpler, and would avoid duplicating the redaction in two places."
+    },
+    {
+      "file": "src/networking.c",
+      "line": 2769,
+      "summary": "The redaction is inconsistent between branches: the short-buffer branch logs only a constant 'Redacted' string with no byte count, while the long branch tries to log the byte count. It also uses a new marker style, '[hide_user_data_from_log]Redacted', rather than the existing 'hide-user-data-from-log is on, skip logging ...' wording.",
+      "failure_scenario": "An operator grepping logs for the established 'hide-user-data-from-log is on' message misses these entries. Logs for short and long protocol errors carry different information under redaction."
+    },
+    {
+      "file": "src/networking.c",
+      "line": 2768,
+      "summary": "No test covers the protocol-error log with hide-user-data-from-log enabled or with a buffer of 128 bytes or more, so the crash and format-string paths went unnoticed (tests/unit/protocol.tcl has no such case).",
+      "failure_scenario": "Running the existing suite with the default `hide-user-data-from-log no` and short invalid requests never reaches the else-if branch with redaction on, so the segfault and format-string bug pass CI."
+    }
+  ],
+  "result_text": "No CLAUDE.md rule applies to this C change; the user-level file only covers agent tooling. I couldn't compile a test because writing to /tmp needed a permission I don't have, so the first finding is based on C semantics. Its first two entries are one defect with two runtime effects.\n\n```json\n[\n  {\n    \"file\": \"src/networking.c\",\n    \"line\": 2774,\n    \"summary\": \"The parenthesized `(\\\"fmt\\\", args...)` groups inside the ternary are comma-operator expressions, not argument lists, so in the non-redacted branch snprintf's format string becomes the last operand, `c->querybuf + sdslen(c->querybuf) - PROTO_DUMP_LEN/2`. That is attacker-controlled query-buffer data used as a format string, called with no arguments.\",\n    \"failure_scenario\": \"hide-user-data-from-log=no (the default), verbosity is verbose, or the client is the primary. A client sends 128 or more unparsable bytes ending in `%s%s%s%n...` (for example an invalid mbulk count followed by padding). setProtocolError then calls snprintf(buf, 256, <user bytes>), which reads garbage varargs or writes via %n: remote memory disclosure or corruption, or a crash.\"\n  },\n  {\n    \"file\": \"src/networking.c\",\n    \"line\": 2772,\n    \"summary\": \"Same comma-operator bug in the redacted branch: the ternary's true operand evaluates to the size_t `sdslen(c->querybuf) - c->qb_pos`, which is converted to a pointer and passed as snprintf's format string.\",\n    \"failure_scenario\": \"hide-user-data-from-log=yes and a client triggers a protocol error with at least 128 bytes pending (for example a 200-byte invalid inline request). snprintf gets format pointer (char*)200 and the server segfaults. Turning redaction on gives a remote DoS.\"\n  },\n  {\n    \"file\": \"src/networking.c\",\n    \"line\": 2771,\n    \"summary\": \"The ternary mixes an integer operand (size_t) with a pointer operand (char*), a pointer/integer type mismatch, and the left operands of the commas are discarded. The compiler warns (-Wunused-value, conditional type mismatch), but the build doesn't fail because WARN lacks -Werror, so the broken code ships silently.\",\n    \"failure_scenario\": \"Building with the default WARN=-Wall -W prints 'left-hand operand of comma expression has no effect' and 'pointer/integer type mismatch in conditional expression', yet the binary still builds with the broken format handling described above.\"\n  },\n  {\n    \"file\": \"src/networking.c\",\n    \"line\": 2771,\n    \"summary\": \"Choosing between two complete format/argument sets with a ternary inside one snprintf call can't work in C. Use an explicit `if (server.hide_user_data_from_log) {...} else {...}` with a separate snprintf call in each branch, or check redaction once before the size branches.\",\n    \"failure_scenario\": \"As written, both branches are wrong (see the first two findings). A single redaction check before building `buf`, like showLatestBacklog and logStackContent do, would be correct and simpler, and would avoid duplicating the redaction in two places.\"\n  },\n  {\n    \"file\": \"src/networking.c\",\n    \"line\": 2769,\n    \"summary\": \"The redaction is inconsistent between branches: the short-buffer branch logs only a constant 'Redacted' string with no byte count, while the long branch tries to log the byte count. It also uses a new marker style, '[hide_user_data_from_log]Redacted', rather than the existing 'hide-user-data-from-log is on, skip logging ...' wording.\",\n    \"failure_scenario\": \"An operator grepping logs for the established 'hide-user-data-from-log is on' message misses these entries. Logs for short and long protocol errors carry different information under redaction.\"\n  },\n  {\n    \"file\": \"src/networking.c\",\n    \"line\": 2768,\n    \"summary\": \"No test covers the protocol-error log with hide-user-data-from-log enabled or with a buffer of 128 bytes or more, so the crash and format-string paths went unnoticed (tests/unit/protocol.tcl has no such case).\",\n    \"failure_scenario\": \"Running the existing suite with the default `hide-user-data-from-log no` and short invalid requests never reaches the else-if branch with redaction on, so the segfault and format-string bug pass CI.\"\n  }\n]\n```",
+  "stderr": "",
+  "claude_duration_ms": 61276,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.161133,
+  "claude_session_id": "c441b5ae-e463-49fe-8f5d-70d11058f45d",
+  "token_usage": {
+    "input_tokens": 12,
+    "output_tokens": 3832,
+    "cache_read_input_tokens": 93750,
+    "cache_creation_input_tokens": 13139,
+    "total_tokens": 110733,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 12,
+        "outputTokens": 3832,
+        "cacheReadInputTokens": 93750,
+        "cacheCreationInputTokens": 13139,
+        "webSearchRequests": 0,
+        "costUSD": 0.161133,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 1091,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/phase1/transcripts/valkey-io__valkey@36f37c0"
+  }
+}

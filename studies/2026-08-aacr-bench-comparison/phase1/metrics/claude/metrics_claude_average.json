@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "total_instances": 30.0,
+    "candidate_instances": 30.0,
+    "evaluated_instances": 27.0,
+    "missing_instances": 3.0,
+    "expected_notes": 167.0,
+    "generated_notes": 217.0,
+    "matched_line_notes": 70.3333,
+    "matched_semantic_notes": 62.6667,
+    "semantic_match_rate": 0.2887,
+    "line_match_rate": 0.3243,
+    "semantic_recall_rate": 0.375,
+    "line_recall_rate": 0.421,
+    "semantic_f1": 0.3263,
+    "line_f1": 0.3667,
+    "total_duration_seconds": 2686.33,
+    "avg_duration_seconds": 99.49,
+    "total_input_tokens": 9341877.0,
+    "total_output_tokens": 217182.0,
+    "total_tokens": 9559059.0,
+    "avg_input_tokens": 345995.0,
+    "avg_output_tokens": 8044.0
+  },
+  "eval_rounds": 3
+}

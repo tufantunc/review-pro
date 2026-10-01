@@ -1,0 +1,131 @@
+{
+  "instance_id": "laravel__framework@180c25f",
+  "repo": "laravel/framework",
+  "base_commit": "2e5054a19ba55b335bf8df43a8ae7e032244f671",
+  "head_commit": "180c25ff94ae2dff26d2ca5f8bf779af1e8fc8c2",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T02:47:36.468858+00:00",
+  "duration_seconds": 456.15,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "tests/Validation/ValidationEmailRuleTest.php",
+      "line": 331,
+      "summary": "[Medium] The \"escaped quote\" fixture actually contains an escaped backslash and a stray quote, so the intended case is never tested",
+      "failure_scenario": "In a single-quoted PHP string, '\"escaped\\\\\\\"quote\"@example.com' becomes \"escaped\\\\\"quote\"@example.com at runtime: an escaped backslash, then a closing quote, then a bare quote\" (malformed under RFC 5322). The comment says \"escaped quote\", but that case is never tested. The rfcCompliant() pass assertions at lines 331 and 543 lock in an egulias parser leniency, and a stricter egulias release could break them. The native-fail placements at lines 543 and 703 likely hold only because of the escaping mistake. Remedy: write the value as '\"escaped\\\"quote\"@example.com' (one backslash at runtime) and re-check which list it belongs in. Fix lines 543 and 703 the same way, or relabel the current strings accurately."
+    },
+    {
+      "file": "tests/Validation/ValidationEmailRuleTest.php",
+      "line": 341,
+      "summary": "[Medium] 15 hand-written foreach loops repeat iteration the passes()/fails() helpers already do, instead of passing arrays or using a data provider",
+      "failure_scenario": "Four matrix tests repeat the same list-over-two-modes loop 15 times (lines 341, 372, 404, 425, 448, 474, 501, 520, 551, 591, 617, 642, 661, 680, 707). assertValidationRules already does Arr::wrap($values) and loops (lines 72-76), and passes()/fails() are documented as string|array. The file grows from 525 to 928 lines, one address's expected behaviour is spread across several methods, and the first failing address stops the whole method, so the remaining addresses never run. Remedy: convert to a #[DataProvider] matrix (one row per address with the expected result per mode), as in ValidationEnumRuleTest.php:104 and ValidationValidatorTest.php:4519. At minimum, pass the arrays straight to passes()/fails(), though only a data provider fixes the stop-at-first-failure problem."
+    },
+    {
+      "file": "tests/Validation/ValidationEmailRuleTest.php",
+      "line": 567,
+      "summary": "[Medium] The 14-entry \"valid plain address\" list is copied word for word between two test methods, and other inputs are scattered across the matrices",
+      "failure_scenario": "Lines 568-581 repeat lines 355-368 entry for entry, and the diff adds both copies. Other inputs also repeat: 'пример@пример.рф', '例子@例子.公司' and 'name@123.123.123.123' at 469/546/656; 'username@domain-with-hyphen-.com' at 394/468/614; '\"has space\"@example.com' at 107/328/542/699. If an input's classification changes (e.g. after an egulias/email-validator upgrade), every copy has to be found and updated by hand, and the lists will drift apart. Remedy: define the shared plain-address corpus once (a private const or a static provider like ValidationValidatorTest::validUrls at line 4535) and reference it from each matrix test."
+    },
+    {
+      "file": "tests/Validation/ValidationEmailRuleTest.php",
+      "line": 516,
+      "summary": "[Low] The empty \"native passes / RFC fails\" list (// none I could find) feeds a loop that never runs",
+      "failure_scenario": "$emailsThatPassNativeFailRfc is empty, so the loop at lines 520-531 never runs. It looks like coverage of the \"native passes, RFC fails\" case but asserts nothing, and a later divergence in that direction would go uncaught. The first-person draft comment is also left in the framework's test suite. Remedy: delete lines 516-531, or add a real divergent address."
+    },
+    {
+      "file": "tests/Validation/ValidationEmailRuleTest.php",
+      "line": 354,
+      "summary": "[Low] testPassesRfcCompliantButNotRfcCompliantStrict has two \"passes on both\" lists with identical loops, and its name covers only one of its groups",
+      "failure_scenario": "$emailsThatPassOnBothRfcCompliantAndOnStrict (line 354) and $emailsThatPassOnBoth (line 418) are the same category. They run the same pass/pass assertions (loops at 372-382 and 425-435), and both contain 'plainaddress@example.com'. Readers will look for a difference that isn't there. The method name also promises only the \"passes RFC, fails strict\" group. Remedy: merge the four Unicode/punycode entries into the list at line 354, delete lines 418-435, and rename the test to something like testRfcCompliantVsStrict."
+    },
+    {
+      "file": "tests/Validation/ValidationEmailRuleTest.php",
+      "line": 350,
+      "summary": "[Low] The default error message array is written out at every fails() call; the diff raises the count from 30 to 44",
+      "failure_scenario": "['The '.self::ATTRIBUTE_REPLACED.' must be a valid email address.'] is repeated 44 times, so the few calls that pass a different message (testMacro, testValidationMessages) are hard to spot. Changing the translation line in setUp() (line 909) would mean editing 44 places. Remedy: give fails() an $expectedMessages default of null that resolves to a class constant or a defaultMessage() helper, and pass a message only where it differs."
+    },
+    {
+      "file": "tests/Validation/ValidationEmailRuleTest.php",
+      "line": 337,
+      "summary": "[Low] Valid IPv6 literals are mislabelled (\"invalid shorthand IPv6\" for ::, \"unusual short form\" for ::1) inside a list that expects them to pass",
+      "failure_scenario": "'user@[IPv6:::]' is the valid IPv6 unspecified address (RFC 4291 §2.5.2), but its comment calls it invalid, inside the list that asserts rfcCompliant() accepts it. '::1' (loopback) is called an \"unusual IPv6 short form\" at lines 335 and 586. A maintainer who trusts the comment will think the validator wrongly accepts bad input. Remedy: change the comments to \"unspecified IPv6 address (::)\" and \"IPv6 loopback (::1)\", and note that these fail strict mode only because domain literals raise warnings."
+    },
+    {
+      "file": "tests/Validation/ValidationEmailRuleTest.php",
+      "line": 828,
+      "summary": "[Low] Static Email::$defaultCallback and the laravelEmployee macro leak between tests and are never reset in tearDown (pre-existing)",
+      "failure_scenario": "testValidationMessages and testItCanSetDefaultUsing set Email::defaults(preventSpoofing) and never clear it (Email.php:58 is a public static). testItCanSetDefaultUsing line 828 expects no default (the spoof email passes), so it fails when it runs after testValidationMessages, e.g. under --order-by=random. The macro registered at line 795 also persists for the whole process. Remedy: reset Email::$defaultCallback = null in tearDown(), and flush macros after testMacro."
+    },
+    {
+      "file": "tests/Validation/ValidationEmailRuleTest.php",
+      "line": 145,
+      "summary": "[Low] MX-record tests need live DNS, and the expected failures can pass for the wrong reason (pre-existing, renamed in this diff)",
+      "failure_scenario": "The passes() cases for taylor@laravel.com in testValidateMxRecord need network access and laravel.com's MX record, so they fail in offline or sandboxed CI. The fails() cases here and in testCombiningRules (line 734) still pass offline, but then because DNS is unreachable, not because example.com has a null MX record. Remedy: move the DNS cases into a test marked @group network (or skip it when DNS is unavailable), or cover the dns → DNSCheckValidation mapping with a mocked validator, as ValidationValidatorTest.php:4495 does."
+    },
+    {
+      "file": "tests/Validation/ValidationEmailRuleTest.php",
+      "line": 106,
+      "summary": "[Nitpick] Variable name contradicts its value, and comments/docblocks misdescribe their fixtures",
+      "failure_scenario": "$emailThatFailsBothNonStrictButFailsInStrict contradicts itself, and the non-strict side is never asserted in that test. 'name@[127.0.0.1]' is commented as \"Local-part with domain-literal\" (lines 334, 585, 636), but the IP literal is the domain part. The docblock at line 533-536 says the list is mostly accented or Unicode local parts, but most entries are comments, quoted strings, addresses with no TLD, or numeric domains. Readers may misjudge which behaviour is being pinned. Remedy: rename the variable to $emailThatFailsBothNonStrictAndStrict (and assert the non-strict failure), change the comment to \"IPv4 domain literal\", and rewrite the docblock to describe the real entries."
+    },
+    {
+      "file": "tests/Validation/ValidationEmailRuleTest.php",
+      "line": 89,
+      "summary": "[Nitpick] Inconsistent style: trailing commas stripped file-wide but one added; mixed rfcCompliant(true)/rfcCompliant(strict: true); docblocks as inline comments",
+      "failure_scenario": "The diff removes trailing commas from about 60 call sites (churn that StyleCI's laravel preset doesn't require), then adds one at line 89. Lines 649, 669, 687 and 715 use rfcCompliant(true) while elsewhere it is rfcCompliant(strict: true), so readers may wonder whether the two forms differ. /** */ docblocks are used as comments inside method bodies (lines 440, 461, 488, 533, 564, 602). Lines 174 and 180 have ',//' with no space. Remedy: keep the original trailing-comma style, use the named strict: argument throughout, use // for comments inside methods, and fix the comment spacing."
+    }
+  ],
+  "result_text": "## Verdict: REQUEST CHANGES (code)\n\nThe change is test-only: one file, `tests/Validation/ValidationEmailRuleTest.php` (+502/−99). The argument `2e5054a1…` was used as the base, and the diff was taken from its merge base with HEAD, `1472088e`. The tests were not run because `vendor/` is not installed. Any claim about how egulias or `filter_var` behaves at runtime comes from reasoning, not execution.\n\nSpec: skipped, no spec found.\n\nCoverage (self-reported): 1 of 1 changed files examined by at least one reviewer.\n\nVerification: 3 checked (3 stand, 0 partly refuted, 0 refuted), 0 not checked. Spec findings are not verified.\n\nNo `.review-pro/` packs exist at the merge base, so reviewers used their core rubrics only. Reviewers: tests, correctness, craft, dry, ai-antipatterns.\n\n### Medium\n- **[Medium] `tests/Validation/ValidationEmailRuleTest.php:331`: the \"escaped quote\" fixture actually holds an escaped backslash and a stray quote, so the intended case is never tested**\n  - **impact:** in PHP single quotes, `'\"escaped\\\\\\\"quote\"@example.com'` becomes `\"escaped\\\\\"quote\"@example.com`, which is malformed. Lines 331 and 543 assert that `rfcCompliant()` accepts it, which locks in a parser leniency. Lines 543 and 703 expect native validation to reject it, and that likely holds only because of the escaping mistake.\n  - **remedy:** use `'\"escaped\\\"quote\"@example.com'` and decide again which list it belongs in. Fix lines 543 and 703 the same way, or relabel those strings.\n  - flagged by: tests, correctness, ai-antipatterns\n  - verification: verified. Not checked: how egulias and `FILTER_VALIDATE_EMAIL` actually handle these strings, since neither is installed.\n- **[Medium] `tests/Validation/ValidationEmailRuleTest.php:341`: 15 hand-written `foreach` loops repeat what `passes()`/`fails()` already do**\n  - **impact:** the helpers already wrap and loop over arrays (lines 72–76), but the test repeats that loop 15 times. The file grows from 525 to 928 lines, and the first failing address stops the whole method.\n  - **remedy:** use a `#[DataProvider]` matrix, as in `ValidationEnumRuleTest.php:104` and `ValidationValidatorTest.php:4519`, or at least pass the arrays straight to the helpers.\n  - flagged by: craft, dry, tests\n  - verification: verified. Not checked: the estimate of about 150 lines of boilerplate.\n  - noticed (not reviewed): passing arrays to the helpers would still stop at the first failure; only a data provider fixes that.\n- **[Medium] `tests/Validation/ValidationEmailRuleTest.php:567`: the 14-entry plain-address list is copied word for word between two methods (355–368 and 568–581), and other inputs repeat across the matrices**\n  - **impact:** if an upgrade changes how an address is classified, every copy has to be found and edited by hand, and the lists will drift apart.\n  - **remedy:** define the shared corpus once, as a constant or a static provider (precedent: `ValidationValidatorTest::validUrls`, line 4535).\n  - verification: verified. Not checked: whether any egulias upgrade would actually reclassify these inputs.\n  - noticed (not reviewed): most of the other repeated addresses are classified differently in each matrix, so a shared corpus fits only the plain-address list.\n\n### Low\n- **[Low] `:516`: an empty list (`// none I could find`) feeds a loop that never runs.** It asserts nothing. Delete it or add a real case.\n  - flagged by: tests, craft, ai-antipatterns\n- **[Low] `:354`: two \"passes on both\" lists in one method (354 and 418) carry identical loops, and the method name covers only one of its groups.** Merge the lists and rename the test.\n  - flagged by: craft, dry, ai-antipatterns\n- **[Low] `:350`: the default error-message array is repeated 44 times; it was 30 before this change.** Give `fails()` a default message.\n  - flagged by: craft, dry\n- **[Low] `:337`: valid IPv6 literals are mislabelled.** `::` is commented as \"invalid\", and `::1` as an \"unusual short form\", inside a list that expects them to pass. Fix the comments.\n- **[Low] `:828`: `Email::$defaultCallback` and the `laravelEmployee` macro leak between tests.** This was already true before the change. The test depends on run order. Reset them in `tearDown()`.\n- **[Low] `:145`: the MX-record tests need live DNS.** This was already true before the change; the test was only renamed. Offline, the \"fails\" cases pass for the wrong reason. Move them to a network group or mock the DNS check.\n\n### Nitpick\n- **[Nitpick] `:106`: the variable name `$emailThatFailsBothNonStrictButFailsInStrict` contradicts itself, and some comments misdescribe their data.** The `[127.0.0.1]` comment calls a domain literal a local part, and the docblock at 533–536 does not match its list.\n  - flagged by: tests, craft, ai-antipatterns\n- **[Nitpick] `:89`: the style is inconsistent.** The diff removes trailing commas file-wide but adds one here. It mixes `rfcCompliant(true)` with `rfcCompliant(strict: true)`, uses docblocks as inline comments, and has `,//` with no space.\n  - flagged by: craft, ai-antipatterns\n\n### Refuted in verification\nNone.\n\n## Spec\nSkipped: no spec was found. The argument was a base commit, not a spec.\n\nAll 11 findings above were sent to the report tool, one call each.",
+  "stderr": "",
+  "claude_duration_ms": 455027,
+  "claude_num_turns": 39,
+  "claude_cost_usd": 4.645230200000001,
+  "claude_session_id": "088959f6-3e74-4a68-975d-2d9995d33cb7",
+  "token_usage": {
+    "input_tokens": 152,
+    "output_tokens": 101498,
+    "cache_read_input_tokens": 2682591,
+    "cache_creation_input_tokens": 362845,
+    "total_tokens": 3147086,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 152,
+        "outputTokens": 101498,
+        "cacheReadInputTokens": 2682591,
+        "cacheCreationInputTokens": 362845,
+        "webSearchRequests": 0,
+        "costUSD": 4.645230200000001,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 55924,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/laravel__framework@180c25f"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: 2e5054a19ba55b335bf8df43a8ae7e032244f671.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

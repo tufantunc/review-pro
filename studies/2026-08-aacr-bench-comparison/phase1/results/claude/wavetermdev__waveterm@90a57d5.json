@@ -1,0 +1,119 @@
+{
+  "instance_id": "wavetermdev__waveterm@90a57d5",
+  "repo": "wavetermdev/waveterm",
+  "base_commit": "286783fb8e71cec6d2294bd871e5ccf8c798c646",
+  "head_commit": "90a57d552d15f1b2a4d92cdfc3a4308efcf5c57b",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T16:22:36.438458+00:00",
+  "duration_seconds": 100.86,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 286,
+      "summary": "cmd blocks never get their cmd:env, the env file, or WAVETERM_JWT. createCmdStrAndOpts stopped filling cmdOpts.Env and everything now goes only into the swap token, but only the interactive shell rc files (`wsh token $WAVETERM_SWAPTOKEN`) read that token. A cmd block runs `<shell> -c cmdStr` and never sources them.",
+      "failure_scenario": "`wsh run -e FOO=bar -- printenv FOO` (or a cmd block with cmd:env) prints nothing, and any `wsh` call inside a cmd block fails with no JWT. Before this change, StartLocalShellProc set these through UpdateCmdEnv(ecmd, cmdOpts.Env) and SSH set them through session.Setenv."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 359,
+      "summary": "User env keys are now copied into the swap token, and `wsh token` calls EncodeEnvVarsForShell, which fails the whole exchange if any key is not a valid env var name. One bad key throws away every env var, including WAVETERM_JWT.",
+      "failure_scenario": "An env file or cmd:env has a key like `MY-VAR`. `wsh token` returns an error, the rc file's eval gets empty output, the shell starts without WAVETERM_JWT, WAVETERM_BLOCKID or any user env, and wsh is broken in that terminal. Before, exec just set the variable."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 544,
+      "summary": "The SSH branch picks the no-wsh path from conn.WshEnabled.Load() and ignores connUnion.WshEnabled, which includes cmd:nowsh. The WSL branch checks connUnion.WshEnabled, so the two branches disagree.",
+      "failure_scenario": "An SSH block has cmd:nowsh=true on a connection with wsh enabled. It still takes the wsh path: it mints a JWT, calls StartRemoteShellProc and injects the swap token. Meanwhile ShellType was never computed (getRemoteInfoAndShellType returned early), so the init-script cascade drops the shell-specific keys."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 401,
+      "summary": "getRemoteInfoAndShellType returns early when wsh is disabled, even for local connections, so ShellPath stays empty. Line 583 then passes that empty ShellPath to cmdOpts, and term:localshellpath (block meta or settings) is ignored.",
+      "failure_scenario": "A local block with cmd:nowsh=true and term:localshellpath=/usr/local/bin/fish now starts the auto-detected default shell instead of fish. The old code applied the local shell path whether or not wsh was on."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 412,
+      "summary": "For SSH and WSL, the shell type used to pick the init script comes only from remoteInfo.Shell. It ignores cmdOpts.ShellPath and conn:shellpath (GetConfigShellPath), which StartRemoteShellProc and StartWslShellProc use first to pick the shell that actually launches.",
+      "failure_scenario": "The remote login shell is bash but conn:shellpath is zsh. ShellType resolves to bash, so the swap token carries cmd:initscript.bash, and that bash script then runs inside the zsh session that actually starts."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 252,
+      "summary": "resolveEnvMap takes connName but never uses it, and createCmdStrAndOpts reads cmd:cwd only at the top level. The new MetaTSType comment says cmd:env and cmd:cwd can be nested under \"[conn]\", but no per-connection override is applied.",
+      "failure_scenario": "Block meta `{\"[myhost]\": {\"cmd:env\": {\"FOO\": \"1\"}}}` on connection myhost: FOO is never set. Only cmd:initscript* honors GetConnectionOverride."
+    },
+    {
+      "file": "pkg/shellexec/shellexec.go",
+      "line": 258,
+      "summary": "StartWslShellProc used to fail with \"no jwt token provided\" when there was no JWT. Now a PackForClient error is only logged and the shell starts anyway without WAVETERM_SWAPTOKEN, silently losing wsh integration and env.",
+      "failure_scenario": "Packing the swap token fails. The WSL shell launches with no token and no JWT, and wsh commands fail later instead of the start reporting an error. The SSH (line 432) and local (line 512) paths behave the same way."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 356,
+      "summary": "An error reading the block env file used to abort the start. It is now only logged, and the process starts without the user's env.",
+      "failure_scenario": "The filestore read times out (2s ctx) or fails. The shell or command runs without its configured environment, and the only trace is a server-log line the user never sees."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 406,
+      "summary": "getConnUnion adds a RemoteGetInfoCommand RPC (2s timeout) to every SSH/WSL shell start. StartRemoteShellProc and StartWslShellProc then make the same RPC again.",
+      "failure_scenario": "Each SSH/WSL block start or restart now does two identical connserver round trips. This adds latency and doubles the chance of hitting the 2s timeout. The remoteInfo from getConnUnion could be passed through instead."
+    },
+    {
+      "file": "pkg/wslconn/wslconn.go",
+      "line": 120,
+      "summary": "The new WslConn.Debugf calls blocklogger.Infof instead of blocklogger.Debugf (SSHConn.Debugf uses Debugf). The packed swap token, a credential that can be exchanged for a JWT, is therefore logged at info level.",
+      "failure_scenario": "Every WSL shell start writes \"packed swaptoken <base64>\" into the block's info-level conndebug log (shellexec.go:262), where it shows up even when debug logging is off."
+    }
+  ],
+  "result_text": "```json\n[\n  {\n    \"file\": \"pkg/blockcontroller/blockcontroller.go\",\n    \"line\": 286,\n    \"summary\": \"cmd blocks never get their cmd:env, the env file, or WAVETERM_JWT. createCmdStrAndOpts stopped filling cmdOpts.Env and everything now goes only into the swap token, but only the interactive shell rc files (`wsh token $WAVETERM_SWAPTOKEN`) read that token. A cmd block runs `<shell> -c cmdStr` and never sources them.\",\n    \"failure_scenario\": \"`wsh run -e FOO=bar -- printenv FOO` (or a cmd block with cmd:env) prints nothing, and any `wsh` call inside a cmd block fails with no JWT. Before this change, StartLocalShellProc set these through UpdateCmdEnv(ecmd, cmdOpts.Env) and SSH set them through session.Setenv.\"\n  },\n  {\n    \"file\": \"pkg/blockcontroller/blockcontroller.go\",\n    \"line\": 359,\n    \"summary\": \"User env keys are now copied into the swap token, and `wsh token` calls EncodeEnvVarsForShell, which fails the whole exchange if any key is not a valid env var name. One bad key throws away every env var, including WAVETERM_JWT.\",\n    \"failure_scenario\": \"An env file or cmd:env has a key like `MY-VAR`. `wsh token` returns an error, the rc file's eval gets empty output, the shell starts without WAVETERM_JWT, WAVETERM_BLOCKID or any user env, and wsh is broken in that terminal. Before, exec just set the variable.\"\n  },\n  {\n    \"file\": \"pkg/blockcontroller/blockcontroller.go\",\n    \"line\": 544,\n    \"summary\": \"The SSH branch picks the no-wsh path from conn.WshEnabled.Load() and ignores connUnion.WshEnabled, which includes cmd:nowsh. The WSL branch checks connUnion.WshEnabled, so the two branches disagree.\",\n    \"failure_scenario\": \"An SSH block has cmd:nowsh=true on a connection with wsh enabled. It still takes the wsh path: it mints a JWT, calls StartRemoteShellProc and injects the swap token. Meanwhile ShellType was never computed (getRemoteInfoAndShellType returned early), so the init-script cascade drops the shell-specific keys.\"\n  },\n  {\n    \"file\": \"pkg/blockcontroller/blockcontroller.go\",\n    \"line\": 401,\n    \"summary\": \"getRemoteInfoAndShellType returns early when wsh is disabled, even for local connections, so ShellPath stays empty. Line 583 then passes that empty ShellPath to cmdOpts, and term:localshellpath (block meta or settings) is ignored.\",\n    \"failure_scenario\": \"A local block with cmd:nowsh=true and term:localshellpath=/usr/local/bin/fish now starts the auto-detected default shell instead of fish. The old code applied the local shell path whether or not wsh was on.\"\n  },\n  {\n    \"file\": \"pkg/blockcontroller/blockcontroller.go\",\n    \"line\": 412,\n    \"summary\": \"For SSH and WSL, the shell type used to pick the init script comes only from remoteInfo.Shell. It ignores cmdOpts.ShellPath and conn:shellpath (GetConfigShellPath), which StartRemoteShellProc and StartWslShellProc use first to pick the shell that actually launches.\",\n    \"failure_scenario\": \"The remote login shell is bash but conn:shellpath is zsh. ShellType resolves to bash, so the swap token carries cmd:initscript.bash, and that bash script then runs inside the zsh session that actually starts.\"\n  },\n  {\n    \"file\": \"pkg/blockcontroller/blockcontroller.go\",\n    \"line\": 252,\n    \"summary\": \"resolveEnvMap takes connName but never uses it, and createCmdStrAndOpts reads cmd:cwd only at the top level. The new MetaTSType comment says cmd:env and cmd:cwd can be nested under \\\"[conn]\\\", but no per-connection override is applied.\",\n    \"failure_scenario\": \"Block meta `{\\\"[myhost]\\\": {\\\"cmd:env\\\": {\\\"FOO\\\": \\\"1\\\"}}}` on connection myhost: FOO is never set. Only cmd:initscript* honors GetConnectionOverride.\"\n  },\n  {\n    \"file\": \"pkg/shellexec/shellexec.go\",\n    \"line\": 258,\n    \"summary\": \"StartWslShellProc used to fail with \\\"no jwt token provided\\\" when there was no JWT. Now a PackForClient error is only logged and the shell starts anyway without WAVETERM_SWAPTOKEN, silently losing wsh integration and env.\",\n    \"failure_scenario\": \"Packing the swap token fails. The WSL shell launches with no token and no JWT, and wsh commands fail later instead of the start reporting an error. The SSH (line 432) and local (line 512) paths behave the same way.\"\n  },\n  {\n    \"file\": \"pkg/blockcontroller/blockcontroller.go\",\n    \"line\": 356,\n    \"summary\": \"An error reading the block env file used to abort the start. It is now only logged, and the process starts without the user's env.\",\n    \"failure_scenario\": \"The filestore read times out (2s ctx) or fails. The shell or command runs without its configured environment, and the only trace is a server-log line the user never sees.\"\n  },\n  {\n    \"file\": \"pkg/blockcontroller/blockcontroller.go\",\n    \"line\": 406,\n    \"summary\": \"getConnUnion adds a RemoteGetInfoCommand RPC (2s timeout) to every SSH/WSL shell start. StartRemoteShellProc and StartWslShellProc then make the same RPC again.\",\n    \"failure_scenario\": \"Each SSH/WSL block start or restart now does two identical connserver round trips. This adds latency and doubles the chance of hitting the 2s timeout. The remoteInfo from getConnUnion could be passed through instead.\"\n  },\n  {\n    \"file\": \"pkg/wslconn/wslconn.go\",\n    \"line\": 120,\n    \"summary\": \"The new WslConn.Debugf calls blocklogger.Infof instead of blocklogger.Debugf (SSHConn.Debugf uses Debugf). The packed swap token, a credential that can be exchanged for a JWT, is therefore logged at info level.\",\n    \"failure_scenario\": \"Every WSL shell start writes \\\"packed swaptoken <base64>\\\" into the block's info-level conndebug log (shellexec.go:262), where it shows up even when debug logging is off.\"\n  }\n]\n```",
+  "stderr": "",
+  "claude_duration_ms": 99572,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.5181276,
+  "claude_session_id": "c146672b-146f-4c4d-afa9-5d4a159bc298",
+  "token_usage": {
+    "input_tokens": 22,
+    "output_tokens": 8281,
+    "cache_read_input_tokens": 408748,
+    "cache_creation_input_tokens": 54134,
+    "total_tokens": 471185,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 22,
+        "outputTokens": 8281,
+        "cacheReadInputTokens": 408748,
+        "cacheCreationInputTokens": 54134,
+        "webSearchRequests": 0,
+        "costUSD": 0.5181276,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 3801,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/phase1/transcripts/wavetermdev__waveterm@90a57d5"
+  }
+}

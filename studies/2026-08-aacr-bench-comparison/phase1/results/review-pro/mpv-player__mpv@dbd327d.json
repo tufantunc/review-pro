@@ -1,0 +1,89 @@
+{
+  "instance_id": "mpv-player__mpv@dbd327d",
+  "repo": "mpv-player/mpv",
+  "base_commit": "30869ddb904f800ad1b858ac99c5fb81690f0cb7",
+  "head_commit": "dbd327d36fd0dc80ebd6e5517c102a92e31a0836",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T21:57:06.419237+00:00",
+  "duration_seconds": 167.34,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "misc/random.c",
+      "line": 90,
+      "summary": "[Medium] new mp_rand_in_range32() has no test for its bounds or edge ranges",
+      "failure_scenario": "Impact: no test covers range==1 (mask 0), exact power-of-two, non-power-of-two (rejection loop), range > 2^31 (relies on mp_round_next_power_of_2 returning 0 and the mask wrapping to UINT32_MAX), or min > 0. playlist_shuffle uses the result directly as an index into pl->entries, so a future off-by-one in the mask or offset would read out of bounds undetected. Remedy: add test/random.c linked with test_utils (misc/random.c is already in test_utils_files). With a fixed seed, loop over (0,1), (5,6), (0,8), (3,11), (0,7), (0,UINT32_MAX), (UINT32_MAX-1,UINT32_MAX) asserting min <= r < max, and bucket-count a small range to check every value appears."
+    },
+    {
+      "file": "misc/random.c",
+      "line": 44,
+      "summary": "[Medium] PRNG refactor to caller-held state has no fixed-seed test for the seeded path",
+      "failure_scenario": "Impact: with a nonzero seed, mp_rand_seed/mp_rand_next are deterministic but nothing pins their output. A mistake in moving the state (wrong index, missing update) would still produce random-looking numbers and go unnoticed, and the [0,1) range of mp_rand_next_double is unchecked. Remedy: add tests asserting the same seed gives identical sequences, different seeds differ, the first few outputs for a fixed seed are pinned, and 0.0 <= d < 1.0 over many draws. Guard seed-dependent checks with #ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION, since that build forces the seed to 42."
+    },
+    {
+      "file": "misc/random.h",
+      "line": 48,
+      "summary": "[Low] mp_rand_next_double() has no callers left and should be deleted",
+      "failure_scenario": "Impact: its only caller (playlist shuffle) now uses mp_rand_in_range32(), yet the function was rewritten and kept in the public header. It is unused code that still has to be maintained, and it uses the slightly biased float-scaling approach this change moved away from, which invites the next caller to pick it over the unbiased helper. Remedy: remove mp_rand_next_double() from misc/random.h and misc/random.c; add it back only when a real caller needs a double."
+    },
+    {
+      "file": "player/main.c",
+      "line": 33,
+      "summary": "[Low] Unused include of misc/random.h left after the mp_rand_seed(0) call was removed",
+      "failure_scenario": "Impact: the change removes the only use of the random module in player/main.c, so the include points to a dependency that no longer exists and misleads anyone looking for where global PRNG seeding happens (osdep/io.c has the same unused include, but it predates this change). Remedy: remove #include \"misc/random.h\" from player/main.c, and optionally from osdep/io.c in a separate cleanup."
+    }
+  ],
+  "result_text": "I recorded all 4 findings from the report above with the report tool (2 Medium, 2 Low). Nothing was refuted in verification, so nothing was left out.\n\nThe verdict is **REQUEST CHANGES**, and only because the new random-number code has no tests. No bugs or security problems turned up.\n\nA few things about how the review ran:\n- **Merge base:** the base commit you gave (`30869dd`) resolves to merge base `5ba7ee5`, and the diff was taken from there.\n- **Stack signals:** the repo has no `.review-pro/` directory at the merge base, so reviewers used their built-in checklists only.\n- **Reviewers:** correctness, security, craft and tests. No spec was found, so the spec check was skipped.\n- **Verification:** an independent verifier checked both Medium findings and both stand. The two Low findings weren't checked because verification only covers Medium and above.",
+  "stderr": "",
+  "claude_duration_ms": 166244,
+  "claude_num_turns": 22,
+  "claude_cost_usd": 1.6447966,
+  "claude_session_id": "56b256f2-d997-4228-ad27-ab416abb8db6",
+  "token_usage": {
+    "input_tokens": 74,
+    "output_tokens": 24312,
+    "cache_read_input_tokens": 925208,
+    "cache_creation_input_tokens": 162728,
+    "total_tokens": 1112322,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 74,
+        "outputTokens": 24312,
+        "cacheReadInputTokens": 925208,
+        "cacheCreationInputTokens": 162728,
+        "webSearchRequests": 0,
+        "costUSD": 1.6447966,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 5434,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/mpv-player__mpv@dbd327d"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: 30869ddb904f800ad1b858ac99c5fb81690f0cb7.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

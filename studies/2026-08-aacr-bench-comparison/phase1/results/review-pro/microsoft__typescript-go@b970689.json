@@ -1,0 +1,149 @@
+{
+  "instance_id": "microsoft__typescript-go@b970689",
+  "repo": "microsoft/typescript-go",
+  "base_commit": "bc3195e0f2727d11a48ed9fc61f37a90c9b7deb4",
+  "head_commit": "b970689fe86e0b6ef4f5285b18343ddf16b294eb",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T21:06:29.107125+00:00",
+  "duration_seconds": 762.56,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "internal/parser/reparser.go",
+      "line": 120,
+      "summary": "[High] JSDoc @import with no import clause panics the parser on nil ImportClause",
+      "failure_scenario": "A JS file containing `/** @import \"./foo\" */` (or a half-typed `/** @import */`) above a statement: parseImportTag's tryParseImportClause returns nil (parser.go:2199-2204), and reparser.go:120 calls importTag.ImportClause.Clone, dereferencing nil (ast.go:216) → nil-pointer panic in ParseSourceFile, crashing compiler/language server. Fix: guard `if importTag.ImportClause == nil { break }` like the typedef branch (or support a nil clause) and add a test."
+    },
+    {
+      "file": "internal/parser/reparser.go",
+      "line": 123,
+      "summary": "[High] Synthetic import shares children with JSDoc tag; setJSDocParents re-parents them, causing GetExternalModuleName panic",
+      "failure_scenario": "`/** @import { Foo } from \"./types\" */ const x = 1;` — the shallow-cloned clause, ModuleSpecifier and Attributes are shared; the JSImportDeclaration is bound first, then the const host's setJSDocParents (binder.go:757, recursive SetParentInChildren) re-points them to the JSDocImportTag. getTargetOfImportSpecifier (checker.go:~13800) calls GetExternalModuleName(JSDocImportTag), whose case this PR removed → panic \"Unhandled case\"; namespace imports panic via getModuleSpecifierFromNode. Existing tests only place tags above functions (bound first). Fix: deep-clone clause/specifier/attributes for the synthetic node, or skip re-parenting JSDocImportTag children; add tests with @import above const/class."
+    },
+    {
+      "file": "internal/ast/ast.go",
+      "line": 4056,
+      "summary": "[Medium] UpdateImportDeclaration/Clone drop KindJSImportDeclaration, unlike the ExportAssignment precedent",
+      "failure_scenario": "Any VisitEachChild/Update/Clone of a JSImportDeclaration returns a KindImportDeclaration, so it bypasses the `case KindJSImportDeclaration: node = nil` in esmodule.go/commonjsmodule.go and can be emitted as a runtime import; currently masked only because typeeraser removes the always-type-only clause first. Fix: use `newImportOrJSImportDeclaration(node.Kind, ...)` in both UpdateImportDeclaration and ImportDeclaration.Clone, as ast.go:4355/4369 do."
+    },
+    {
+      "file": "internal/ast/utilities.go",
+      "line": 2553,
+      "summary": "[Medium] Nested @import no longer module-resolved and reported as misplaced import (TS1473)",
+      "failure_scenario": "`function f() { /** @import { Foo } from \"./types\" */ let y; }` — parseListIndex (parser.go:478) splices the JSImportDeclaration into the block; collectModuleReferences only walks top-level statements and the removed JSDocImportTag branch of ForEachDynamicImportOrRequireCall was the only nested collector, so the module is never added to file.Imports; checkImportDeclaration reports TS1473 and bails; the alias is bound to the block/class scope instead of the file. Fix: hoist JSDoc imports to the SourceFile (like Strada's jsDocImports) or keep collecting nested ones and skip the grammar-context check for reparsed nodes; add tests."
+    },
+    {
+      "file": "internal/checker/checker.go",
+      "line": 4933,
+      "summary": "[Medium] False TS1363 on valid `@import Foo, { I }` and duplicate TS2857 under es2015 (baselines lock them in)",
+      "failure_scenario": "checkJs users writing valid JSDoc `@import Foo, { I } from \"./a\"` get TS1363 which tsc does not emit (importTag16), and under module=es2015 get TS2857 alongside TS2823 because checkImportAttributes doesn't return after TS2823 (importTag15); the synthetic node's forced IsTypeOnly routes it through TS `import type` grammar checks. Fix: skip TS1363/TS2857 type-only checks for KindJSImportDeclaration (mirror Strada's checkJSDocImportTag) and regenerate so the .diff baselines disappear."
+    },
+    {
+      "file": "testdata/baselines/reference/submodule/conformance/importTag16.types",
+      "line": 16,
+      "summary": "[Medium] Accepted .types baselines print `default` instead of `Foo` for default-imported types",
+      "failure_scenario": "importTag3/importTag16 previously matched Strada; now `@import Foo from \"./a\"` types print as `default` (visible in hover/quick info/error messages), and new .types.diff files silently accept the regression because JS tests auto-land in submoduleAccepted. Fix: name the alias symbol for the reparsed default import after its local name so the .diff files go away, or explicitly record it as a known gap."
+    },
+    {
+      "file": "internal/ast/ast.go",
+      "line": 4080,
+      "summary": "[Low] No IsAnyImportDeclaration/IsJSImportDeclaration predicate; IsImportDeclaration callers not audited",
+      "failure_scenario": "~30 sites hand-list both kinds and existing ast.IsImportDeclaration callers (emitresolver.go:148 now walks into JS imports, checker.go:14330, utilities.go:1492, completions.go:2279, ls/utilities.go:198) silently exclude the new kind, so future call sites are likely to miss it. Fix: add IsJSImportDeclaration/IsAnyImportDeclaration mirroring ast.go:4380-4386, use them in the || chains, and audit each IsImportDeclaration caller."
+    },
+    {
+      "file": "internal/ast/kind.go",
+      "line": 384,
+      "summary": "[Low] New kind 348 sent over API but TS client SyntaxKind/childProperties unaware; ProtocolVersion not bumped",
+      "failure_scenario": "API clients reading a JS file with @import decode kind 348 as SyntheticReferenceExpression in _packages/ast, and with no childProperties entry RemoteNode.getNamedChild throws \"Expected only one child\" when accessing importClause/moduleSpecifier; ProtocolVersion stays 1 (mirror already stale before this PR, packages private). Fix: sync _packages/ast syntaxKind enum and childProperties, and bump encoder.ProtocolVersion or generate the TS enum from kind.go."
+    },
+    {
+      "file": "internal/transformers/commonjsmodule.go",
+      "line": 66,
+      "summary": "[Low] New KindJSImportDeclaration emit-path branches have no emit coverage",
+      "failure_scenario": "Nothing verifies that a JS file with @import emits no require/import and no __importStar/__importDefault helpers or __esModule marker; no .js baseline exists for any @import test, and the harness skips allowJs emit baselines (js_emit_baseline.go:27-29), so the suggested compiler-runner test would not help. Fix: add a Go-level transformer unit test (or lift the harness allowJs emit restriction) asserting the emitted JS for @import named/namespace/default forms."
+    },
+    {
+      "file": "internal/transformers/typeeraser.go",
+      "line": 258,
+      "summary": "[Low] JS-import arms in later transformers are dead and contradictory",
+      "failure_scenario": "The type eraser always runs first and removes every reparsed @import via its type-only clause, so the new KindJSImportDeclaration arms in importelision, esnext, externalmoduleinfo (which would treat it as a real external import) and module transformers (which drop it) are unreachable and inconsistent; elision silently depends on IsTypeOnly. Fix: elide KindJSImportDeclaration explicitly in typeeraser's `return nil` arm alongside KindJSExportAssignment, and remove the dead arms."
+    },
+    {
+      "file": "internal/parser/reparser.go",
+      "line": 123,
+      "summary": "[Low] importTag.Modifiers() is always nil and IsTypeOnly=true is redundant",
+      "failure_scenario": "JSDocImportTag has no ModifiersBase so importTag.Modifiers() always returns nil (misleading), and parseImportTag already builds the clause with isTypeOnly=true so reparser.go:122 is a no-op that implies a nonexistent invariant. Fix: pass `nil /*modifiers*/` or drop the parameter from NewJSImportDeclaration like NewJSExportAssignment, and delete the redundant IsTypeOnly assignment."
+    },
+    {
+      "file": "testdata/baselines/reference/submodule/conformance/importTag17.errors.txt",
+      "line": 1,
+      "summary": "[Low] importTag17 baseline still ignores resolution-mode on @import but reads like progress",
+      "failure_scenario": "`@import { Import } from 'foo' with { 'resolution-mode': 'import' }` now yields TS2305/TS2749 instead of Strada's TS2322 because resolution-mode is not honored (pre-existing gap); the regenerated diff swaps one wrong result for another and can look like a partial fix. Fix: mark it as a known gap in the PR, or wire the resolution-mode override into resolution for KindJSImportDeclaration and re-baseline."
+    },
+    {
+      "file": "internal/transformers/commonjsmodule.go",
+      "line": 66,
+      "summary": "[Nitpick] Duplicate `node = nil` cases for JSImportDeclaration and JSExportAssignment",
+      "failure_scenario": "commonjsmodule.go and esmodule.go each have two separate one-line cases dropping JS-only synthetic nodes; a future JS-only kind would need another copy. Fix: merge into `case ast.KindJSImportDeclaration, ast.KindJSExportAssignment: node = nil` with a short comment in both files."
+    },
+    {
+      "file": "internal/ast/ast.go",
+      "line": 1673,
+      "summary": "[Nitpick] Stale JSDocImportTag references in comments after its handling was removed",
+      "failure_scenario": "The AnyValidImportOrReExport comment still lists JSDocImportTag and binder.go:1595 keeps a bindJSDocImportTag placeholder, misdescribing which nodes carry module specifiers. Fix: replace JSDocImportTag with JSImportDeclaration in the comment and delete the stale binder placeholder."
+    }
+  ],
+  "result_text": "I sent all 14 findings from the report to the findings tool, one call each (2 High, 4 Medium, 6 Low, 2 Nitpick). Nothing was refuted in verification, so nothing was left out. The High findings were checked by reading code, not by running it.",
+  "stderr": "",
+  "claude_duration_ms": 214545,
+  "claude_num_turns": 24,
+  "claude_cost_usd": 10.2560722,
+  "claude_session_id": "58f5d50b-19ac-4809-8c8f-5f1fc1cdacf3",
+  "token_usage": {
+    "input_tokens": 476,
+    "output_tokens": 171709,
+    "cache_read_input_tokens": 11993901,
+    "cache_creation_input_tokens": 798093,
+    "total_tokens": 12964179,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 476,
+        "outputTokens": 171709,
+        "cacheReadInputTokens": 11993901,
+        "cacheCreationInputTokens": 798093,
+        "webSearchRequests": 0,
+        "costUSD": 10.2560722,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 58604,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/microsoft__typescript-go@b970689"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: bc3195e0f2727d11a48ed9fc61f37a90c9b7deb4.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

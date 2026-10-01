@@ -1,0 +1,143 @@
+{
+  "instance_id": "ollama__ollama@b6002f6",
+  "repo": "ollama/ollama",
+  "base_commit": "92b96d54efd6b49322b7cf046f9a0dc16b00cd0a",
+  "head_commit": "b6002f6b6c69370f8c18a9e6c1cafa8463273a6b",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T21:47:48.851820+00:00",
+  "duration_seconds": 553.37,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "ml/backend/ggml/ggml.go",
+      "line": 1035,
+      "summary": "[High] Ints() reads a placeholder pointer during the memory-fit pass, so llama4 loads and mllama-with-vision loads fail",
+      "failure_scenario": "Every load starts with a Fit pass with AllocMemory=false (llm/server.go:709, runner.go:1204). FromIntSlice writes no data (ggml.go:931), and the no_alloc CPU input buffer gives the tensor a non-NULL placeholder base near 0x20 (ggml-backend.cpp:135-137). Ints() wraps that address in a Go slice. llama4 TextModel.Forward (temperature tuning on by default, model_text.go:204/222) ranges over it, and EncoderCache.StartForward (encoder.go:94, mllama with an image in the reserve graph) indexes it, so the load fails. Remedy: don't read tensor data when the buffer is no_alloc or not host memory (check allocMemory / ggml_backend_buffer_is_host), or keep the host []int32 positions on input.Batch for Go-side consumers. Add a Fit-mode reserve test."
+    },
+    {
+      "file": "ml/backend/ggml/ggml.go",
+      "line": 1029,
+      "summary": "[High] The new ggml Tensor.Ints() and the CPU-memory fallback in Bytes()/Floats() have no tests",
+      "failure_scenario": "Every forward pass reads positions through this path (kvcache/causal.go:203-204). ml/ has no _test.go and no test builds a real ggml tensor, so these can regress silently: the sync==nil branch, the nil-return branch (curBatchSize 0), the aliasing behaviour, and allocMemory=false tensors. Remedy: add ml/backend/ggml/ggml_test.go with a tiny GGUF (fs/ggml.WriteGGUF, as in llm/memory_test.go:37) and a CPU backend. Assert Ints/Floats/Bytes round-trips, that zero-length tensors don't panic, and the post-Compute values."
+    },
+    {
+      "file": "kvcache/causal_test.go",
+      "line": 675,
+      "summary": "[Medium] The test double's Ints() ignores dtype and always copies, which hides ggml's aliasing and dtype behaviour",
+      "failure_scenario": "ggml's Ints() reinterprets raw bits, aliases CPU memory and can return nil. The fake converts float to int32 for any dtype, always returns a fresh copy and never returns nil. A wrong-dtype Positions tensor, an aliasing bug or the nil case would pass the kvcache tests and fail in production. Remedy: make testTensor.Ints() fail when dtype != DTypeI32, and add a Causal test with empty Positions."
+    },
+    {
+      "file": "kvcache/encoder.go",
+      "line": 94,
+      "summary": "[Medium] The EncoderCache and WrapperCache unwind paths now read Positions.Ints() and have no test",
+      "failure_scenario": "kvcache/ has only causal_test.go, and it never sets Multimodal or uses the Wrapper/Encoder caches. The changed mllama cross-attention position lookup and the WrapperCache rollback (wrapper.go:50) are never exercised, so a regression there goes unnoticed. Remedy: add an EncoderCache test (Positions {0,1,2}, Multimodal Index 2, assert curPos==2) and a WrapperCache test where the second cache fails StartForward, asserting the first cache's cells were removed."
+    },
+    {
+      "file": "ml/backend/ggml/ggml.go",
+      "line": 1029,
+      "summary": "[Medium] Ints() is a copy of Floats(), and the sync/CPU-fallback logic now exists three times",
+      "failure_scenario": "Bytes/Floats/Ints share the same body, and the copies already disagree on ownership (Bytes copies, Floats/Ints alias). Any fix, such as the &data[0] panic on an empty tensor, must be made three times and can be missed in one of them. Remedy: extract one generic helper tensorData[T any](t *Tensor) []T (Go 1.24) with a single ownership rule, and make each accessor a one-line call to it."
+    },
+    {
+      "file": "ml/backend/ggml/ggml.go",
+      "line": 1037,
+      "summary": "[Medium] On the CPU path, Ints()/Floats() return C-owned memory, while the sync path and Bytes() return copies",
+      "failure_scenario": "On the CPU path, Floats()/Ints() return an unsafe.Slice view of a buffer that Context.Close() frees (ggml.go:960-962). Before this change Floats() returned only Go-owned memory or nil. The interface (ml/backend.go:402-404) documents none of this, and there is no dtype check. Causal stores the view in c.curPositions; any caller that keeps or writes the slice later gets a use-after-free or silently mutates the input tensor. Remedy: copy in the CPU branch (make + copy), or document the borrowed lifetime and add a separately named view method. Assert the dtype."
+    },
+    {
+      "file": "model/input/input.go",
+      "line": 59,
+      "summary": "[Medium] Host positions are uploaded to a tensor, then read back by every CPU consumer",
+      "failure_scenario": "The runner builds a []int32, uploads it (runner.go:582), and causal.go:203, encoder.go:94, wrapper.go:50 and llama4/model_text.go:222 read it back via Ints(). kvcache now depends on input tensors living in CPU memory; if they don't, Ints() returns nil or garbage without an error. The change also forced Ints() onto ml.Tensor and made tests wrap every slice, while Sequences stays []int. Remedy: keep the host []int32 as the source of truth next to a model-facing tensor, or pass the host positions to Cache.StartForward separately."
+    },
+    {
+      "file": "runner/ollamarunner/runner.go",
+      "line": 582,
+      "summary": "[Medium] Batch-tensor construction and the Outputs.Dim(0)-based vocabSize are untested",
+      "failure_scenario": "No test covers the iBatch bookkeeping, the Positions/Outputs tensors, vocabSize from Outputs.Dim(0) (:711), or the Arange for Outputs (:1070). cache_test.go uses a mockCache and never builds a batch. A mismatched iBatch or a wrong vocabSize split would sample from the wrong logits row with no failing test. Remedy: extract batch assembly into a helper that takes an ml.Context and test it with a fake context, asserting Positions, Outputs and iBatch for two sequences of different lengths."
+    },
+    {
+      "file": "ml/backend/ggml/ggml.go",
+      "line": 1007,
+      "summary": "[Low] The Bytes()/Floats() fallback treats a non-nil ggml_get_data as host memory, which breaks ml.Dump's \"nil means not computed\" check",
+      "failure_scenario": "ggml_get_data returns tensor->data for any buffer. For GPU-resident tensors with sync==nil, GoBytes/unsafe.Slice read a device address and crash. ml.Dump (ml/backend.go:567) no longer computes the tensor first, so it prints stale data or crashes. Remedy: take the fallback only when ggml_backend_buffer_is_host(t.t.buffer) is true and the buffer is not no_alloc; otherwise return nil."
+    },
+    {
+      "file": "model/model.go",
+      "line": 285,
+      "summary": "[Low] model.Forward now panics on a nil Positions instead of returning its validation error",
+      "failure_scenario": "A zero-value input.Batch used to return \"batch size cannot be less than 1\". Now batch.Positions.Dim(0) dereferences a nil interface and panics. Remedy: add `if batch.Positions == nil { return nil, errors.New(\"batch size cannot be less than 1\") }` before the Dim checks."
+    },
+    {
+      "file": "model/model.go",
+      "line": 285,
+      "summary": "[Low] The rewritten length/empty-batch validation in Forward has no test",
+      "failure_scenario": "The guard now relies on Dim(0) of a tensor, and model_test.go never calls model.Forward. A regression in the mismatch check or the empty-batch check would go unnoticed. Remedy: add table cases for Positions dim 3 with 2 sequences (mismatch error) and Positions dim 0 (batch-size error)."
+    },
+    {
+      "file": "kvcache/wrapper.go",
+      "line": 50,
+      "summary": "[Low] Positions are read back with Ints() at four call sites, and inside the unwind loop, even though the runner already built them",
+      "failure_scenario": "The same host data is read back four times (causal.go:203, encoder.go:94, wrapper.go:50 once per outer-loop iteration, llama4/model_text.go:222). If the tensor is not CPU-resident, each read does another sync and copy. Remedy: hoist Ints() out of the j loop, or keep the runner's []int32 next to the tensor as one canonical slice."
+    },
+    {
+      "file": "model/models/mllama/model.go",
+      "line": 110,
+      "summary": "[Low] mllama keeps the old exploded TextModel.Forward signature while the other models moved to taking batch",
+      "failure_scenario": "After a change meant to clean up the model interface, mllama is the only multimodal text model still taking batch fields as loose arguments. The next person adding a field to input.Batch has two conventions to follow. Remedy: change it to Forward(ctx, batch input.Batch, crossAttentionStates, cache *kvcache.WrapperCache) and drop the always-nil crossAttentionMask."
+    }
+  ],
+  "result_text": "The review verdict is **BLOCK**, and all 13 findings from the final report went through the report tool: 2 High, 6 Medium and 5 Low. There were no spec findings, because no spec was found; there are no `.review-pro` packs or rules at the merge base, and `gh` was not available to read a PR body.\n\nThe blocking issue is at `ml/backend/ggml/ggml.go:1035`. Every model load starts with a memory-fit pass that doesn't allocate real memory. In that pass, the new `Tensor.Ints()` returns a slice over a fake pointer near address 0x20. llama4 (every load, since temperature tuning is on by default) and mllama (when an image is in the reserve graph) then read from that slice, so the load fails. The fix is either to stop `Ints()` reading unallocated or non-host buffers, or to keep a plain `[]int32` copy of the positions on `input.Batch` for the kvcache and llama4 code that reads them.\n\nThe other High finding is that `Ints()` and the new CPU-memory fallback in `Bytes()`/`Floats()` have no tests at all.\n\nAll 23 changed files were read by at least one reviewer. The 8 Medium-and-above findings were each checked by an independent verifier and all 8 held up. Those verifiers ran the diff command themselves rather than getting the diff text in their prompt.",
+  "stderr": "",
+  "claude_duration_ms": 552193,
+  "claude_num_turns": 45,
+  "claude_cost_usd": 7.958517599999996,
+  "claude_session_id": "3c6844df-c3ef-497d-be89-0b5db9c73b4f",
+  "token_usage": {
+    "input_tokens": 380,
+    "output_tokens": 139228,
+    "cache_read_input_tokens": 7386813,
+    "cache_creation_input_tokens": 666775,
+    "total_tokens": 8193196,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 380,
+        "outputTokens": 139228,
+        "cacheReadInputTokens": 7386813,
+        "cacheCreationInputTokens": 666775,
+        "webSearchRequests": 0,
+        "costUSD": 7.958517599999996,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 48453,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/ollama__ollama@b6002f6"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: 92b96d54efd6b49322b7cf046f9a0dc16b00cd0a.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

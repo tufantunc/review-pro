@@ -1,0 +1,155 @@
+{
+  "instance_id": "browser-use__browser-use@aab7b3b",
+  "repo": "browser-use/browser-use",
+  "base_commit": "515b94225aa86c40dc2c20034055ab8bcc88c6ae",
+  "head_commit": "aab7b3bb54e2b15ee3b32ad7de74c91fc8b22f52",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T02:06:28.850389+00:00",
+  "duration_seconds": 412.04,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "browser_use/browser/browser.py",
+      "line": 91,
+      "summary": "[High] browser_class Literal still accepts firefox/webkit, but every launch now passes channel='chrome'",
+      "failure_scenario": "Impact: BrowserConfig(browser_class='firefox' or 'webkit') still validates and builds per-engine args (browser.py:265-279). The launch at :281-284 passes channel='chrome' to the firefox/webkit launchers with no guard, and patchright targets Chromium only. Two advertised values can no longer launch, and nothing rejects them before runtime. Remedy: narrow the Literal to 'chromium' or add a validator with a clear error, or pass channel only when browser_class == 'chromium'."
+    },
+    {
+      "file": "browser_use/browser/browser.py",
+      "line": 283,
+      "summary": "[High] Default Browser() launch hard-codes channel='chrome', requiring system Google Chrome while install docs still say `playwright install chromium`",
+      "failure_scenario": "Impact: the built-in launch path is the default when no cdp/wss/binary path is set (browser.py:296-306). It now requests branded Chrome stable with no config option to opt out. README.md:33, docs/quickstart.mdx:38 and the notebook install only bundled Chromium via playwright, so on CI, Docker or any machine without Chrome the first Agent run fails. Remedy: add a BrowserConfig.channel option or fall back to bundled Chromium, pass the channel only for chromium, and update the install docs to `patchright install chrome`."
+    },
+    {
+      "file": "browser_use/browser/context.py",
+      "line": 413,
+      "summary": "[High] The new kwargs logic in _create_context has no test",
+      "failure_scenario": "Impact: the fixed no_viewport=True / user_agent / bypass_csp call is replaced by three conditional branches. No test checks what browser.new_context receives, and nothing under tests/ calls _create_context. Regressions in viewport, user-agent or CSP-bypass handling would ship unnoticed. Remedy: add a parametrized test in tests/test_context.py with an AsyncMock new_context over headless x user_agent x disable_security, asserting on new_context.call_args.kwargs."
+    },
+    {
+      "file": "browser_use/agent/service.py",
+      "line": 261,
+      "summary": "[Medium] Agent overwrites the user's new_context_config.disable_security by mutating the injected Browser's config",
+      "failure_scenario": "Impact: both flags default to False. A user who sets only BrowserContextConfig(disable_security=True) has it silently reset to False and loses bypass_csp/ignore_https_errors (context.py:423). The write changes the caller's shared BrowserConfig, which also affects later browser.new_context() calls (browser.py:127). It runs even when a browser_context is injected, and only the Agent path does this sync. Remedy: don't mutate the injected config. Derive the effective value (e.g. model_copy), or propagate only when the field wasn't set explicitly via a BrowserConfig model_validator, or read self.browser.config.disable_security in _create_context."
+    },
+    {
+      "file": "browser_use/agent/service.py",
+      "line": 261,
+      "summary": "[Medium] The new disable_security sync in Agent.__init__ has no test",
+      "failure_scenario": "Impact: this line decides whether Agent-created contexts get the CSP/HTTPS bypass and overwrites values the caller set explicitly. No test covers it or its precedence, so a broken sync or an unwanted overwrite ships silently. Remedy: add Agent tests with a mocked LLM for both precedence directions (BrowserConfig(disable_security=True), and BrowserConfig(False) with a context config of True), asserting agent.browser_context.config.disable_security."
+    },
+    {
+      "file": "browser_use/browser/browser.py",
+      "line": 127,
+      "summary": "[Medium] The no-argument path of new_context() changed, but only the explicit-config path is tested",
+      "failure_scenario": "Impact: test_new_context_creation (tests/test_browser.py:234) passes an explicit config only. The fixed fallback to self.config.new_context_config, used in docs and fixtures, has no regression test. Remedy: call browser_obj.new_context() with no argument and assert context.config is browser_obj.config.new_context_config."
+    },
+    {
+      "file": "browser_use/browser/browser.py",
+      "line": 283,
+      "summary": "[Medium] Nothing checks the new channel='chrome' launch kwarg, and the existing launch mocks reject extra kwargs",
+      "failure_scenario": "Impact: the mocks at tests/test_browser.py:24 and :196 are `launch(self, headless, args, proxy=None)`. The handle_* kwargs already broke them before this change, and channel adds another, so the builtin-launch tests raise TypeError before their assertions. No test asserts the channel, which is also passed for firefox/webkit. Remedy: give the dummy launch a **kwargs parameter, assert kwargs.get('channel') == 'chrome' for chromium, and add a firefox case for the intended behaviour."
+    },
+    {
+      "file": "browser_use/browser/context.py",
+      "line": 413,
+      "summary": "[Medium] Headed mode lost no_viewport=True and now gets the library's default emulated viewport",
+      "failure_scenario": "Impact: the headed window is launched at screen size (browser.py:244-254), but the context no longer sets no_viewport. A fixed emulated viewport (likely 1280x720) sits inside a larger window, which affects screenshots, viewport_expansion filtering and scroll math, and record_video_size no longer matches. BrowserContextConfig.no_viewport (context.py:147) is still never read. Remedy: pass no_viewport=True in headed mode and respect self.config.no_viewport; set viewport=browser_window_size only for headless."
+    },
+    {
+      "file": "browser_use/browser/context.py",
+      "line": 447,
+      "summary": "[Medium] Removing the attachShadow open-mode override hides closed shadow-DOM content from DOM extraction",
+      "failure_scenario": "Impact: buildDomTree.js:977 walks shadow trees only through node.shadowRoot, which is null for closed roots. Elements inside closed shadow roots (web components, consent/login widgets) no longer appear in the DOM tree the LLM sees, so the agent can't target them. Remedy: keep the attachShadow override, or switch to CDP DOM.describeNode with pierce: true. If dropping it for stealth is deliberate, document the lost coverage."
+    },
+    {
+      "file": "browser_use/controller/registry/views.py",
+      "line": 3,
+      "summary": "[Medium] Public Page/ElementHandle/BrowserContext types moved from playwright to patchright with no compatibility note",
+      "failure_scenario": "Impact: page_filter callbacks and get_current_page() now use patchright classes. examples/custom-functions/action_filters.py:23 and tests/test_action_filters.py:4 still use playwright's Page. User isinstance(page, playwright Page) checks and `except playwright.async_api.TimeoutError` handlers stop matching, and because playwright stays installed nothing surfaces at import time. Remedy: re-export the driver types from a browser_use module, update the example and test imports, and document the switch (exceptions included) in the release notes."
+    },
+    {
+      "file": "pyproject.toml",
+      "line": 19,
+      "summary": "[Medium] Patchright added but playwright kept as a runtime dependency; partial swap with no single alias module",
+      "failure_scenario": "Impact: no browser_use runtime module imports playwright any more. Only tests and examples do (tests/test_browser.py:6, tests/test_action_filters.py:4, examples/custom-functions/action_filters.py:23). Every install pulls two driver stacks, the install docs set up browsers for the copy the library no longer uses, and the driver choice is hard-coded in 7 modules. Remedy: add one internal driver-alias module, move the remaining imports to it, drop playwright from the runtime deps (or keep it only as a dev extra), and update the install docs."
+    },
+    {
+      "file": "browser_use/browser/browser.py",
+      "line": 92,
+      "summary": "[Low] browser_binary_path move from alias= to validation_alias= has no test",
+      "failure_scenario": "Impact: nothing checks that the legacy chrome_instance_path / browser_instance_path names, or the field name itself, still populate browser_binary_path, so an alias regression would go unseen. Remedy: add a parametrized test over the three names asserting BrowserConfig(**{name: '/x/chrome'}).browser_binary_path == '/x/chrome'."
+    },
+    {
+      "file": "browser_use/browser/context.py",
+      "line": 154,
+      "summary": "[Low] user_agent now defaults to None: headless sends the native HeadlessChrome UA, and docs still show the old default",
+      "failure_scenario": "Impact: headless contexts now send Chrome's default user agent containing 'HeadlessChrome', which makes detection easier and works against this anti-detection change. The docstring at context.py:93 and docs/customize/browser-settings.mdx:122 still document the Chrome/85 string as the default. Remedy: in headless mode with no user agent configured, derive one with HeadlessChrome replaced by Chrome, and update the docstring and docs to say None."
+    },
+    {
+      "file": "browser_use/browser/context.py",
+      "line": 423,
+      "summary": "[Low] Conditional dict-splat replaces two plain boolean kwargs (same behaviour) beside a separate kwargs dict",
+      "failure_scenario": "Impact: the splat behaves exactly like the old bypass_csp=disable_security / ignore_https_errors=disable_security, despite the commit's \"fix CSP\" claim. One new_context call now uses three different idioms to pass arguments, and no_viewport=False is redundant once viewport is set, so it is harder to see what gets passed. Remedy: build every conditional option in the one kwargs dict (an `if self.config.disable_security:` block), drop no_viewport=False, and pass **kwargs once."
+    },
+    {
+      "file": "browser_use/browser/context.py",
+      "line": 446,
+      "summary": "[Low] Stale \"anti-detection scripts\" comment; patchright logger not silenced",
+      "failure_scenario": "Impact: only a notifications-permission shim remains under the \"Expose anti-detection scripts\" comment, which misleads anyone looking for where stealth is handled. browser_use/logging_config.py:118 silences only the 'playwright' logger, so patchright's logging may no longer be suppressed. Remedy: update the comment to describe the shim (or move the shim to a named constant), and add 'patchright' to the silenced loggers."
+    }
+  ],
+  "result_text": "The review verdict is **BLOCK**, driven by the code findings; the spec check was skipped. It found 15 problems: 3 High, 8 Medium and 4 Low. All 15 are recorded through the findings tool, one call each.\n\n**High, all three confirmed by independent verifiers:**\n- **Every launch now needs Google Chrome installed** (`browser_use/browser/browser.py:283`). The default `Browser()` passes `channel='chrome'`, but the README and quickstart still tell users to run `playwright install chromium`. On machines without Chrome, such as most CI and Docker setups, the first run fails.\n- **Firefox and WebKit no longer work** (`browser_use/browser/browser.py:91`). The config still accepts them, but the same hard-coded Chrome channel is passed to their launchers too.\n- **The new context-creation logic has no test** (`browser_use/browser/context.py:413`). This covers the viewport, user-agent and security-bypass branches.\n\n**Main Medium findings:**\n- **`Agent` overwrites the user's `disable_security` setting** (`browser_use/agent/service.py:261`). It changes the context-level value on the browser's config, which the caller may share.\n- **The page no longer fills the window in visible-browser mode.** It now gets the library's default viewport, probably 1280x720, instead.\n- **Elements inside closed shadow DOM disappear from what the agent sees**, because the script that forced shadow roots open was removed.\n- **Public `Page` and exception types now come from patchright**, so user code written against playwright's types stops matching.\n- **`pyproject.toml` lists both `patchright` and `playwright`** as runtime dependencies.\n- **Test gaps:** the disable_security sync, the no-argument `new_context()` path and the new launch kwarg have no tests. The existing launch mocks also can't accept the new kwarg.\n\n**What the review could and couldn't check:**\n- All 11 changed files were examined, by the reviewers' own account. Six reviewers ran (correctness, API contract, security, tests, AI anti-patterns, maintainability). Security found nothing.\n- Of the 11 findings at Medium or above, the top 8 were checked by independent verifiers and all 8 held up. The other 3 (closed shadow DOM, public type switch, dual dependency) went unverified because of the 8-finding cap.\n- Some library behaviour is unconfirmed because patchright isn't installed and web access was denied. This includes the exact launch error without Chrome, whether Firefox/WebKit reject the Chrome channel, and the exact default viewport size.\n- No spec was available. The PR body couldn't be fetched because `gh` needed approval, and the commit messages reference no issues.",
+  "stderr": "",
+  "claude_duration_ms": 410437,
+  "claude_num_turns": 46,
+  "claude_cost_usd": 4.553466200000002,
+  "claude_session_id": "15bfa315-4f5a-461d-865e-b6c368cedbb2",
+  "token_usage": {
+    "input_tokens": 214,
+    "output_tokens": 89076,
+    "cache_read_input_tokens": 2942661,
+    "cache_creation_input_tokens": 375977,
+    "total_tokens": 3407928,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 214,
+        "outputTokens": 89076,
+        "cacheReadInputTokens": 2942661,
+        "cacheCreationInputTokens": 375977,
+        "webSearchRequests": 0,
+        "costUSD": 4.553466200000002,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 24715,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/browser-use__browser-use@aab7b3b"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: 515b94225aa86c40dc2c20034055ab8bcc88c6ae.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

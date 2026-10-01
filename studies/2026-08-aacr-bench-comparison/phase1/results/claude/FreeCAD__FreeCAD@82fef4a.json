@@ -1,0 +1,119 @@
+{
+  "instance_id": "FreeCAD__FreeCAD@82fef4a",
+  "repo": "FreeCAD/FreeCAD",
+  "base_commit": "ab225f5672cbe45404299437d1613c308b68900b",
+  "head_commit": "82fef4a22503dd3affdd39e7120b6f71e9423f86",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T16:09:44.825947+00:00",
+  "duration_seconds": 85.38,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1868,
+      "summary": "NoOpEntityResolver::resolveEntity returns nullptr, which in Xerces means 'fall back to default resolution', not 'block'; the resolver does nothing and its comment 'Block all external entity resolution' is false.",
+      "failure_scenario": "A user.cfg with <!DOCTYPE x [<!ENTITY e SYSTEM \"file:///etc/passwd\">]> is only blocked by the older setDisableDefaultEntityResolution(true) call. If that flag is removed or changed later (for example, copying this pattern into ProjectFile.cpp or Metadata.cpp, which do not set it), the resolver returns null, Xerces opens the URI, and the XXE comes back. To really block, return an empty MemBufInputSource (e.g. `new MemBufInputSource(nullptr, 0, systemId)`)."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1886,
+      "summary": "The XML hardening covers only external entities and still allows internal-entity expansion attacks (billion laughs), because no Xerces SecurityManager is set.",
+      "failure_scenario": "A parameter or preference-pack .cfg file with nested internal <!ENTITY> definitions (lol1..lol9) expands exponentially during parser->parse(), so FreeCAD runs out of memory or hangs at startup or on 'import preference pack'. Fix: parser->setSecurityManager(&secMgr) with an expansion limit, or reject DOCTYPE entirely."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1863,
+      "summary": "The hardening is a one-off special case in ParameterManager instead of a shared, hardened parser factory; other untrusted-XML parsers in the codebase stay unprotected.",
+      "failure_scenario": "src/App/ProjectFile.cpp:242 (XercesDOMParser on FCStd Document.xml from arbitrary downloaded files), src/App/Metadata.cpp:144 (package.xml from addons) and src/Base/Reader.cpp:78 (SAX2 reader for documents) set up no entity resolver, entity-resolution restriction or security manager. The attack surface with the most exposure (opening a malicious .FCStd) is left open while the user config file gets hardened."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1915,
+      "summary": "Parse failures reported through the ErrorHandler (fatalError/error) are never checked. errReporter->getSawErrors() and parser->getErrorCount() are ignored, so a malformed document is treated as success.",
+      "failure_scenario": "A truncated or corrupted user.cfg (e.g. a crash mid-save) makes Xerces call fatalError() and stop without throwing. errorsOccurred stays false, adoptDocument() returns the partial DOM, and LoadDocument returns 1 with parameters silently lost. Callers like ParameterGrp::importFrom (line 289), which rely on != 1 to detect failure, go ahead with half-read data."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1919,
+      "summary": "_pDocument is overwritten without deleting the previous document, unlike CreateDocument (line 2046), so every reload of an already-loaded manager leaks the old DOM tree.",
+      "failure_scenario": "PreferencePackManager.cpp:127 calls GetUserParameter().LoadDocument(backup) on the live user parameter manager, and Application.cpp:3035 loads a template into _pcUserParamMngr. The previous DOMDocument, which can be MBs for a large user.cfg, is leaked each time."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1863,
+      "summary": "NoOpEntityResolver is defined at global namespace with external linkage in a .cpp file instead of inside an anonymous namespace.",
+      "failure_scenario": "If any other translation unit linked into FreeCADBase or a module defines a class of the same common name with a different layout or vtable, you get an ODR violation: undefined behavior, where the wrong vtable or inline resolveEntity can be picked at link time without any diagnostic."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1879,
+      "summary": "The declaration order makes parser outlive entityBlocker and errReporter: unique_ptrs destroy in reverse order, so errReporter and entityBlocker are freed while the parser still holds raw pointers to them.",
+      "failure_scenario": "While ~XercesDOMParser runs, its fErrorHandler and fEntityResolver point at freed objects. Any Xerces version or code path that reports or resolves during cleanup (e.g. scanner reset or grammar cleanup) becomes a use-after-free. Declaring the handler and resolver before the parser, or using stack objects, removes the risk."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1914,
+      "summary": "On a late throw after adoptDocument (no root element, or root group not found), _pDocument is left pointing at the new invalid document and _pGroupNode keeps pointing into the old, now-orphaned tree.",
+      "failure_scenario": "Loading a well-formed XML file whose root isn't FCParamGroup 'Root' throws XMLBaseException after _pDocument has been replaced. The caller catches it (e.g. DlgRevertToBackupConfigImp), later saves, and SaveDocument writes the foreign document over user.cfg, while the group handles still modify the old tree, which is not what gets saved."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1880,
+      "summary": "Heap-allocating the resolver and error reporter with make_unique is unnecessary; the stack objects already used by the sibling CheckDocument (line 2091, `DOMTreeErrorReporter errHandler;`) are simpler.",
+      "failure_scenario": "Three extra heap allocations and a destruction-order hazard for objects whose lifetime is exactly this function's scope. `XercesDOMParser parser; NoOpEntityResolver resolver; DOMTreeErrorReporter reporter;` does the same job with no allocation."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1911,
+      "summary": "The mechanical std::endl -> \"\\n\" swap left an odd `\"...parsing\\n \" << \"\\n\"` (a trailing space then two newlines) and is inconsistent with the std::endl used everywhere else in the same file (lines 1841, 1858, 2140).",
+      "failure_scenario": "The catch-all path prints an extra blank line with a stray space. It is also a pointless change, since std::cerr is unit-buffered anyway, and it leaves mixed conventions within the one file."
+    }
+  ],
+  "result_text": "I found 8 issues in this diff. The most important one: the new `NoOpEntityResolver` doesn't block anything, despite what its comment says. External entities are only blocked by the existing `setDisableDefaultEntityResolution(true)` call. Findings 4, 5 and 8 are older bugs in the edited `LoadDocument` function, not changes made by this diff. No CLAUDE.md applies to these files; the only one is `~/.claude/CLAUDE.md`, and nothing in it covers this code.\n\n```json\n[\n  {\n    \"file\": \"src/Base/Parameter.cpp\",\n    \"line\": 1868,\n    \"summary\": \"NoOpEntityResolver::resolveEntity returns nullptr, which in Xerces means 'fall back to default resolution', not 'block'; the resolver does nothing and its comment 'Block all external entity resolution' is false.\",\n    \"failure_scenario\": \"A user.cfg with <!DOCTYPE x [<!ENTITY e SYSTEM \\\"file:///etc/passwd\\\">]> is only blocked by the older setDisableDefaultEntityResolution(true) call. If that flag is removed or changed later (for example, copying this pattern into ProjectFile.cpp or Metadata.cpp, which do not set it), the resolver returns null, Xerces opens the URI, and the XXE comes back. To really block, return an empty MemBufInputSource (e.g. `new MemBufInputSource(nullptr, 0, systemId)`).\"\n  },\n  {\n    \"file\": \"src/Base/Parameter.cpp\",\n    \"line\": 1886,\n    \"summary\": \"The XML hardening covers only external entities and still allows internal-entity expansion attacks (billion laughs), because no Xerces SecurityManager is set.\",\n    \"failure_scenario\": \"A parameter or preference-pack .cfg file with nested internal <!ENTITY> definitions (lol1..lol9) expands exponentially during parser->parse(), so FreeCAD runs out of memory or hangs at startup or on 'import preference pack'. Fix: parser->setSecurityManager(&secMgr) with an expansion limit, or reject DOCTYPE entirely.\"\n  },\n  {\n    \"file\": \"src/Base/Parameter.cpp\",\n    \"line\": 1863,\n    \"summary\": \"The hardening is a one-off special case in ParameterManager instead of a shared, hardened parser factory; other untrusted-XML parsers in the codebase stay unprotected.\",\n    \"failure_scenario\": \"src/App/ProjectFile.cpp:242 (XercesDOMParser on FCStd Document.xml from arbitrary downloaded files), src/App/Metadata.cpp:144 (package.xml from addons) and src/Base/Reader.cpp:78 (SAX2 reader for documents) set up no entity resolver, entity-resolution restriction or security manager. The attack surface with the most exposure (opening a malicious .FCStd) is left open while the user config file gets hardened.\"\n  },\n  {\n    \"file\": \"src/Base/Parameter.cpp\",\n    \"line\": 1915,\n    \"summary\": \"Parse failures reported through the ErrorHandler (fatalError/error) are never checked. errReporter->getSawErrors() and parser->getErrorCount() are ignored, so a malformed document is treated as success.\",\n    \"failure_scenario\": \"A truncated or corrupted user.cfg (e.g. a crash mid-save) makes Xerces call fatalError() and stop without throwing. errorsOccurred stays false, adoptDocument() returns the partial DOM, and LoadDocument returns 1 with parameters silently lost. Callers like ParameterGrp::importFrom (line 289), which rely on != 1 to detect failure, go ahead with half-read data.\"\n  },\n  {\n    \"file\": \"src/Base/Parameter.cpp\",\n    \"line\": 1919,\n    \"summary\": \"_pDocument is overwritten without deleting the previous document, unlike CreateDocument (line 2046), so every reload of an already-loaded manager leaks the old DOM tree.\",\n    \"failure_scenario\": \"PreferencePackManager.cpp:127 calls GetUserParameter().LoadDocument(backup) on the live user parameter manager, and Application.cpp:3035 loads a template into _pcUserParamMngr. The previous DOMDocument, which can be MBs for a large user.cfg, is leaked each time.\"\n  },\n  {\n    \"file\": \"src/Base/Parameter.cpp\",\n    \"line\": 1863,\n    \"summary\": \"NoOpEntityResolver is defined at global namespace with external linkage in a .cpp file instead of inside an anonymous namespace.\",\n    \"failure_scenario\": \"If any other translation unit linked into FreeCADBase or a module defines a class of the same common name with a different layout or vtable, you get an ODR violation: undefined behavior, where the wrong vtable or inline resolveEntity can be picked at link time without any diagnostic.\"\n  },\n  {\n    \"file\": \"src/Base/Parameter.cpp\",\n    \"line\": 1879,\n    \"summary\": \"The declaration order makes parser outlive entityBlocker and errReporter: unique_ptrs destroy in reverse order, so errReporter and entityBlocker are freed while the parser still holds raw pointers to them.\",\n    \"failure_scenario\": \"While ~XercesDOMParser runs, its fErrorHandler and fEntityResolver point at freed objects. Any Xerces version or code path that reports or resolves during cleanup (e.g. scanner reset or grammar cleanup) becomes a use-after-free. Declaring the handler and resolver before the parser, or using stack objects, removes the risk.\"\n  },\n  {\n    \"file\": \"src/Base/Parameter.cpp\",\n    \"line\": 1914,\n    \"summary\": \"On a late throw after adoptDocument (no root element, or root group not found), _pDocument is left pointing at the new invalid document and _pGroupNode keeps pointing into the old, now-orphaned tree.\",\n    \"failure_scenario\": \"Loading a well-formed XML file whose root isn't FCParamGroup 'Root' throws XMLBaseException after _pDocument has been replaced. The caller catches it (e.g. DlgRevertToBackupConfigImp), later saves, and SaveDocument writes the foreign document over user.cfg, while the group handles still modify the old tree, which is not what gets saved.\"\n  },\n  {\n    \"file\": \"src/Base/Parameter.cpp\",\n    \"line\": 1880,\n    \"summary\": \"Heap-allocating the resolver and error reporter with make_unique is unnecessary; the stack objects already used by the sibling CheckDocument (line 2091, `DOMTreeErrorReporter errHandler;`) are simpler.\",\n    \"failure_scenario\": \"Three extra heap allocations and a destruction-order hazard for objects whose lifetime is exactly this function's scope. `XercesDOMParser parser; NoOpEntityResolver resolver; DOMTreeErrorReporter reporter;` does the same job with no allocation.\"\n  },\n  {\n    \"file\": \"src/Base/Parameter.cpp\",\n    \"line\": 1911,\n    \"summary\": \"The mechanical std::endl -> \\\"\\\\n\\\" swap left an odd `\\\"...parsing\\\\n \\\" << \\\"\\\\n\\\"` (a trailing space then two newlines) and is inconsistent with the std::endl used everywhere else in the same file (lines 1841, 1858, 2140).\",\n    \"failure_scenario\": \"The catch-all path prints an extra blank line with a stray space. It is also a pointless change, since std::cerr is unit-buffered anyway, and it leaves mixed conventions within the one file.\"\n  }\n]\n```",
+  "stderr": "",
+  "claude_duration_ms": 84000,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.259831,
+  "claude_session_id": "76833847-26cb-42a9-9987-51ebc708ed10",
+  "token_usage": {
+    "input_tokens": 14,
+    "output_tokens": 6375,
+    "cache_read_input_tokens": 136375,
+    "cache_creation_input_tokens": 21000,
+    "total_tokens": 163764,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 14,
+        "outputTokens": 6375,
+        "cacheReadInputTokens": 136375,
+        "cacheCreationInputTokens": 21000,
+        "webSearchRequests": 0,
+        "costUSD": 0.259831,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 2382,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/phase1/transcripts/FreeCAD__FreeCAD@82fef4a"
+  }
+}

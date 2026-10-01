@@ -1,0 +1,95 @@
+{
+  "instance_id": "filamentphp__filament@d47632c",
+  "repo": "filamentphp/filament",
+  "base_commit": "ce4d9d08df41142ff219bb3dc44968084eaae0dc",
+  "head_commit": "d47632c0583bac481d4ce7cc9b6b1711d0f8e0fc",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T01:29:51.364269+00:00",
+  "duration_seconds": 83.08,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "packages/support/src/helpers.php",
+      "line": 187,
+      "summary": "The new MySQL/MariaDB branch builds `lower(json_extract(field, path))` without `json_unquote`, so the search runs against the JSON-encoded text (with surrounding quotes and escapes), not the actual value. A plain `data->name` search uses Laravel's `json_unquote(json_extract(...))`, so the two paths behave differently.",
+      "failure_scenario": "Forced case-insensitive search on `data->name` where the stored value is `O\"Brien`. MySQL compares against the text `\"o\\\"brien\"`, so searching `o\"brien` finds nothing. Searching for a single `\"` or `\\` matches every row because every string value is wrapped in quotes. Values with escaped control characters (newline, tab) also fail to match what the user typed."
+    },
+    {
+      "file": "packages/support/src/helpers.php",
+      "line": 185,
+      "summary": "The fix uses `invade()` to call the grammar's protected `wrapJsonFieldAndPath()` and hides the error with `@phpstan-ignore-line`. The grammar's public `wrap($column)` already turns `a->b` into the right driver-specific JSON selector (`json_unquote(json_extract(...))` on MySQL/MariaDB).",
+      "failure_scenario": "This depends on a protected, internal Laravel method whose signature or return shape can change in any minor release. When it changes, PHPStan won't warn because the whole line is ignored, and the code then fails at runtime. `$databaseConnection->getQueryGrammar()->wrap($column)` does the same job through a public API and also adds the missing unquote."
+    },
+    {
+      "file": "packages/support/src/helpers.php",
+      "line": 184,
+      "summary": "The JSON-path fix only covers mysql/mariadb. SQLite and PostgreSQL still put the raw `data->name` into a raw `lower(...)` expression, so the root cause (a JSON column path used inside a raw SQL expression without going through the grammar) is still there for those drivers.",
+      "failure_scenario": "On SQLite with forced case-insensitivity, a column `data->name` becomes `lower(data->name)`. SQLite reads `name` as a column, so the query fails with 'no such column' or returns wrong results. On pgsql, where case-insensitivity is forced by default, `data->name` becomes `lower(data->name::text)`, which also reads `name` as a column. Wrapping JSON paths with the grammar before the driver-specific transforms would fix every driver."
+    },
+    {
+      "file": "packages/support/src/helpers.php",
+      "line": 184,
+      "summary": "`str_contains($column, '->')` matches any column string that contains `->`, including raw expressions or MySQL's shorthand `col->'$.path'`/`col->>'$.path'`, and sends them to `wrapJsonFieldAndPath`, which mangles them.",
+      "failure_scenario": "A search column `data->>'$.name'` or `data->'$.name'` (valid MySQL shorthand) is split at the first `->`. That produces a path like `'$.\">'$.name'\"'` or `'$.\"'$\".\"name'\"'`, so the query matches nothing or raises a JSON path syntax error."
+    },
+    {
+      "file": "packages/support/src/helpers.php",
+      "line": 185,
+      "summary": "`/** @phpstan-ignore-line */` silences every PHPStan error on the line, including errors on the destructuring and the `invade` call, when only the protected-method access needed suppressing.",
+      "failure_scenario": "If `wrapJsonFieldAndPath` is renamed or starts returning something other than a 2-element array, PHPStan reports nothing. The list destructuring then sets `$field`/`$path` to null at runtime and produces `json_extract()` with no arguments, which is invalid SQL."
+    },
+    {
+      "file": "packages/support/src/helpers.php",
+      "line": 180,
+      "summary": "On MySQL the default case-insensitivity check only looks for `json_extract(` in the original column. A `data->name` column therefore defaults to not-forced, and the new JSON handling only runs when the user explicitly forces case-insensitivity, even though a plain `data->name` search is also case-sensitive (the JSON text uses the utf8mb4_bin collation).",
+      "failure_scenario": "A MySQL table column `searchable()` on `data->name` without `forceSearchCaseInsensitive()` still runs a case-sensitive `json_unquote(json_extract(...)) like '%john%'`, so it misses `John`. The fix only helps users who opt in, unlike the translatable plugin's `json_extract(` columns, which default to forced."
+    }
+  ],
+  "result_text": "```json\n[\n  {\n    \"file\": \"packages/support/src/helpers.php\",\n    \"line\": 187,\n    \"summary\": \"The new MySQL/MariaDB branch builds `lower(json_extract(field, path))` without `json_unquote`, so the search runs against the JSON-encoded text (with surrounding quotes and escapes), not the actual value. A plain `data->name` search uses Laravel's `json_unquote(json_extract(...))`, so the two paths behave differently.\",\n    \"failure_scenario\": \"Forced case-insensitive search on `data->name` where the stored value is `O\\\"Brien`. MySQL compares against the text `\\\"o\\\\\\\"brien\\\"`, so searching `o\\\"brien` finds nothing. Searching for a single `\\\"` or `\\\\` matches every row because every string value is wrapped in quotes. Values with escaped control characters (newline, tab) also fail to match what the user typed.\"\n  },\n  {\n    \"file\": \"packages/support/src/helpers.php\",\n    \"line\": 185,\n    \"summary\": \"The fix uses `invade()` to call the grammar's protected `wrapJsonFieldAndPath()` and hides the error with `@phpstan-ignore-line`. The grammar's public `wrap($column)` already turns `a->b` into the right driver-specific JSON selector (`json_unquote(json_extract(...))` on MySQL/MariaDB).\",\n    \"failure_scenario\": \"This depends on a protected, internal Laravel method whose signature or return shape can change in any minor release. When it changes, PHPStan won't warn because the whole line is ignored, and the code then fails at runtime. `$databaseConnection->getQueryGrammar()->wrap($column)` does the same job through a public API and also adds the missing unquote.\"\n  },\n  {\n    \"file\": \"packages/support/src/helpers.php\",\n    \"line\": 184,\n    \"summary\": \"The JSON-path fix only covers mysql/mariadb. SQLite and PostgreSQL still put the raw `data->name` into a raw `lower(...)` expression, so the root cause (a JSON column path used inside a raw SQL expression without going through the grammar) is still there for those drivers.\",\n    \"failure_scenario\": \"On SQLite with forced case-insensitivity, a column `data->name` becomes `lower(data->name)`. SQLite reads `name` as a column, so the query fails with 'no such column' or returns wrong results. On pgsql, where case-insensitivity is forced by default, `data->name` becomes `lower(data->name::text)`, which also reads `name` as a column. Wrapping JSON paths with the grammar before the driver-specific transforms would fix every driver.\"\n  },\n  {\n    \"file\": \"packages/support/src/helpers.php\",\n    \"line\": 184,\n    \"summary\": \"`str_contains($column, '->')` matches any column string that contains `->`, including raw expressions or MySQL's shorthand `col->'$.path'`/`col->>'$.path'`, and sends them to `wrapJsonFieldAndPath`, which mangles them.\",\n    \"failure_scenario\": \"A search column `data->>'$.name'` or `data->'$.name'` (valid MySQL shorthand) is split at the first `->`. That produces a path like `'$.\\\">'$.name'\\\"'` or `'$.\\\"'$\\\".\\\"name'\\\"'`, so the query matches nothing or raises a JSON path syntax error.\"\n  },\n  {\n    \"file\": \"packages/support/src/helpers.php\",\n    \"line\": 185,\n    \"summary\": \"`/** @phpstan-ignore-line */` silences every PHPStan error on the line, including errors on the destructuring and the `invade` call, when only the protected-method access needed suppressing.\",\n    \"failure_scenario\": \"If `wrapJsonFieldAndPath` is renamed or starts returning something other than a 2-element array, PHPStan reports nothing. The list destructuring then sets `$field`/`$path` to null at runtime and produces `json_extract()` with no arguments, which is invalid SQL.\"\n  },\n  {\n    \"file\": \"packages/support/src/helpers.php\",\n    \"line\": 180,\n    \"summary\": \"On MySQL the default case-insensitivity check only looks for `json_extract(` in the original column. A `data->name` column therefore defaults to not-forced, and the new JSON handling only runs when the user explicitly forces case-insensitivity, even though a plain `data->name` search is also case-sensitive (the JSON text uses the utf8mb4_bin collation).\",\n    \"failure_scenario\": \"A MySQL table column `searchable()` on `data->name` without `forceSearchCaseInsensitive()` still runs a case-sensitive `json_unquote(json_extract(...)) like '%john%'`, so it misses `John`. The fix only helps users who opt in, unlike the translatable plugin's `json_extract(` columns, which default to forced.\"\n  }\n]\n```",
+  "stderr": "",
+  "claude_duration_ms": 81758,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.22430080000000002,
+  "claude_session_id": "eb6bdd53-86bd-4bc1-8d06-e949e111b383",
+  "token_usage": {
+    "input_tokens": 12,
+    "output_tokens": 6934,
+    "cache_read_input_tokens": 87014,
+    "cache_creation_input_tokens": 13634,
+    "total_tokens": 107594,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 12,
+        "outputTokens": 6934,
+        "cacheReadInputTokens": 87014,
+        "cacheCreationInputTokens": 13634,
+        "webSearchRequests": 0,
+        "costUSD": 0.22430080000000002,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 3982,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/phase1/transcripts/filamentphp__filament@d47632c"
+  }
+}

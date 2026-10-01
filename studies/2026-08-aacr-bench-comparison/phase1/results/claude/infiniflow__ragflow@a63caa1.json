@@ -1,0 +1,119 @@
+{
+  "instance_id": "infiniflow__ragflow@a63caa1",
+  "repo": "infiniflow/ragflow",
+  "base_commit": "0a42e5777eb966b26aaf8f2a7d593ae99a4aa87a",
+  "head_commit": "a63caa1087852ada98964678be26b7c4d8363af6",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T01:26:03.423404+00:00",
+  "duration_seconds": 75.59,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "graphrag/general/extractor.py",
+      "line": 223,
+      "summary": "When an edge from a merged node is moved onto nodes[0] (the else branch, `graph.add_edge(nodes[0], neighbor, **edge1_attrs)`), the new edge is never added to `change.added_updated_edges`, but the old edge (node1, neighbor) is added to `change.removed_edges`.",
+      "failure_scenario": "Entity resolution merges B into A, and B has a neighbor C that A is not connected to. set_graph deletes the relation chunk B-C from the doc store but never inserts A-C, because it only writes edges listed in `added_updated_edges`. The relation is missing from the ES/Infinity index, so retrieval cannot find it, even though the serialized graph JSON still has it."
+    },
+    {
+      "file": "graphrag/entity_resolution.py",
+      "line": 115,
+      "summary": "`_merge_graph_nodes` runs concurrently for every connected component in a trio nursery and awaits LLM summaries partway through its loop. Meanwhile other tasks call `graph.remove_node` and `graph.add_edge` on the same shared graph.",
+      "failure_scenario": "Component {A1, A2} and component {B1, B2} where A2 is adjacent to B2 in the main graph. Task A is suspended at `await _handle_entity_relation_summary` while iterating `graph.neighbors(A2)`. Task B runs `graph.remove_node(B2)`, which deletes a key from `_adj[A2]`. When task A resumes it raises `RuntimeError: dictionary changed size during iteration`, or calls `get_edge_data` on an edge that no longer exists and gets None, then hits a TypeError on `edge1_attrs['weight']`."
+    },
+    {
+      "file": "graphrag/general/extractor.py",
+      "line": 210,
+      "summary": "`node0_neighbors` is captured once before the loop and never updated. When a later merged node shares a neighbor that an earlier merged node already re-pointed to nodes[0], the code takes the else branch and overwrites that edge instead of merging it.",
+      "failure_scenario": "Merging [A, B, C] where A has no edge to X, and both B and C have edges to X. B's edge becomes A-X. When C is processed, X is not in the stale `node0_neighbors`, so `add_edge(A, X, **C_X_attrs)` replaces B-X's weight, description, keywords and source_id. That data is silently lost."
+    },
+    {
+      "file": "graphrag/general/extractor.py",
+      "line": 233,
+      "summary": "`description_list=use_description.split(GRAPH_FIELD_SEP),` has a trailing comma, so `description_list` is a 1-tuple and `len(description_list) <= 12` is always true. The summary never runs, yet the merge path added here depends on it.",
+      "failure_scenario": "A node or edge that has accumulated 30 descriptions from entity resolution merges is never summarized by the LLM. The description is only truncated to 512 tokens, so most merged content is dropped instead of summarized. If the summary path were ever reached, the prompt would receive a tuple-wrapped list."
+    },
+    {
+      "file": "graphrag/utils.py",
+      "line": 442,
+      "summary": "The fix replaced `nursery.start_soon` with a sequential `await` but left the `async with trio.open_nursery()` wrapper, which is now empty and dead. It also issues one blocking delete_by_query round trip per removed edge.",
+      "failure_scenario": "A resolution that removes 2,000 edges makes 2,000 sequential ES delete_by_query calls, each with retries, so set_graph slows down dramatically. Instead, wrap a real async function and keep it in the nursery (e.g. `nursery.start_soon(trio.to_thread.run_sync, fn)`), or batch the deletes per from_entity using list terms."
+    },
+    {
+      "file": "graphrag/utils.py",
+      "line": 442,
+      "summary": "The line is indented with 17 spaces instead of 16, which does not match the surrounding block.",
+      "failure_scenario": "It still parses because it is the only statement in the for-body, but linters flag it (E111/E117). Adding another statement to the loop at 16-space indentation raises IndentationError."
+    },
+    {
+      "file": "graphrag/general/extractor.py",
+      "line": 216,
+      "summary": "The extend-then-dedupe code reimplements the existing `flat_uniq_list` helper in graphrag/utils.py, and it fails if an attribute is stored as a string rather than a list.",
+      "failure_scenario": "If `keywords` or `source_id` on an edge is a str (relationship extraction produces string keywords before they are flattened), `.extend` raises AttributeError, or splits the string into characters if only the other side is a str. `flat_uniq_list([edge0_attrs, edge1_attrs], 'keywords')` handles both cases in one line."
+    },
+    {
+      "file": "graphrag/general/extractor.py",
+      "line": 219,
+      "summary": "Node `source_id` is deduped with `sorted(set(...))` but edge `keywords` and `source_id` use `list(set(...))`, so their order is non-deterministic.",
+      "failure_scenario": "The same graph produces edge chunks whose `source_id` and `important_kwd` order differs from run to run. This churns the stored graph JSON and the relation chunk content, and is inconsistent with the node handling a few lines above."
+    },
+    {
+      "file": "graphrag/entity_resolution.py",
+      "line": 114,
+      "summary": "`list(sub_connect_graph)` turns a set into a list in arbitrary order, so which entity survives as `nodes[0]` (keeping its name, type and pagerank) is effectively random.",
+      "failure_scenario": "Resolving 'IBM' and 'INTERNATIONAL BUSINESS MACHINES' may keep either name depending on set hash order, and the result can differ between runs or processes. Sorting, or picking by degree, would make the result deterministic."
+    },
+    {
+      "file": "graphrag/entity_resolution.py",
+      "line": 118,
+      "summary": "After the merge, pagerank is recomputed for every node, but only the merged nodes are put in `change.added_updated_nodes`, so the index keeps old pagerank values for every other entity.",
+      "failure_scenario": "After resolution, entity chunks for unmerged nodes keep pre-merge pagerank in `content_with_weight`. The in-memory graph JSON has the new values, so retrieval ranking that reads entity chunks drifts away from the graph."
+    }
+  ],
+  "result_text": "```json\n[\n  {\n    \"file\": \"graphrag/general/extractor.py\",\n    \"line\": 223,\n    \"summary\": \"When an edge from a merged node is moved onto nodes[0] (the else branch, `graph.add_edge(nodes[0], neighbor, **edge1_attrs)`), the new edge is never added to `change.added_updated_edges`, but the old edge (node1, neighbor) is added to `change.removed_edges`.\",\n    \"failure_scenario\": \"Entity resolution merges B into A, and B has a neighbor C that A is not connected to. set_graph deletes the relation chunk B-C from the doc store but never inserts A-C, because it only writes edges listed in `added_updated_edges`. The relation is missing from the ES/Infinity index, so retrieval cannot find it, even though the serialized graph JSON still has it.\"\n  },\n  {\n    \"file\": \"graphrag/entity_resolution.py\",\n    \"line\": 115,\n    \"summary\": \"`_merge_graph_nodes` runs concurrently for every connected component in a trio nursery and awaits LLM summaries partway through its loop. Meanwhile other tasks call `graph.remove_node` and `graph.add_edge` on the same shared graph.\",\n    \"failure_scenario\": \"Component {A1, A2} and component {B1, B2} where A2 is adjacent to B2 in the main graph. Task A is suspended at `await _handle_entity_relation_summary` while iterating `graph.neighbors(A2)`. Task B runs `graph.remove_node(B2)`, which deletes a key from `_adj[A2]`. When task A resumes it raises `RuntimeError: dictionary changed size during iteration`, or calls `get_edge_data` on an edge that no longer exists and gets None, then hits a TypeError on `edge1_attrs['weight']`.\"\n  },\n  {\n    \"file\": \"graphrag/general/extractor.py\",\n    \"line\": 210,\n    \"summary\": \"`node0_neighbors` is captured once before the loop and never updated. When a later merged node shares a neighbor that an earlier merged node already re-pointed to nodes[0], the code takes the else branch and overwrites that edge instead of merging it.\",\n    \"failure_scenario\": \"Merging [A, B, C] where A has no edge to X, and both B and C have edges to X. B's edge becomes A-X. When C is processed, X is not in the stale `node0_neighbors`, so `add_edge(A, X, **C_X_attrs)` replaces B-X's weight, description, keywords and source_id. That data is silently lost.\"\n  },\n  {\n    \"file\": \"graphrag/general/extractor.py\",\n    \"line\": 233,\n    \"summary\": \"`description_list=use_description.split(GRAPH_FIELD_SEP),` has a trailing comma, so `description_list` is a 1-tuple and `len(description_list) <= 12` is always true. The summary never runs, yet the merge path added here depends on it.\",\n    \"failure_scenario\": \"A node or edge that has accumulated 30 descriptions from entity resolution merges is never summarized by the LLM. The description is only truncated to 512 tokens, so most merged content is dropped instead of summarized. If the summary path were ever reached, the prompt would receive a tuple-wrapped list.\"\n  },\n  {\n    \"file\": \"graphrag/utils.py\",\n    \"line\": 442,\n    \"summary\": \"The fix replaced `nursery.start_soon` with a sequential `await` but left the `async with trio.open_nursery()` wrapper, which is now empty and dead. It also issues one blocking delete_by_query round trip per removed edge.\",\n    \"failure_scenario\": \"A resolution that removes 2,000 edges makes 2,000 sequential ES delete_by_query calls, each with retries, so set_graph slows down dramatically. Instead, wrap a real async function and keep it in the nursery (e.g. `nursery.start_soon(trio.to_thread.run_sync, fn)`), or batch the deletes per from_entity using list terms.\"\n  },\n  {\n    \"file\": \"graphrag/utils.py\",\n    \"line\": 442,\n    \"summary\": \"The line is indented with 17 spaces instead of 16, which does not match the surrounding block.\",\n    \"failure_scenario\": \"It still parses because it is the only statement in the for-body, but linters flag it (E111/E117). Adding another statement to the loop at 16-space indentation raises IndentationError.\"\n  },\n  {\n    \"file\": \"graphrag/general/extractor.py\",\n    \"line\": 216,\n    \"summary\": \"The extend-then-dedupe code reimplements the existing `flat_uniq_list` helper in graphrag/utils.py, and it fails if an attribute is stored as a string rather than a list.\",\n    \"failure_scenario\": \"If `keywords` or `source_id` on an edge is a str (relationship extraction produces string keywords before they are flattened), `.extend` raises AttributeError, or splits the string into characters if only the other side is a str. `flat_uniq_list([edge0_attrs, edge1_attrs], 'keywords')` handles both cases in one line.\"\n  },\n  {\n    \"file\": \"graphrag/general/extractor.py\",\n    \"line\": 219,\n    \"summary\": \"Node `source_id` is deduped with `sorted(set(...))` but edge `keywords` and `source_id` use `list(set(...))`, so their order is non-deterministic.\",\n    \"failure_scenario\": \"The same graph produces edge chunks whose `source_id` and `important_kwd` order differs from run to run. This churns the stored graph JSON and the relation chunk content, and is inconsistent with the node handling a few lines above.\"\n  },\n  {\n    \"file\": \"graphrag/entity_resolution.py\",\n    \"line\": 114,\n    \"summary\": \"`list(sub_connect_graph)` turns a set into a list in arbitrary order, so which entity survives as `nodes[0]` (keeping its name, type and pagerank) is effectively random.\",\n    \"failure_scenario\": \"Resolving 'IBM' and 'INTERNATIONAL BUSINESS MACHINES' may keep either name depending on set hash order, and the result can differ between runs or processes. Sorting, or picking by degree, would make the result deterministic.\"\n  },\n  {\n    \"file\": \"graphrag/entity_resolution.py\",\n    \"line\": 118,\n    \"summary\": \"After the merge, pagerank is recomputed for every node, but only the merged nodes are put in `change.added_updated_nodes`, so the index keeps old pagerank values for every other entity.\",\n    \"failure_scenario\": \"After resolution, entity chunks for unmerged nodes keep pre-merge pagerank in `content_with_weight`. The in-memory graph JSON has the new values, so retrieval ranking that reads entity chunks drifts away from the graph.\"\n  }\n]\n```",
+  "stderr": "",
+  "claude_duration_ms": 74474,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.2608242,
+  "claude_session_id": "b856c57c-7a63-4b7f-b89f-c28cd8f05534",
+  "token_usage": {
+    "input_tokens": 10,
+    "output_tokens": 6271,
+    "cache_read_input_tokens": 88146,
+    "cache_creation_input_tokens": 23547,
+    "total_tokens": 117974,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 10,
+        "outputTokens": 6271,
+        "cacheReadInputTokens": 88146,
+        "cacheCreationInputTokens": 23547,
+        "webSearchRequests": 0,
+        "costUSD": 0.2608242,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 3030,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/phase1/transcripts/infiniflow__ragflow@a63caa1"
+  }
+}

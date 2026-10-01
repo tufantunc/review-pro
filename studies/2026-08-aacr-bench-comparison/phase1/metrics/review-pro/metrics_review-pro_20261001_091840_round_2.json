@@ -1,0 +1,1871 @@
+{
+  "ex_info": {
+    "start_time": "2026-10-01T09:18:40.085172",
+    "results_dir": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1",
+    "reviewer": "review-pro",
+    "line_k": 1,
+    "limit": null,
+    "missing_instance_ids": [
+      "astral-sh__uv@ed57db2",
+      "comfyanonymous__ComfyUI@cfc3122",
+      "ClickHouse__ClickHouse@5fb6ee3"
+    ]
+  },
+  "summary": {
+    "total_instances": 30,
+    "candidate_instances": 30,
+    "evaluated_instances": 27,
+    "missing_instances": 3,
+    "expected_notes": 167,
+    "generated_notes": 259,
+    "matched_line_notes": 77,
+    "matched_semantic_notes": 69,
+    "semantic_match_rate": 0.266,
+    "line_match_rate": 0.297,
+    "semantic_recall_rate": 0.413,
+    "line_recall_rate": 0.461,
+    "semantic_f1": 0.324,
+    "line_f1": 0.361,
+    "total_duration_seconds": 9192.81,
+    "avg_duration_seconds": 340.47,
+    "total_input_tokens": 86433249,
+    "total_output_tokens": 1975899,
+    "total_tokens": 88409148,
+    "avg_input_tokens": 3201231,
+    "avg_output_tokens": 73181
+  },
+  "eval_res": [
+    {
+      "instance_id": "vllm-project__vllm@6217b0c",
+      "repo": "vllm-project/vllm",
+      "comments": [
+        {
+          "note": "Redundant exception message in logger.exception call: the current implementation includes the exception string in the format specifier, but logger.exception automatically appends full exception details, causing duplication. Remove the `: %s` format specifier and `str(e)` argument.",
+          "path": "vllm/distributed/kv_transfer/kv_connector/v1/multi_connector.py",
+          "side": "right",
+          "from_line": 96,
+          "to_line": 97,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        }
+      ]
+    },
+    {
+      "instance_id": "lvgl__lvgl@4a57db3",
+      "repo": "lvgl/lvgl",
+      "comments": [
+        {
+          "note": "The change replaces dynamic text width calculation with a cached value (`dsc->text_size.x`), risking incorrect rendering if text updates occur without refreshing the cache. Ensure the cached dimensions remain consistent with the current text state.",
+          "path": "src/draw/lv_draw_label.c",
+          "side": "right",
+          "from_line": 220,
+          "to_line": 221,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[High] New public text_size field feeds a width that lv_text_get_next_line ignores under EXPAND, so the field and branch can both be deleted\nw in lv_draw_label_iterate_characters is only passed to lv_text_get_next_line (lines 259/265/509), which returns before reading max_width when LV_TEXT_FLAG_EXPAND/FIT is set (src/misc/lv_text.c:336-344). The old lv_text_get_size call was dead work; the PR replaced it with a widget-maintained cache exposed in public lv_draw_label_dsc_t, adding a public field, a producer obligation and a draw-layer dependency on widget state for a value that is thrown away. Remedy: set w = LV_COORD_MAX in the EXPAND branch (or drop the branch), remove text_size from lv_draw_label_dsc_t and the assignment at lv_label.c:826, apply the same to src/draw/nema_gfx/lv_draw_nema_gfx_label.c:433-443; keep draw_main's reuse of label->text_size."
+        },
+        {
+          "note": "`label->text_size` is reused later for scroll alignment/scroll-circular logic, but it’s only updated in `lv_label_refr_text()`. If font/letter_space/line_space/flags/max_w or `label->text` change and `lv_label_refr_text()` is not called before `draw_main()`, `text_size` can become stale and cause wrong alignment/scroll behavior. Consider either recomputing size in the specific draw paths when needed, or ensure all setters that impact text metrics update `label->text_size` (or invalidate and trigger `lv_label_refr_text()`) before draw.",
+          "path": "src/widgets/label/lv_label.c",
+          "side": "right",
+          "from_line": 856,
+          "to_line": 856,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "`label->text_size` is updated here based on current `max_w` and flags. If other code paths compute size with a different `max_w` (e.g., `LV_COORD_MAX` used in scroll checks previously), reusing this cached value can change behavior. Verify that `label->text_size` is intended to represent the unbounded width (`LV_COORD_MAX`) size for scrolling decisions; otherwise consider caching both constrained and unconstrained sizes or keep the local `lv_text_get_size(... LV_COORD_MAX ...)` for scroll logic.",
+          "path": "src/widgets/label/lv_label.c",
+          "side": "right",
+          "from_line": 968,
+          "to_line": 968,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The newly added `text_size` struct member is uninitialized, risking undefined behavior if accessed before `lv_label_refr_text` sets it; initialize to `{0, 0}` during label creation.",
+          "path": "src/widgets/label/lv_label_private.h",
+          "side": "right",
+          "from_line": 54,
+          "to_line": 56,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] Second, undocumented text-size cache added next to existing size_cache\nlv_label_t now has two lv_point_t text-size caches: size_cache (lazy, self-size width, max-height clamp) and text_size (eager, content width in lv_label_refr_text). The new member lacks the /**< */ doc comment every other member has and nothing says which one draw/scroll code should read, so they can silently drift or be misused. Remedy: rename (e.g. refr_text_size), place it next to size_cache, and add a doc comment stating how it differs."
+        },
+        {
+          "note": "The new text_size field is not consistently updated when the cache is invalidated. In LV_EVENT_GET_SELF_SIZE handler, when invalid_size_cache is true, only size_cache gets updated but text_size remains stale. This creates inconsistency between the two cached size fields.",
+          "path": "src/widgets/label/lv_label_private.h",
+          "side": "right",
+          "from_line": 54,
+          "to_line": 54,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        }
+      ]
+    },
+    {
+      "instance_id": "FreeCAD__FreeCAD@82fef4a",
+      "repo": "FreeCAD/FreeCAD",
+      "comments": [
+        {
+          "note": "Unnamed parameters in `NoOpEntityResolver::resolveEntity` trigger a linter warning; name the parameters and mark them as unused (e.g., with `[[maybe_unused]]` or a `(void)` cast) to resolve both the unnamed-parameter and unused-variable warnings.",
+          "path": "src/Base/Parameter.cpp",
+          "side": "right",
+          "from_line": 1866,
+          "to_line": 1866,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Double newline detected. The string \"\\n\" followed by \"\\n\" produces two consecutive newlines. Consider using a single \"\\n\" or std::endl for consistency with other error messages.\n\n```suggestion\n        std::cerr << \"An error occurred during parsing\\n\";\n```",
+          "path": "src/Base/Parameter.cpp",
+          "side": "right",
+          "from_line": 1911,
+          "to_line": 1911,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Nitpick] Replacing std::endl left a leftover literal, and the sibling overload was not updated\nImpact: `std::cerr << \"An error occurred during parsing\\n \" << \"\\n\";` prints a trailing space, a blank line and a redundant second insertion. The same catch block in LoadDocument(const char*) at line 1858 still uses `<< std::endl`, so the two overloads now format the same message differently. Remedy: Use a single literal, `std::cerr << \"An error occurred during parsing\\n\";`, and make line 1858 match."
+        },
+        {
+          "note": "Replacing `std::endl` with `\\n` in error messages may delay critical error visibility due to lack of explicit flushing; revert to `std::endl` to guarantee immediate terminal output for error reporting.",
+          "path": "src/Base/Parameter.cpp",
+          "side": "right",
+          "from_line": 1913,
+          "to_line": 1913,
+          "line_match": true,
+          "semantic_match": false,
+          "matched_note": ""
+        }
+      ]
+    },
+    {
+      "instance_id": "elastic__elasticsearch@a6a4623",
+      "repo": "elastic/elasticsearch",
+      "comments": [
+        {
+          "note": "Minor clarity: `getNotNull()` is called after a null-check, but it returns a primitive `int` and can never be null. The name reads like it might perform a nullability check/throw. Consider renaming to something like `get()`/`value()`/`asInt()` (or at least aligning naming across usages) to reduce confusion for future readers.\n\n```suggestion\n            off = new LimitedOffsetsEnum(off, queryMaxAnalyzedOffset.value());\n```",
+          "path": "server/src/main/java/org/elasticsearch/lucene/search/uhighlight/CustomFieldHighlighter.java",
+          "side": "right",
+          "from_line": 116,
+          "to_line": 116,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "There appears to be a mismatch between the comment indicating special handling for negative values and the actual constructor implementation which directly assigns the value. Either the comment should be updated or the constructor should implement the described behavior.",
+          "path": "server/src/main/java/org/elasticsearch/lucene/search/uhighlight/QueryMaxAnalyzedOffset.java",
+          "side": "right",
+          "from_line": 15,
+          "to_line": 18,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Confusing method name: The name `getNotNull()` is misleading because: 1) It returns a primitive int which cannot be null anyway, 2) The QueryMaxAnalyzedOffset instance itself could be null (when `create` returns null), potentially causing NPE when calling this method, 3) The name doesn't clearly convey what value is being returned. Consider renaming to something more descriptive like `getValue()` or `getMaxAnalyzedOffset()`.",
+          "path": "server/src/main/java/org/elasticsearch/lucene/search/uhighlight/QueryMaxAnalyzedOffset.java",
+          "side": "right",
+          "from_line": 27,
+          "to_line": 29,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The current validation condition for `maxAnalyzedOffset` incorrectly allows 0, which is invalid as highlighting zero characters is nonsensical and may cause undefined behavior. The condition should reject 0 while permitting -1 (special default) and positive integers.",
+          "path": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/AbstractHighlighterBuilder.java",
+          "side": "right",
+          "from_line": 568,
+          "to_line": 568,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[High] -1 and 0 are now accepted and sent to other nodes with no TransportVersion check, so older data nodes can't read the request\nwriteTo writes maxAnalyzedOffset with writeOptionalInt for every stream version, and readFrom passes it back through the setter. During a rolling upgrade, a new coordinating node accepts max_analyzed_offset:-1 (or 0). An old data node's setter still rejects values <= 0 (\"must be a positive integer\"), so it fails while reading the shard request, and the user gets shard failures instead of a clean 400. Remedy: add a new TransportVersion; when the receiving node is older and the value is <= 0, fail with a clear error, or reject -1 at the coordinator until every node supports it."
+        },
+        {
+          "note": "`QueryMaxAnalyzedOffset.create(...)` returns `null` when the query param is unset. That part is fine, but the current code mixes wrapper-vs-null semantics in a confusing way:\n\n- In the `if` guard, `queryMaxAnalyzedOffset == null || queryMaxAnalyzedOffset.getNotNull() > maxAnalyzedOffset` is logically equivalent to the previous Integer-based check, but it obscures intent and invites mistakes.\n- `wrapAnalyzer(...)` takes a `QueryMaxAnalyzedOffset` yet still checks for null; this is OK functionally, but the naming (`maxAnalyzedOffset`) suggests a primitive/int, and makes it easy to accidentally call `getNotNull()` without guarding in future edits.\n\nSuggestion: keep an `Integer` variable for the query param and only construct the wrapper when non-null (or rename the wrapper variable to `queryMaxAnalyzedOffsetWrapper` / `queryMaxOffset`), so nullability is obvious and `getNotNull()` is only used on a clearly non-null reference.\n\n```suggestion\n        final Integer queryMaxAnalyzedOffset = fieldContext.field.fieldOptions().maxAnalyzedOffset();\n        final QueryMaxAnalyzedOffset queryMaxAnalyzedOffsetWrapper = QueryMaxAnalyzedOffset.create(queryMaxAnalyzedOffset, maxAnalyzedOffset);\n        Analyzer analyzer = wrapAnalyzer(\n            context.getSearchExecutionContext().getIndexAnalyzer(f -> Lucene.KEYWORD_ANALYZER),\n            queryMaxAnalyzedOffsetWrapper\n        );\n```",
+          "path": "server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/PlainHighlighter.java",
+          "side": "right",
+          "from_line": 111,
+          "to_line": 118,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        }
+      ]
+    },
+    {
+      "instance_id": "microsoft__typescript-go@b970689",
+      "repo": "microsoft/typescript-go",
+      "comments": [
+        {
+          "note": "Removing KindJSDocImportTag from this switch statement may cause runtime panics when calling ModuleSpecifier() on JSDocImportTag nodes. Since JSDocImportTag has a ModuleSpecifier property (as evidenced by other methods including it and the NewJSDocImportTag function setting it), it should likely be handled here similar to other import declaration types.",
+          "path": "internal/ast/ast.go",
+          "side": "right",
+          "from_line": 754,
+          "to_line": 757,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "`IsDefaultImport` now accepts `KindJSImportDeclaration` but still calls `node.AsImportDeclaration()`. This is safe only if `JSImportDeclaration` is represented by the same struct/accessor as `ImportDeclaration`. If `KindJSImportDeclaration` has its own node type (e.g., `AsJSImportDeclaration()`), this will panic or misread fields at runtime. Please confirm the accessor mapping for `KindJSImportDeclaration`, and if needed switch to the correct `As*` method (or add a shared helper that extracts `ImportClause` for both kinds).",
+          "path": "internal/ast/utilities.go",
+          "side": "right",
+          "from_line": 2367,
+          "to_line": 2369,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Calling `AsImportDeclaration()` on a node of kind `KindExportDeclaration` will cause a panic because `ExportDeclaration` uses a different struct than `ImportDeclaration`. Consider using `getModuleSpecifierFromNode(parent)` which handles both kinds correctly, or split the check.",
+          "path": "internal/checker/checker.go",
+          "side": "right",
+          "from_line": 29386,
+          "to_line": 29386,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Potential panic: `importTag.ImportClause` might be nil (e.g., for side-effect imports like `/** @import \"mod\" */`). If so, `Clone` might return nil (or panic if not nil-safe), and subsequent access to `importClause.Flags` or `AsImportClause()` will cause a panic. \n\nSuggestion: Add a nil check for `importTag.ImportClause`.",
+          "path": "internal/parser/reparser.go",
+          "side": "right",
+          "from_line": 120,
+          "to_line": 122,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[High] JSDoc @import with no import clause panics the parser on nil ImportClause\nA JS file containing `/** @import \"./foo\" */` (or a half-typed `/** @import */`) above a statement: parseImportTag's tryParseImportClause returns nil (parser.go:2199-2204), and reparser.go:120 calls importTag.ImportClause.Clone, dereferencing nil (ast.go:216) → nil-pointer panic in ParseSourceFile, crashing compiler/language server. Fix: guard `if importTag.ImportClause == nil { break }` like the typedef branch (or support a nil clause) and add a test."
+        },
+        {
+          "note": "Directly mutating IsTypeOnly after cloning may violate immutability assumptions present in other parts of the codebase. Consider using a factory method or reconstruction pattern consistent with how similar mutations are performed elsewhere.",
+          "path": "internal/parser/reparser.go",
+          "side": "right",
+          "from_line": 122,
+          "to_line": 122,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[High] Synthetic import shares children with JSDoc tag; setJSDocParents re-parents them, causing GetExternalModuleName panic\n`/** @import { Foo } from \"./types\" */ const x = 1;` — the shallow-cloned clause, ModuleSpecifier and Attributes are shared; the JSImportDeclaration is bound first, then the const host's setJSDocParents (binder.go:757, recursive SetParentInChildren) re-points them to the JSDocImportTag. getTargetOfImportSpecifier (checker.go:~13800) calls GetExternalModuleName(JSDocImportTag), whose case this PR removed → panic \"Unhandled case\"; namespace imports panic via getModuleSpecifierFromNode. Existing tests only place tags above functions (bound first). Fix: deep-clone clause/specifier/attributes for the synthetic node, or skip re-parenting JSDocImportTag children; add tests with @import above const/class."
+        },
+        {
+          "note": "Unhandled `KindJSImportDeclaration` case in `emitStatement` switch lacks implementation; must either add dedicated emit logic or explicitly panic if transformation is expected.",
+          "path": "internal/printer/printer.go",
+          "side": "left",
+          "from_line": 3956,
+          "to_line": 3956,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "CommonJSModuleTransformer should not handle `JSImportDeclaration` directly; this node kind should be normalized by earlier passes (e.g., type eraser or import ellision) to maintain transformer separation of concerns and ensure module transformers only process edition-appropriate syntax.",
+          "path": "internal/transformers/commonjsmodule.go",
+          "side": "right",
+          "from_line": 66,
+          "to_line": 66,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Nitpick] Duplicate `node = nil` cases for JSImportDeclaration and JSExportAssignment\ncommonjsmodule.go and esmodule.go each have two separate one-line cases dropping JS-only synthetic nodes; a future JS-only kind would need another copy. Fix: merge into `case ast.KindJSImportDeclaration, ast.KindJSExportAssignment: node = nil` with a short comment in both files."
+        },
+        {
+          "note": "The `JSImportDeclaration` node should not be set to nil in this transformer; it must be processed during an earlier transformation phase instead.",
+          "path": "internal/transformers/esmodule.go",
+          "side": "right",
+          "from_line": 43,
+          "to_line": 43,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The addition of `KindJSImportDeclaration` to the `transformUsingDeclarations` switch case is misplaced; this node type should be processed in an earlier transformation stage before reaching this function.",
+          "path": "internal/transformers/esnext.go",
+          "side": "right",
+          "from_line": 371,
+          "to_line": 371,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The change to include `ast.KindJSImportDeclaration` in the import handling switch case is invalid because type-only imports are elided during compilation and should not affect runtime module dependency collection.",
+          "path": "internal/transformers/externalmoduleinfo.go",
+          "side": "right",
+          "from_line": 50,
+          "to_line": 50,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Grouping ast.KindImportDeclaration and ast.KindJSImportDeclaration assumes interchangeable use of .AsImportDeclaration(). Please verify that both node kinds structurally support this conversion uniformly.",
+          "path": "internal/transformers/externalmoduleinfo.go",
+          "side": "right",
+          "from_line": 50,
+          "to_line": 50,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The addition of `ast.KindJSImportDeclaration` to the import case statement is incorrect because `JSImportDeclaration` nodes should have been processed by `typeeraser.go` and thus never reach the `ImportElisionTransformer`.",
+          "path": "internal/transformers/importelision.go",
+          "side": "right",
+          "from_line": 31,
+          "to_line": 31,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Adding ast.KindJSImportDeclaration to the switch case is redundant because typeeraser.go is designed to handle JSImportDeclaration nodes.",
+          "path": "internal/transformers/importelision.go",
+          "side": "right",
+          "from_line": 169,
+          "to_line": 169,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "ast.KindJSImportDeclaration should be handled in a separate case to elide the node, not grouped with ast.KindImportDeclaration which requires different processing.",
+          "path": "internal/transformers/typeeraser.go",
+          "side": "right",
+          "from_line": 258,
+          "to_line": 258,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] JS-import arms in later transformers are dead and contradictory\nThe type eraser always runs first and removes every reparsed @import via its type-only clause, so the new KindJSImportDeclaration arms in importelision, esnext, externalmoduleinfo (which would treat it as a real external import) and module transformers (which drop it) are unreachable and inconsistent; elision silently depends on IsTypeOnly. Fix: elide KindJSImportDeclaration explicitly in typeeraser's `return nil` arm alongside KindJSExportAssignment, and remove the dead arms."
+        },
+        {
+          "note": "The type display has regressed from 'Foo' to 'default'. This reduces clarity as 'Foo' is the local name of the imported interface. This change likely results from the new handling of JSDoc `@import` tags (via `JSImportDeclaration`) where the default import symbol is not being correctly aliased or printed with its local name.",
+          "path": "testdata/baselines/reference/submodule/conformance/importTag3.types",
+          "side": "right",
+          "from_line": 18,
+          "to_line": 19,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        }
+      ]
+    },
+    {
+      "instance_id": "valkey-io__valkey@866fa4a",
+      "repo": "valkey-io/valkey",
+      "comments": [
+        {
+          "note": "Memory-safety (per checklist): after freeServerConfig(), consider setting the pointer to NULL. This reduces risk of accidental reuse/double-free if future code adds additional cleanup paths or early returns.\n\n```suggestion\n        if (config.server_config != NULL) {\n            freeServerConfig(config.server_config);\n            config.server_config = NULL;\n        }\n```",
+          "path": "src/valkey-benchmark.c",
+          "side": "right",
+          "from_line": 1998,
+          "to_line": 1998,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        }
+      ]
+    },
+    {
+      "instance_id": "microsoft__typescript-go@892b4a3",
+      "repo": "microsoft/typescript-go",
+      "comments": [
+        {
+          "note": "The getManualTests function crashes when manualTests.txt is missing due to lack of file existence check; it should return an empty set in this scenario.",
+          "path": "internal/fourslash/_scripts/convertFourslash.mts",
+          "side": "right",
+          "from_line": 26,
+          "to_line": 29,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[High] convertfourslash and updatefailing crash with ENOENT: manualTests.txt is never created, and *.txt is gitignored\nImpact: the change doesn't add manualTests.txt, and getManualTests() reads it with readFileSync and no existence check. By the time that read throws, main() has already deleted tests/gen, so `npm run convertfourslash` leaves the generated tests wiped. `npm run updatefailing` has also already emptied failingTests.txt (updateFailing.mts:10) before it crashes the same way. On top of that, .gitignore:176 ignores `*.txt` and only failingTests.txt is excepted (.gitignore:200), so a manualTests.txt that makemanual writes is silently left untracked. Remedy: commit an empty manualTests.txt, add `!internal/fourslash/_scripts/manualTests.txt` to .gitignore, and have getManualTests return an empty set when the file is missing, as makeManual.mts already does."
+        },
+        {
+          "note": "Inconsistent test name processing: getFailingTests() uses substring(4) to remove prefix, but getManualTests() doesn't. This could cause manual test filtering to fail if the manual tests file uses the same format as failing tests.",
+          "path": "internal/fourslash/_scripts/convertFourslash.mts",
+          "side": "right",
+          "from_line": 26,
+          "to_line": 29,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Medium] List-file parsing now exists three times, and the copies disagree on whether a missing file is allowed\nImpact: the readFileSync/split/trim/filter pipeline is hand-written at convertFourslash.mts:22, convertFourslash.mts:27 and makeManual.mts:36, and the copies have already drifted: makeManual tolerates a missing file, getManualTests does not. makeManual.mts also re-declares the manualTests path and the gen/manual directory constants that convertFourslash.mts owns. Any change to the list format has to be made in three places. Remedy: export one `readTestList(path, transform?)` helper from convertFourslash.mts that returns an empty set for a missing file, build getFailingTests and getManualTests on it, and import it plus the path constants in makeManual.mts, the same way updateFailing.mts already imports from convertFourslash.mts."
+        },
+        {
+          "note": "manualOutputDir is created but never used. Either remove this directory creation or implement the logic to use it for manual tests.",
+          "path": "internal/fourslash/_scripts/convertFourslash.mts",
+          "side": "right",
+          "from_line": 44,
+          "to_line": 44,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] convertfourslash creates tests/manual on every run although it never writes there\nImpact: manualOutputDir is only ever passed to mkdirSync. convertFourslash neither writes to it nor formats it (gofumpt runs only on tests/gen), and makeManual already creates the directory itself, so two scripts now manage the same directory. Remedy: remove manualOutputDir and its mkdirSync from convertFourslash.mts, unless it's repurposed to copy util_test.go there (see the tests/manual helpers finding)."
+        },
+        {
+          "note": "There is a potential naming mismatch between how test names are stored in `manualTests.txt` and how they are checked. In `makeManual.mts`, the test name is stored as the full filename (e.g., 'testFile_test.go'), but here the code checks against the capitalized base name (e.g., 'TestFile'). This inconsistency means the skip logic may not work correctly. Consider ensuring consistent naming between the two scripts, or check against both formats.",
+          "path": "internal/fourslash/_scripts/convertFourslash.mts",
+          "side": "right",
+          "from_line": 70,
+          "to_line": 74,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] Test-name capitalization is copied from generateGoTest\nImpact: the key used to skip manual tests (line 70) and the one generateGoTest uses for the Test name and failing-test lookup (line 946) are computed separately. If one changes, manual skipping silently stops lining up with the generated names. Remedy: compute testName once (a getTestName/capitalize helper, or a field on GoTest) and pass it to generateGoTest."
+        },
+        {
+          "note": "This logic assumes `test.name` is not empty. If a filename results in an empty name (e.g. `.ts`), accessing index 0 will cause a runtime error. Consider adding a check for `test.name.length > 0`.",
+          "path": "internal/fourslash/_scripts/convertFourslash.mts",
+          "side": "right",
+          "from_line": 70,
+          "to_line": 70,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The condition `if (testContent)` fails to prevent writing files containing only whitespace, as non-empty whitespace strings evaluate as truthy in JavaScript. It should instead verify meaningful content exists by checking `testContent.trim().length > 0` before writing the file.",
+          "path": "internal/fourslash/_scripts/convertFourslash.mts",
+          "side": "right",
+          "from_line": 75,
+          "to_line": 79,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] Dead `if (testContent)` check on a function that always returns a non-empty string\nImpact: generateGoTest (line 945) is typed to return string and always returns a non-empty template, so the new guard can never be false. It suggests a \"no output\" path that doesn't exist. Remedy: remove the `if (testContent)` wrapper and write the file unconditionally, as before."
+        },
+        {
+          "note": "This conditional check is unnecessary. The `generateGoTest` function has a return type of `string` and always returns a non-empty template string. This check adds unnecessary complexity and might confuse future maintainers into thinking that `generateGoTest` can return falsy values. Consider removing this check and directly writing the file as in the original code.",
+          "path": "internal/fourslash/_scripts/convertFourslash.mts",
+          "side": "right",
+          "from_line": 75,
+          "to_line": 79,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The script exits silently with status 1 when no arguments are provided, failing to inform users of the required usage. Add descriptive error messages explaining the expected argument format and purpose.",
+          "path": "internal/fourslash/_scripts/makeManual.mts",
+          "side": "right",
+          "from_line": 12,
+          "to_line": 14,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] makemanual with no argument exits 1 with no usage message\nImpact: `npm run makemanual` with no argument fails with only npm's generic error and no hint about what to pass. Given the confusion over the name format, users are likely to guess wrong. Remedy: print a usage line, e.g. `console.error(\"Usage: npm run makemanual -- <testName>\")`, before process.exit(1)."
+        },
+        {
+          "note": "`testName` comes directly from CLI and is used to build a path under `genDir`. If a user passes something like `../foo`, `path.join` will resolve outside `genDir`, and `renameSync` could move arbitrary files. Consider restricting input to a filename (no path separators) via `path.basename` + equality check and/or validating allowed characters.\n\n```suggestion\n    const testName = args[0];\n    const testFileName = path.basename(testName);\n    if (testFileName !== testName) {\n        console.error(\"Invalid test name: must be a file name, not a path.\");\n        process.exit(1);\n    }\n    const genTestFile = path.join(genDir, testFileName);\n```",
+          "path": "internal/fourslash/_scripts/makeManual.mts",
+          "side": "right",
+          "from_line": 16,
+          "to_line": 18,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[High] makeManual writes a different name to manualTests.txt than convertFourslash looks up, so manual tests are never skipped\nImpact: makeManual uses args[0] directly as the file name in tests/gen, with no suffix added. So only the full file name (e.g. `fooBar_test.go`) passes its existence check, and that exact string is what gets written to manualTests.txt. convertFourslash.mts:70-72 compares against the capitalized name with no suffix (`FooBar`). Passing `FooBar` makes makeManual fail with \"Test file not found\". Either way the skip never fires, and the next convertfourslash run regenerates the test in tests/gen next to the manual copy. The entry format also doesn't match failingTests.txt, which uses `TestXxx`. Remedy: pick one key format (e.g. `TestXxx`), have makeManual derive the gen file name from it, and compare using the same derivation in convertFourslash, reusing generateGoTest's name logic."
+        },
+        {
+          "note": "Missing validation: The script doesn't verify that genTestFile is actually a Go test file (should end with _test.go). This could accidentally move non-test files or directories if they exist with the matching name. Consider adding a file extension check.\n\n```suggestion\n    const genTestFile = path.join(genDir, `${testFileName}_test.go`);\n    if (!fs.existsSync(genTestFile)) {\n        console.error(`Test file not found: ${genTestFile}`);\n        console.error(\"Make sure the test exists in the gen directory first.\");\n        process.exit(1);\n    }\n```",
+          "path": "internal/fourslash/_scripts/makeManual.mts",
+          "side": "right",
+          "from_line": 18,
+          "to_line": 23,
+          "line_match": true,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Missing error handling: The `renameSync` operation can fail (e.g., permission issues, disk full, file locked). If it fails after the existence check, the script will crash. Consider wrapping file operations in try-catch blocks to handle errors gracefully and provide meaningful error messages.",
+          "path": "internal/fourslash/_scripts/makeManual.mts",
+          "side": "right",
+          "from_line": 29,
+          "to_line": 30,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[High] Tests moved to tests/manual/ have no util_test.go helpers, so the manual package does not compile\nImpact: generateHelperFile() copies util_test.go (ptrTo, defaultCommitCharacters, completionGlobals, ...) only into tests/gen. About 610 generated tests use these helpers. When makeManual moves one into tests/manual, that directory is its own Go package with no helper definitions, so `go test ./internal/fourslash/tests/manual` (and `./...`) fails with undefined identifiers. Remedy: also copy util_test.go into tests/manual in generateHelperFile() or makeManual, or move the helpers into a shared package both directories can import."
+        },
+        {
+          "note": "Consider adding error handling for the manualTests.txt file operations. If the file is corrupted or has invalid content, the split operation might fail. Also, consider using a try-catch block for file operations.",
+          "path": "internal/fourslash/_scripts/makeManual.mts",
+          "side": "right",
+          "from_line": 32,
+          "to_line": 36,
+          "line_match": true,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Appending an empty string to `manualTests` ensures a trailing newline upon join(), but consider controlling EOL explicitly instead of relying on array manipulation which can lead to inconsistent formatting especially if readers don't trim inputs uniformly.",
+          "path": "internal/fourslash/_scripts/makeManual.mts",
+          "side": "right",
+          "from_line": 41,
+          "to_line": 41,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        }
+      ]
+    },
+    {
+      "instance_id": "wavetermdev__waveterm@90a57d5",
+      "repo": "wavetermdev/waveterm",
+      "comments": [
+        {
+          "note": "Improper error comparison may miss wrapped `fs.ErrNotExist` errors. Replace direct `err == fs.ErrNotExist` comparison with `errors.Is(err, fs.ErrNotExist)` to properly handle potentially wrapped filesystem errors when checking for non-existent files.",
+          "path": "pkg/blockcontroller/blockcontroller.go",
+          "side": "right",
+          "from_line": 149,
+          "to_line": 156,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Insufficient command string validation when shell execution is disabled; the current space check doesn't prevent command injection via other special characters. Implement more robust validation to ensure only valid executable paths are accepted when cmd:shell is false.",
+          "path": "pkg/blockcontroller/blockcontroller.go",
+          "side": "right",
+          "from_line": 285,
+          "to_line": 310,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Debug log outputs sensitive swap token value. Remove the token value from the log message to prevent credential exposure.",
+          "path": "pkg/shellexec/shellexec.go",
+          "side": "right",
+          "from_line": 258,
+          "to_line": 263,
+          "line_match": true,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "These new fields introduce dotted JSON tags like `cmd:initscript.sh`. Plain `encoding/json` treats the tag as a literal key (fine), but if any layer later interprets dots as path separators for nesting, this could break compatibility or create ambiguity with `[conn]` nesting. Suggest verifying the meta parsing/flattening logic expects literal keys and documenting/enforcing one convention. Also consider whether `CmdEnv`/`CmdCwd` being described as nestable under `[conn]` requires special merge behavior; nil vs empty map differences can affect overrides (e.g., clearing env).",
+          "path": "pkg/waveobj/wtypemeta.go",
+          "side": "right",
+          "from_line": 52,
+          "to_line": 62,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] The new cmd:allowconnchange meta key is declared and exported to TypeScript but nothing reads it\nImpact: MetaKey_CmdAllowConnChange and the TS \"cmd:allowconnchange\" field are part of the public meta schema, but no Go or frontend code reads the key, so setting it does nothing. Remedy: implement the behaviour, or remove the key from MetaTSType and regenerate until something consumes it."
+        },
+        {
+          "note": "This Debugf method is calling blocklogger.Infof instead of blocklogger.Debugf. This is likely a copy-paste error and should probably use Debugf to match the function's intent.",
+          "path": "pkg/wslconn/wslconn.go",
+          "side": "right",
+          "from_line": 121,
+          "to_line": 121,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] The new WslConn.Debugf logs at Info level, unlike SSHConn.Debugf\nImpact: WslConn.Debugf copies Infof (blocklogger.Infof), while SSHConn.Debugf uses blocklogger.Debugf. So the \"packed swaptoken\" line logs at Info on WSL and at Debug on SSH. Security found no leak: the packed token holds no JWT. Remedy: call blocklogger.Debugf(ctx, \"[conndebug] \"+format, args...)."
+        }
+      ]
+    },
+    {
+      "instance_id": "google-gemini__gemini-cli@c6e6248",
+      "repo": "google-gemini/gemini-cli",
+      "comments": [
+        {
+          "note": "* The new `runCommand` method lacks validation that `setup()` has been called, risking runtime errors when `testDir` is uninitialized.  \n* The existing `run` method has the same vulnerability and requires identical setup validation.",
+          "path": "integration-tests/test-helper.ts",
+          "side": "right",
+          "from_line": 309,
+          "to_line": 312,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The `runCommand` method duplicates process execution and stream handling logic already present in the `run` method, violating DRY principles and increasing maintenance burden. Extract the common child process spawning, stream collection, and promise resolution into a private helper method shared by both functions.",
+          "path": "integration-tests/test-helper.ts",
+          "side": "right",
+          "from_line": 309,
+          "to_line": 358,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Medium] runCommand copies run()'s spawn, output-collection and close handling, and the two copies already behave differently\nLines 309-358 repeat 210-242/244-304 almost line for line and already differ. runCommand never ends stdin when no stdin is given (223-228 vs 323-326). It skips the Podman telemetry filtering (253-286) and the JSON-output stderr exclusion (290-296). It still overwrites _lastRunStdout, which readToolLogs reads (657-669). The KEEP_OUTPUT/VERBOSE check appears 5 times, so every future spawn/output fix has to be made twice. Remedy: move the logic into one private spawnCli(commandArgs, {stdin?, stdinDoesNotEnd?}) helper; run() adds --yolo/--prompt and the Podman/JSON handling, and runCommand becomes return this.spawnCli([this.bundlePath, ...args], options)."
+        },
+        {
+          "note": "Using non-null assertion operators (!) on child process streams could lead to runtime errors if the streams are unexpectedly null. Consider adding proper null checks for better safety.",
+          "path": "integration-tests/test-helper.ts",
+          "side": "right",
+          "from_line": 323,
+          "to_line": 326,
+          "line_match": true,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "If `options.stdin` is an empty string, this branch won’t run, and stdin won’t be closed. Prefer checking `options.stdin !== undefined` so callers can intentionally send empty input and still close stdin to avoid child waiting for EOF.\n\n```suggestion\n    if (options.stdin !== undefined) {\n      child.stdin!.write(options.stdin);\n      child.stdin!.end();\n    }\n```",
+          "path": "integration-tests/test-helper.ts",
+          "side": "right",
+          "from_line": 323,
+          "to_line": 326,
+          "line_match": false,
+          "semantic_match": true,
+          "matched_note": "[Low] runCommand leaves the child's stdin open when no stdin is given\nrun() closes stdin by default, but runCommand closes it only when options.stdin is truthy. A command that reaches a readline prompt (e.g. if update ever asks for consent) would wait until the 300s testTimeout, and retry: 2 repeats the wait. Today's commands exit through process.exit(0) after their handler (config.ts:345-348), so this is latent. Remedy: always call child.stdin!.end() after writing any input."
+        },
+        {
+          "note": "`stdout += data` / `stderr += data` is concatenating a Buffer to a string, which relies on implicit coercion and can produce unexpected output (e.g., \"[object Object]\") depending on runtime/TS settings. Convert explicitly via `data.toString('utf8')` (or set encoding on the streams) before appending.\n\n```suggestion\n    child.stdout!.setEncoding('utf8');\n    child.stdout!.on('data', (data: string) => {\n      stdout += data;\n      if (env.KEEP_OUTPUT === 'true' || env.VERBOSE === 'true') {\n        process.stdout.write(data);\n      }\n    });\n```",
+          "path": "integration-tests/test-helper.ts",
+          "side": "right",
+          "from_line": 328,
+          "to_line": 333,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Missing `child.on('error', ...)` handling. If spawning `node` fails (ENOENT, permission, etc.), the promise will never settle. Add an `error` listener that rejects.\n\n```suggestion\n    const promise = new Promise<string>((resolve, reject) => {\n      child.on('error', reject);\n      child.on('close', (code: number | null, signal: NodeJS.Signals | null) => {\n        if (code === 0) {\n          this._lastRunStdout = stdout;\n          let result = stdout;\n          if (stderr) result += `\\n\\nStdErr:\\n${stderr}`;\n          resolve(result);\n        } else {\n          const extra = signal ? ` (signal: ${signal})` : '';\n          reject(new Error(`Process exited with code ${code}${extra}:\\n${stderr}`));\n        }\n      });\n    });\n```",
+          "path": "integration-tests/test-helper.ts",
+          "side": "right",
+          "from_line": 342,
+          "to_line": 355,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The error handling only includes stderr in the rejection. For better debugging, consider including both stdout and stderr in the error message.",
+          "path": "integration-tests/test-helper.ts",
+          "side": "right",
+          "from_line": 352,
+          "to_line": 352,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        }
+      ]
+    },
+    {
+      "instance_id": "FreeCAD__FreeCAD@ec3da2e",
+      "repo": "FreeCAD/FreeCAD",
+      "comments": [
+        {
+          "note": "The function `isCosmeticVertex` should accept the string parameter by `const std::string&` instead of by value to prevent unnecessary string copying and enforce immutability of the input.",
+          "path": "src/Mod/TechDraw/App/DrawViewPart.cpp",
+          "side": "right",
+          "from_line": 1502,
+          "to_line": 1502,
+          "line_match": true,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The string parameter in `isCosmeticVertex` should be passed by const reference instead of by value to avoid unnecessary copying. Change `std::string element` to `const std::string& element` for better performance.",
+          "path": "src/Mod/TechDraw/App/DrawViewPart.h",
+          "side": "right",
+          "from_line": 242,
+          "to_line": 242,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The newly added member functions `isCosmeticVertex`, `isCosmeticEdge`, and `isCenterLine` are incorrectly declared as `static` with an unnecessary `owner` parameter; remove `static` and the `App::DocumentObject* owner` argument to correctly implement them as non-static member functions operating on the current instance.",
+          "path": "src/Mod/TechDraw/App/DrawViewPart.h",
+          "side": "right",
+          "from_line": 242,
+          "to_line": 245,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        }
+      ]
+    },
+    {
+      "instance_id": "linera-io__linera-protocol@024925d",
+      "repo": "linera-io/linera-protocol",
+      "comments": [
+        {
+          "note": "The typo 'Reponse' was correctly fixed to 'Response', but there is another typo 'ceritifcates' that should also be corrected to 'certificates'.\n\n```suggestion\n    #[error(\"Response doesn't contain requested certificates: {0:?}\")]\n```",
+          "path": "linera-core/src/node.rs",
+          "side": "right",
+          "from_line": 205,
+          "to_line": 205,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Nitpick] The typo-fix edit leaves \"ceritifcates\" misspelled in the same error message\nImpact: the MissingCertificates error text still reads \"requested ceritifcates\" after this change fixed \"Reponse\" in the same string, so users still see a typo. Remedy: change it to \"certificates\"."
+        },
+        {
+          "note": "The `grace_period` parameter should use `Option<f64>` instead of `impl Into<Option<f64>>` to maintain strong type checking and code normalization standards.",
+          "path": "linera-core/src/updater.rs",
+          "side": "right",
+          "from_line": 109,
+          "to_line": 109,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Medium] No caller sets the new grace_period parameter, and its doc comment misdescribes the default\nImpact: the public communicate_with_quorum gains `grace_period: impl Into<Option<f64>>`, but all four call sites pass None and no config, CLI or client option supplies a value. The \"configurable\" claim is not delivered, and every call site gains an unexplained None. The doc (\"If `grace_period` is specified, other validators are given additional time\") suggests None means no grace period, but None applies DEFAULT_GRACE_PERIOD. The inline `//` parameter comment repeats the doc. Remedy: drop the parameter and the four Nones, or pass a real client setting through. Either way, reword the doc to say None uses DEFAULT_GRACE_PERIOD, and remove the duplicate inline comment."
+        },
+        {
+          "note": "Robustness: `grace_period` comes from callers and is used in `mul_f64`. If it’s negative/NaN/inf, `Duration::mul_f64` can panic or behave unexpectedly. Recommend validating/clamping before use (e.g., ensure finite and >= 0.0; optionally cap to a max like 1.0).\n\n```suggestion\n    let grace_period = grace_period.into().unwrap_or(DEFAULT_GRACE_PERIOD);\n    let grace_period = if grace_period.is_finite() && grace_period >= 0.0 {\n        grace_period\n    } else {\n        0.0\n    };\n```",
+          "path": "linera-core/src/updater.rs",
+          "side": "right",
+          "from_line": 139,
+          "to_line": 139,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The loop label 'vote_wait is added but doesn't appear to be referenced by any break or continue statements. Consider removing the label if it's not actually used for control flow.",
+          "path": "linera-core/src/updater.rs",
+          "side": "right",
+          "from_line": 141,
+          "to_line": 141,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Nitpick] Unnecessary loop label 'vote_wait on a single loop with no nesting\nImpact: the break sits directly inside the only loop, so the label does nothing. It suggests nesting that isn't there, and it is the only labeled loop in linera-core. Remedy: remove the label and use a plain `break;`."
+        }
+      ]
+    },
+    {
+      "instance_id": "ollama__ollama@b6002f6",
+      "repo": "ollama/ollama",
+      "comments": [
+        {
+          "note": "The call to `batch.Positions.Ints()` to convert the tensor back to a slice is necessary here for iteration. However, this creates a performance concern: we're converting from slice to tensor when building the batch, then back to slice for cache operations. Consider whether the cache layer could work directly with tensors to avoid this round-trip conversion, though that may be out of scope for this PR.",
+          "path": "kvcache/causal.go",
+          "side": "right",
+          "from_line": 202,
+          "to_line": 202,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Potential panic/semantic change: switching to `batch.Positions.Ints()[...]` assumes `Ints()` returns a non-nil slice with at least the required length and that it stays consistent with `batch.Multimodal[*].Index`. If `Ints()` can return nil/empty (or a newly allocated slice with different length), this will panic at runtime. Consider guarding (e.g., check `idx < len(batch.Positions.Ints())`) or caching the slice once and validating its length before indexing to preserve previous behavior.",
+          "path": "kvcache/encoder.go",
+          "side": "right",
+          "from_line": 94,
+          "to_line": 94,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Medium] The EncoderCache and WrapperCache unwind paths now read Positions.Ints() and have no test\nkvcache/ has only causal_test.go, and it never sets Multimodal or uses the Wrapper/Encoder caches. The changed mllama cross-attention position lookup and the WrapperCache rollback (wrapper.go:50) are never exercised, so a regression there goes unnoticed. Remedy: add an EncoderCache test (Positions {0,1,2}, Multimodal Index 2, assert curPos==2) and a WrapperCache test where the second cache fails StartForward, asserting the first cache's cells were removed."
+        },
+        {
+          "note": "Potential issue: `batch.Positions.Ints()` is called inside the unwind loop. If `Ints()` materializes/copies tensor data, this can be unnecessarily expensive (and potentially unsafe if it depends on ctx/lifetime). Also you iterate `range curPositions` but index `batch.Sequences[k]`; this assumes `len(batch.Sequences)==len(curPositions)`—consider validating once or using a shared length variable.\n\nSuggestion: hoist `curPositions := batch.Positions.Ints()` outside the `for j := ...` loop and iterate up to `min(len(batch.Sequences), len(curPositions))` (or assert equality).\n\n```suggestion\n\t\t\tcurPositions := batch.Positions.Ints()\n\t\t\tfor j := i - 1; j >= 0; j-- {\n\t\t\t\t// assuming sequences and positions align\n\t\t\t\tfor k := 0; k < len(curPositions) && k < len(batch.Sequences); k++ {\n\t\t\t\t\t_ = c.caches[j].Remove(batch.Sequences[k], curPositions[k], math.MaxInt32)\n\t\t\t\t}\n\t\t\t}\n```",
+          "path": "kvcache/wrapper.go",
+          "side": "right",
+          "from_line": 49,
+          "to_line": 54,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] Positions are read back with Ints() at four call sites, and inside the unwind loop, even though the runner already built them\nThe same host data is read back four times (causal.go:203, encoder.go:94, wrapper.go:50 once per outer-loop iteration, llama4/model_text.go:222). If the tensor is not CPU-resident, each read does another sync and copy. Remedy: hoist Ints() out of the j loop, or keep the runner's []int32 next to the tensor as one canonical slice."
+        },
+        {
+          "note": "Adding `Ints() []int32` to the `Tensor` interface is an API-breaking change: all concrete tensor implementations and any test fakes/mocks must implement it or compilation will fail. Please ensure every backend/wrapper that implements `Tensor` is updated, and define expected behavior when the underlying tensor dtype is not int32 (e.g., return nil, convert, or panic) to keep implementations consistent.",
+          "path": "ml/backend.go",
+          "side": "right",
+          "from_line": 402,
+          "to_line": 404,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The use of `C.GoBytes` with `C.int` cast for the length creates a risk of data truncation. `C.int` is typically 32-bit, so if the tensor size exceeds ~2GB, the data will be truncated. It is recommended to manually allocate the slice and copy the data to support larger tensors, ensuring consistency with the `t.sync != nil` branch.",
+          "path": "ml/backend/ggml/ggml.go",
+          "side": "right",
+          "from_line": 1007,
+          "to_line": 1010,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] The Bytes()/Floats() fallback treats a non-nil ggml_get_data as host memory, which breaks ml.Dump's \"nil means not computed\" check\nggml_get_data returns tensor->data for any buffer. For GPU-resident tensors with sync==nil, GoBytes/unsafe.Slice read a device address and crash. ml.Dump (ml/backend.go:567) no longer computes the tensor first, so it prints stale data or crashes. Remedy: take the fallback only when ggml_backend_buffer_is_host(t.t.buffer) is true and the buffer is not no_alloc; otherwise return nil."
+        },
+        {
+          "note": "The `Bytes()` method now handles CPU tensors by using `C.GoBytes()` which creates a copy of the data. However, there's a potential issue: if the tensor is neither on a backend (sync == nil) nor in CPU memory (bts == nil), the function will return a nil slice without any error or warning. Consider adding an error return or at least logging this edge case to prevent silent failures.",
+          "path": "ml/backend/ggml/ggml.go",
+          "side": "right",
+          "from_line": 1007,
+          "to_line": 1007,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Good addition of the `Ints()` method to complement `Floats()` and `Bytes()`. However, the same concern applies here: when both `sync` is nil and `C.ggml_get_data(t.t)` returns nil, the function silently returns a nil slice. This could lead to nil pointer dereferences in calling code. Consider adding error handling or defensive checks.",
+          "path": "ml/backend/ggml/ggml.go",
+          "side": "right",
+          "from_line": 1029,
+          "to_line": 1029,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[High] The new ggml Tensor.Ints() and the CPU-memory fallback in Bytes()/Floats() have no tests\nEvery forward pass reads positions through this path (kvcache/causal.go:203-204). ml/ has no _test.go and no test builds a real ggml tensor, so these can regress silently: the sync==nil branch, the nil-return branch (curBatchSize 0), the aliasing behaviour, and allocMemory=false tensors. Remedy: add ml/backend/ggml/ggml_test.go with a tiny GGUF (fs/ggml.WriteGGUF, as in llm/memory_test.go:37) and a CPU backend. Assert Ints/Floats/Bytes round-trips, that zero-length tensors don't panic, and the post-Compute values."
+        },
+        {
+          "note": "The word 'indicies' is misspelled. It should be 'indices'.\n\n```suggestion\n\t// Outputs are the set of indices into Inputs for which output data should\n\t// be returned.\n\tOutputs ml.Tensor\n```",
+          "path": "model/input/input.go",
+          "side": "right",
+          "from_line": 61,
+          "to_line": 63,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The change from `len(batch.Positions)` to `batch.Positions.Dim(0)` is correct for the new tensor-based API. However, there's a potential nil pointer dereference risk if `batch.Positions` is nil. Consider adding a nil check before calling `Dim(0)`, or ensure that batch validation happens earlier in the call chain to guarantee `Positions` is always initialized.",
+          "path": "model/model.go",
+          "side": "right",
+          "from_line": 285,
+          "to_line": 285,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] model.Forward now panics on a nil Positions instead of returning its validation error\nA zero-value input.Batch used to return \"batch size cannot be less than 1\". Now batch.Positions.Dim(0) dereferences a nil interface and panics. Remedy: add `if batch.Positions == nil { return nil, errors.New(\"batch size cannot be less than 1\") }` before the Dim checks."
+        },
+        {
+          "note": "Behavior change: lastLayerOutputs now comes from `batch.Outputs` instead of an explicit `outputs` argument. If `batch.Outputs` can be nil/zero (or not sized for the current forward), the last layer may silently skip writing requested outputs or panic later. Consider validating `batch.Outputs` when `i==len(m.Layers)-1` (or keep the explicit parameter) to preserve previous contract.",
+          "path": "model/models/llama4/model_text.go",
+          "side": "right",
+          "from_line": 238,
+          "to_line": 241,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Good refactoring - moving tensor creation closer to where it's used. The code now creates `batchPositions` and `batchOutputs` as slices first, then converts them to tensors just before the Forward call. This is cleaner and more efficient. However, ensure that the `ctx.Input()` calls for creating tensors don't fail silently if the context is invalid.",
+          "path": "runner/ollamarunner/runner.go",
+          "side": "right",
+          "from_line": 581,
+          "to_line": 581,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Medium] Batch-tensor construction and the Outputs.Dim(0)-based vocabSize are untested\nNo test covers the iBatch bookkeeping, the Positions/Outputs tensors, vocabSize from Outputs.Dim(0) (:711), or the Arange for Outputs (:1070). cache_test.go uses a mockCache and never builds a batch. A mismatched iBatch or a wrong vocabSize split would sample from the wrong logits row with no failing test. Remedy: extract batch assembly into a helper that takes an ml.Context and test it with a fake context, asserting Positions, Outputs and iBatch for two sequences of different lengths."
+        },
+        {
+          "note": "Potential runtime panic: vocabSize := len(outputs) / activeBatch.batch.Outputs.Dim(0) will divide by zero if Outputs is empty (Dim(0)==0). Even if normally non-empty, add a defensive guard (and ideally validate Outputs is 1-D) to avoid panics and hard-to-debug slice bound errors when sampling.\n\n```suggestion\n\t\toutN := activeBatch.batch.Outputs.Dim(0)\n\t\tif outN <= 0 {\n\t\t\ts.hardErrCh <- fmt.Errorf(\"invalid Outputs dimension: %d\", outN)\n\t\t\treturn\n\t\t}\n\t\tvocabSize := len(outputs) / outN\n\t\tlogutil.Trace(\"computeBatch: vocab details\", \"batchID\", activeBatch.id, \"seqIdx\", i, \"len(logits)\", len(outputs), \"len(activeBatch.batch.Outputs)\", outN, \"vocabSize\", vocabSize, \"iBatches\", iBatches)\n```",
+          "path": "runner/ollamarunner/runner.go",
+          "side": "right",
+          "from_line": 711,
+          "to_line": 712,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        }
+      ]
+    },
+    {
+      "instance_id": "mpv-player__mpv@dbd327d",
+      "repo": "mpv-player/mpv",
+      "comments": [
+        {
+          "note": "Potential signed/unsigned narrowing: `pl->num_entries` is likely `int`, but `mp_rand_in_range32` takes `uint32_t`. If `num_entries` can exceed `UINT32_MAX` or be negative (corrupted state), implicit conversion can wrap and lead to OOB access. Consider casting with validation (and early-return if `num_entries <= 1`) to keep bounds safe.\n\n```suggestion\n        if (pl->num_entries <= 1)\n            return;\n        \n        uint32_t nn = (uint32_t)pl->num_entries; // consider asserting pl->num_entries > 0\n        uint32_t i = (uint32_t)n;\n        size_t j = mp_rand_in_range32(&s, i, nn);\n        MPSWAP(struct playlist_entry *, pl->entries[n], pl->entries[j]);\n```",
+          "path": "common/playlist.c",
+          "side": "right",
+          "from_line": 175,
+          "to_line": 176,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The new per-function RNG state (`struct mp_rand_state s = mp_rand_seed(0);`) changes behavior from using a global RNG (`mp_rand_next()` without state) to a locally-seeded stream. Seeding with a constant `0` makes the sequence deterministic for every call, which can increase collision risk across concurrent calls/processes. If the goal is merely to avoid global state, consider seeding from a higher-entropy source (time/PID/urandom) or document why determinism is acceptable here. Also consider moving the seed outside the loop is fine (as done), but ensure `mp_rand_seed(0)` is not an expensive call in this hot path.",
+          "path": "misc/io_utils.c",
+          "side": "right",
+          "from_line": 43,
+          "to_line": 47,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The variable names 'fuckshit' and 'fuckmess' contain inappropriate profanity and violate the naming conventions requirement. Variable names should be meaningful and use snake_case. Please rename these to descriptive names like 'attempt' or 'iteration' for the loop counter, and 'random_value' or 'rand_val' for the random value.\n\n```suggestion\n    for (size_t attempt = 0; attempt < UINT32_MAX; attempt++) {\n        // Using a random value may make it require fewer iterations (even if\n        // not truly random; just a counter would be sufficient).\n        size_t rand_val = mp_rand_next(&s);\n```",
+          "path": "misc/io_utils.c",
+          "side": "right",
+          "from_line": 44,
+          "to_line": 47,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Remove unused function `mp_rand_next_double` as it is not referenced in the current codebase and adds unnecessary dead code.",
+          "path": "misc/random.c",
+          "side": "right",
+          "from_line": 84,
+          "to_line": 84,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The reference link in the algorithm documentation should be updated to include a Wayback Machine snapshot on a separate line, matching the project's convention for preventing dead links and enabling easier URL copying.",
+          "path": "misc/random.c",
+          "side": "right",
+          "from_line": 89,
+          "to_line": 89,
+          "line_match": true,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "mp_rand_in_range32(): `mp_round_next_power_of_2()` explicitly returns 0 on overflow (e.g. for values needing 2^32). If `range > 0x80000000`, `mp_round_next_power_of_2(range)` becomes 0, so `mask` underflows to `UINT32_MAX`. The rejection loop still terminates but can become extremely slow (acceptance probability ~= range/2^32), and this behavior is surprising. Suggest: explicitly handle large ranges, e.g.:\n- if `range` is a power of two: just `min + (mp_rand_next(s) & (range - 1))`\n- else if `mp_round_next_power_of_2(range)==0`: use a 64-bit mask/rejection (or Lemire method) based on `uint64_t r = mp_rand_next(s)` and `ret = (uint32_t)(r % range)` with bias-free technique.\nAt minimum, add a guard/fast-path to avoid the underflow case.",
+          "path": "misc/random.c",
+          "side": "right",
+          "from_line": 93,
+          "to_line": 99,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The project convention prohibits typedef'ing internal structs; retain `mp_rand_state` as `struct mp_rand_state` without typedef to maintain consistency.",
+          "path": "misc/random.h",
+          "side": "right",
+          "from_line": 28,
+          "to_line": 28,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        }
+      ]
+    },
+    {
+      "instance_id": "microsoft__typescript-go@45c0de9",
+      "repo": "microsoft/typescript-go",
+      "comments": [
+        {
+          "note": "Passing `nil` for converters to `toLSPDiagnostic` in the new `toLSPDiagnostics` helper will cause a panic since the function requires non-nil converters; propagate `l.converters` from the receiver instead.",
+          "path": "internal/ls/diagnostics.go",
+          "side": "right",
+          "from_line": 44,
+          "to_line": 44,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Critical] Every diagnostic is converted with a nil *Converters, so the first one panics and kills the language server\ntoLSPDiagnostics calls toLSPDiagnostic(diag, nil). toLSPDiagnostic always calls converters.ToLSPRange (line 86, and line 68 for related information), which reads c.getLineMap through a nil receiver (converters.go:210) and panics. The diagnostic request runs in a goroutine (go handle(), server.go:301) with nothing that recovers, so any textDocument/diagnostic request for a file with at least one diagnostic crashes the whole tsgo LSP process. Fix: have toLSPDiagnostics take converters, or make it a *LanguageService method, pass l.converters, and delete the \"converters can be nil\" comment."
+        }
+      ]
+    },
+    {
+      "instance_id": "elastic__elasticsearch@e38d20c",
+      "repo": "elastic/elasticsearch",
+      "comments": [
+        {
+          "note": "The method `maybeWrapListenerForStackTrace` introduces unnecessary heavy dependencies by requiring `ClusterService` and the full `ShardSearchRequest` when only the local node ID and shard ID are needed.",
+          "path": "server/src/main/java/org/elasticsearch/search/SearchService.java",
+          "side": "right",
+          "from_line": 549,
+          "to_line": 549,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The current implementation logs server errors (5xx) at debug level when stripping stack traces (`header == false`), which obscures critical failures in production. Change logging to WARN level for 5xx errors and replace trace-removal messaging with clear exception details.",
+          "path": "server/src/main/java/org/elasticsearch/search/SearchService.java",
+          "side": "right",
+          "from_line": 555,
+          "to_line": 555,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "**Inefficiency concern**: Using a lambda with `logger.debug()` is good for avoiding string formatting when debug is disabled. However, the lambda still captures the `clusterService.localNode()` call and `request.shardId()` which happens before checking if debug is enabled. Consider if this adds unnecessary overhead in production when debug logging is disabled (which is the common case).\n\nThe current implementation is acceptable, but if performance is critical, you might want to check the log level first before any computation.",
+          "path": "server/src/main/java/org/elasticsearch/search/SearchService.java",
+          "side": "right",
+          "from_line": 556,
+          "to_line": 556,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Failure-path robustness: this debug log dereferences `clusterService.localNode().getId()` and `request.shardId()` while already handling an exception. If `localNode()` is null during startup/shutdown, logging will throw and could mask the original failure or change behavior. Consider null-safe node id / shard id extraction (or log `clusterService.state().nodes().getLocalNodeId()` if guaranteed) and avoid any additional failure points here.\n\n```suggestion\n                final String nodeId = clusterService != null && clusterService.localNode() != null ? clusterService.localNode().getId() : \"_unknown\";\n                final Object shardId = request != null ? request.shardId() : \"_unknown\";\n                logger.debug(() -> format(\"[%s]%s Clearing stack trace before transport:\", nodeId, shardId), e);\n```",
+          "path": "server/src/main/java/org/elasticsearch/search/SearchService.java",
+          "side": "right",
+          "from_line": 557,
+          "to_line": 560,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The log message format includes the closing bracket in the wrong position. The format string shows `[%s]%s Clearing stack trace` but should be `[%s][%s] Clearing stack trace` to properly match the pattern `[nodeId][indexName][shard]` mentioned in the PR description. \n\nCurrently: `[nodeId][indexName][shard] Clearing stack trace`\nExpected: `[nodeId][indexName][shard] Clearing stack trace`\n\nThe issue is that `request.shardId()` returns a ShardId object which already includes the index name and shard number in its toString() format like `[indexName][shard]`, so the format should be `[%s]%s` (which is correct as written). However, this makes the log format inconsistent with the description that claims it will be prefixed with `[nodeId][indexName][shard]`.",
+          "path": "server/src/main/java/org/elasticsearch/search/SearchService.java",
+          "side": "right",
+          "from_line": 558,
+          "to_line": 558,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        }
+      ]
+    },
+    {
+      "instance_id": "CherryHQ__cherry-studio@5644b00",
+      "repo": "CherryHQ/cherry-studio",
+      "comments": [
+        {
+          "note": "Avoid using 'any' type. Consider using a more specific type for the rest object or provide proper type definitions.",
+          "path": "src/renderer/src/middleware/convertLinksMiddleware.ts",
+          "side": "right",
+          "from_line": 9,
+          "to_line": 9,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The `@ts-expect-error` comment suppresses a legitimate TypeScript type error. When the generic type `T` is provided without a `textDelta` property (e.g., `convertLinksMiddleware<MyCustomType>()`), accessing `chunk.textDelta` will cause a runtime error. Consider either: 1) Using a type guard to check if `textDelta` exists before accessing it, or 2) Defining a proper constraint that ensures `T` has `textDelta` when `type === 'text-delta'`.\n\n```suggestion\n              if (chunk.type === 'text-delta') {\n                const textDelta = (chunk as any).textDelta\n                if (textDelta !== undefined) {\n                  controller.enqueue({\n                    ...chunk,\n                    textDelta: convertLinks(textDelta as string)\n                  })\n                } else {\n                  controller.enqueue(chunk)\n                }\n```",
+          "path": "src/renderer/src/middleware/convertLinksMiddleware.ts",
+          "side": "right",
+          "from_line": 16,
+          "to_line": 21,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Critical] convertLinks now runs on every OpenAI-compatible reply, never resets and never flushes, so it drops reply text and carries it into later replies\nBefore this change, convertLinks ran only when web search was on and was reset per reply. Now it runs on every text delta with resetCounter=false, and the TransformStream has no flush. Its module-level buffer holds back everything after any '[' that isn't a complete link (arr[0], [1, 2, 3], \"- [ ]\"). The reply then shows only \"Use a list: x = \", so TEXT_COMPLETE, content and processToolUses all get truncated text, and the stale tail leaks into the next reply. Fix: gate on web search and provider as before, keep per-stream converter state (reset on the first chunk, or use a factory), and add flush() to emit the remaining buffer."
+        },
+        {
+          "note": "**Type Safety Improvement**\n\nUsing `@ts-expect-error` suppresses the type check but doesn't guarantee runtime safety. If a chunk has `type: 'text-delta'` but is missing `textDelta`, this will throw.\n\n**Suggestion**:\nUse a type guard or a safe cast to ensure `textDelta` exists.\n\n```typescript\nif (chunk.type === 'text-delta' && 'textDelta' in chunk && typeof chunk.textDelta === 'string') {\n  controller.enqueue({\n    ...chunk,\n    textDelta: convertLinks(chunk.textDelta)\n  })\n}\n```",
+          "path": "src/renderer/src/middleware/convertLinksMiddleware.ts",
+          "side": "right",
+          "from_line": 16,
+          "to_line": 22,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[High] convertLinks runs on every text token and its unbounded hold-back buffer makes total work O(n^2) in response length\nAfter one unmatched '[' in a long code answer, every later token is appended to the module-level buffer, and each call rescans it (substring plus regex exec). That is O(n^2) work, run synchronously on the renderer thread, so long answers may stutter. Fix: gate the conversion as before (web search only), reset or keep state per stream, cap the hold-back length, and add flush."
+        },
+        {
+          "note": "Hard-coded string: `'text-delta'` is a protocol constant. If this value is used elsewhere, consider centralizing it (enum/const) to avoid drift and improve discoverability. Also consider guarding `chunk.textDelta` with a runtime type check if chunks can be malformed (e.g., `typeof (chunk as any).textDelta === 'string'`) to prevent `convertLinks` from throwing.",
+          "path": "src/renderer/src/middleware/convertLinksMiddleware.ts",
+          "side": "right",
+          "from_line": 16,
+          "to_line": 21,
+          "line_match": true,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The tag extraction logic in `extractReasoningMiddleware` lacks validation for nested or malformed tags, risking incorrect content extraction; implement structural validation and explicit error handling for tag integrity.",
+          "path": "src/renderer/src/middleware/extractReasoningMiddleware.ts",
+          "side": "right",
+          "from_line": 12,
+          "to_line": 12,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Missing error handling in async function. Consider adding try-catch blocks to handle potential errors from doGenerate() call.",
+          "path": "src/renderer/src/middleware/extractReasoningMiddleware.ts",
+          "side": "right",
+          "from_line": 20,
+          "to_line": 22,
+          "line_match": true,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Type safety: `Record<string, any>` weakens typing and spreads `any` through callers. Prefer a generic return type that preserves provider-specific fields (e.g., `<R extends {text:string}>(...) => Promise<R>`), or at least use `Record<string, unknown>`.\n\nAlso consider typing `doGenerate/doStream` params via a shared interface to avoid repeating/loosening types.",
+          "path": "src/renderer/src/middleware/extractReasoningMiddleware.ts",
+          "side": "right",
+          "from_line": 21,
+          "to_line": 22,
+          "line_match": true,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Use strict equality `===` instead of loose equality `==`. Loose equality can lead to unexpected type coercion behavior.",
+          "path": "src/renderer/src/middleware/extractReasoningMiddleware.ts",
+          "side": "right",
+          "from_line": 23,
+          "to_line": 23,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Potential null pointer issue: `RegExpMatchArray.index` can return `number | undefined` in TypeScript. Using type assertion `as number` without null checking could cause runtime errors if `match.index` is undefined. Please add a null check before using `match.index`.\n\n```suggestion\n      for (let i = matches.length - 1; i >= 0; i--) {\n        const match = matches[i] as RegExpMatchArray\n        if (match.index == null) continue\n        const beforeMatch = textWithoutReasoning.slice(0, match.index)\n        const afterMatch = textWithoutReasoning.slice(match.index + match[0].length)\n```",
+          "path": "src/renderer/src/middleware/extractReasoningMiddleware.ts",
+          "side": "right",
+          "from_line": 34,
+          "to_line": 37,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Potential data loss: the transform has no `flush()` implementation. If the stream ends with remaining `buffer` content (e.g., partial tag or trailing text), it will never be emitted. Add a `flush(controller)` to `publish(buffer)` at end (taking `isReasoning/afterSwitch` into account).\n\n```suggestion\n          new TransformStream<T, T>({\n                      transform: (chunk, controller) => {\n                        // ...existing logic...\n                      },\n                      flush: (controller) => {\n                        if (buffer.length > 0) {\n                          // publish remaining buffer as-is\n                          const prefix = afterSwitch && (isReasoning ? !isFirstReasoning : !isFirstText) ? separator : ''\n                          controller.enqueue({\n                            ...(lastChunk as any),\n                            type: isReasoning ? 'reasoning' : 'text-delta',\n                            textDelta: prefix + buffer\n                          })\n                          buffer = ''\n                        }\n                      }\n                    })\n```",
+          "path": "src/renderer/src/middleware/extractReasoningMiddleware.ts",
+          "side": "right",
+          "from_line": 56,
+          "to_line": 57,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] Reasoning transform has no flush, so a trailing partial tag prefix is dropped\nA reply ending in '<' or '<th' (for example a code answer) has that suffix held in the buffer as a possible <think> prefix and never emitted, so content and TEXT_COMPLETE are truncated. Fix: add flush(controller) that publishes the remaining buffer as the current type."
+        },
+        {
+          "note": "This conditional assignment relies heavily on previous state flags (afterSwitch, isFirst*, etc.). Its complexity makes it harder to follow. Refactoring into helper functions or clearer conditionals could improve readability.",
+          "path": "src/renderer/src/middleware/extractReasoningMiddleware.ts",
+          "side": "right",
+          "from_line": 66,
+          "to_line": 66,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The 'finish' variant of `OpenAIStreamChunk` uses `any` for `finishReason`, `usage`, `delta`, and `chunk`, undermining TypeScript's type safety; replace with structured interfaces defining explicit properties and types.",
+          "path": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+          "side": "right",
+          "from_line": 63,
+          "to_line": 66,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Medium] OpenAIStreamChunk uses `any` and passes the raw provider chunk through, so vendor parsing is split across two places\nThe finish case still reads raw citations/web_search/search_info/annotations from `chunk: any`, `lastUsage = usage` takes an unchecked any, and 'reasoning' chunks are enqueued into T without a check, so a chunk-shape change compiles silently. Fix: move web-search extraction into the normalizer as typed variants ({type:'web-search'; results; source}), type finishReason/usage (Usage), and drop the export."
+        },
+        {
+          "note": "`time_first_token_millsec` is set on first reasoning OR first text delta; but `time_first_content_millsec_delta` metric is never assigned (always 0), which can break analytics/UX relying on it. Either compute it when first text token arrives or remove it from metrics.\n\n```suggestion\n      let time_first_token_millsec = 0\n      let time_first_token_millsec_delta = 0\n      let time_first_content_millsec = 0\n      let time_first_content_millsec_delta = 0 // set when first text-delta arrives after start\n      // ...\n      if (time_first_content_millsec === 0 && chunk.type === 'text-delta') {\n        time_first_content_millsec = currentTime\n        time_first_content_millsec_delta = currentTime - start_time_millsec\n      }\n```",
+          "path": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+          "side": "right",
+          "from_line": 496,
+          "to_line": 498,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] Seven loose timing/flag variables with overlapping guards\nisFirstChunk overlaps the time_first_token_millsec === 0 check, and time_thinking_start duplicates time_first_token_millsec, so tracing the metrics means following several mutable variables across switch cases. Bugs in timing are easy to introduce. Fix: replace them with a createStreamMetrics(start) tracker exposing mark* methods and toMetrics()."
+        },
+        {
+          "note": "These tag names are still effectively hardcoded. Define them as named constants (e.g., `TAG_THINK = 'think'; TAG_REASONING = 'reasoning';`) and use those constants here for improved readability and easier maintenance.",
+          "path": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+          "side": "right",
+          "from_line": 502,
+          "to_line": 505,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Medium] getAppropriateTag returns the same value on every branch; the 'reasoning' tag entry is never used\nReaders assume per-model tag selection (a claude branch, a 'reasoning' tag) that does not exist. The function is also reallocated on every processStream call, and the GLM ###Response handling it seems to stand in for is gone. Fix: delete reasoningTags/getAppropriateTag and pass { tagName: 'think' } directly. If per-model tags are needed, add a typed map in config/models.ts."
+        },
+        {
+          "note": "`openAIChunkToTextDelta` assumes `chunk.choices[0]` always exists. In partial/edge cases this can be undefined, causing runtime errors. Add guards (and consider emitting finish on stream end).\n\n```suggestion\n          const choice0 = chunk?.choices?.[0]\n          const delta = choice0?.delta\n          if (delta?.reasoning_content || delta?.reasoning) {\n            yield { type: 'reasoning', textDelta: delta.reasoning_content ?? delta.reasoning }\n          }\n          if (delta?.content) {\n            yield { type: 'text-delta', textDelta: delta.content }\n          }\n          const finishReason = choice0?.finish_reason\n```",
+          "path": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+          "side": "right",
+          "from_line": 518,
+          "to_line": 525,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "There is a risk of missing the `usage` data here.\n\n1. OpenAI often sends the `usage` field in a separate final chunk *after* the chunk containing `finish_reason`. Breaking the loop immediately when `finishReason` is found prevents processing that subsequent usage chunk.\n2. The usage-only chunk typically has empty `choices`, so `finishReason` will be undefined, causing the loop to skip yielding the usage data.\n\nSuggestion: Remove the `break` and update the condition to yield if either `finishReason` exists OR `chunk.usage` is present.",
+          "path": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+          "side": "right",
+          "from_line": 525,
+          "to_line": 529,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Missing error handling: The middleware calls and stream iteration lack try-catch blocks. If the middleware or stream processing fails, errors could crash the stream without proper user feedback. Consider wrapping this section in try-catch to handle potential errors gracefully.",
+          "path": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+          "side": "right",
+          "from_line": 533,
+          "to_line": 549,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Medium] A copy of vercel/ai's wrapStream/doStream middleware protocol is rebuilt without the ai package, only to pipe one stream\nEvery stream goes async generator → ReadableStream → two TransformStreams → hand-written iterable, through fake doStream thunks and Record<string, any> rest plumbing. That adds indirection and two single-use adapters on the hot path, with no middleware runner in the repo. Fix: compose plain async-generator (or TransformStream) transforms directly, and delete utils/stream.ts and the doStream envelope."
+        },
+        {
+          "note": "`time_first_token_millsec` is reused as both \"first token\" and \"thinking start\" in reasoning path. This makes `time_first_token_millsec_delta` ambiguous when there is reasoning first. Consider keeping separate timestamps for \"first token overall\" and \"thinking start\" (you already have `time_thinking_start`).",
+          "path": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+          "side": "right",
+          "from_line": 553,
+          "to_line": 557,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Minor: `const currentTime` is declared at loop top and re-declared inside `finish` case, which is redundant and can confuse readers. Reuse the outer variable.",
+          "path": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+          "side": "right",
+          "from_line": 585,
+          "to_line": 591,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] Redundant isEmpty(finishReason) check and shadowed currentTime in the finish case\nThe generator yields 'finish' only after the same !isEmpty check, so the guard is always true. The inner currentTime shadows the outer one. Both are dead or confusing leftovers that hide the real invariant. Fix: remove the guard and the inner currentTime."
+        },
+        {
+          "note": "Naming inconsistency: The filename is `getPotentialIndex.ts` but the exported function is named `getPotentialStartIndex`. Consider renaming the file to `getPotentialStartIndex.ts` to match the function name, which will make imports more intuitive and consistent.",
+          "path": "src/renderer/src/utils/getPotentialIndex.ts",
+          "side": "right",
+          "from_line": 7,
+          "to_line": 7,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Medium] getPotentialStartIndex has no unit tests for its suffix/prefix branches\nA regression in the empty-search, direct-hit, partial-suffix or no-match branches would mis-split reasoning without any test failing. Fix: add getPotentialIndex.test.ts with ('abc','')→null, ('a<think>b','<think>')→1, ('hello <thi','<think>')→6, ('hello','<think>')→null, ('<','<think>')→0."
+        },
+        {
+          "note": "Potential performance issue: this suffix scan is O(n^2) and allocates a new substring on each iteration (`text.substring(i)`). If `text` can be large (streaming buffers), consider avoiding allocations by comparing via indices (e.g., loop k over possible suffix length and check `searchedText.startsWith(text.slice(-k))` with bounded k, or compare characters directly). At minimum, prefer `text.slice(i)` only if necessary and consider early-bounding the scan to `Math.min(text.length, searchedText.length)`.",
+          "path": "src/renderer/src/utils/getPotentialIndex.ts",
+          "side": "right",
+          "from_line": 21,
+          "to_line": 26,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The `reader` created from `stream.getReader()` is never closed. According to the Streams API specification, when a reader is created, the stream becomes locked to that reader. If `reader.read()` throws an error or the iteration is interrupted, the reader should be properly closed via `reader.releaseLock()` to allow the stream to be used again and prevent memory leaks. Consider wrapping the async iterator with proper cleanup logic.\n\n```suggestion\nexport function readableStreamAsyncIterable<T>(stream: ReadableStream<T>): AsyncIterable<T> {\n  const reader = stream.getReader()\n  return {\n    [Symbol.asyncIterator](): AsyncIterator<T> {\n      return {\n        async next(): Promise<IteratorResult<T>> {\n          try {\n            return await reader.read()\n          } catch (error) {\n            reader.releaseLock()\n            throw error\n          }\n        },\n        async return(): Promise<IteratorResult<T>> {\n          reader.releaseLock()\n          return { done: true, value: undefined as any }\n        }\n      }\n    }\n  }\n}\n```",
+          "path": "src/renderer/src/utils/stream.ts",
+          "side": "right",
+          "from_line": 1,
+          "to_line": 12,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] Stream adapters never cancel or return the upstream, so a consumer error leaves the OpenAI HTTP stream open\nIf onChunk or processToolUses throws inside the consume loop, the iterator has no return() to release the reader or cancel the stream, and the ReadableStream has no cancel() to call gen.return(). The SDK response stays open until the server closes it: one leaked connection per failed stream. Fix: add an iterator return() that calls reader.cancel()/releaseLock(), and cancel(){ return gen.return(undefined) } on the source, or use native ReadableStream async iteration."
+        },
+        {
+          "note": "The `asyncGeneratorToReadableStream` function lacks error handling. If `gen.next()` throws an error or the generator encounters an error, the `controller.error(error)` should be called to propagate the error to the stream consumer. Without this, errors may be silently swallowed or cause unhandled promise rejections.\n\n```suggestion\nexport function asyncGeneratorToReadableStream<T>(gen: AsyncGenerator<T>): ReadableStream<T> {\n  return new ReadableStream<T>({\n    async pull(controller) {\n      try {\n        const { value, done } = await gen.next()\n        if (done) {\n          controller.close()\n        } else {\n          controller.enqueue(value)\n        }\n      } catch (error) {\n        controller.error(error)\n      }\n    },\n    cancel() {\n      gen.return?.()\n    }\n  })\n}\n```",
+          "path": "src/renderer/src/utils/stream.ts",
+          "side": "right",
+          "from_line": 14,
+          "to_line": 25,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] readableStreamAsyncIterable and asyncGeneratorToReadableStream adapters are untested\nOrdering, clean termination, error propagation and reader-lock release on break are unchecked, so a regression in the bridge from the OpenAI SDK to the middleware goes unnoticed. Fix: add stream.test.ts covering a [1,2,3] round trip, a throwing generator rejecting the for-await, and stream.locked after a break."
+        }
+      ]
+    },
+    {
+      "instance_id": "lvgl__lvgl@a0067e3",
+      "repo": "lvgl/lvgl",
+      "comments": [
+        {
+          "note": "The added null check for `txt` parameter omits the required logging; include LOG_ERR or LOG_WRN specifically when `txt` is NULL.",
+          "path": "src/misc/lv_text.c",
+          "side": "right",
+          "from_line": 653,
+          "to_line": 653,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Medium] lv_label_get_letter_on infinite loop when a recolor label's last line ends inside a `#` command\nImpact: last-line bound is strlen+1 (lv_label.c:451); with text like \"ab#\" the decoder now stays at '\\0', lv_text_is_cmd(&cmd_state, '\\0') returns true in PAR state (lv_text.c:160-165), and the `continue` at lv_label.c:487-495 loops forever — pressing past the last glyph in a textarea/roller hangs the UI thread or causes a watchdog reset. Remedy: break when bidi_txt[i] == '\\0' or i did not advance; pass `letter` rather than bidi_txt[i] to lv_text_is_cmd; add a regression test."
+        },
+        {
+          "note": "**Potential logic issue**: Checking `txt[*i] == '\\0'` before processing might change the expected behavior of this function. \n\nIf `*i` points to the null terminator, this returns early without incrementing `*i`. Callers might expect `*i` to be incremented even when reaching the end of the string.\n\nConsider whether this early return is the intended behavior, or if the null check should only prevent accessing beyond valid memory while still allowing normal processing of the null terminator case.",
+          "path": "src/misc/lv_text.c",
+          "side": "right",
+          "from_line": 653,
+          "to_line": 653,
+          "line_match": false,
+          "semantic_match": true,
+          "matched_note": "[High] Returning at '\\0' without advancing *i hangs index-bounded loops when the bound overshoots the terminator\nImpact: lv_text_get_width(_with_flags) (while(i < length), :399/:432) and lv_text_utf8_get_char_id (while(i < byte_id), :772) relied on the decoder stepping past '\\0'; now i sticks at the terminator and the loop never exits. In-tree trigger: text ending in a truncated UTF-8 sequence such as \"A\\xC3\" — lv_text_utf8_get_byte_id over-counts (byte_id 3), lv_label_get_letter_pos calls lv_text_get_width_with_flags(txt, 3) which hangs at i=2 (with BIDI, lv_text_encoded_get_char_id hangs). Public API callers with length > strlen now hang instead of over-reading. Remedy: add `&& txt[i] != '\\0'` to these loops and/or clamp lv_text_utf8_get_byte_id at the terminator; add a regression test e.g. lv_text_get_width(\"A\\xC3\", 3, ...) terminating."
+        }
+      ]
+    },
+    {
+      "instance_id": "FreeCAD__FreeCAD@f8cd643",
+      "repo": "FreeCAD/FreeCAD",
+      "comments": [
+        {
+          "note": "Consider using standard ASCII characters for consistency and compatibility. While the Unicode ellipsis is visually appealing, some systems or tools may not render it correctly.",
+          "path": "src/Mod/ReverseEngineering/App/AppReverseEngineering.cpp",
+          "side": "right",
+          "from_line": 1002,
+          "to_line": 1002,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] Module-load log lines changed to Unicode \"…\", unlike all 45 other modules; these are not UI strings\nThe UI ellipsis rule was applied to untranslated developer log output (also AppReverseEngineeringGui.cpp:85). Every other module logs \"module... done\" in ASCII (e.g. src/Mod/Mesh/App/AppMesh.cpp:57), so a log grep for \"... done\" now misses ReverseEngineering, and plain logs gain non-ASCII text. Remedy: revert both Console().log strings to ASCII \"...\"."
+        },
+        {
+          "note": "Consider using std::make_shared instead of raw 'new' for improved safety and adherence to modern C++ practices.",
+          "path": "src/Mod/ReverseEngineering/App/RegionGrowing.cpp",
+          "side": "right",
+          "from_line": 58,
+          "to_line": 58,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Consider using standard ASCII triple-dot notation (...) instead of Unicode ellipsis (…) for improved compatibility across various terminals and encodings.",
+          "path": "src/Mod/ReverseEngineering/Gui/AppReverseEngineeringGui.cpp",
+          "side": "right",
+          "from_line": 85,
+          "to_line": 85,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Tooltip text lacks specificity on segmentation criteria; update to state it creates separate mesh segments based on surface types per documentation.",
+          "path": "src/Mod/ReverseEngineering/Gui/Command.cpp",
+          "side": "right",
+          "from_line": 425,
+          "to_line": 425,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Tooltip text should be updated to \"Performs Poisson surface reconstruction\" for clearer user guidance.",
+          "path": "src/Mod/ReverseEngineering/Gui/Command.cpp",
+          "side": "right",
+          "from_line": 602,
+          "to_line": 602,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] Two tooltips were not converted to the third-person verb form used everywhere else\n\"Poisson surface reconstruction\" (:602) and \"Triangulation of structured point clouds\" (:636-637) are still noun phrases, while every sibling now reads \"Approximates…\" or \"Creates…\", so the tooltip set stays mixed. Line 637 also repeats the literal in sStatusTip, so the two can drift apart. Remedy: e.g. \"Reconstructs a surface using the Poisson method\" and \"Triangulates structured point clouds\", with sStatusTip = sToolTipText."
+        },
+        {
+          "note": "Tooltip text uses a noun phrase instead of the expected action-oriented verb form; update from \"Triangulation of structured point clouds\" to \"Triangulates structured point clouds\" for consistency with UI conventions.",
+          "path": "src/Mod/ReverseEngineering/Gui/Command.cpp",
+          "side": "right",
+          "from_line": 636,
+          "to_line": 636,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        }
+      ]
+    },
+    {
+      "instance_id": "browser-use__browser-use@aab7b3b",
+      "repo": "browser-use/browser-use",
+      "comments": [
+        {
+          "note": "The hardcoding of `channel='chrome'` in the browser launch call is invalid for non-Chromium browsers (Firefox/WebKit), as the `channel` parameter is exclusively supported by Chromium-based browsers and will cause runtime errors if used with other browser types.",
+          "path": "browser_use/browser/browser.py",
+          "side": "right",
+          "from_line": 283,
+          "to_line": 283,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[High] Default Browser() launch hard-codes channel='chrome', requiring system Google Chrome while install docs still say `playwright install chromium`\nImpact: the built-in launch path is the default when no cdp/wss/binary path is set (browser.py:296-306). It now requests branded Chrome stable with no config option to opt out. README.md:33, docs/quickstart.mdx:38 and the notebook install only bundled Chromium via playwright, so on CI, Docker or any machine without Chrome the first Agent run fails. Remedy: add a BrowserConfig.channel option or fall back to bundled Chromium, pass the channel only for chromium, and update the install docs to `patchright install chrome`."
+        },
+        {
+          "note": "Documentation inconsistency: The import statement has been updated to use `patchright.async_api`, but the surrounding documentation text still references 'Playwright' (e.g., line 91 mentions 'A Playwright browser context' and lines 120-121 link to Playwright documentation). Consider updating these references to 'Patchright' for consistency, or add a note explaining that Patchright is a Playwright-compatible library being used in the codebase.",
+          "path": "docs/customize/agent-settings.mdx",
+          "side": "right",
+          "from_line": 95,
+          "to_line": 95,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        }
+      ]
+    },
+    {
+      "instance_id": "facebook__react@b045f18",
+      "repo": "facebook/react",
+      "comments": [
+        {
+          "note": "The added import of `ActivityComponent` from `react-reconciler/src/ReactWorkTags` violates React's public API boundary by accessing internal implementation details, risking instability and future breakage.",
+          "path": "packages/react-devtools-shared/src/backend/fiber/renderer.js",
+          "side": "right",
+          "from_line": 149,
+          "to_line": 149,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Medium] DevTools reads ActivityComponent from the reconciler's tag constant instead of the version-keyed ReactTypeOfWork map\nImpact: getDisplayNameForFiber (~631) and shouldFilterFiber (~1491) both match the hardcoded 31 imported from react-reconciler/src/ReactWorkTags, whatever React version is attached. That makes the new WorkTagMap entries (31 for the newest version, -1 for older ones) dead code. It is also the first runtime value import from react-reconciler in the DevTools backend; every other import from it is type-only. If tag 31 is ever renumbered or reused, DevTools will misname or wrongly filter fibers for that version, and editing the per-version map will not fix it. Remedy: remove the import and add ActivityComponent to both `const {...} = ReactTypeOfWork` destructurings (in getInternalReactConstants and in attach), next to ViewTransitionComponent."
+        },
+        {
+          "note": "ActivityComponent must be visible in React DevTools as it represents user-rendered content, not an internal implementation detail; adding it to the hidden components list is incorrect.",
+          "path": "packages/react-devtools-shared/src/backend/fiber/renderer.js",
+          "side": "right",
+          "from_line": 1491,
+          "to_line": 1491,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Medium] No DevTools test checks that the new Activity fiber is hidden and its children still show\nImpact: every <Activity> now creates an extra fiber with tag 31 that DevTools must filter out, but no DevTools test renders unstable_Activity. The only Offscreen matches in the tests are lane labels in preprocessData-test.js and TimelineProfiler-test.js. If the Activity wrapper started appearing in the component tree, or its children were dropped, no test would catch it. The new 'Activity' display-name case is also never run. Remedy: add a store-test.js case gated on enableActivity that renders <Activity mode=\"visible\"><Child /></Activity> and asserts <Child> appears directly under its parent with no Activity or Offscreen node, plus a mode=\"hidden\" case."
+        },
+        {
+          "note": "The Offscreen case in the `createFiberFromTypeAndProps` type switch appears redundant with the new `REACT_ACTIVITY_TYPE` addition and should be removed.",
+          "path": "packages/react-reconciler/src/ReactFiber.js",
+          "side": "right",
+          "from_line": 593,
+          "to_line": 593,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Setting `fiber.elementType` to `REACT_ACTIVITY_TYPE` in `createFiberFromActivity` overrides the element's actual type (e.g., when wrapped in `React.lazy`), breaking reconciliation. Remove this assignment to preserve the original element type, as fixed for portals in PR #32640.",
+          "path": "packages/react-reconciler/src/ReactFiber.js",
+          "side": "right",
+          "from_line": 879,
+          "to_line": 879,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "`createFiberFromActivity` currently types `pendingProps` as `OffscreenProps`. If Activity has different props (or a dedicated `ActivityProps` type), this will silently allow incorrect shapes and reduce type safety. Consider introducing/using a specific props type for Activity (and importing it) or, if it truly reuses Offscreen props, add a brief rationale and ensure the name reflects that reuse.",
+          "path": "packages/react-reconciler/src/ReactFiber.js",
+          "side": "right",
+          "from_line": 881,
+          "to_line": 886,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] Activity's public props are typed with Offscreen's internal OffscreenProps type\nImpact: createFiberFromActivity declares its props as OffscreenProps, an internal type marked \"TODO: Pick an API before exposing the Offscreen type\". That type includes the internal mode 'unstable-defer-without-hiding', and updateActivityComponent passes it straight through. So the public <Activity> contract is tied to Offscreen internals, and changing Offscreen's props would silently change Activity's. This is not a regression; createFiberFromLegacyHidden also uses OffscreenProps. The function is also missing the blank line that separates the other createFiberFrom* helpers. Remedy: define an ActivityProps type (mode?: 'hidden' | 'visible' | null | void, children) in ReactFiberActivityComponent.js, use it in createFiberFromActivity, map it to OffscreenProps explicitly in updateActivityComponent, and add the blank line."
+        },
+        {
+          "note": "The `createFiberFromActivity` function doesn't initialize the `stateNode` property like `createFiberFromOffscreen` does (see line 878). \n\nShould this function also include:\n```javascript\nconst primaryChildInstance: OffscreenInstance = {\n  _visibility: OffscreenVisible,\n  _pendingVisibility: OffscreenVisible,\n  _pendingMarkers: null,\n  _retryCache: null,\n  _transitions: null,\n  _current: null,\n  detach: () => detachOffscreenInstance(primaryChildInstance),\n  attach: () => attachOffscreenInstance(primaryChildInstance),\n};\nfiber.stateNode = primaryChildInstance;\n```\n\nOr does Activity intentionally not need state management? If intentional, a comment explaining why would be helpful.",
+          "path": "packages/react-reconciler/src/ReactFiber.js",
+          "side": "right",
+          "from_line": 881,
+          "to_line": 881,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "This function largely duplicates the Offscreen/LegacyHidden mounting+updating pattern (creating/updating an Offscreen fiber, wiring `ref`, `child`, and `return`). Consider extracting a shared helper (or reusing `updateOffscreenComponent`/`updateLegacyHiddenComponent` if semantics match) to reduce divergence risk when Offscreen behavior changes (e.g. flags, lanes, ref handling). If semantics intentionally differ, add a short comment explaining why Activity needs its own fork.",
+          "path": "packages/react-reconciler/src/ReactFiberBeginWork.js",
+          "side": "right",
+          "from_line": 871,
+          "to_line": 883,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The `updateActivityComponent` function creates an Offscreen child fiber internally. A few questions:\n\n1. Should there be a feature flag check for Activity support, similar to how other experimental features are gated?\n2. The function always creates an Offscreen fiber as a child - is this the intended behavior? This seems to indicate Activity is a wrapper around Offscreen rather than a replacement.\n3. Consider adding a JSDoc comment explaining the relationship between Activity and Offscreen components, especially since this is a new abstraction separating hydration semantics.",
+          "path": "packages/react-reconciler/src/ReactFiberBeginWork.js",
+          "side": "right",
+          "from_line": 871,
+          "to_line": 871,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The use of `any` type casting violates the code quality guideline. According to the TypeScript type rules, avoid using `any` type; if necessary, please add a comment explaining the reason. Consider following the pattern used in `updateOffscreenComponent` (line 687) which assigns directly without type casting: `let currentChild = (workInProgress.child = current.child);`",
+          "path": "packages/react-reconciler/src/ReactFiberBeginWork.js",
+          "side": "right",
+          "from_line": 897,
+          "to_line": 897,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Consider adding a brief comment explaining what ActivityComponent represents, similar to other exported tags, to maintain consistency and aid future maintenance.",
+          "path": "packages/react-reconciler/src/ReactWorkTags.js",
+          "side": "right",
+          "from_line": 73,
+          "to_line": 73,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Consider verifying if 'Activity' as a component name aligns with naming conventions used elsewhere in the codebase. If there's a constant or shared definition for this name, it might be better to reuse it instead of hardcoding the string here.",
+          "path": "packages/react-reconciler/src/getComponentNameFromFiber.js",
+          "side": "right",
+          "from_line": 90,
+          "to_line": 90,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "REACT_ACTIVITY_TYPE is now rendered via `renderOffscreen` by falling through to the Offscreen case. Please confirm this is intended for server rendering (Fizz):\n- Activity’s props/semantics are fully compatible with `renderOffscreen` (e.g. expected prop names/shape, visibility/hidden behavior, and any special Activity-only behavior).\n- If this is only a temporary implementation detail, consider adding a short inline note (or a thin `renderActivity` wrapper calling `renderOffscreen`) to make the coupling explicit and reduce regression risk if Activity and Offscreen behavior diverge later.",
+          "path": "packages/react-server/src/ReactFizzServer.js",
+          "side": "right",
+          "from_line": 2265,
+          "to_line": 2268,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "REACT_OFFSCREEN_TYPE symbol is unnecessary and should be removed; Offscreen is handled internally by tag without requiring reconciliation via elementType.",
+          "path": "packages/shared/ReactSymbols.js",
+          "side": "right",
+          "from_line": 36,
+          "to_line": 36,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Adding a new well-known symbol is fine, but please double-check API surface consistency: this symbol string ('react.activity') must remain stable and unique (it becomes part of the public/DevTools contract). Also, since ReactClient switched unstable_Activity from REACT_OFFSCREEN_TYPE to REACT_ACTIVITY_TYPE, verify any other codepaths still expecting Offscreen for Activity semantics won’t break (e.g., reconciler/server/DevTools symbol/type checks). Consider adding/adjusting tests that validate unstable_Activity maps to the intended tag/type and is accepted by isValidElementType.",
+          "path": "packages/shared/ReactSymbols.js",
+          "side": "right",
+          "from_line": 37,
+          "to_line": 37,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Consider placing `REACT_ACTIVITY_TYPE` before `REACT_OFFSCREEN_TYPE` for alphabetical ordering. This would make the symbol definitions more maintainable and consistent with the rest of the file where symbols appear to follow alphabetical order (lazy, memo, offscreen, scope, etc.).",
+          "path": "packages/shared/ReactSymbols.js",
+          "side": "right",
+          "from_line": 37,
+          "to_line": 37,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The REACT_ACTIVITY_TYPE check should be wrapped with the enableActivity feature flag for consistency with other experimental element types. Similar to how REACT_LEGACY_HIDDEN_TYPE uses enableLegacyHidden, REACT_SCOPE_TYPE uses enableScopeAPI, etc., this check should be: (enableActivity && type === REACT_ACTIVITY_TYPE). You'll also need to import enableActivity from './ReactFeatureFlags'.",
+          "path": "packages/shared/isValidElementType.js",
+          "side": "right",
+          "from_line": 54,
+          "to_line": 54,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] No direct test checks that the new Activity symbol counts as a valid element type\nImpact: unstable_Activity is now Symbol.for('react.activity'), and this new clause is the only reason it still passes isValidElementType. ReactIs-test.js does not cover Activity, and under owner-stack configs nothing exercises this line, so removing or breaking it would go unnoticed. Remedy: add a ReactIs-test.js case gated on enableActivity asserting ReactIs.isValidElementType(React.unstable_Activity) === true, and optionally that React.unstable_Activity === Symbol.for('react.activity') to pin the public symbol change."
+        }
+      ]
+    },
+    {
+      "instance_id": "valkey-io__valkey@36f37c0",
+      "repo": "valkey-io/valkey",
+      "comments": [
+        {
+          "note": "The current implementation processes the query buffer before checking `server.hide_user_data_from_log` in `setProtocolError`, risking exposure of sensitive user data in logs. Move the redaction check to the beginning of buffer handling logic to immediately skip data processing when enabled.",
+          "path": "src/networking.c",
+          "side": "right",
+          "from_line": 2773,
+          "to_line": 2773,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The snprintf ternary expression for redacting long query buffers has mismatched types and incorrect argument structure, failing to suppress user data exposure when `server.hide_user_data_from_log` is enabled and causing potential crashes.",
+          "path": "src/networking.c",
+          "side": "right",
+          "from_line": 2776,
+          "to_line": 2776,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        }
+      ]
+    },
+    {
+      "instance_id": "alibaba__spring-ai-alibaba@4bc7305",
+      "repo": "alibaba/spring-ai-alibaba",
+      "comments": [
+        {
+          "note": "The default value for the deprecated `systemPrompt` field is set to a space character, which lacks clarity and could cause confusion; replace it with an empty string or add a comment explaining the requirement.",
+          "path": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/dynamic/agent/entity/DynamicAgentEntity.java",
+          "side": "right",
+          "from_line": 47,
+          "to_line": 47,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Medium] Whitespace sentinel \" \" for deprecated systemPrompt makes merge-and-warn fire on every load/save and leaks to API\nWith the \" \" default, the `!= null ||` guard at AgentServiceImpl.java:190 is always true, so every create/get/update logs a misleading deprecation WARN, and \" \" is copied into AgentConfig (line 157), making \"empty\" indistinguishable from \"has content\". Remedy: drop the sentinel, use StringUtils.hasText(...) in the guard, and stop copying the deprecated field into AgentConfig."
+        },
+        {
+          "note": "The use of a single space character (\" \") to represent an empty system prompt may bypass validation checks that treat it as non-empty. Replace with an empty string (\"\") to properly indicate no prompt content while maintaining non-null safety.",
+          "path": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/dynamic/agent/service/AgentServiceImpl.java",
+          "side": "right",
+          "from_line": 200,
+          "to_line": 200,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Medium] No test for mergePrompts after the switch from a null to a \" \" sentinel\nAgentServiceImpl has no tests, so the always-true guard, spurious warnings, and the discarded merged prompt are undetected (and a null systemPrompt would NPE). Remedy: add unit tests with a mocked repository covering systemPrompt \" \", \"S\", and null."
+        },
+        {
+          "note": "The import `WaitForSelectorState` is added but never used in the code. This is unused code that should be removed to keep the codebase clean.",
+          "path": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/tool/browser/actions/InputTextAction.java",
+          "side": "right",
+          "from_line": 24,
+          "to_line": 24,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] Unused imports and fully-qualified name for an already-imported class\nRandom, ElementHandle and the newly added WaitForSelectorState are unused (hinting at an unwritten wait step), and Locator.PressSequentiallyOptions is spelled fully-qualified despite the import; noise and possible lint failures. Remedy: delete the unused imports, use Locator.PressSequentiallyOptions, and restore the blank line between import groups."
+        },
+        {
+          "note": "The second `fill(\"\")` call in the exception handler is redundant since the field was already cleared in the try block before attempting text input. Removing this duplicate operation would simplify the fallback logic without affecting functionality.",
+          "path": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/tool/browser/actions/InputTextAction.java",
+          "side": "right",
+          "from_line": 73,
+          "to_line": 73,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Potential NPE risk: getBrowserDebug() returns Boolean (wrapper type) which can be null if the configuration is not set. Auto-unboxing to primitive boolean will throw NullPointerException if null. Consider using Boolean.TRUE.equals() or providing a default value (e.g., Boolean.TRUE.equals(getBrowserUseTool().getManusProperties().getBrowserDebug())).",
+          "path": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/tool/browser/actions/MoveToAndClickAction.java",
+          "side": "right",
+          "from_line": 46,
+          "to_line": 46,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Nitpick] Debug-flag lookup chain copied instead of a BrowserAction accessor\ngetBrowserUseTool().getManusProperties().getBrowserDebug() is duplicated from GetElementPositionByNameAction and unboxes a nullable Boolean, so a null value throws NPE and any default change must be made in every copy. Remedy: add a null-safe `protected boolean isBrowserDebug()` (Boolean.TRUE.equals(...)) to BrowserAction and use it in both actions."
+        },
+        {
+          "note": "Potential NullPointerException: `page.viewportSize()` can return null in Playwright (e.g., when running in headless mode without explicit viewport configuration or in certain browser contexts). Accessing `.width` and `.height` directly will throw NPE. Please add null check before using viewport dimensions.\n\n```suggestion\n\t\t\t// 1. 滚动到目标位置（让目标点尽量在视窗中央）\n\t\t\tvar viewportSize = page.viewportSize();\n\t\t\tif (viewportSize != null) {\n\t\t\t\tint scrollX = Math.max(0, x - viewportSize.width / 2);\n\t\t\t\tint scrollY = Math.max(0, y - viewportSize.height / 2);\n\t\t\t\tpage.evaluate(\"(args) => window.scrollTo({left: args[0], top: args[1], behavior: 'instant'})\",\n\t\t\t\t\t\tnew Object[] { scrollX, scrollY });\n\t\t\t}\n```",
+          "path": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/tool/browser/actions/MoveToAndClickAction.java",
+          "side": "right",
+          "from_line": 48,
+          "to_line": 50,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[High] The new scroll moves the page before the click, so the click lands on the wrong element\nCoordinates from get_element_position (boundingBox, viewport-relative) are clicked after window.scrollTo(x - vw/2, y - vh/2), so on a scrollable page any target outside the top-left viewport quarter is missed, and the action still reports \"Clicked\". Remedy: remove the scroll, or read window.scrollX/Y before/after scrolling and click at the adjusted coordinates."
+        },
+        {
+          "note": "Coordinate semantics risk: after `window.scrollTo`, `page.mouse().move(x,y)` uses viewport coordinates, while your scroll calculation assumes `x/y` are document coordinates (and the debug marker uses `position:absolute` on `body`, also document coordinates). If callers provide viewport coords, scrolling will shift the target and you’ll click the wrong spot; if callers provide document coords, you should click at `(x - scrollX, y - scrollY)` after scrolling. Please clarify/normalize coordinates and keep marker/click consistent (also consider `position: fixed` for viewport marker).",
+          "path": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/tool/browser/actions/MoveToAndClickAction.java",
+          "side": "right",
+          "from_line": 51,
+          "to_line": 70,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Medium] Debug overlay pasted inline as concatenated JS, a second copy of GetElementPositionByNameAction's marker\nTwo if(isDebug) blocks around the click hide the business flow, the string-concatenated JS is fragile, and the two marker implementations already disagree (absolute vs fixed, sizes, cleanup), so any fix must be made twice. Remedy: extract one BrowserAction helper (e.g. withDebugMarker) using a text-block script with removal in finally, and use it from both actions."
+        },
+        {
+          "note": "**Suggestion: Consider extracting marker injection to a separate method**\n\nThe debug marker injection code (lines 54-66) makes the main method harder to read. Consider extracting it:\n\n```java\nprivate void injectDebugMarker(Page page, int x, int y, String markerId) {\n    page.evaluate(\"(args) => {\\\\n\"\n        + \"  const [x, y, id] = args;\\\\n\"\n        + \"  let dot = document.getElementById(id);\\\\n\"\n        // ... rest of the JavaScript\n        + \"}\", new Object[] { x, y, markerId });\n}\n\nprivate void removeDebugMarker(Page page, String markerId) {\n    page.evaluate(\"(id) => { const dot = document.getElementById(id); if (dot) dot.remove(); }\", \n        new Object[] { markerId });\n}\n```\n\nThis would make the main execute method more readable and the debug logic more testable.",
+          "path": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/tool/browser/actions/MoveToAndClickAction.java",
+          "side": "right",
+          "from_line": 54,
+          "to_line": 54,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Resource leak in debug mode: If an exception occurs after inserting the red marker but before removing it, the marker will remain in the DOM permanently. Consider using a try-finally block to ensure cleanup, or wrap the marker removal in the catch block as well.\n\n```suggestion\n\t\t\tif (isDebug) {\n\t\t\t\t// 2. 注入大红点（仅debug模式）\n\t\t\t\tpage.evaluate(\"(args) => {\\n\" + \"  const [x, y, id] = args;\\n\"\n\t\t\t\t\t\t+ \"  let dot = document.getElementById(id);\\n\" + \"  if (!dot) {\\n\"\n\t\t\t\t\t\t+ \"    dot = document.createElement('div');\\n\" + \"    dot.id = id;\\n\"\n\t\t\t\t\t\t+ \"    dot.style.position = 'absolute';\\n\" + \"    dot.style.left = x + 'px';\\n\"\n\t\t\t\t\t\t+ \"    dot.style.top = y + 'px';\\n\" + \"    dot.style.width = '24px';\\n\"\n\t\t\t\t\t\t+ \"    dot.style.height = '24px';\\n\" + \"    dot.style.background = 'red';\\n\"\n\t\t\t\t\t\t+ \"    dot.style.borderRadius = '50%';\\n\" + \"    dot.style.zIndex = 99999;\\n\"\n\t\t\t\t\t\t+ \"    dot.style.boxShadow = '0 0 8px 4px #f00';\\n\" + \"    dot.style.pointerEvents = 'none';\\n\"\n\t\t\t\t\t\t+ \"    document.body.appendChild(dot);\\n\" + \"  }\\n\" + \"}\", new Object[] { x, y, markerId });\n\t\t\t\ttry {\n\t\t\t\t\t// 3. 鼠标移动并点击\n\t\t\t\t\tpage.mouse().move(x, y);\n\t\t\t\t\tpage.mouse().click(x, y);\n\t\t\t\t\tlog.info(\"Clicked at position ({}, {})\", x, y);\n\t\t\t\t} finally {\n\t\t\t\t\t// 4. 移除大红点（仅debug模式）\n\t\t\t\t\tpage.evaluate(\"(id) => { const dot = document.getElementById(id); if (dot) dot.remove(); }\",\n\t\t\t\t\t\t\tnew Object[] { markerId });\n\t\t\t\t}\n\t\t\t} else {\n\t\t\t\t// 3. 鼠标移动并点击\n\t\t\t\tpage.mouse().move(x, y);\n\t\t\t\tpage.mouse().click(x, y);\n\t\t\t\tlog.info(\"Clicked at position ({}, {})\", x, y);\n\t\t\t}\n```",
+          "path": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/tool/browser/actions/MoveToAndClickAction.java",
+          "side": "right",
+          "from_line": 55,
+          "to_line": 66,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] Debug marker uses absolute positioning with viewport coordinates and is removed right after the click\nAfter the scroll, the absolutely-positioned dot renders away from where the mouse clicks (masking the scroll bug) and is removed synchronously so it is barely visible. Remedy: use position:fixed, centre on the point, and remove via setTimeout as GetElementPositionByNameAction does."
+        },
+        {
+          "note": "The URL prefix auto-completion logic may incorrectly handle certain edge cases:\n1. Protocol-relative URLs (e.g., '//example.com') would become 'https:////example.com'\n2. URLs with other protocols (e.g., 'ftp://example.com') would become 'https://ftp://example.com'\n\nConsider using a more robust check, such as:\n```java\nif (!url.matches(\"^[a-zA-Z][a-zA-Z0-9+.-]*://.*\")) {\n    url = \"https://\" + url;\n}\n```\nThis regex checks for any valid protocol scheme, not just http/https.",
+          "path": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/tool/browser/actions/NavigateAction.java",
+          "side": "right",
+          "from_line": 41,
+          "to_line": 44,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Medium] URL auto-prefixing branch is untested, including the edge cases it gets wrong\nAll existing navigate calls pass full https URLs, so nothing pins \"www.baidu.com\" -> \"https://www.baidu.com\" or catches HTTP://, about:blank, file:// being mangled. Remedy: add a parameterized test with a mocked Page capturing the navigate argument."
+        }
+      ]
+    },
+    {
+      "instance_id": "infiniflow__ragflow@a63caa1",
+      "repo": "infiniflow/ragflow",
+      "comments": [
+        {
+          "note": "Accessing `.nodes` on the result of `nx.connected_components` (which returns node sets, not graph objects) causes AttributeError; use the set of nodes directly.",
+          "path": "graphrag/entity_resolution.py",
+          "side": "right",
+          "from_line": 114,
+          "to_line": 114,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Critical bug: Lambda function captures loop variable by reference. All async tasks will use the last value of `merging_nodes` instead of their intended values. This will cause incorrect node merging behavior. Fix by using a default argument to capture the value: `lambda nodes=merging_nodes: self._merge_graph_nodes(graph, nodes, change)`\n\n```suggestion\n                nursery.start_soon(lambda nodes=merging_nodes: self._merge_graph_nodes(graph, nodes, change))\n```",
+          "path": "graphrag/entity_resolution.py",
+          "side": "right",
+          "from_line": 115,
+          "to_line": 115,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The direct access to `node1_attrs[\"source_id\"]` risks KeyError if the attribute is missing; replace with `.get(\"source_id\", [])` to safely handle absent attributes during list extension.",
+          "path": "graphrag/general/extractor.py",
+          "side": "right",
+          "from_line": 205,
+          "to_line": 205,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[High] The crash fix in `_merge_graph_nodes` has no regression test, and the function still crashes three lines earlier\nImpact: GraphChange.removed_nodes is a set (graphrag/utils.py:41), and line 196 calls `change.removed_nodes.extend(nodes[1:])` on it. Every merge with 2 or more nodes raises AttributeError before it reaches the fixed lines 204-219, so entity resolution still fails on every real merge even though the commit says it fixes that error. There are no graphrag unit tests to catch this or a later regression. Remedy: change line 196 to `change.removed_nodes.update(nodes[1:])` and add a trio unit test for `_merge_graph_nodes` on a small nx.Graph, built with Extractor(llm_invoker=None). The test should check node removal, the source_id union, the edge weight/keywords/source_id merge, the change.removed_nodes/removed_edges/added_updated_edges contents, and the single-node early return."
+        },
+        {
+          "note": "Similar to prior corrections applied to node merging logic, suggest applying consistent idiom here too i.e., prefer creating new combined collection over mutating existing one e.g.: `edge0_attrs[\"keywords\"] = list(set(edge0_attrs[\"keywords\"] + edge1_attrs[\"keywords\"]))`. Improves readability & reduces mutation-related confusion.",
+          "path": "graphrag/general/extractor.py",
+          "side": "right",
+          "from_line": 216,
+          "to_line": 217,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Type/ordering consistency: for edges you deduplicate with `list(set(...))`, which produces non-deterministic order. Elsewhere you use `sorted(set(...))` (node source_id). If downstream relies on stable ordering (e.g., tests, hashing, serialization diffs), consider using `sorted(set(...))` consistently for both `keywords` and `source_id`. Also ensure the attributes exist and are lists before calling `extend`.\n\n```suggestion\n                        if isinstance(edge0_attrs.get(\"keywords\"), list) and isinstance(edge1_attrs.get(\"keywords\"), list):\n                            edge0_attrs[\"keywords\"].extend(edge1_attrs[\"keywords\"])\n                            edge0_attrs[\"keywords\"] = sorted(set(edge0_attrs[\"keywords\"]))\n                        \n                        if isinstance(edge0_attrs.get(\"source_id\"), list) and isinstance(edge1_attrs.get(\"source_id\"), list):\n                            edge0_attrs[\"source_id\"].extend(edge1_attrs[\"source_id\"])\n                            edge0_attrs[\"source_id\"] = sorted(set(edge0_attrs[\"source_id\"]))\n```",
+          "path": "graphrag/general/extractor.py",
+          "side": "right",
+          "from_line": 216,
+          "to_line": 219,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The change replaces concurrent edge deletion (via `nursery.start_soon`) with sequential execution (via `await trio.to_thread.run_sync`), causing unnecessary performance degradation when removing multiple edges.",
+          "path": "graphrag/utils.py",
+          "side": "right",
+          "from_line": 442,
+          "to_line": 442,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] The changed edge-deletion loop in `set_graph` has no test of the delete calls it makes\nImpact: the lambda captures the loop variables from_node and to_node. That is safe only because each call is awaited before the next loop iteration. If someone brings back concurrent dispatch, every delete would silently target the last edge, and no test would notice. Remedy: stub settings.docStoreConn and search.index_name, call set_graph with two removed_edges, and assert that exactly one delete is made for each (from_entity_kwd, to_entity_kwd) pair."
+        }
+      ]
+    },
+    {
+      "instance_id": "opencv__opencv@e3e45c8",
+      "repo": "opencv/opencv",
+      "comments": [
+        {
+          "note": "The fixed string 'Edge Thres: input' does not require snprintf; change edge_thresh_label to a const char* pointer to avoid unnecessary copying.",
+          "path": "samples/cpp/tutorial_code/ImgTrans/HoughLines_Demo.cpp",
+          "side": "right",
+          "from_line": 75,
+          "to_line": 75,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Nitpick] Fixed-size buffer plus snprintf just to copy a string literal; the literal can go straight to createTrackbar\nThe format string has no conversion specifiers, so the 50-byte buffer and the snprintf call do nothing. This is tutorial code that readers copy, and it teaches them to format text that needs no formatting. The change kept the old pattern while editing the line. Remedy: delete `edge_thresh_label` and the snprintf line, and call `createTrackbar(\"Edge Thres: input\", weighted_name, &e_trackbar, max_trackbar, Weighted_Hough);`. createTrackbar takes a `const String&`."
+        },
+        {
+          "note": "Good improvement switching from `sprintf` to `snprintf` to prevent buffer overflows. Two follow-ups to consider:\n1) Portability: `snprintf` is C99; on older MSVC it may require `_snprintf` or feature macros. Ensure the build toolchain guarantees `snprintf` availability.\n2) If you can touch more code, prefer avoiding raw C buffers entirely (e.g., `std::array<char, 50>` or `std::string`), which is safer and clearer.\nAlso verify the proper header is included (`<cstdio>` / `<stdio.h>`) in this file or via transitive includes.",
+          "path": "samples/cpp/tutorial_code/ImgTrans/HoughLines_Demo.cpp",
+          "side": "right",
+          "from_line": 75,
+          "to_line": 75,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Good improvement switching to snprintf for bounds safety. Consider checking the return value to detect truncation/encoding errors (snprintf returns <0 on error or >= sizeof(buf) when truncated). If truncation matters for later use/logging, handle it explicitly (e.g., clamp, append \"...\", or ensure buffer is large enough).\n\n```suggestion\n        int n = snprintf(buf, sizeof(buf), \"flags: %s%s%s%s\",\n                         (flags & cv::CALIB_USE_INTRINSIC_GUESS) ? \"+use_intrinsic_guess\" : \"\",\n                         (flags & cv::CALIB_FIX_ASPECT_RATIO) ? \"+fix_aspectRatio\" : \"\",\n                         (flags & cv::CALIB_FIX_PRINCIPAL_POINT) ? \"+fix_principal_point\" : \"\");\n        if (n < 0) {\n            buf[0] = '\\0';\n        } else if (n >= static_cast<int>(sizeof(buf))) {\n            // truncated: optionally handle\n        }\n```",
+          "path": "samples/cpp/tutorial_code/objectDetection/aruco_samples_utility.hpp",
+          "side": "right",
+          "from_line": 35,
+          "to_line": 38,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] The flags string written into `buf` is never read; the whole if-block is dead\nNothing reads `buf` after line 40 before the function returns. The block builds a readable flags string and throws it away, so a reader assumes it reaches the output file when it doesn't. The change made the dead call safer instead of removing it. This was already the case before the change. Remedy: delete the `if (flags != 0) { ... }` block, which changes no behaviour. Or, if a comment was meant to be written, add `fs.writeComment(buf);` inside it. The same block in samples/cpp/calibration.cpp:252 has that call commented out."
+        },
+        {
+          "note": "The existing `snprintf` call in the Linux section uses `sizeof(buf)-1` which is inconsistent with the newly changed Windows code that uses `sizeof(buf)`. According to the C/C++ standard, `snprintf` guarantees null-termination, so `sizeof(buf)` is correct and sufficient. Consider changing this to `sizeof(buf)` for consistency with the Windows code changes.\n\n```suggestion\n        snprintf(buf, sizeof(buf), \"Time, msec: %2.1f, Mode: %s OpenGL %s, Device: %s\", time, m_modeStr[mode].c_str(), use_buffer() ? \"buffer\" : \"texture\", oclDevName.c_str());\n```",
+          "path": "samples/opengl/opengl_interop.cpp",
+          "side": "right",
+          "from_line": 242,
+          "to_line": 242,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        }
+      ]
+    },
+    {
+      "instance_id": "dotnet__aspnetcore@8ac940f",
+      "repo": "dotnet/aspnetcore",
+      "comments": [
+        {
+          "note": "- `BitOperations.LeadingZeroCount` is unsupported in netstandard2.0 and .NET Framework; implement a cross-TFM fallback using a loop or math-based alternative.  \n- The span-based `Encoding.GetBytes` overload lacks compatibility with lower TFMs; replace with the array-indexed overload (`GetBytes(char[], int, int, byte[], int)`).",
+          "path": "src/DataProtection/DataProtection/src/KeyManagement/KeyRingBasedDataProtector.cs",
+          "side": "right",
+          "from_line": 356,
+          "to_line": 356,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Medium] The AAD wire format now has two serializers, split by a TFM gate nothing else in src/ uses\nImpact: One security-sensitive AAD layout is now written by two unrelated code paths: span code with a hand-written varint, and BinaryWriter/MemoryStream with PurposeBinaryWriter. The constructors also take different parameter types (string[] vs IEnumerable<string>). Data protected on one target framework must unprotect on another, yet nothing ties the two paths together, so every future format change has to be made twice and kept byte-identical by hand. NET10_0_OR_GREATER appears nowhere else in src/, while this file uses #if NETCOREAPP / #elif NETSTANDARD2_0 || NETFRAMEWORK / #else #error at lines 144 and 297. Remedy: Merge into one implementation for all target frameworks (fixed + WriteBigEndianInteger + pointer-based Encoding.GetBytes), deleting the #else branch. At minimum, gate on NETCOREAPP using the file's #elif/#error pattern, give both constructors the same parameter type, and add a test that both paths produce the same bytes."
+        },
+        {
+          "note": "Missing null validation: The constructor doesn't validate if the `purposes` parameter or its elements are null. This could lead to NullReferenceException when calling `GetByteCount` or `GetBytes`. Consider adding validation at the beginning of the constructor:\n\n```csharp\nArgumentNullException.ThrowIfNull(purposes);\nfor (int i = 0; i < purposes.Length; i++)\n{\n    ArgumentNullException.ThrowIfNull(purposes[i], $\"purposes[{i}]\");\n}\n```\n\nOr at minimum, add Debug.Assert statements similar to the original implementation.",
+          "path": "src/DataProtection/DataProtection/src/KeyManagement/KeyRingBasedDataProtector.cs",
+          "side": "right",
+          "from_line": 357,
+          "to_line": 363,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Potential integer overflow: totalPurposeLen is int and accumulates user-controlled purpose lengths. Consider checked arithmetic (as in the old code) when adding lengths and when allocating the byte[] to avoid silent overflow leading to undersized buffer and out-of-range writes.\n\n```suggestion\n            int totalPurposeLen = checked(4 + keySize + 4);\n\n            var purposeLengthsPool = ArrayPool<int>.Shared.Rent(purposes.Length);\n```",
+          "path": "src/DataProtection/DataProtection/src/KeyManagement/KeyRingBasedDataProtector.cs",
+          "side": "right",
+          "from_line": 363,
+          "to_line": 365,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Low] The rented ArrayPool buffer is not returned on throw, and the header size is written as bare 4 + keySize + 4\nImpact: SecureUtf8Encoding (throwOnInvalidBytes: true) throws on a purpose with a lone surrogate. When that happens, ArrayPool<int>.Shared.Return is never reached and the pooled array is lost to the GC; callers see the same exception as before. The header size 4 + keySize + 4 is repeated with literals, while the rest of the file writes sizeof(uint) + sizeof(Guid). Remedy: Wrap the work in try/finally, or use stackalloc (or simply call GetByteCount again in the write loop). Define one header-size constant from sizeof(uint) + sizeof(Guid) + sizeof(uint)."
+        },
+        {
+          "note": "The current implementation unconditionally rents an array from `ArrayPool` for purpose length calculations despite expecting few purposes, introducing unnecessary overhead; replace with stack allocation for arrays ≤32 elements using `stackalloc` with `ArrayPool` fallback for larger arrays.",
+          "path": "src/DataProtection/DataProtection/src/KeyManagement/KeyRingBasedDataProtector.cs",
+          "side": "right",
+          "from_line": 365,
+          "to_line": 365,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Consider wrapping the logic that uses the rented array pool in a try-finally block to ensure the array is always returned to the pool, even if an exception occurs during processing. This prevents potential resource leaks.",
+          "path": "src/DataProtection/DataProtection/src/KeyManagement/KeyRingBasedDataProtector.cs",
+          "side": "right",
+          "from_line": 365,
+          "to_line": 397,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Nitpick] The file now writes big-endian uint32 values two ways\nImpact: The new code writes MAGIC_HEADER_V0 with BinaryPrimitives.WriteUInt32BigEndian, while the same class still writes and reads the same header field with its own pointer-based WriteBigEndianInteger (:311) and ReadBigEndian32BitInteger (:155). That is two ways to do one job in one class. Remedy: In a follow-up, route those helpers through BinaryPrimitives.WriteUInt32BigEndian / ReadUInt32BigEndian, or delete them."
+        }
+      ]
+    },
+    {
+      "instance_id": "filamentphp__filament@d47632c",
+      "repo": "filamentphp/filament",
+      "comments": [
+        {
+          "note": "The new condition for '->' JSON syntax must skip columns starting with `json_extract()` to prevent double-wrapping, as the two syntax forms are mutually exclusive and the translatable plugin already handles these columns.",
+          "path": "packages/support/src/helpers.php",
+          "side": "right",
+          "from_line": 184,
+          "to_line": 184,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[High] No test covers the new MySQL/MariaDB JSON-path branch, and the SQLite-only suite can never reach it\nNothing tests this bug fix. phpunit.xml uses DB_CONNECTION=testing, which is in-memory SQLite, and CI installs only pdo_sqlite, so the mysql/mariadb check is always false. No test calls generate_search_column_expression directly. If the protected wrapJsonFieldAndPath() call (made through invade(), with phpstan suppressed) or the hand-built json_extract string breaks, MySQL/MariaDB JSON search fails and CI still passes. Remedy: add Pest unit tests in tests/src/Support/helpersTest.php that call generate_search_column_expression() with a real MySqlConnection built from a lazy PDO closure, and assert the exact Expression SQL. Cover a single JSON path, a nested path, mariadb, the non-forced case, a plain column, SQLite as a negative case, and the collation suffix."
+        },
+        {
+          "note": "Potential SQL correctness/safety issue: building `$column = \"json_extract({$field}{$path})\"` assumes `$path` already includes the comma and is correctly quoted/escaped, and that JSON extraction syntax matches the current connection settings (e.g., MySQL vs MariaDB variants, json type/collation). Since this string is later interpolated into `lower({$column})`, any mismatch can break queries or bypass proper identifier wrapping.\n\nSuggestion: prefer using the grammar’s JSON selector wrapping (or query builder expressions) end-to-end rather than concatenating raw SQL. If you must transform here, ensure the generated SQL includes the required `,` between field and path and that both parts are wrapped/escaped by the grammar (e.g., `json_extract({$field}, {$path})`), and consider handling nested selectors/edge cases consistently with other drivers.",
+          "path": "packages/support/src/helpers.php",
+          "side": "right",
+          "from_line": 184,
+          "to_line": 188,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Medium] Calls the grammar's protected internals via invade() when the public wrap() already compiles `->` selectors\nA shared support helper now depends on Laravel's protected Grammar::wrapJsonFieldAndPath(), which carries no BC guarantee across illuminate ^10.45|^11.0. It needs a blanket @phpstan-ignore-line, and it rebuilds grammar logic by hand without the json_unquote that Laravel's MySqlGrammar::wrapJsonSelector adds. A framework change to that method breaks search silently. Remedy: replace the invade/destructure/json_extract lines with `$column = $databaseConnection->getQueryGrammar()->wrap($column);`, which also handles qualified table.column->path, and drop the phpstan suppression."
+        }
+      ]
+    },
+    {
+      "instance_id": "laravel__framework@180c25f",
+      "repo": "laravel/framework",
+      "comments": [
+        {
+          "note": "The test method `testRfcCompliantStrict` should be refactored to use a data provider pattern for the email validation test cases to eliminate hardcoded examples and improve test maintainability.",
+          "path": "tests/Validation/ValidationEmailRuleTest.php",
+          "side": "right",
+          "from_line": 106,
+          "to_line": 108,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Nitpick] Variable name contradicts its value, and comments/docblocks misdescribe their fixtures\n$emailThatFailsBothNonStrictButFailsInStrict contradicts itself, and the non-strict side is never asserted in that test. 'name@[127.0.0.1]' is commented as \"Local-part with domain-literal\" (lines 334, 585, 636), but the IP literal is the domain part. The docblock at line 533-536 says the list is mostly accented or Unicode local parts, but most entries are comments, quoted strings, addresses with no TLD, or numeric domains. Readers may misjudge which behaviour is being pinned. Remedy: rename the variable to $emailThatFailsBothNonStrictAndStrict (and assert the non-strict failure), change the comment to \"IPv4 domain literal\", and rewrite the docblock to describe the real entries."
+        },
+        {
+          "note": "Test data organization issue: Large test data arrays like `$emailsThatPassOnRfcCompliantButNotRfcCompliantStrict` should be moved to external fixture files instead of being defined inline in test methods.",
+          "path": "tests/Validation/ValidationEmailRuleTest.php",
+          "side": "right",
+          "from_line": 327,
+          "to_line": 339,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "[Medium] The \"escaped quote\" fixture actually contains an escaped backslash and a stray quote, so the intended case is never tested\nIn a single-quoted PHP string, '\"escaped\\\\\\\"quote\"@example.com' becomes \"escaped\\\\\"quote\"@example.com at runtime: an escaped backslash, then a closing quote, then a bare quote\" (malformed under RFC 5322). The comment says \"escaped quote\", but that case is never tested. The rfcCompliant() pass assertions at lines 331 and 543 lock in an egulias parser leniency, and a stricter egulias release could break them. The native-fail placements at lines 543 and 703 likely hold only because of the escaping mistake. Remedy: write the value as '\"escaped\\\"quote\"@example.com' (one backslash at runtime) and re-check which list it belongs in. Fix lines 543 and 703 the same way, or relabel the current strings accurately."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "instance_id": "ollama__ollama@b6002f6",
+  "repo": "ollama/ollama",
+  "base_commit": "92b96d54efd6b49322b7cf046f9a0dc16b00cd0a",
+  "head_commit": "b6002f6b6c69370f8c18a9e6c1cafa8463273a6b",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T16:28:10.056071+00:00",
+  "duration_seconds": 175.74,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "kvcache/encoder.go",
+      "line": 94,
+      "summary": "EncoderCache.StartForward now indexes batch.Positions.Ints(), which during a no-alloc reserve pass is an unsafe.Slice over ggml's fake placeholder base pointer, so it reads unmapped memory.",
+      "failure_scenario": "The server sends LoadOperationFit, so the backend runs with AllocMemory=false (runner.go:1204). ggml_backend_buffer_get_base returns (void*)alignment for no_alloc buffers, so ggml_get_data is non-nil (about 0x20). reserveWorstCaseGraph encodes a dummy image for a multimodal model (mllama, whose WrapperCache holds an EncoderCache) and calls cache.StartForward(ctx, batch, true). Ints()[idx] reads address about 0x20: SIGSEGV / nil-deref panic while estimating memory. Before, the []int32 slice lived on the Go side."
+    },
+    {
+      "file": "model/models/llama4/model_text.go",
+      "line": 222,
+      "summary": "The attention temperature-tuning loop reads batch.Positions.Ints(), which points at the no-alloc placeholder address during the worst-case reserve graph.",
+      "failure_scenario": "A llama4 model with attentionTemperatureTuning=true, loaded with LoadOperationFit (AllocMemory=false), calls reserveWorstCaseGraph, then Model.Forward, then TextModel.Forward. The range over Ints() dereferences placeholder memory and the runner crashes before it can report memory needs. Even when allocation is on, the reserve pass now reads real tensor data where it used to read a Go slice."
+    },
+    {
+      "file": "ml/backend/ggml/ggml.go",
+      "line": 1035,
+      "summary": "The new 'tensor is in cpu memory' branches in Bytes/Floats/Ints treat any non-nil ggml_get_data as host memory, but t->data is a device address for GPU buffers and a fake pointer for no_alloc buffers.",
+      "failure_scenario": "Calling Bytes/Floats/Ints on a tensor that was not computed and lives in a CUDA/ROCm buffer (such as a GPU-offloaded weight passed to ml.Dump, or any input if the input buffer type ever isn't CPU) makes C.GoBytes or unsafe.Slice dereference a device pointer and segfault. Before, these returned nil. Fix: guard with ggml_backend_buffer_is_host(t.t.buffer) and check that the buffer is not no_alloc."
+    },
+    {
+      "file": "ml/backend.go",
+      "line": 567,
+      "summary": "dump() uses 't.Bytes() == nil' to mean 'not computed yet', but Bytes() now returns non-nil for any tensor with a data pointer, so dump skips Compute and prints stale or garbage bytes (or crashes on GPU tensors).",
+      "failure_scenario": "ml.Dump is called on an intermediate CPU graph node that the scheduler allocated in a previous graph but that was not passed to Compute. Bytes() returns the reused compute-buffer contents without computing, so debugging output shows wrong values. For GPU-resident tensors it dereferences a device pointer (see the Bytes/Floats/Ints finding)."
+    },
+    {
+      "file": "model/models/gptoss/model.go",
+      "line": 43,
+      "summary": "The removed 'len(batch.Outputs) > 0' guard means gpt-oss now always applies Rows with a possibly zero-length Outputs tensor, and then runs the MoE MLP on zero tokens.",
+      "failure_scenario": "A prompt longer than the batch size is split. The first batch has no final token for any sequence, so batchOutputs is empty. Before, outputs was nil and the MLP ran on the full hidden states. Now hiddenStates.Rows(ctx, emptyTensor) yields 0 rows and top-k, mul_mat_id and softmax run on empty tensors, which risks ggml asserts or backend kernel errors on some backends. That case was presumably why the guard existed."
+    },
+    {
+      "file": "ml/backend/ggml/ggml.go",
+      "line": 1023,
+      "summary": "Floats() and Ints() now return an unsafe.Slice that aliases C tensor memory with no copy, unlike Bytes() (GoBytes copy) and unlike the sync path, so callers get a slice that dies with the context and writes back into the tensor.",
+      "failure_scenario": "Causal.curPositions (causal.go:203) keeps the alias after nextBatch.ctx.Close() frees the input buffer. Any later read before the next StartForward is a use-after-free. Separately, a caller that changes the returned []float32 (for example a sampler normalizing in place) silently corrupts the tensor. The return contract also changes depending on whether the tensor was computed."
+    },
+    {
+      "file": "kvcache/causal.go",
+      "line": 204,
+      "summary": "curBatchSize is now len(batch.Positions.Ints()), not the tensor's logical length, so it becomes 0 whenever Ints() returns nil (data not host-readable).",
+      "failure_scenario": "If Positions sits in a buffer where ggml_get_data is NULL, or on a non-host path, curBatchSize=0. findStartLoc returns 0 immediately, no cells are written, and Put later panics with 'inconsistent batch sizes'. Use batch.Positions.Dim(0), which model.Forward already validates, for the size."
+    },
+    {
+      "file": "model/model.go",
+      "line": 285,
+      "summary": "The validation now calls batch.Positions.Dim(0) directly, so a Batch with nil Positions (an interface) causes a nil-pointer panic instead of the old 'batch size cannot be less than 1' error.",
+      "failure_scenario": "Any caller or test that builds input.Batch{} without Positions, or an empty batch, hits a panic in model.Forward. Before, len(nil)==0 produced a clean error."
+    },
+    {
+      "file": "kvcache/wrapper.go",
+      "line": 50,
+      "summary": "batch.Positions.Ints() is called inside the outer unwind loop over caches j, so the positions tensor is re-read once per already-started cache.",
+      "failure_scenario": "On a StartForward failure in the i-th sub-cache, Ints() runs i times. On the sync path each call allocates and copies from the device. Hoist a single 'positions := batch.Positions.Ints()' above the j loop."
+    },
+    {
+      "file": "ml/backend/ggml/ggml.go",
+      "line": 1029,
+      "summary": "Altitude/reuse: host-side consumers (Causal, EncoderCache, WrapperCache, llama4) now read positions back from a ggml tensor instead of keeping the []int32 the runner already built, and Ints() copies Floats() almost line for line.",
+      "failure_scenario": "The read-back causes the no-alloc and non-host crashes above and adds a copy per StartForward. Keeping the host slice next to the tensor in input.Batch (or passing batchPositions into the cache) removes the problem at the source. A generic helper such as func readHost[T any](t *Tensor) []T would remove the duplicated Floats/Ints bodies."
+    }
+  ],
+  "result_text": "No CLAUDE.md applies to this code: the user-level file only covers tool workflow, and the repo has no CLAUDE.md. Build and vet could not run because they needed approval. The main risk is the new host-side read path in `ggml.go`: it now dereferences `ggml_get_data` without checking that the buffer is real, host-resident memory. That breaks the fit pass and `ml.Dump`.\n\n```json\n[\n  {\n    \"file\": \"kvcache/encoder.go\",\n    \"line\": 94,\n    \"summary\": \"EncoderCache.StartForward now indexes batch.Positions.Ints(), which during a no-alloc reserve pass is an unsafe.Slice over ggml's fake placeholder base pointer, so it reads unmapped memory.\",\n    \"failure_scenario\": \"The server sends LoadOperationFit, so the backend runs with AllocMemory=false (runner.go:1204). ggml_backend_buffer_get_base returns (void*)alignment for no_alloc buffers, so ggml_get_data is non-nil (about 0x20). reserveWorstCaseGraph encodes a dummy image for a multimodal model (mllama, whose WrapperCache holds an EncoderCache) and calls cache.StartForward(ctx, batch, true). Ints()[idx] reads address about 0x20: SIGSEGV / nil-deref panic while estimating memory. Before, the []int32 slice lived on the Go side.\"\n  },\n  {\n    \"file\": \"model/models/llama4/model_text.go\",\n    \"line\": 222,\n    \"summary\": \"The attention temperature-tuning loop reads batch.Positions.Ints(), which points at the no-alloc placeholder address during the worst-case reserve graph.\",\n    \"failure_scenario\": \"A llama4 model with attentionTemperatureTuning=true, loaded with LoadOperationFit (AllocMemory=false), calls reserveWorstCaseGraph, then Model.Forward, then TextModel.Forward. The range over Ints() dereferences placeholder memory and the runner crashes before it can report memory needs. Even when allocation is on, the reserve pass now reads real tensor data where it used to read a Go slice.\"\n  },\n  {\n    \"file\": \"ml/backend/ggml/ggml.go\",\n    \"line\": 1035,\n    \"summary\": \"The new 'tensor is in cpu memory' branches in Bytes/Floats/Ints treat any non-nil ggml_get_data as host memory, but t->data is a device address for GPU buffers and a fake pointer for no_alloc buffers.\",\n    \"failure_scenario\": \"Calling Bytes/Floats/Ints on a tensor that was not computed and lives in a CUDA/ROCm buffer (such as a GPU-offloaded weight passed to ml.Dump, or any input if the input buffer type ever isn't CPU) makes C.GoBytes or unsafe.Slice dereference a device pointer and segfault. Before, these returned nil. Fix: guard with ggml_backend_buffer_is_host(t.t.buffer) and check that the buffer is not no_alloc.\"\n  },\n  {\n    \"file\": \"ml/backend.go\",\n    \"line\": 567,\n    \"summary\": \"dump() uses 't.Bytes() == nil' to mean 'not computed yet', but Bytes() now returns non-nil for any tensor with a data pointer, so dump skips Compute and prints stale or garbage bytes (or crashes on GPU tensors).\",\n    \"failure_scenario\": \"ml.Dump is called on an intermediate CPU graph node that the scheduler allocated in a previous graph but that was not passed to Compute. Bytes() returns the reused compute-buffer contents without computing, so debugging output shows wrong values. For GPU-resident tensors it dereferences a device pointer (see the Bytes/Floats/Ints finding).\"\n  },\n  {\n    \"file\": \"model/models/gptoss/model.go\",\n    \"line\": 43,\n    \"summary\": \"The removed 'len(batch.Outputs) > 0' guard means gpt-oss now always applies Rows with a possibly zero-length Outputs tensor, and then runs the MoE MLP on zero tokens.\",\n    \"failure_scenario\": \"A prompt longer than the batch size is split. The first batch has no final token for any sequence, so batchOutputs is empty. Before, outputs was nil and the MLP ran on the full hidden states. Now hiddenStates.Rows(ctx, emptyTensor) yields 0 rows and top-k, mul_mat_id and softmax run on empty tensors, which risks ggml asserts or backend kernel errors on some backends. That case was presumably why the guard existed.\"\n  },\n  {\n    \"file\": \"ml/backend/ggml/ggml.go\",\n    \"line\": 1023,\n    \"summary\": \"Floats() and Ints() now return an unsafe.Slice that aliases C tensor memory with no copy, unlike Bytes() (GoBytes copy) and unlike the sync path, so callers get a slice that dies with the context and writes back into the tensor.\",\n    \"failure_scenario\": \"Causal.curPositions (causal.go:203) keeps the alias after nextBatch.ctx.Close() frees the input buffer. Any later read before the next StartForward is a use-after-free. Separately, a caller that changes the returned []float32 (for example a sampler normalizing in place) silently corrupts the tensor. The return contract also changes depending on whether the tensor was computed.\"\n  },\n  {\n    \"file\": \"kvcache/causal.go\",\n    \"line\": 204,\n    \"summary\": \"curBatchSize is now len(batch.Positions.Ints()), not the tensor's logical length, so it becomes 0 whenever Ints() returns nil (data not host-readable).\",\n    \"failure_scenario\": \"If Positions sits in a buffer where ggml_get_data is NULL, or on a non-host path, curBatchSize=0. findStartLoc returns 0 immediately, no cells are written, and Put later panics with 'inconsistent batch sizes'. Use batch.Positions.Dim(0), which model.Forward already validates, for the size.\"\n  },\n  {\n    \"file\": \"model/model.go\",\n    \"line\": 285,\n    \"summary\": \"The validation now calls batch.Positions.Dim(0) directly, so a Batch with nil Positions (an interface) causes a nil-pointer panic instead of the old 'batch size cannot be less than 1' error.\",\n    \"failure_scenario\": \"Any caller or test that builds input.Batch{} without Positions, or an empty batch, hits a panic in model.Forward. Before, len(nil)==0 produced a clean error.\"\n  },\n  {\n    \"file\": \"kvcache/wrapper.go\",\n    \"line\": 50,\n    \"summary\": \"batch.Positions.Ints() is called inside the outer unwind loop over caches j, so the positions tensor is re-read once per already-started cache.\",\n    \"failure_scenario\": \"On a StartForward failure in the i-th sub-cache, Ints() runs i times. On the sync path each call allocates and copies from the device. Hoist a single 'positions := batch.Positions.Ints()' above the j loop.\"\n  },\n  {\n    \"file\": \"ml/backend/ggml/ggml.go\",\n    \"line\": 1029,\n    \"summary\": \"Altitude/reuse: host-side consumers (Causal, EncoderCache, WrapperCache, llama4) now read positions back from a ggml tensor instead of keeping the []int32 the runner already built, and Ints() copies Floats() almost line for line.\",\n    \"failure_scenario\": \"The read-back causes the no-alloc and non-host crashes above and adds a copy per StartForward. Keeping the host slice next to the tensor in input.Batch (or passing batchPositions into the cache) removes the problem at the source. A generic helper such as func readHost[T any](t *Tensor) []T would remove the duplicated Floats/Ints bodies.\"\n  }\n]\n```",
+  "stderr": "",
+  "claude_duration_ms": 174560,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.7716859999999999,
+  "claude_session_id": "9a9256e7-9256-4e1d-a820-3a2e174e5e13",
+  "token_usage": {
+    "input_tokens": 40,
+    "output_tokens": 15450,
+    "cache_read_input_tokens": 910630,
+    "cache_creation_input_tokens": 56080,
+    "total_tokens": 982200,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 40,
+        "outputTokens": 15450,
+        "cacheReadInputTokens": 910630,
+        "cacheCreationInputTokens": 56080,
+        "webSearchRequests": 0,
+        "costUSD": 0.7716859999999999,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 9049,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/phase1/transcripts/ollama__ollama@b6002f6"
+  }
+}

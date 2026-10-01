@@ -1,0 +1,95 @@
+{
+  "instance_id": "infiniflow__ragflow@a63caa1",
+  "repo": "infiniflow/ragflow",
+  "base_commit": "0a42e5777eb966b26aaf8f2a7d593ae99a4aa87a",
+  "head_commit": "a63caa1087852ada98964678be26b7c4d8363af6",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T02:31:04.416509+00:00",
+  "duration_seconds": 270.73,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "graphrag/general/extractor.py",
+      "line": 204,
+      "summary": "[High] The crash fix in `_merge_graph_nodes` has no regression test, and the function still crashes three lines earlier",
+      "failure_scenario": "Impact: GraphChange.removed_nodes is a set (graphrag/utils.py:41), and line 196 calls `change.removed_nodes.extend(nodes[1:])` on it. Every merge with 2 or more nodes raises AttributeError before it reaches the fixed lines 204-219, so entity resolution still fails on every real merge even though the commit says it fixes that error. There are no graphrag unit tests to catch this or a later regression. Remedy: change line 196 to `change.removed_nodes.update(nodes[1:])` and add a trio unit test for `_merge_graph_nodes` on a small nx.Graph, built with Extractor(llm_invoker=None). The test should check node removal, the source_id union, the edge weight/keywords/source_id merge, the change.removed_nodes/removed_edges/added_updated_edges contents, and the single-node early return."
+    },
+    {
+      "file": "graphrag/general/extractor.py",
+      "line": 204,
+      "summary": "[Medium] Three hand-written \"extend then dedupe\" pairs duplicate `flat_uniq_list`, which this file already uses",
+      "failure_scenario": "Impact: the fix replaces 3 expressions with 6 lines that change lists in place and then dedupe them. Nodes are sorted and edges are not, with no reason given. `_merge_edges` in the same file (lines 180-181) already does this merge with the imported flat_uniq_list helper (utils.py:543). This hand-written idiom caused the original bug and invites the next slip. Remedy: use `node0_attrs[\"source_id\"] = sorted(flat_uniq_list([node0_attrs, node1_attrs], \"source_id\"))`, and for edges `for attr in (\"keywords\", \"source_id\"): edge0_attrs[attr] = flat_uniq_list([edge0_attrs, edge1_attrs], attr)`. Pick one ordering rule for both."
+    },
+    {
+      "file": "graphrag/utils.py",
+      "line": 440,
+      "summary": "[Medium] The nursery around the removed-edge deletes no longer starts any task, and the new line is indented 17 spaces",
+      "failure_scenario": "Impact: the deletes now run one after another, but `async with trio.open_nursery() as nursery` still makes the block look concurrent, and `nursery` is never used. The new line is indented 17 spaces. The other deletes in set_graph (lines 434 and 437) are plain awaited to_thread.run_sync calls, so this block no longer matches them. Remedy: remove the nursery and dedent the loop to 4-space steps to match lines 434 and 437. If you want concurrency, use nursery.start_soon(trio.to_thread.run_sync, partial(...)) and bind the loop variables explicitly."
+    },
+    {
+      "file": "graphrag/general/extractor.py",
+      "line": 223,
+      "summary": "[Low] Edges moved onto the kept node are not added to `change.added_updated_edges`",
+      "failure_scenario": "Impact: this merge path could not run before; once the line-196 crash is fixed, it will. When a merged-away node has a neighbor that the kept node lacks, the old edge goes into removed_edges and is deleted from the doc store. The new edge (nodes[0], neighbor) is added only to the in-memory graph, so set_graph never writes a relation chunk for it, and retrieval through the relation index loses that edge. Remedy: in the else branch, add `change.added_updated_edges.add(get_from_to(nodes[0], neighbor))` before graph.add_edge(...)."
+    },
+    {
+      "file": "graphrag/utils.py",
+      "line": 442,
+      "summary": "[Low] The changed edge-deletion loop in `set_graph` has no test of the delete calls it makes",
+      "failure_scenario": "Impact: the lambda captures the loop variables from_node and to_node. That is safe only because each call is awaited before the next loop iteration. If someone brings back concurrent dispatch, every delete would silently target the last edge, and no test would notice. Remedy: stub settings.docStoreConn and search.index_name, call set_graph with two removed_edges, and assert that exactly one delete is made for each (from_entity_kwd, to_entity_kwd) pair."
+    }
+  ],
+  "result_text": "The verdict is **BLOCK**: this change doesn't fully fix the entity-resolution error it targets. `graphrag/general/extractor.py:196` still calls `.extend` on `GraphChange.removed_nodes`, which is a `set`. So every merge of two or more nodes crashes before it reaches the fixed lines, and no test covers that function. An independent verifier confirmed this.\n\nThe full report is above. Five reviewers ran (correctness, performance, craft, ai-antipatterns, tests), and four independent verifiers checked the Medium-and-above findings. No spec was found to review against.\n\n| Severity | Location | Finding |\n|---|---|---|\n| High | `graphrag/general/extractor.py:204` | The crash fix has no regression test, and line 196 still crashes |\n| Medium | `graphrag/general/extractor.py:204` | Hand-written \"extend then dedupe\" repeats the `flat_uniq_list` helper the file already uses |\n| Medium | `graphrag/utils.py:440` | The nursery around the edge deletes no longer starts any task, and the new line is indented 17 spaces |\n| Low | `graphrag/general/extractor.py:223` | Edges moved onto the kept node are never recorded as updated, so they aren't written back to the index |\n| Low | `graphrag/utils.py:442` | No test checks the delete calls in the changed loop |\n\nOne more finding was refuted in verification and left out: the performance reviewer said deleting removed edges one by one is slow. That loop can't run today because of the line-196 crash. Once that crash is fixed, the cost becomes real, and batching the deletes would remove it.\n\nI sent all five findings above through the report tool, one call each.",
+  "stderr": "",
+  "claude_duration_ms": 269588,
+  "claude_num_turns": 30,
+  "claude_cost_usd": 2.8240914000000004,
+  "claude_session_id": "e67abec3-463c-4b29-99ab-02e6210cf6fc",
+  "token_usage": {
+    "input_tokens": 124,
+    "output_tokens": 52574,
+    "cache_read_input_tokens": 1606082,
+    "cache_creation_input_tokens": 246903,
+    "total_tokens": 1905683,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 124,
+        "outputTokens": 52574,
+        "cacheReadInputTokens": 1606082,
+        "cacheCreationInputTokens": 246903,
+        "webSearchRequests": 0,
+        "costUSD": 2.8240914000000004,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 11291,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/infiniflow__ragflow@a63caa1"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: 0a42e5777eb966b26aaf8f2a7d593ae99a4aa87a.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

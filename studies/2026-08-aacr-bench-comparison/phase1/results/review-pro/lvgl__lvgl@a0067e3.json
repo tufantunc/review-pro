@@ -1,0 +1,137 @@
+{
+  "instance_id": "lvgl__lvgl@a0067e3",
+  "repo": "lvgl/lvgl",
+  "base_commit": "5f41926f0414c02f70547c50329969f7fe6a4b8d",
+  "head_commit": "a0067e3984cc95bb3ed0dce9abb664ee6a01a199",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T01:53:49.635464+00:00",
+  "duration_seconds": 415.35,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "src/misc/lv_text.c",
+      "line": 653,
+      "summary": "[High] Returning at '\\0' without advancing *i hangs index-bounded loops when the bound overshoots the terminator",
+      "failure_scenario": "Impact: lv_text_get_width(_with_flags) (while(i < length), :399/:432) and lv_text_utf8_get_char_id (while(i < byte_id), :772) relied on the decoder stepping past '\\0'; now i sticks at the terminator and the loop never exits. In-tree trigger: text ending in a truncated UTF-8 sequence such as \"A\\xC3\" — lv_text_utf8_get_byte_id over-counts (byte_id 3), lv_label_get_letter_pos calls lv_text_get_width_with_flags(txt, 3) which hangs at i=2 (with BIDI, lv_text_encoded_get_char_id hangs). Public API callers with length > strlen now hang instead of over-reading. Remedy: add `&& txt[i] != '\\0'` to these loops and/or clamp lv_text_utf8_get_byte_id at the terminator; add a regression test e.g. lv_text_get_width(\"A\\xC3\", 3, ...) terminating."
+    },
+    {
+      "file": "src/misc/lv_text.c",
+      "line": 653,
+      "summary": "[Medium] lv_label_get_letter_on infinite loop when a recolor label's last line ends inside a `#` command",
+      "failure_scenario": "Impact: last-line bound is strlen+1 (lv_label.c:451); with text like \"ab#\" the decoder now stays at '\\0', lv_text_is_cmd(&cmd_state, '\\0') returns true in PAR state (lv_text.c:160-165), and the `continue` at lv_label.c:487-495 loops forever — pressing past the last glyph in a textarea/roller hangs the UI thread or causes a watchdog reset. Remedy: break when bidi_txt[i] == '\\0' or i did not advance; pass `letter` rather than bidi_txt[i] to lv_text_is_cmd; add a regression test."
+    },
+    {
+      "file": "src/misc/lv_text.c",
+      "line": 653,
+      "summary": "[Medium] NULL/terminator guard only in the UTF-8 backend; lv_text_encoded_next contract now depends on LV_TXT_ENC",
+      "failure_scenario": "Impact: lv_text_iso8859_1_next (:847-853) still dereferences NULL and advances past '\\0', so in ASCII builds the OOB fix does not apply and the new NULL test crashes / empty-string test fails. Remedy: apply the same guard in lv_text_iso8859_1_next or do the NULL check once at the shared entry, and document it in lv_text_private.h:219-227."
+    },
+    {
+      "file": "src/misc/lv_text.c",
+      "line": 631,
+      "summary": "[Medium] Decoder contract changed (no advance at terminator, NULL accepted) but doc comments not updated",
+      "failure_scenario": "Impact: docs at lv_text.c:628-635 and lv_text_private.h:219-226 still say txt must be a terminated string and *i always moves to the next char; now NULL is accepted and *i stays at '\\0', so loops assuming progress (lv_text.c:772) can't learn this from the docs. Remedy: update both doc blocks to state NULL returns 0 and *i does not move at NULL/'\\0'."
+    },
+    {
+      "file": "src/misc/lv_text.c",
+      "line": 666,
+      "summary": "[Medium] Truncated multibyte sequences and invalid lead bytes are untested",
+      "failure_scenario": "Impact: \"\\xC3\", \"\\xE2\\x82\", \"\\xF0\\x9F\\x98\" (the realistic old OOB trigger) and the invalid-lead else{(*i)++;} branch (:699-701) have no tests, so a regression reintroducing the over-read would go unnoticed. Remedy: add tests decoding these with repeated calls asserting ofs never exceeds strlen; add a \"\\x80A\" case."
+    },
+    {
+      "file": "src/misc/lv_text.c",
+      "line": 399,
+      "summary": "[Medium] No test covers length-bounded callers whose bound runs past the terminator",
+      "failure_scenario": "Impact: the change turns an over-read in lv_text_get_width(_with_flags) and lv_text_utf8_get_char_id into an infinite loop (e.g. lv_text_get_width(\"A\", 5, ...)), and no test calls them with length/byte_id > strlen. Remedy: add tests with an over-long bound asserting termination with the strlen result (forcing a txt[i] != '\\0' guard)."
+    },
+    {
+      "file": "tests/src/test_cases/test_txt.c",
+      "line": 142,
+      "summary": "[Low] New tests assume UTF-8 encoding with no encoding guard",
+      "failure_scenario": "Impact: under LV_TXT_ENC ISO8859-1/ASCII builds the NULL test dereferences NULL and the \"é\" tests fail. Remedy: wrap them in #if LV_TXT_ENC == LV_TXT_ENC_UTF8, or make both decoder backends behave the same."
+    },
+    {
+      "file": "tests/src/test_cases/test_txt.c",
+      "line": 149,
+      "summary": "[Low] \"ofs unchanged\" assertion cannot distinguish unchanged from reset to 0",
+      "failure_scenario": "Impact: ofs starts at 0 and the test asserts 0 (also at :162), so a regression that resets ofs would pass and the comment over-claims. Remedy: start ofs at a non-zero value (e.g. 3) and assert it is preserved."
+    },
+    {
+      "file": "tests/src/test_cases/test_txt.c",
+      "line": 168,
+      "summary": "[Low] 3 of the 5 new tests pass on the merge base and don't test the fix",
+      "failure_scenario": "Impact: \"A\", \"é\", \"éA\" behave identically before and after the change and only exercise the lv_text_encoded_letter_next_2 wrapper, yet read as coverage of the fix. Remedy: extend them with end-of-string calls or add direct lv_text_encoded_next tests, or label them as baseline decode tests."
+    },
+    {
+      "file": "src/misc/lv_text.c",
+      "line": 652,
+      "summary": "[Low] Guard comment covers only half the check and differs from the file's style",
+      "failure_scenario": "Impact: the comment says \"not null\" but the '\\0' half is the actual OOB fix and is unmentioned, risking later removal; the file uses tight /*...*/ comments and explicit `return 0;` for early returns. Remedy: e.g. `/*NULL or end of string: don't step past the terminator*/` and `return 0;`."
+    },
+    {
+      "file": "tests/src/test_cases/test_txt.c",
+      "line": 183,
+      "summary": "[Low] Raw \"é\" literals where the file uses hex-escaped UTF-8 bytes",
+      "failure_scenario": "Impact: expected bytes depend on source-file encoding and compiler execution charset, so the 0xE9 / ofs==2 expectations may break on other toolchains. Remedy: use \"\\xc3\\xa9\" and \"\\xc3\\xa9\" \"A\" like the neighbouring tests."
+    },
+    {
+      "file": "tests/src/test_cases/test_txt.c",
+      "line": 142,
+      "summary": "[Nitpick] New test names break the file's test_txt_ prefix convention",
+      "failure_scenario": "Impact: these 5 tests are the only test_lv_* names in the suite, hurting grep and naming consistency. Remedy: rename to test_txt_encoded_letter_next_2_should_..."
+    }
+  ],
+  "result_text": "The review's verdict is **BLOCK**. The fix stops one out-of-bounds read, but it can now make text measurement and label hit-testing loop forever. I sent all 12 findings in the report above to the findings tool (1 High, 5 Medium, 5 Low, 1 Nitpick). I left out the one finding that verification refuted. Six specialist reviewers covered both changed files, and independent verifiers confirmed 6 of the 7 Medium-and-above findings.\n\n**What blocks it.** The new check stops the UTF-8 decoder from moving past the end-of-string byte. Some callers loop until a byte count is reached rather than until the end of the string, and they now never finish:\n- **Width and index loops** (`lv_text.c:399`, `:432`, `:772`) hang when the count runs past the end of the string. Text ending in a cut-off multibyte character, like `\"A\\xC3\"`, causes exactly that through `lv_label_get_letter_pos`. Before this change these loops read a byte or two too far and then stopped.\n- **`lv_label_get_letter_on`** hangs on a label with recolor on whose last line ends inside a `#` color command (e.g. `\"ab#\"`). Pressing past the last character in a textarea or roller freezes the UI thread.\n\n**Medium findings to fix as well:**\n- The new check exists only in the UTF-8 decoder. The ISO-8859-1 decoder still reads through NULL and past the end, so behaviour depends on the build's encoding setting.\n- The doc comments still describe the old behaviour.\n- There are no tests for cut-off multibyte sequences or for lengths that run past the end of the string.\n\n**Fix:** stop those loops at the end-of-string byte (add `txt[i] != '\\0'` to their conditions) and add regression tests for both hangs.\n\nNo spec was found beyond the commit message, so nothing was checked against requirements.",
+  "stderr": "",
+  "claude_duration_ms": 414172,
+  "claude_num_turns": 43,
+  "claude_cost_usd": 4.765164800000001,
+  "claude_session_id": "9b44e678-d2b8-477b-9ab1-5029463816b8",
+  "token_usage": {
+    "input_tokens": 210,
+    "output_tokens": 89580,
+    "cache_read_input_tokens": 3240379,
+    "cache_creation_input_tokens": 410604,
+    "total_tokens": 3740773,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 210,
+        "outputTokens": 89580,
+        "cacheReadInputTokens": 3240379,
+        "cacheCreationInputTokens": 410604,
+        "webSearchRequests": 0,
+        "costUSD": 4.765164800000001,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 29150,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/lvgl__lvgl@a0067e3"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: 5f41926f0414c02f70547c50329969f7fe6a4b8d.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

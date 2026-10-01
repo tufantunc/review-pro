@@ -1,0 +1,113 @@
+{
+  "instance_id": "FreeCAD__FreeCAD@82fef4a",
+  "repo": "FreeCAD/FreeCAD",
+  "base_commit": "ab225f5672cbe45404299437d1613c308b68900b",
+  "head_commit": "82fef4a22503dd3affdd39e7120b6f71e9423f86",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T20:45:21.277107+00:00",
+  "duration_seconds": 315.11,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1863,
+      "summary": "[Medium] NoOpEntityResolver does nothing, and its comment says it blocks entities when it does not",
+      "failure_scenario": "Impact: In Xerces-C, a nullptr returned from resolveEntity means \"fall back to default resolution\". The blocking comes only from setDisableDefaultEntityResolution(true), which was already at line 1886 before this change. So the new class, its heap allocation and the two new includes change nothing. The comment \"Block all external entity resolution\" gives the resolver credit for the flag's job, so a maintainer who trusts it and removes the flag would re-open external entity resolution (XXE). CheckDocument (line 2105) relies on the flag alone. Remedy: Delete NoOpEntityResolver, entityBlocker, the setEntityResolver call and both EntityResolver.hpp includes (Parameter.cpp:37, PreCompiled.h:107). Keep setDisableDefaultEntityResolution(true) and add a comment naming it as the XXE guard. If you want an explicit resolver anyway, have it return an empty MemBufInputSource so it blocks on its own, and apply it to both parser setups."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1863,
+      "summary": "[Medium] No test checks that LoadDocument blocks external entities",
+      "failure_scenario": "Impact: The change is presented as entity-blocking hardening, but no test asserts it. None of the 24 TEST_F cases in tests/src/Base/Parameter.cpp uses DOCTYPE, ENTITY or MemBufInputSource, and src/Mod/Test has no entity case either. If setDisableDefaultEntityResolution(true) or the resolver were removed or reordered, every test would still pass. Remedy: Add TEST_F(ParameterTest, TestExternalEntityNotResolved). Write a secret file and a config whose DOCTYPE declares <!ENTITY xxe SYSTEM \"file://<secret>\"> and uses &xxe; in an FCText value under the Root FCParamGroup. Call LoadDocument and assert it returns 0, or that GetASCII does not return the secret. You can also feed a MemBufInputSource to the public LoadDocument(const InputSource&) overload (Parameter.h:572)."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1863,
+      "summary": "[Low] New file-local helper class has global external linkage, though an anonymous namespace sits just above it",
+      "failure_scenario": "Impact: NoOpEntityResolver is used only in this file but is declared at global scope. If another file in the same library defines a class with this generic name, the two definitions would silently clash at link time (an ODR violation). The helpers right next to LoadDocument (getLockFile, getTimeout at lines 1802-1815) sit in an anonymous namespace. Remedy: Remove the class (see the redundant-resolver finding). If it stays, move it into the anonymous namespace or the private-classes block at the top of the file."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1879,
+      "summary": "[Low] make_unique heap allocations where plain stack objects would do, unlike CheckDocument",
+      "failure_scenario": "Impact: The parser, resolver and error reporter never leave the function, so the heap allocations and .get() calls only add indirection. CheckDocument in the same file (lines 2091, 2107-2108) already uses stack locals for the same setup, so the file now has two styles for one job. Remedy: Use stack locals: declare DOMTreeErrorReporter errReporter; first, then XercesDOMParser parser;, and call parser.setErrorHandler(&errReporter). Declaring the handlers first also means the parser is destroyed before them."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1887,
+      "summary": "[Low] Entity-resolver hardening is applied to only one of the two parser setups, and they share no helper",
+      "failure_scenario": "Impact: CheckDocument (src/Base/Parameter.cpp:2091-2108) builds its own XercesDOMParser for the same user parameter file and repeats setDoNamespaces, setDoSchema, setDisableDefaultEntityResolution and the DOMTreeErrorReporter wiring, but it does not get the new setEntityResolver call. The two sites keep separate lists of security settings and have already drifted in this change, so the next hardening edit is likely to miss one of them. Remedy: Move the security settings into one file-local helper, for example hardenParser(XercesDOMParser&), and call it from both LoadDocument and CheckDocument. Or, if the resolver is removed as redundant, keep the flag as the single convention at both sites."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1913,
+      "summary": "[Low] The rewritten parse-error path (return 0, unique_ptr cleanup) has no test",
+      "failure_scenario": "Impact: This path moved from manual delete to RAII cleanup, but existing tests reach LoadDocument only through importFrom with valid XML they wrote themselves. If malformed input started throwing, crashing, or leaving _pDocument half set instead of returning 0, no test would catch it, yet importFrom (src/Base/Parameter.cpp:289) depends on that return value. Remedy: Add a test that writes non-well-formed XML (for example an unclosed <FCParameters><FCParamGroup Name=\"Root\">) and asserts EXPECT_EQ(getConfig()->LoadDocument(fn.c_str()), 0). Optionally add EXPECT_THROW(..., Base::XMLBaseException) for a well-formed document with no Root group."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1879,
+      "summary": "[Nitpick] The parser is now destroyed after the resolver and error handler it points to (the reverse of the old order)",
+      "failure_scenario": "Impact: Locals are destroyed in reverse order of declaration, so errReporter and entityBlocker are destroyed before ~XercesDOMParser runs, while the parser still holds raw pointers to both. The old code deleted the parser first. Current Xerces does not call the handlers during teardown, but a future version that did would touch freed memory. Remedy: Declare entityBlocker and errReporter before parser, or call parser.reset() explicitly before they go out of scope."
+    },
+    {
+      "file": "src/Base/Parameter.cpp",
+      "line": 1911,
+      "summary": "[Nitpick] Replacing std::endl left a leftover literal, and the sibling overload was not updated",
+      "failure_scenario": "Impact: `std::cerr << \"An error occurred during parsing\\n \" << \"\\n\";` prints a trailing space, a blank line and a redundant second insertion. The same catch block in LoadDocument(const char*) at line 1858 still uses `<< std::endl`, so the two overloads now format the same message differently. Remedy: Use a single literal, `std::cerr << \"An error occurred during parsing\\n\";`, and make line 1858 match."
+    }
+  ],
+  "result_text": "## Verdict: REQUEST CHANGES (code)\n\nSpec: skipped, no spec found.\n\nCoverage (self-reported): 2 of 2 changed files examined by at least one reviewer.\n\nVerification: 2 checked (2 stand, 0 partly refuted, 0 refuted), 0 not checked. Spec findings are not verified.\n\nReviewers dispatched: correctness, security, ai-antipatterns, craft, dry, tests. The merge base (`f3e1e6cec0`) has no `.review-pro/` stack packs or `rules.md`, so every reviewer ran on its core rubric only. The security reviewer reported no findings. All 8 findings below were reported through the findings tool.\n\n### Medium\n- [Medium] src/Base/Parameter.cpp:1863 — `NoOpEntityResolver` does nothing, and its comment says it blocks entities when it does not\n  impact: In Xerces-C, a `nullptr` returned from `resolveEntity` means \"fall back to default resolution\". The only thing that blocks entities is `setDisableDefaultEntityResolution(true)`, and that line was already there before this change (line 1886). The new class, its heap allocation and the two new includes therefore change nothing. The comment \"Block all external entity resolution\" gives the resolver credit for what the flag does. A maintainer who trusts the comment and removes the flag would turn external entity resolution (XXE) back on. `CheckDocument` (line 2105) relies on the flag alone.\n  remedy: Delete `NoOpEntityResolver`, `entityBlocker`, the `setEntityResolver` call, and both `EntityResolver.hpp` includes (Parameter.cpp:37, PreCompiled.h:107). Keep the flag and add a comment saying it is the XXE guard. If you still want a resolver, have it return an empty `MemBufInputSource` so it blocks on its own, and use it in both parser setups.\n  flagged by: ai-antipatterns, craft\n  verification: verified, unchecked: the Xerces-C rule that a null return falls back to default resolution (the verifier had no pinned Xerces source to read).\n\n- [Medium] src/Base/Parameter.cpp:1863 — No test checks that `LoadDocument` blocks external entities\n  impact: None of the 24 `TEST_F` cases in `tests/src/Base/Parameter.cpp` uses a DOCTYPE or ENTITY declaration, and `src/Mod/Test` has no such case either. If the flag or the resolver were removed, every test would still pass.\n  remedy: Add `TestExternalEntityNotResolved`. It should write a secret file, then load a config that declares `<!ENTITY xxe SYSTEM \"file://<secret>\">` and uses `&xxe;` in an `FCText` value. Assert that the load returns 0, or that `GetASCII` does not return the secret. The public `LoadDocument(const InputSource&)` (Parameter.h:572) can take a `MemBufInputSource` for this.\n  verification: verified, unchecked: if the resolver really is a no-op, this test catches removal of the flag but not removal of the resolver alone.\n\n### Low\n- [Low] src/Base/Parameter.cpp:1863 — The new file-local class has global external linkage, even though an anonymous namespace sits just above it (lines 1802-1815)\n  impact: If another file ever defines a class with the same generic name, the two definitions clash (a one-definition-rule violation).\n  remedy: Remove the class, or move it into the anonymous namespace.\n- [Low] src/Base/Parameter.cpp:1879 — `make_unique` heap allocations where plain stack objects would do\n  impact: The extra indirection buys nothing, and `CheckDocument` (lines 2091 and 2107-2108) already uses stack locals for the same setup, so the file now has two styles.\n  remedy: Use stack locals, and declare the handlers before the parser.\n- [Low] src/Base/Parameter.cpp:1887 — The resolver hardening went into only one of the two parser setups; `CheckDocument` (line 2105) did not get it\n  impact: The security settings are listed separately at the two sites and have already drifted apart in this change.\n  remedy: Share one `hardenParser(XercesDOMParser&)` helper between both sites. Or, if the resolver is removed, the flag alone becomes the single approach at both sites.\n- [Low] src/Base/Parameter.cpp:1913 — The rewritten parse-error path (`return 0` plus `unique_ptr` cleanup) has no test\n  impact: `importFrom` (line 289) depends on this return value, but existing tests only load valid XML.\n  remedy: Add a malformed-XML test that expects 0, and optionally an `EXPECT_THROW(XMLBaseException)` test for a document with no Root group.\n\n### Nitpick\n- [Nitpick] src/Base/Parameter.cpp:1879 — The parser is now destroyed after the resolver and error handler it points to, which reverses the old order\n  impact: Current Xerces does not call the handlers during teardown, so nothing breaks today. A future version that did would use freed memory.\n  remedy: Declare `entityBlocker` and `errReporter` before `parser`, or call `parser.reset()` first.\n- [Nitpick] src/Base/Parameter.cpp:1911 — `\"An error occurred during parsing\\n \" << \"\\n\"` is a leftover from replacing `std::endl`\n  impact: It prints a trailing space and a blank line, and the sibling overload at line 1858 still uses `std::endl`, so the two print the same message differently.\n  remedy: Use a single literal, `\"An error occurred during parsing\\n\"`, and make line 1858 match.\n\n### Refuted in verification\nNone.\n\n## Spec\nSpec: skipped, no spec found. The commit message references no issue, and I did not query a PR body.",
+  "stderr": "",
+  "claude_duration_ms": 313860,
+  "claude_num_turns": 40,
+  "claude_cost_usd": 2.7867722,
+  "claude_session_id": "68a0e341-1d6c-4467-83c1-d9bd7e6eca60",
+  "token_usage": {
+    "input_tokens": 130,
+    "output_tokens": 51498,
+    "cache_read_input_tokens": 1780726,
+    "cache_creation_input_tokens": 235873,
+    "total_tokens": 2068227,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 130,
+        "outputTokens": 51498,
+        "cacheReadInputTokens": 1780726,
+        "cacheCreationInputTokens": 235873,
+        "webSearchRequests": 0,
+        "costUSD": 2.7867722,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 10413,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/FreeCAD__FreeCAD@82fef4a"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: ab225f5672cbe45404299437d1613c308b68900b.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

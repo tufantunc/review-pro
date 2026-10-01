@@ -1,0 +1,101 @@
+{
+  "instance_id": "microsoft__typescript-go@45c0de9",
+  "repo": "microsoft/typescript-go",
+  "base_commit": "af2ba7365ad3e2f572ddb95a439b0220eccc06b1",
+  "head_commit": "45c0de96a08812aff07974b859bc2327e7fe25ed",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T01:33:34.475404+00:00",
+  "duration_seconds": 214.96,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "internal/ls/diagnostics.go",
+      "line": 44,
+      "summary": "[Critical] Every diagnostic is converted with a nil *Converters, so the first one panics and kills the language server",
+      "failure_scenario": "toLSPDiagnostics calls toLSPDiagnostic(diag, nil). toLSPDiagnostic always calls converters.ToLSPRange (line 86, and line 68 for related information), which reads c.getLineMap through a nil receiver (converters.go:210) and panics. The diagnostic request runs in a goroutine (go handle(), server.go:301) with nothing that recovers, so any textDocument/diagnostic request for a file with at least one diagnostic crashes the whole tsgo LSP process. Fix: have toLSPDiagnostics take converters, or make it a *LanguageService method, pass l.converters, and delete the \"converters can be nil\" comment."
+    },
+    {
+      "file": "internal/ls/diagnostics.go",
+      "line": 23,
+      "summary": "[High] Declaration diagnostics use a checker that has already been returned to the shared pool",
+      "failure_scenario": "GetDeclarationDiagnostics -> getDeclarationDiagnosticsForFile -> emitHost.GetEmitResolver gets a checker with context.TODO() and releases it (defer done()) before the declaration transformer uses the resolver (emitHost.go:105-111, emitter.go:476-478). Concurrent LSP requests (go handle()) can take the same checker from the pool and change its state without emitResolver.checkerMu, which is a data race that can corrupt results or panic. Cancellation is also lost, and the checker may not be the one that type-checked the file. Fix: pass ctx through getDeclarationDiagnosticsForFile -> GetEmitResolver -> GetTypeCheckerForFile, and keep the checker until the transform finishes (return done to the caller, or get the checker in getDeclarationDiagnosticsForFile and defer done())."
+    },
+    {
+      "file": "internal/ls/diagnostics.go",
+      "line": 44,
+      "summary": "[High] No test calls GetDocumentDiagnostics, so the nil-converters panic shipped with CI green",
+      "failure_scenario": "The only caller of GetDocumentDiagnostics is server.go:518. No test in internal/ls or internal/lsp exercises diagnostics, so the nil-converters regression (a panic on any file with a diagnostic) passes CI and ships. Fix: add internal/ls/diagnostics_test.go using createLanguageService (completions_test.go:2031), and assert the Items, including code, severity and Range, for one semantic error and one syntax error."
+    },
+    {
+      "file": "internal/ls/diagnostics.go",
+      "line": 23,
+      "summary": "[Medium] The declaration transform runs on every pull-diagnostics request, can't be cancelled, and isn't cached",
+      "failure_scenario": "In projects with declaration or composite enabled, every textDocument/diagnostic pull runs a new DeclarationTransformer over the whole file, with no caching between requests. getDeclarationDiagnosticsForFile ignores _ctx and GetEmitResolver uses context.TODO(), so a request the editor cancelled or replaced while the user types still runs the full transform and ties up the language service. Fix: pass ctx through and check ctx.Err(); cache declaration diagnostics per (program, file)."
+    },
+    {
+      "file": "internal/ls/diagnostics.go",
+      "line": 22,
+      "summary": "[Medium] The new declaration-diagnostics branch and the syntax-error short-circuit have no test",
+      "failure_scenario": "Nothing tests that declaration-emit diagnostics are reported only when GetEmitDeclarations() is true, or that syntax errors short-circuit them. Declaration diagnostics could be dropped, wrongly gated, leak into the syntax-error path, or be duplicated without anyone noticing. Fix: add tests with declaration true and false on a source that produces a TS4xxx error, plus a syntax-error file that asserts only syntax diagnostics come back."
+    },
+    {
+      "file": "internal/ls/diagnostics.go",
+      "line": 14,
+      "summary": "[Low] A slice of slices, a variadic helper and a size-counting first pass stand in for one flat append",
+      "failure_scenario": "With at most three source slices, the [][]*ast.Diagnostic intermediate, the variadic signature, the size-counting first pass and the nested loop add code without real benefit and hide the simple gather-then-map logic. Fix: append into one []*ast.Diagnostic, then convert it with core.Map(diags, func(d) { return toLSPDiagnostic(d, l.converters) }), keeping Items non-nil."
+    }
+  ],
+  "result_text": "All six findings in the final report went through the report tool, at every severity: 1 Critical, 2 High, 2 Medium and 1 Low. None were refuted in verification, and there was no spec to review against.\n\nThe verdict is **BLOCK**. The new `toLSPDiagnostics` passes nil converters at `internal/ls/diagnostics.go:44`, so any file with a diagnostic crashes the language server. The new declaration-diagnostics path also uses a checker after it has been returned to the shared pool, so two concurrent requests can use it at once. Both were confirmed by independent verifiers, though neither was reproduced by running the server.",
+  "stderr": "",
+  "claude_duration_ms": 37305,
+  "claude_num_turns": 8,
+  "claude_cost_usd": 3.0927267999999994,
+  "claude_session_id": "382633d7-58e8-47d2-a5f6-5df3dcf7d7d1",
+  "token_usage": {
+    "input_tokens": 178,
+    "output_tokens": 45819,
+    "cache_read_input_tokens": 2350164,
+    "cache_creation_input_tokens": 293670,
+    "total_tokens": 2689831,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 178,
+        "outputTokens": 45819,
+        "cacheReadInputTokens": 2350164,
+        "cacheCreationInputTokens": 293670,
+        "webSearchRequests": 0,
+        "costUSD": 3.0927267999999994,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 8004,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/microsoft__typescript-go@45c0de9"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: af2ba7365ad3e2f572ddb95a439b0220eccc06b1.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

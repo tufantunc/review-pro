@@ -1,0 +1,95 @@
+{
+  "instance_id": "valkey-io__valkey@866fa4a",
+  "repo": "valkey-io/valkey",
+  "base_commit": "23fb9f2b5162752fbf42d892c6ff311a346565b8",
+  "head_commit": "866fa4a4c9635bae6f0a6b59a78954083ff5ff1a",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T16:20:19.458154+00:00",
+  "duration_seconds": 51.02,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "src/valkey-benchmark.c",
+      "line": 1950,
+      "summary": "The command-parsing loop runs to i <= argc and checks `sds_args[i][0]` whenever i == start, before checking i == argc. That reads past the end of the argc-sized sds_args array.",
+      "failure_scenario": "`valkey-benchmark SET a b \\;` (a trailing ';' separator): at i=3 the ';' sets start=4, then at i=4 (== argc == start) the code dereferences sds_args[4], an out-of-bounds heap read and a possible crash. The same happens when argc is 0 after --stdin realloc edge cases, since getSdsArrayFromArgv allocates exactly argc slots."
+    },
+    {
+      "file": "src/valkey-benchmark.c",
+      "line": 1998,
+      "summary": "The custom-command exit path frees only config.server_config. In cluster mode the per-node `server_config` objects (and the cluster nodes) are never freed, because freeClusterNodes() is not called on either exit path of main.",
+      "failure_scenario": "`valkey-benchmark --cluster SET k v`: each node's serverConfig from getServerConfig (line 1872) leaks at exit, and ASan/valgrind runs report leaked sds save/appendonly strings per node."
+    },
+    {
+      "file": "src/valkey-benchmark.c",
+      "line": 2205,
+      "summary": "The default-suite exit path has the same problem: it frees config.server_config but never the cluster nodes' server_config.",
+      "failure_scenario": "`valkey-benchmark --cluster -t set`: the node serverConfig objects and node structs leak at exit, and the renamed field is not covered by any cleanup."
+    },
+    {
+      "file": "src/valkey-benchmark.c",
+      "line": 1998,
+      "summary": "The early `return 0` for custom commands skips `freeCliConnInfo(config.conn_info)` and `zfree(data)`-style cleanup that the default-suite path does at line 2204, so the two exit paths are inconsistent.",
+      "failure_scenario": "`valkey-benchmark -a pass SET k v` under a leak checker: conn_info hostip/auth/user strings are reported as leaked, while the default suite path frees them."
+    },
+    {
+      "file": "src/valkey-benchmark.c",
+      "line": 899,
+      "summary": "Non-cluster mode prints `config.server_config->save` directly, but cluster mode maps an empty save to \"NONE\" (line 894). Standalone output shows an empty value when persistence is disabled.",
+      "failure_scenario": "Server with `save \"\"`: the standalone report prints `host configuration \"save\": ` (blank), while the cluster report prints `save: NONE` for the same config. Output is inconsistent and misleading."
+    },
+    {
+      "file": "src/valkey-benchmark.c",
+      "line": 1079,
+      "summary": "freeClusterNode frees slots and server_config but not `node->updated_slots`, which updateClusterSlotsConfiguration allocates (line 1276).",
+      "failure_scenario": "A slot update fills node->updated_slots, then fetchClusterConfiguration fails or re-runs and calls freeClusterNodes (line 1185) before the swap at line 1299. The CLUSTER_SLOTS*sizeof(int) buffer leaks."
+    }
+  ],
+  "result_text": "The diff is a pure rename: `redis_config` becomes `server_config` in both the global `config` struct and `clusterNode`, and all 14 uses in `src/valkey-benchmark.c` are updated. No uses of the old name are left in `src/`, `tests/` or `utils/`, so the rename is complete and doesn't change behaviour. No `.codegraph/` directory exists, and no CLAUDE.md rule covers C code here, so the conventions angle found nothing.\n\nAll six findings below are existing bugs inside functions this diff touches (`main`, `showLatencyReport`, `freeClusterNode`), not bugs the rename introduced. None were separately verified, as this review level specifies.\n\n```json\n[\n  {\n    \"file\": \"src/valkey-benchmark.c\",\n    \"line\": 1950,\n    \"summary\": \"The command-parsing loop runs to i <= argc and checks `sds_args[i][0]` whenever i == start, before checking i == argc. That reads past the end of the argc-sized sds_args array.\",\n    \"failure_scenario\": \"`valkey-benchmark SET a b \\\\;` (a trailing ';' separator): at i=3 the ';' sets start=4, then at i=4 (== argc == start) the code dereferences sds_args[4], an out-of-bounds heap read and a possible crash. The same happens when argc is 0 after --stdin realloc edge cases, since getSdsArrayFromArgv allocates exactly argc slots.\"\n  },\n  {\n    \"file\": \"src/valkey-benchmark.c\",\n    \"line\": 1998,\n    \"summary\": \"The custom-command exit path frees only config.server_config. In cluster mode the per-node `server_config` objects (and the cluster nodes) are never freed, because freeClusterNodes() is not called on either exit path of main.\",\n    \"failure_scenario\": \"`valkey-benchmark --cluster SET k v`: each node's serverConfig from getServerConfig (line 1872) leaks at exit, and ASan/valgrind runs report leaked sds save/appendonly strings per node.\"\n  },\n  {\n    \"file\": \"src/valkey-benchmark.c\",\n    \"line\": 2205,\n    \"summary\": \"The default-suite exit path has the same problem: it frees config.server_config but never the cluster nodes' server_config.\",\n    \"failure_scenario\": \"`valkey-benchmark --cluster -t set`: the node serverConfig objects and node structs leak at exit, and the renamed field is not covered by any cleanup.\"\n  },\n  {\n    \"file\": \"src/valkey-benchmark.c\",\n    \"line\": 1998,\n    \"summary\": \"The early `return 0` for custom commands skips `freeCliConnInfo(config.conn_info)` and `zfree(data)`-style cleanup that the default-suite path does at line 2204, so the two exit paths are inconsistent.\",\n    \"failure_scenario\": \"`valkey-benchmark -a pass SET k v` under a leak checker: conn_info hostip/auth/user strings are reported as leaked, while the default suite path frees them.\"\n  },\n  {\n    \"file\": \"src/valkey-benchmark.c\",\n    \"line\": 899,\n    \"summary\": \"Non-cluster mode prints `config.server_config->save` directly, but cluster mode maps an empty save to \\\"NONE\\\" (line 894). Standalone output shows an empty value when persistence is disabled.\",\n    \"failure_scenario\": \"Server with `save \\\"\\\"`: the standalone report prints `host configuration \\\"save\\\": ` (blank), while the cluster report prints `save: NONE` for the same config. Output is inconsistent and misleading.\"\n  },\n  {\n    \"file\": \"src/valkey-benchmark.c\",\n    \"line\": 1079,\n    \"summary\": \"freeClusterNode frees slots and server_config but not `node->updated_slots`, which updateClusterSlotsConfiguration allocates (line 1276).\",\n    \"failure_scenario\": \"A slot update fills node->updated_slots, then fetchClusterConfiguration fails or re-runs and calls freeClusterNodes (line 1185) before the swap at line 1299. The CLUSTER_SLOTS*sizeof(int) buffer leaks.\"\n  }\n]\n```",
+  "stderr": "",
+  "claude_duration_ms": 49847,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.20805980000000002,
+  "claude_session_id": "f7d6c5f3-6572-4d80-bda5-0c95e3b53067",
+  "token_usage": {
+    "input_tokens": 14,
+    "output_tokens": 3979,
+    "cache_read_input_tokens": 118769,
+    "cache_creation_input_tokens": 20934,
+    "total_tokens": 143696,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 14,
+        "outputTokens": 3979,
+        "cacheReadInputTokens": 118769,
+        "cacheCreationInputTokens": 20934,
+        "webSearchRequests": 0,
+        "costUSD": 0.20805980000000002,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 921,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/phase1/transcripts/valkey-io__valkey@866fa4a"
+  }
+}

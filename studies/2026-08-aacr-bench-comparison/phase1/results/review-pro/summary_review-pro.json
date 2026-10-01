@@ -1,0 +1,180 @@
+[
+  {
+    "instance_id": "astral-sh__uv@ed57db2",
+    "status": "infra_failure_skipped",
+    "reason": "head commit ed57db2b34c2 no longer exists on GitHub (not our ref; commits API 422)"
+  },
+  {
+    "instance_id": "comfyanonymous__ComfyUI@cfc3122",
+    "status": "infra_failure_skipped",
+    "reason": "head commit cfc312296c0b no longer exists on GitHub (not our ref; commits API 422)"
+  },
+  {
+    "instance_id": "ClickHouse__ClickHouse@5fb6ee3",
+    "status": "infra_failure_skipped",
+    "reason": "repository history not obtainable on this host: 45 transfer attempts broke at about 80 minutes"
+  },
+  {
+    "instance_id": "vllm-project__vllm@6217b0c",
+    "status": "skipped",
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/vllm-project__vllm@6217b0c.json"
+  },
+  {
+    "instance_id": "lvgl__lvgl@4a57db3",
+    "status": "skipped",
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/lvgl__lvgl@4a57db3.json"
+  },
+  {
+    "instance_id": "FreeCAD__FreeCAD@82fef4a",
+    "status": "skipped",
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/FreeCAD__FreeCAD@82fef4a.json"
+  },
+  {
+    "instance_id": "elastic__elasticsearch@a6a4623",
+    "status": "skipped",
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/elastic__elasticsearch@a6a4623.json"
+  },
+  {
+    "instance_id": "microsoft__typescript-go@b970689",
+    "status": "skipped",
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/microsoft__typescript-go@b970689.json"
+  },
+  {
+    "instance_id": "valkey-io__valkey@866fa4a",
+    "status": "skipped",
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/valkey-io__valkey@866fa4a.json"
+  },
+  {
+    "instance_id": "microsoft__typescript-go@892b4a3",
+    "status": "skipped",
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/microsoft__typescript-go@892b4a3.json"
+  },
+  {
+    "instance_id": "wavetermdev__waveterm@90a57d5",
+    "status": "skipped",
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/wavetermdev__waveterm@90a57d5.json"
+  },
+  {
+    "instance_id": "google-gemini__gemini-cli@c6e6248",
+    "status": "skipped",
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/google-gemini__gemini-cli@c6e6248.json"
+  },
+  {
+    "instance_id": "FreeCAD__FreeCAD@ec3da2e",
+    "status": "skipped",
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/FreeCAD__FreeCAD@ec3da2e.json"
+  },
+  {
+    "instance_id": "linera-io__linera-protocol@024925d",
+    "status": "skipped",
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/linera-io__linera-protocol@024925d.json"
+  },
+  {
+    "instance_id": "ollama__ollama@b6002f6",
+    "status": "skipped",
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/ollama__ollama@b6002f6.json"
+  },
+  {
+    "instance_id": "mpv-player__mpv@dbd327d",
+    "status": "skipped",
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/mpv-player__mpv@dbd327d.json"
+  },
+  {
+    "instance_id": "microsoft__typescript-go@45c0de9",
+    "status": "ok",
+    "exit_code": 0,
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/microsoft__typescript-go@45c0de9.json",
+    "retry_exhausted": false
+  },
+  {
+    "instance_id": "elastic__elasticsearch@e38d20c",
+    "status": "ok",
+    "exit_code": 0,
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/elastic__elasticsearch@e38d20c.json",
+    "retry_exhausted": false
+  },
+  {
+    "instance_id": "CherryHQ__cherry-studio@5644b00",
+    "status": "ok",
+    "exit_code": 0,
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/CherryHQ__cherry-studio@5644b00.json",
+    "retry_exhausted": false
+  },
+  {
+    "instance_id": "lvgl__lvgl@a0067e3",
+    "status": "ok",
+    "exit_code": 0,
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/lvgl__lvgl@a0067e3.json",
+    "retry_exhausted": false
+  },
+  {
+    "instance_id": "FreeCAD__FreeCAD@f8cd643",
+    "status": "ok",
+    "exit_code": 0,
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/FreeCAD__FreeCAD@f8cd643.json",
+    "retry_exhausted": false
+  },
+  {
+    "instance_id": "browser-use__browser-use@aab7b3b",
+    "status": "ok",
+    "exit_code": 0,
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/browser-use__browser-use@aab7b3b.json",
+    "retry_exhausted": false
+  },
+  {
+    "instance_id": "facebook__react@b045f18",
+    "status": "ok",
+    "exit_code": 0,
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/facebook__react@b045f18.json",
+    "retry_exhausted": false
+  },
+  {
+    "instance_id": "valkey-io__valkey@36f37c0",
+    "status": "ok",
+    "exit_code": 0,
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/valkey-io__valkey@36f37c0.json",
+    "retry_exhausted": false
+  },
+  {
+    "instance_id": "alibaba__spring-ai-alibaba@4bc7305",
+    "status": "ok",
+    "exit_code": 0,
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/alibaba__spring-ai-alibaba@4bc7305.json",
+    "retry_exhausted": false
+  },
+  {
+    "instance_id": "infiniflow__ragflow@a63caa1",
+    "status": "ok",
+    "exit_code": 0,
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/infiniflow__ragflow@a63caa1.json",
+    "retry_exhausted": false
+  },
+  {
+    "instance_id": "opencv__opencv@e3e45c8",
+    "status": "ok",
+    "exit_code": 0,
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/opencv__opencv@e3e45c8.json",
+    "retry_exhausted": false
+  },
+  {
+    "instance_id": "dotnet__aspnetcore@8ac940f",
+    "status": "ok",
+    "exit_code": 0,
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/dotnet__aspnetcore@8ac940f.json",
+    "retry_exhausted": false
+  },
+  {
+    "instance_id": "filamentphp__filament@d47632c",
+    "status": "ok",
+    "exit_code": 0,
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/filamentphp__filament@d47632c.json",
+    "retry_exhausted": false
+  },
+  {
+    "instance_id": "laravel__framework@180c25f",
+    "status": "ok",
+    "exit_code": 0,
+    "result_path": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/laravel__framework@180c25f.json",
+    "retry_exhausted": false
+  }
+]

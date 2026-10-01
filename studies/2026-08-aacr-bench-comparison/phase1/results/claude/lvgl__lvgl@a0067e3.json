@@ -1,0 +1,113 @@
+{
+  "instance_id": "lvgl__lvgl@a0067e3",
+  "repo": "lvgl/lvgl",
+  "base_commit": "5f41926f0414c02f70547c50329969f7fe6a4b8d",
+  "head_commit": "a0067e3984cc95bb3ed0dce9abb664ee6a01a199",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T01:15:16.070631+00:00",
+  "duration_seconds": 119.41,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "src/misc/lv_text.c",
+      "line": 653,
+      "summary": "lv_text_utf8_next no longer moves *i forward when it reaches the '\\0' terminator, so any caller that loops on a byte-length bound (`while(i < length)`) and is given a length longer than the string now spins forever instead of ending.",
+      "failure_scenario": "Call lv_text_get_width(\"AB\", 10, font, 0) or lv_text_get_width_with_flags with a length larger than strlen. Once i reaches 2, lv_text_encoded_letter_next_2 returns letter=0 and leaves i at 2. `while(i < length)` never becomes false, so the UI thread hangs. Before the change, i went past the terminator and the loop eventually ended."
+    },
+    {
+      "file": "src/misc/lv_text.c",
+      "line": 772,
+      "summary": "lv_text_utf8_get_char_id loops on `while(i < byte_id)` with no '\\0' check, so after this change it hangs whenever byte_id is past the end of the string.",
+      "failure_scenario": "lv_text_encoded_get_char_id(\"abc\", 5): i stops at 3 because utf8_next no longer advances at '\\0', so the loop never ends. Callers in lv_label.c, lv_dropdown.c and lv_draw_label.c pass computed byte offsets, and an off-by-one there now freezes the device instead of returning a slightly wrong index."
+    },
+    {
+      "file": "src/misc/lv_bidi.c",
+      "line": 212,
+      "summary": "lv_bidi_process_paragraph (`while(rd < len)`) and bracket_process (`while(txt_i < len)`, line 597) both depend on lv_text_encoded_next always moving the index forward, which is no longer true at the terminator.",
+      "failure_scenario": "lv_bidi_get_visual_pos or lv_bidi_get_logical_pos is called with a len that runs past an embedded or early '\\0' (for example a stale line length after the label text shrinks). rd or txt_i gets stuck at the terminator and the bidi pass loops forever."
+    },
+    {
+      "file": "src/misc/lv_text.c",
+      "line": 849,
+      "summary": "The NULL and terminator guard was added only to the UTF-8 decoder. lv_text_iso8859_1_next still dereferences a NULL txt and still advances *i past '\\0', so the two encodings now behave differently.",
+      "failure_scenario": "With LV_TXT_ENC == LV_TXT_ENC_ASCII, the new test test_lv_text_encoded_letter_next_2_should_handle_null_pointer dereferences NULL inside lv_text_iso8859_1_next (txt[*i]) and segfaults. The empty-string test fails because ofs becomes 1 instead of 0. The out-of-bounds read the commit claims to fix is still present in that encoding."
+    },
+    {
+      "file": "src/misc/lv_text.c",
+      "line": 541,
+      "summary": "The fix sits in the per-character decoder instead of at the root cause: callers such as letter_next_2, lv_text_get_width and get_char_id iterate by a byte count without checking for '\\0'.",
+      "failure_scenario": "Making the decoder refuse to advance turns the out-of-bounds read into a potential infinite loop in every length-bounded caller. Adding `txt[i] != '\\0'` to those loops, or having letter_next_2 stop at the terminator, would fix the read without the hang and would apply to both encodings."
+    },
+    {
+      "file": "src/misc/lv_text.c",
+      "line": 541,
+      "summary": "lv_text_encoded_letter_next_2 treats a decoded value of 0 as end of string, but utf8_next also returns 0 for an invalid or truncated sequence that is not at the end, so letter_next is wrongly set to 0.",
+      "failure_scenario": "For txt = \"\\x80A\", letter=0 and ofs=1, but letter_next=0 instead of 'A'. Kerning and glyph width for the following character are computed wrongly. The touched path does not handle this case."
+    },
+    {
+      "file": "src/misc/lv_text.c",
+      "line": 653,
+      "summary": "A `txt == NULL` check now runs on every decoded character in hot rendering loops, even though the public entry points (lv_text_get_width, get_next_word, and others) already check txt for NULL.",
+      "failure_scenario": "Each glyph decoded while drawing labels, spans or bidi text pays an extra branch through the function pointer, which is wasted work on MCU targets. The NULL check belongs at the API boundary, such as lv_text_encoded_letter_next_2, not in the per-character decoder."
+    },
+    {
+      "file": "src/misc/lv_text.c",
+      "line": 652,
+      "summary": "The comment says \"Ensure the string is not null\", but the check also returns early on an empty or terminated position. The function's doc comment still says *i always moves to the next character, which is no longer true at '\\0'.",
+      "failure_scenario": "Someone relying on the documented contract (\"After call it will point to the next UTF-8 char\") writes a loop that expects the index to always advance. Given the new behavior, that loop hangs at the terminator."
+    },
+    {
+      "file": "tests/src/test_cases/test_txt.c",
+      "line": 142,
+      "summary": "The new tests only call the function once from offset 0. None covers the case that was actually out of bounds (calling again at the terminator with a non-zero offset), and none covers truncated multibyte sequences or a length-bounded caller such as lv_text_get_width with a length past the string end.",
+      "failure_scenario": "The regression where lv_text_get_width(\"A\", 5, ...) hangs, and a reintroduced out-of-bounds read for \"\\xC3\" followed by a second call at ofs=1, would both pass this test suite unnoticed."
+    }
+  ],
+  "result_text": "```json\n[\n  {\n    \"file\": \"src/misc/lv_text.c\",\n    \"line\": 653,\n    \"summary\": \"lv_text_utf8_next no longer moves *i forward when it reaches the '\\\\0' terminator, so any caller that loops on a byte-length bound (`while(i < length)`) and is given a length longer than the string now spins forever instead of ending.\",\n    \"failure_scenario\": \"Call lv_text_get_width(\\\"AB\\\", 10, font, 0) or lv_text_get_width_with_flags with a length larger than strlen. Once i reaches 2, lv_text_encoded_letter_next_2 returns letter=0 and leaves i at 2. `while(i < length)` never becomes false, so the UI thread hangs. Before the change, i went past the terminator and the loop eventually ended.\"\n  },\n  {\n    \"file\": \"src/misc/lv_text.c\",\n    \"line\": 772,\n    \"summary\": \"lv_text_utf8_get_char_id loops on `while(i < byte_id)` with no '\\\\0' check, so after this change it hangs whenever byte_id is past the end of the string.\",\n    \"failure_scenario\": \"lv_text_encoded_get_char_id(\\\"abc\\\", 5): i stops at 3 because utf8_next no longer advances at '\\\\0', so the loop never ends. Callers in lv_label.c, lv_dropdown.c and lv_draw_label.c pass computed byte offsets, and an off-by-one there now freezes the device instead of returning a slightly wrong index.\"\n  },\n  {\n    \"file\": \"src/misc/lv_bidi.c\",\n    \"line\": 212,\n    \"summary\": \"lv_bidi_process_paragraph (`while(rd < len)`) and bracket_process (`while(txt_i < len)`, line 597) both depend on lv_text_encoded_next always moving the index forward, which is no longer true at the terminator.\",\n    \"failure_scenario\": \"lv_bidi_get_visual_pos or lv_bidi_get_logical_pos is called with a len that runs past an embedded or early '\\\\0' (for example a stale line length after the label text shrinks). rd or txt_i gets stuck at the terminator and the bidi pass loops forever.\"\n  },\n  {\n    \"file\": \"src/misc/lv_text.c\",\n    \"line\": 849,\n    \"summary\": \"The NULL and terminator guard was added only to the UTF-8 decoder. lv_text_iso8859_1_next still dereferences a NULL txt and still advances *i past '\\\\0', so the two encodings now behave differently.\",\n    \"failure_scenario\": \"With LV_TXT_ENC == LV_TXT_ENC_ASCII, the new test test_lv_text_encoded_letter_next_2_should_handle_null_pointer dereferences NULL inside lv_text_iso8859_1_next (txt[*i]) and segfaults. The empty-string test fails because ofs becomes 1 instead of 0. The out-of-bounds read the commit claims to fix is still present in that encoding.\"\n  },\n  {\n    \"file\": \"src/misc/lv_text.c\",\n    \"line\": 541,\n    \"summary\": \"The fix sits in the per-character decoder instead of at the root cause: callers such as letter_next_2, lv_text_get_width and get_char_id iterate by a byte count without checking for '\\\\0'.\",\n    \"failure_scenario\": \"Making the decoder refuse to advance turns the out-of-bounds read into a potential infinite loop in every length-bounded caller. Adding `txt[i] != '\\\\0'` to those loops, or having letter_next_2 stop at the terminator, would fix the read without the hang and would apply to both encodings.\"\n  },\n  {\n    \"file\": \"src/misc/lv_text.c\",\n    \"line\": 541,\n    \"summary\": \"lv_text_encoded_letter_next_2 treats a decoded value of 0 as end of string, but utf8_next also returns 0 for an invalid or truncated sequence that is not at the end, so letter_next is wrongly set to 0.\",\n    \"failure_scenario\": \"For txt = \\\"\\\\x80A\\\", letter=0 and ofs=1, but letter_next=0 instead of 'A'. Kerning and glyph width for the following character are computed wrongly. The touched path does not handle this case.\"\n  },\n  {\n    \"file\": \"src/misc/lv_text.c\",\n    \"line\": 653,\n    \"summary\": \"A `txt == NULL` check now runs on every decoded character in hot rendering loops, even though the public entry points (lv_text_get_width, get_next_word, and others) already check txt for NULL.\",\n    \"failure_scenario\": \"Each glyph decoded while drawing labels, spans or bidi text pays an extra branch through the function pointer, which is wasted work on MCU targets. The NULL check belongs at the API boundary, such as lv_text_encoded_letter_next_2, not in the per-character decoder.\"\n  },\n  {\n    \"file\": \"src/misc/lv_text.c\",\n    \"line\": 652,\n    \"summary\": \"The comment says \\\"Ensure the string is not null\\\", but the check also returns early on an empty or terminated position. The function's doc comment still says *i always moves to the next character, which is no longer true at '\\\\0'.\",\n    \"failure_scenario\": \"Someone relying on the documented contract (\\\"After call it will point to the next UTF-8 char\\\") writes a loop that expects the index to always advance. Given the new behavior, that loop hangs at the terminator.\"\n  },\n  {\n    \"file\": \"tests/src/test_cases/test_txt.c\",\n    \"line\": 142,\n    \"summary\": \"The new tests only call the function once from offset 0. None covers the case that was actually out of bounds (calling again at the terminator with a non-zero offset), and none covers truncated multibyte sequences or a length-bounded caller such as lv_text_get_width with a length past the string end.\",\n    \"failure_scenario\": \"The regression where lv_text_get_width(\\\"A\\\", 5, ...) hangs, and a reintroduced out-of-bounds read for \\\"\\\\xC3\\\" followed by a second call at ofs=1, would both pass this test suite unnoticed.\"\n  }\n]\n```",
+  "stderr": "",
+  "claude_duration_ms": 118179,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.4373052,
+  "claude_session_id": "f43b6f11-5c09-4dda-bb3d-ec2347e9c913",
+  "token_usage": {
+    "input_tokens": 24,
+    "output_tokens": 9965,
+    "cache_read_input_tokens": 328421,
+    "cache_creation_input_tokens": 34445,
+    "total_tokens": 372855,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 24,
+        "outputTokens": 9965,
+        "cacheReadInputTokens": 328421,
+        "cacheCreationInputTokens": 34445,
+        "webSearchRequests": 0,
+        "costUSD": 0.4373052,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 5305,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/phase1/transcripts/lvgl__lvgl@a0067e3"
+  }
+}

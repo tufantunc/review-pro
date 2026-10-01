@@ -1,0 +1,191 @@
+{
+  "ex_info": {
+    "start_time": "2026-10-01T09:37:11.298348",
+    "results_dir": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/sens-dataset/claude/phase1-sens",
+    "reviewer": "claude",
+    "line_k": 1,
+    "limit": null,
+    "missing_instance_ids": []
+  },
+  "summary": {
+    "total_instances": 1,
+    "candidate_instances": 1,
+    "evaluated_instances": 1,
+    "missing_instances": 0,
+    "expected_notes": 15,
+    "generated_notes": 10,
+    "matched_line_notes": 2,
+    "matched_semantic_notes": 2,
+    "semantic_match_rate": 0.2,
+    "line_match_rate": 0.2,
+    "semantic_recall_rate": 0.133,
+    "line_recall_rate": 0.133,
+    "semantic_f1": 0.16,
+    "line_f1": 0.16,
+    "total_duration_seconds": 435.12,
+    "avg_duration_seconds": 435.12,
+    "total_input_tokens": 3065645,
+    "total_output_tokens": 34512,
+    "total_tokens": 3100157,
+    "avg_input_tokens": 3065645,
+    "avg_output_tokens": 34512
+  },
+  "eval_res": [
+    {
+      "instance_id": "microsoft__typescript-go@b970689",
+      "repo": "microsoft/typescript-go",
+      "comments": [
+        {
+          "note": "Removing KindJSDocImportTag from this switch statement may cause runtime panics when calling ModuleSpecifier() on JSDocImportTag nodes. Since JSDocImportTag has a ModuleSpecifier property (as evidenced by other methods including it and the NewJSDocImportTag function setting it), it should likely be handled here similar to other import declaration types.",
+          "path": "internal/ast/ast.go",
+          "side": "right",
+          "from_line": 754,
+          "to_line": 757,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "`IsDefaultImport` now accepts `KindJSImportDeclaration` but still calls `node.AsImportDeclaration()`. This is safe only if `JSImportDeclaration` is represented by the same struct/accessor as `ImportDeclaration`. If `KindJSImportDeclaration` has its own node type (e.g., `AsJSImportDeclaration()`), this will panic or misread fields at runtime. Please confirm the accessor mapping for `KindJSImportDeclaration`, and if needed switch to the correct `As*` method (or add a shared helper that extracts `ImportClause` for both kinds).",
+          "path": "internal/ast/utilities.go",
+          "side": "right",
+          "from_line": 2367,
+          "to_line": 2369,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Calling `AsImportDeclaration()` on a node of kind `KindExportDeclaration` will cause a panic because `ExportDeclaration` uses a different struct than `ImportDeclaration`. Consider using `getModuleSpecifierFromNode(parent)` which handles both kinds correctly, or split the check.",
+          "path": "internal/checker/checker.go",
+          "side": "right",
+          "from_line": 29386,
+          "to_line": 29386,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Potential panic: `importTag.ImportClause` might be nil (e.g., for side-effect imports like `/** @import \"mod\" */`). If so, `Clone` might return nil (or panic if not nil-safe), and subsequent access to `importClause.Flags` or `AsImportClause()` will cause a panic. \n\nSuggestion: Add a nil check for `importTag.ImportClause`.",
+          "path": "internal/parser/reparser.go",
+          "side": "right",
+          "from_line": 120,
+          "to_line": 122,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "The reparser calls `importTag.ImportClause.Clone(...)` without a nil check, but `parseImportTag` gets its clause from `tryParseImportClause`, which returns nil for a side-effect or malformed `@import`.\nA JS file containing `/** @import \"./foo\" */` (or `/** @import */`) gives a nil `ImportClause`; `(*Node)(nil).Clone` dereferences `n.data` and the parser panics. Any JS file with this comment crashes the compiler and the language server."
+        },
+        {
+          "note": "Directly mutating IsTypeOnly after cloning may violate immutability assumptions present in other parts of the codebase. Consider using a factory method or reconstruction pattern consistent with how similar mutations are performed elsewhere.",
+          "path": "internal/parser/reparser.go",
+          "side": "right",
+          "from_line": 122,
+          "to_line": 122,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Unhandled `KindJSImportDeclaration` case in `emitStatement` switch lacks implementation; must either add dedicated emit logic or explicitly panic if transformation is expected.",
+          "path": "internal/printer/printer.go",
+          "side": "left",
+          "from_line": 3956,
+          "to_line": 3956,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "CommonJSModuleTransformer should not handle `JSImportDeclaration` directly; this node kind should be normalized by earlier passes (e.g., type eraser or import ellision) to maintain transformer separation of concerns and ensure module transformers only process edition-appropriate syntax.",
+          "path": "internal/transformers/commonjsmodule.go",
+          "side": "right",
+          "from_line": 66,
+          "to_line": 66,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The `JSImportDeclaration` node should not be set to nil in this transformer; it must be processed during an earlier transformation phase instead.",
+          "path": "internal/transformers/esmodule.go",
+          "side": "right",
+          "from_line": 43,
+          "to_line": 43,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The addition of `KindJSImportDeclaration` to the `transformUsingDeclarations` switch case is misplaced; this node type should be processed in an earlier transformation stage before reaching this function.",
+          "path": "internal/transformers/esnext.go",
+          "side": "right",
+          "from_line": 371,
+          "to_line": 371,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The change to include `ast.KindJSImportDeclaration` in the import handling switch case is invalid because type-only imports are elided during compilation and should not affect runtime module dependency collection.",
+          "path": "internal/transformers/externalmoduleinfo.go",
+          "side": "right",
+          "from_line": 50,
+          "to_line": 50,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Grouping ast.KindImportDeclaration and ast.KindJSImportDeclaration assumes interchangeable use of .AsImportDeclaration(). Please verify that both node kinds structurally support this conversion uniformly.",
+          "path": "internal/transformers/externalmoduleinfo.go",
+          "side": "right",
+          "from_line": 50,
+          "to_line": 50,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The addition of `ast.KindJSImportDeclaration` to the import case statement is incorrect because `JSImportDeclaration` nodes should have been processed by `typeeraser.go` and thus never reach the `ImportElisionTransformer`.",
+          "path": "internal/transformers/importelision.go",
+          "side": "right",
+          "from_line": 31,
+          "to_line": 31,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "Adding ast.KindJSImportDeclaration to the switch case is redundant because typeeraser.go is designed to handle JSImportDeclaration nodes.",
+          "path": "internal/transformers/importelision.go",
+          "side": "right",
+          "from_line": 169,
+          "to_line": 169,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "ast.KindJSImportDeclaration should be handled in a separate case to elide the node, not grouped with ast.KindImportDeclaration which requires different processing.",
+          "path": "internal/transformers/typeeraser.go",
+          "side": "right",
+          "from_line": 258,
+          "to_line": 258,
+          "line_match": false,
+          "semantic_match": false,
+          "matched_note": ""
+        },
+        {
+          "note": "The type display has regressed from 'Foo' to 'default'. This reduces clarity as 'Foo' is the local name of the imported interface. This change likely results from the new handling of JSDoc `@import` tags (via `JSImportDeclaration`) where the default import symbol is not being correctly aliased or printed with its local name.",
+          "path": "testdata/baselines/reference/submodule/conformance/importTag3.types",
+          "side": "right",
+          "from_line": 18,
+          "to_line": 19,
+          "line_match": true,
+          "semantic_match": true,
+          "matched_note": "Types reached through a default @import now print as `default` instead of the local alias name, which diverges from TypeScript; the regression is accepted in `importTag3.types.diff` and `importTag16.types.diff`.\n`/** @import Foo from './a' */ /** @param {Foo} foo */ function f(foo){}` shows `f : (foo: default) => void` in hover, quick info and declaration output, where TypeScript shows `(foo: Foo) => void`."
+        }
+      ]
+    }
+  ]
+}

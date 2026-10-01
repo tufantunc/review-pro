@@ -1,0 +1,95 @@
+{
+  "instance_id": "filamentphp__filament@d47632c",
+  "repo": "filamentphp/filament",
+  "base_commit": "ce4d9d08df41142ff219bb3dc44968084eaae0dc",
+  "head_commit": "d47632c0583bac481d4ce7cc9b6b1711d0f8e0fc",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T02:43:22.455336+00:00",
+  "duration_seconds": 250.34,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "packages/support/src/helpers.php",
+      "line": 184,
+      "summary": "[High] No test covers the new MySQL/MariaDB JSON-path branch, and the SQLite-only suite can never reach it",
+      "failure_scenario": "Nothing tests this bug fix. phpunit.xml uses DB_CONNECTION=testing, which is in-memory SQLite, and CI installs only pdo_sqlite, so the mysql/mariadb check is always false. No test calls generate_search_column_expression directly. If the protected wrapJsonFieldAndPath() call (made through invade(), with phpstan suppressed) or the hand-built json_extract string breaks, MySQL/MariaDB JSON search fails and CI still passes. Remedy: add Pest unit tests in tests/src/Support/helpersTest.php that call generate_search_column_expression() with a real MySqlConnection built from a lazy PDO closure, and assert the exact Expression SQL. Cover a single JSON path, a nested path, mariadb, the non-forced case, a plain column, SQLite as a negative case, and the collation suffix."
+    },
+    {
+      "file": "packages/support/src/helpers.php",
+      "line": 185,
+      "summary": "[Medium] Calls the grammar's protected internals via invade() when the public wrap() already compiles `->` selectors",
+      "failure_scenario": "A shared support helper now depends on Laravel's protected Grammar::wrapJsonFieldAndPath(), which carries no BC guarantee across illuminate ^10.45|^11.0. It needs a blanket @phpstan-ignore-line, and it rebuilds grammar logic by hand without the json_unquote that Laravel's MySqlGrammar::wrapJsonSelector adds. A framework change to that method breaks search silently. Remedy: replace the invade/destructure/json_extract lines with `$column = $databaseConnection->getQueryGrammar()->wrap($column);`, which also handles qualified table.column->path, and drop the phpstan suppression."
+    },
+    {
+      "file": "packages/support/src/helpers.php",
+      "line": 187,
+      "summary": "[Medium] Forced case-insensitive JSON search uses json_extract without json_unquote, so it matches against JSON-encoded text",
+      "failure_scenario": "lower(json_extract(...)) compares LIKE '%term%' against the JSON-encoded value, with its surrounding quotes and escape sequences. A search for `say \"hi\"` or `C:\\dir` never matches. On MariaDB, JSON stored with \\uXXXX escapes means accented or non-Latin searches return no rows. Searches that start or end with `\"`, or search `null`, also behave unexpectedly. Remedy: use `json_unquote(json_extract({$field}{$path}))`, or the grammar's public wrap(), which does this. Add a test with a value that contains a quote and a non-ASCII character."
+    },
+    {
+      "file": "packages/support/src/helpers.php",
+      "line": 184,
+      "summary": "[Low] Fix only covers mysql/mariadb; pgsql and sqlite still build invalid raw `lower(col->path)` SQL",
+      "failure_scenario": "On SQLite with isSearchForcedCaseInsensitive(true), or on pgsql, where case-insensitive search is forced by default, a `->` column such as one built from relationship dot notation in InteractsWithTableQuery.php:98-104 still becomes the raw Expression `lower(data->name)` or `lower(data->name::text)`. The grammar never rewrites it, and `name` is read as an identifier, so the query errors. Remedy: compile `->` columns through the connection grammar for every driver, before the pgsql ::text cast and the lower() call, e.g. `if (str_contains($column, '->')) { $column = $grammar->wrap($column); }`, or at least add sqlite to the driver list."
+    },
+    {
+      "file": "packages/support/src/helpers.php",
+      "line": 184,
+      "summary": "[Low] Another driver-specific branch nested inside the case-insensitivity branch of generate_search_column_expression",
+      "failure_scenario": "JSON-path compilation has nothing to do with case-sensitivity, yet it runs only when a search is forced case-insensitive. The function now has four separate per-driver steps that interact through string checks (contains('json_extract('), contains('(')), so readers have to trace string contents to see what is produced. Remedy: compile JSON paths once near the top of the function with the grammar, or move it into a small helper, so the lower() branch makes no driver checks of its own."
+    }
+  ],
+  "result_text": "## Verdict: BLOCK (code)\n\nSpec: skipped, no spec found. The commits name no issue, there's no matching spec file, and `gh pr view` was not permitted.\n\nVerification: 3 checked (3 stand, 0 partly refuted, 0 refuted), 0 not checked. Spec findings are not verified.\n\nThe diff is small (one file, +6 lines), so the coverage line and the out-of-diff caveat are left out. There were no review packs, repository rules or external premises. Reviewers dispatched: correctness, db, tests, craft, ai-antipatterns.\n\nWhat blocks is a missing test, not broken code. The fix works for plain searches on MySQL/MariaDB, but nothing in CI can ever run it, and it has two Medium problems.\n\n### High\n- [High] `packages/support/src/helpers.php:184`: no test covers the new MySQL/MariaDB JSON-path branch, and the test suite, which runs only on SQLite, can never reach it.\n  - **Impact:** `phpunit.xml:14` sets `DB_CONNECTION=testing` (in-memory SQLite), and `.github/workflows/tests.yml:36` installs only `pdo_sqlite`. So the `mysql`/`mariadb` check is always false in CI, and no test calls `generate_search_column_expression` directly. If the protected framework call made through `invade()` changes, or the hand-built SQL string breaks, MySQL/MariaDB JSON search stops working and CI still passes.\n  - **Fix:** add Pest unit tests in `tests/src/Support/helpersTest.php` that call `generate_search_column_expression()` with a real `MySqlConnection` built from a lazy PDO closure, and assert the exact SQL. Cover:\n    - a single JSON path and a nested path\n    - `mariadb`\n    - the non-forced case\n    - a plain column\n    - SQLite as a negative case\n    - the collation suffix\n  - flagged by: tests\n  - verification: verified. Unchecked: whether `wrapJsonFieldAndPath` is protected and stable, and whether the lazy-PDO test setup works (no `vendor/` installed).\n\n### Medium\n- [Medium] `packages/support/src/helpers.php:185`: the code calls the query grammar's protected `wrapJsonFieldAndPath()` through `invade()`, when the public `wrap()` already compiles `->` selectors.\n  - **Impact:** a shared helper now depends on a protected Laravel method with no compatibility promise across `^10.45|^11.0`. It needs a blanket `@phpstan-ignore-line`, and it rebuilds grammar logic by hand while leaving out `json_unquote`. The repo's other five `invade()` calls reach internals that have no public equivalent; this one has one.\n  - **Fix:** use `$column = $databaseConnection->getQueryGrammar()->wrap($column);`. It also handles a qualified `table.column->path`, which `AttachAction.php:232` passes.\n  - flagged by: craft, ai-antipatterns\n  - verification: verified. Unchecked: Laravel's `wrap()` → `wrapJsonSelector()` → `json_unquote(json_extract(...))` chain, which couldn't be checked without `vendor/`.\n- [Medium] `packages/support/src/helpers.php:187`: the forced case-insensitive search uses `json_extract` without `json_unquote`, so it matches against the JSON-encoded text rather than the value.\n  - **Impact:** `lower(json_extract(...)) LIKE '%term%'` runs against the quoted, escaped JSON text.\n    - Searches containing `\"` or `\\` never match.\n    - On MariaDB, values stored with `\\uXXXX` escapes make accented or non-Latin searches return no rows.\n    - The `%` wildcards hide this for plain ASCII, so simple searches still work.\n  - **Fix:** use `json_unquote(json_extract({$field}{$path}))`, or the grammar's `wrap()`. Add a test with a value containing a quote and a non-ASCII character.\n  - flagged by: db, correctness, ai-antipatterns\n  - verification: verified. Unchecked: MySQL/MariaDB `JSON_EXTRACT` quoting and escaping, and Laravel's `json_encode` defaults.\n  - Note: the translatable plugin (`SpatieLaravelTranslatableContentDriver.php:118`) also leaves out `json_unquote`, so this matches an existing in-repo pattern.\n\n### Low\n- [Low] `packages/support/src/helpers.php:184`: the fix only covers mysql/mariadb. pgsql (which forces case-insensitive search by default) and sqlite still build invalid raw `lower(col->path)` SQL for `->` columns. This gap existed before the change.\n  - **Fix:** compile `->` columns through the grammar for every driver, before the `::text` cast and `lower()`, or at least add `sqlite`.\n  - flagged by: correctness, db\n- [Low] `packages/support/src/helpers.php:184`: turning JSON paths into SQL is nested under the case-insensitivity branch. That makes four per-driver steps in this function, which interact through string checks.\n  - **Fix:** compile JSON paths once near the top of the function, or move it into a small helper.\n  - flagged by: craft\n\n### Refuted in verification\nNone.\n\n## Spec\nSkipped, no spec found.\n\nAll five findings were also sent through the findings report tool, one call each.",
+  "stderr": "",
+  "claude_duration_ms": 249257,
+  "claude_num_turns": 28,
+  "claude_cost_usd": 2.3784936,
+  "claude_session_id": "a76d8d37-554e-4728-86c7-edbaa7530289",
+  "token_usage": {
+    "input_tokens": 108,
+    "output_tokens": 48622,
+    "cache_read_input_tokens": 1335298,
+    "cache_creation_input_tokens": 188356,
+    "total_tokens": 1572384,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 108,
+        "outputTokens": 48622,
+        "cacheReadInputTokens": 1335298,
+        "cacheCreationInputTokens": 188356,
+        "webSearchRequests": 0,
+        "costUSD": 2.3784936,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 16208,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/filamentphp__filament@d47632c"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: ce4d9d08df41142ff219bb3dc44968084eaae0dc.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

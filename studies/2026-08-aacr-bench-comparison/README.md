@@ -1,8 +1,10 @@
 # Study: standard harness review vs. review-pro on AACR-Bench
 
-**Status: pre-registered, not yet run.** This directory currently contains only the
-locked design. Results, instance lists, raw outputs, and the write-up land here as
-the study proceeds.
+**Status: phase 1 run and scored (2026-10-01).** H1 is not supported: review-pro did not find more of
+the repo-context references than `/code-review` (12 paired instances, p = 0.56). It found more
+overall (recall 0.425 vs 0.375), within the noise budget, at 9.2 times the tokens. See
+**[RESULTS.md](RESULTS.md)**. The registration with Amendments 1 to 4, the instance list, the
+infrastructure-failure log, per-instance outputs and the run log are all in this directory.
 
 ## The question
 

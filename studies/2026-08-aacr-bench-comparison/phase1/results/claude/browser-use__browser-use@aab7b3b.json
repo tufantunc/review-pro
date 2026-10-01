@@ -1,0 +1,119 @@
+{
+  "instance_id": "browser-use__browser-use@aab7b3b",
+  "repo": "browser-use/browser-use",
+  "base_commit": "515b94225aa86c40dc2c20034055ab8bcc88c6ae",
+  "head_commit": "aab7b3bb54e2b15ee3b32ad7de74c91fc8b22f52",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T01:19:21.772339+00:00",
+  "duration_seconds": 67.93,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "browser_use/browser/browser.py",
+      "line": 283,
+      "summary": "`channel='chrome'` is now hard-coded for every builtin launch, even when `browser_class` is `firefox` or `webkit`.",
+      "failure_scenario": "With BrowserConfig(browser_class='firefox'), the call becomes playwright.firefox.launch(channel='chrome', ...). Firefox and WebKit do not accept a chrome channel, so the browser fails to start and _setup_browser re-raises. Firefox/WebKit support breaks completely."
+    },
+    {
+      "file": "browser_use/browser/browser.py",
+      "line": 283,
+      "summary": "`channel='chrome'` needs branded Google Chrome installed, but setup docs and examples still only run `playwright install` (bundled Chromium), and patchright's browsers are never installed.",
+      "failure_scenario": "In a fresh install, Docker or CI where only `playwright install chromium` was run, launch fails with \"Chromium distribution 'chrome' is not found\". Before this change the default config worked out of the box."
+    },
+    {
+      "file": "browser_use/browser/context.py",
+      "line": 413,
+      "summary": "In non-headless mode, `no_viewport=True` was removed and nothing replaces it, so Playwright falls back to its default fixed 1280x720 viewport.",
+      "failure_scenario": "BrowserConfig(headless=False), which is the default: the page viewport is 1280x720 instead of filling the real --window-size window. Content is clipped or letterboxed, screenshots and viewport_expansion calculations use the wrong size, and the fixed viewport is also a known automation fingerprint, which defeats the bot-detection goal. config.no_viewport and browser_window_size are still ignored in this branch."
+    },
+    {
+      "file": "browser_use/browser/context.py",
+      "line": 448,
+      "summary": "The init script that forced `attachShadow` to `mode: 'open'` was deleted, so closed shadow roots are no longer visible to DOM extraction.",
+      "failure_scenario": "On sites that use closed shadow DOM (many web-component UIs, some login widgets), buildDomTree.js line 977 checks `node.shadowRoot`, which is null for closed roots. The interactive elements inside are never indexed, so the agent cannot click or type into them, where before this change it could."
+    },
+    {
+      "file": "browser_use/agent/service.py",
+      "line": 261,
+      "summary": "Agent unconditionally overwrites `new_context_config.disable_security` with the browser-level value, wiping out a context-level setting the user chose.",
+      "failure_scenario": "A user passes Browser(BrowserConfig(new_context_config=BrowserContextConfig(disable_security=True))), leaving the browser-level flag False. Agent.__init__ resets it to False, so bypass_csp and ignore_https_errors are silently dropped and cross-origin iframe or self-signed-cert sites fail. It also mutates the caller's shared injected Browser config as a side effect, even when a browser_context is injected and the config is never used."
+    },
+    {
+      "file": "browser_use/agent/service.py",
+      "line": 261,
+      "summary": "The disable_security sync is a special case inside Agent only, so contexts created through `Browser.new_context()` or `BrowserContext(...)` directly never get it.",
+      "failure_scenario": "BrowserConfig(disable_security=True), then `await browser.new_context()` and pass that context to Agent: the context still has disable_security=False, so CSP and HTTPS errors are not bypassed. Behavior depends on the construction path. The sync belongs in a BrowserConfig model validator or in Browser.new_context."
+    },
+    {
+      "file": "browser_use/browser/context.py",
+      "line": 449,
+      "summary": "The remaining init script monkey-patches `navigator.permissions.query` with a non-native JS function, which is itself a well-known bot-detection signal.",
+      "failure_scenario": "Detectors check `navigator.permissions.query.toString()` and see a JS arrow function instead of `[native code]`, so they flag the session as automated. This undercuts the move to patchright, which already handles the stealth patches natively."
+    },
+    {
+      "file": "pyproject.toml",
+      "line": 20,
+      "summary": "`playwright` is still a required dependency next to `patchright`, and several files still import from `playwright`, so the codebase mixes two driver stacks.",
+      "failure_scenario": "Both packages and their Node drivers get installed. examples/custom-functions/action_filters.py and tests/test_action_filters.py annotate page filters with playwright.Page, while the registry and runtime now pass patchright.Page objects. tests/test_browser.py imports playwright._impl ProxySettings. Type checks and isinstance checks against these classes fail, and the dead dependency inflates installs."
+    },
+    {
+      "file": "browser_use/browser/context.py",
+      "line": 93,
+      "summary": "The docstring still says the default user_agent is the Chrome/85 string, but the field default is now None.",
+      "failure_scenario": "Users reading the config docs expect a fixed Windows Chrome/85 UA, but the real UA is now the browser's native one. Anyone relying on the documented default gets different headers and server behavior."
+    },
+    {
+      "file": "browser_use/browser/browser.py",
+      "line": 92,
+      "summary": "Switching from `alias` to `validation_alias` changes how the field serializes: model_dump(by_alias=True) now emits `browser_binary_path`, not the legacy key.",
+      "failure_scenario": "Code that round-trips BrowserConfig through model_dump(by_alias=True) into older consumers, or into saved configs that expect `browser_instance_path` or `chrome_instance_path`, no longer finds the legacy key. Minor, but it is a behavior change hidden inside a reformatting hunk."
+    }
+  ],
+  "result_text": "```json\n[\n  {\n    \"file\": \"browser_use/browser/browser.py\",\n    \"line\": 283,\n    \"summary\": \"`channel='chrome'` is now hard-coded for every builtin launch, even when `browser_class` is `firefox` or `webkit`.\",\n    \"failure_scenario\": \"With BrowserConfig(browser_class='firefox'), the call becomes playwright.firefox.launch(channel='chrome', ...). Firefox and WebKit do not accept a chrome channel, so the browser fails to start and _setup_browser re-raises. Firefox/WebKit support breaks completely.\"\n  },\n  {\n    \"file\": \"browser_use/browser/browser.py\",\n    \"line\": 283,\n    \"summary\": \"`channel='chrome'` needs branded Google Chrome installed, but setup docs and examples still only run `playwright install` (bundled Chromium), and patchright's browsers are never installed.\",\n    \"failure_scenario\": \"In a fresh install, Docker or CI where only `playwright install chromium` was run, launch fails with \\\"Chromium distribution 'chrome' is not found\\\". Before this change the default config worked out of the box.\"\n  },\n  {\n    \"file\": \"browser_use/browser/context.py\",\n    \"line\": 413,\n    \"summary\": \"In non-headless mode, `no_viewport=True` was removed and nothing replaces it, so Playwright falls back to its default fixed 1280x720 viewport.\",\n    \"failure_scenario\": \"BrowserConfig(headless=False), which is the default: the page viewport is 1280x720 instead of filling the real --window-size window. Content is clipped or letterboxed, screenshots and viewport_expansion calculations use the wrong size, and the fixed viewport is also a known automation fingerprint, which defeats the bot-detection goal. config.no_viewport and browser_window_size are still ignored in this branch.\"\n  },\n  {\n    \"file\": \"browser_use/browser/context.py\",\n    \"line\": 448,\n    \"summary\": \"The init script that forced `attachShadow` to `mode: 'open'` was deleted, so closed shadow roots are no longer visible to DOM extraction.\",\n    \"failure_scenario\": \"On sites that use closed shadow DOM (many web-component UIs, some login widgets), buildDomTree.js line 977 checks `node.shadowRoot`, which is null for closed roots. The interactive elements inside are never indexed, so the agent cannot click or type into them, where before this change it could.\"\n  },\n  {\n    \"file\": \"browser_use/agent/service.py\",\n    \"line\": 261,\n    \"summary\": \"Agent unconditionally overwrites `new_context_config.disable_security` with the browser-level value, wiping out a context-level setting the user chose.\",\n    \"failure_scenario\": \"A user passes Browser(BrowserConfig(new_context_config=BrowserContextConfig(disable_security=True))), leaving the browser-level flag False. Agent.__init__ resets it to False, so bypass_csp and ignore_https_errors are silently dropped and cross-origin iframe or self-signed-cert sites fail. It also mutates the caller's shared injected Browser config as a side effect, even when a browser_context is injected and the config is never used.\"\n  },\n  {\n    \"file\": \"browser_use/agent/service.py\",\n    \"line\": 261,\n    \"summary\": \"The disable_security sync is a special case inside Agent only, so contexts created through `Browser.new_context()` or `BrowserContext(...)` directly never get it.\",\n    \"failure_scenario\": \"BrowserConfig(disable_security=True), then `await browser.new_context()` and pass that context to Agent: the context still has disable_security=False, so CSP and HTTPS errors are not bypassed. Behavior depends on the construction path. The sync belongs in a BrowserConfig model validator or in Browser.new_context.\"\n  },\n  {\n    \"file\": \"browser_use/browser/context.py\",\n    \"line\": 449,\n    \"summary\": \"The remaining init script monkey-patches `navigator.permissions.query` with a non-native JS function, which is itself a well-known bot-detection signal.\",\n    \"failure_scenario\": \"Detectors check `navigator.permissions.query.toString()` and see a JS arrow function instead of `[native code]`, so they flag the session as automated. This undercuts the move to patchright, which already handles the stealth patches natively.\"\n  },\n  {\n    \"file\": \"pyproject.toml\",\n    \"line\": 20,\n    \"summary\": \"`playwright` is still a required dependency next to `patchright`, and several files still import from `playwright`, so the codebase mixes two driver stacks.\",\n    \"failure_scenario\": \"Both packages and their Node drivers get installed. examples/custom-functions/action_filters.py and tests/test_action_filters.py annotate page filters with playwright.Page, while the registry and runtime now pass patchright.Page objects. tests/test_browser.py imports playwright._impl ProxySettings. Type checks and isinstance checks against these classes fail, and the dead dependency inflates installs.\"\n  },\n  {\n    \"file\": \"browser_use/browser/context.py\",\n    \"line\": 93,\n    \"summary\": \"The docstring still says the default user_agent is the Chrome/85 string, but the field default is now None.\",\n    \"failure_scenario\": \"Users reading the config docs expect a fixed Windows Chrome/85 UA, but the real UA is now the browser's native one. Anyone relying on the documented default gets different headers and server behavior.\"\n  },\n  {\n    \"file\": \"browser_use/browser/browser.py\",\n    \"line\": 92,\n    \"summary\": \"Switching from `alias` to `validation_alias` changes how the field serializes: model_dump(by_alias=True) now emits `browser_binary_path`, not the legacy key.\",\n    \"failure_scenario\": \"Code that round-trips BrowserConfig through model_dump(by_alias=True) into older consumers, or into saved configs that expect `browser_instance_path` or `chrome_instance_path`, no longer finds the legacy key. Minor, but it is a behavior change hidden inside a reformatting hunk.\"\n  }\n]\n```",
+  "stderr": "",
+  "claude_duration_ms": 66365,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.2458768,
+  "claude_session_id": "8d5dc6b3-8dce-4a86-9924-72de6d751f60",
+  "token_usage": {
+    "input_tokens": 16,
+    "output_tokens": 5297,
+    "cache_read_input_tokens": 155414,
+    "cache_creation_input_tokens": 21758,
+    "total_tokens": 182485,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 16,
+        "outputTokens": 5297,
+        "cacheReadInputTokens": 155414,
+        "cacheCreationInputTokens": 21758,
+        "webSearchRequests": 0,
+        "costUSD": 0.2458768,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 1925,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/phase1/transcripts/browser-use__browser-use@aab7b3b"
+  }
+}

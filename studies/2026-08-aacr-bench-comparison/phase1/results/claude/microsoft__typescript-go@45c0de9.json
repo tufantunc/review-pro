@@ -1,0 +1,95 @@
+{
+  "instance_id": "microsoft__typescript-go@45c0de9",
+  "repo": "microsoft/typescript-go",
+  "base_commit": "af2ba7365ad3e2f572ddb95a439b0220eccc06b1",
+  "head_commit": "45c0de96a08812aff07974b859bc2327e7fe25ed",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T01:10:05.255778+00:00",
+  "duration_seconds": 86.12,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "internal/ls/diagnostics.go",
+      "line": 44,
+      "summary": "toLSPDiagnostics passes nil instead of l.converters to toLSPDiagnostic, and that function always calls converters.ToLSPRange, which reads c.getLineMap. So any request that returns at least one diagnostic panics on a nil pointer.",
+      "failure_scenario": "Open any file with a syntax, semantic, suggestion or declaration diagnostic (e.g. `let x: number = \"s\"`). toLSPDiagnostic runs `converters.ToLSPRange(diagnostic.File(), ...)` with converters == nil, PositionToLineAndCharacter dereferences c.getLineMap, and the textDocument/diagnostic handler panics. The old code passed l.converters. The comment 'converters can be nil if not needed' is wrong because the converters are always needed."
+    },
+    {
+      "file": "internal/ls/diagnostics.go",
+      "line": 23,
+      "summary": "GetDeclarationDiagnostics now runs on the LSP path. It reaches emitHost.GetEmitResolver, which gets a checker with context.TODO() (no request ID) and releases it with `defer done()` before the returned emit resolver is used. The comment in emitHost.go says this must be fixed before any LSP use.",
+      "failure_scenario": "In the project checkerPool, the checker tied to the file is marked in use and then released as soon as GetEmitResolver returns. The declaration transformer then calls the resolver, which mutates that checker, while another concurrent LSP request (hover, diagnostics) takes the same now-free checker. The result is a data race and corrupted checker state. If the checker was disposed after a cancellation, a fresh checker is created outside the request's association."
+    },
+    {
+      "file": "internal/compiler/program.go",
+      "line": 524,
+      "summary": "getDeclarationDiagnosticsForFile ignores its ctx (`_ctx`), and GetDocumentDiagnostics keeps going to the suggestion and declaration passes even after a cancelled semantic pass returned nil. Cancelled LSP diagnostic requests therefore still run the full declaration transform.",
+      "failure_scenario": "The user types quickly and each keystroke cancels the previous diagnostic pull. GetSemanticDiagnostics sees ctx.Err() and returns nil, but the code still calls GetSuggestionDiagnostics and then GetDeclarationDiagnostics. The latter runs NewDeclarationTransformer/TransformSourceFile to completion with no cancellation check, which wastes CPU and delays the next request."
+    },
+    {
+      "file": "internal/ls/diagnostics.go",
+      "line": 36,
+      "summary": "toLSPDiagnostics is a free function, so it can't reach l.converters. That is the root cause of the nil-converters bug; it should be a method on *LanguageService, or take converters as a parameter.",
+      "failure_scenario": "Because the helper has no access to the language service's converters, the author hard-coded nil. Making it `func (l *LanguageService) toLSPDiagnostics(...)` and passing l.converters removes the crash and the misleading comment."
+    },
+    {
+      "file": "internal/compiler/program.go",
+      "line": 419,
+      "summary": "Declaration diagnostics are not cached per file (TypeScript caches them in cachedDeclarationDiagnosticsForFile), so every LSP diagnostic pull re-runs the whole declaration transform.",
+      "failure_scenario": "With `declaration: true`, every textDocument/diagnostic request for every open file rebuilds the declaration AST for that file, even if the program hasn't changed. Repeated pulls for an unchanged file (e.g. switching tabs, or the client re-pulling after a change in another file) repeat expensive work that upstream TypeScript memoizes."
+    },
+    {
+      "file": "internal/ls/diagnostics.go",
+      "line": 22,
+      "summary": "program.Options().GetEmitDeclarations() is called with no nil check, while other Program code (getOptionsDiagnosticsOfConfigFile) explicitly guards `p.Options() == nil`.",
+      "failure_scenario": "If a program is built with nil compiler options (the case Program code elsewhere guards against), GetEmitDeclarations dereferences nil fields and the diagnostics request panics."
+    }
+  ],
+  "result_text": "```json\n[\n  {\n    \"file\": \"internal/ls/diagnostics.go\",\n    \"line\": 44,\n    \"summary\": \"toLSPDiagnostics passes nil instead of l.converters to toLSPDiagnostic, and that function always calls converters.ToLSPRange, which reads c.getLineMap. So any request that returns at least one diagnostic panics on a nil pointer.\",\n    \"failure_scenario\": \"Open any file with a syntax, semantic, suggestion or declaration diagnostic (e.g. `let x: number = \\\"s\\\"`). toLSPDiagnostic runs `converters.ToLSPRange(diagnostic.File(), ...)` with converters == nil, PositionToLineAndCharacter dereferences c.getLineMap, and the textDocument/diagnostic handler panics. The old code passed l.converters. The comment 'converters can be nil if not needed' is wrong because the converters are always needed.\"\n  },\n  {\n    \"file\": \"internal/ls/diagnostics.go\",\n    \"line\": 23,\n    \"summary\": \"GetDeclarationDiagnostics now runs on the LSP path. It reaches emitHost.GetEmitResolver, which gets a checker with context.TODO() (no request ID) and releases it with `defer done()` before the returned emit resolver is used. The comment in emitHost.go says this must be fixed before any LSP use.\",\n    \"failure_scenario\": \"In the project checkerPool, the checker tied to the file is marked in use and then released as soon as GetEmitResolver returns. The declaration transformer then calls the resolver, which mutates that checker, while another concurrent LSP request (hover, diagnostics) takes the same now-free checker. The result is a data race and corrupted checker state. If the checker was disposed after a cancellation, a fresh checker is created outside the request's association.\"\n  },\n  {\n    \"file\": \"internal/compiler/program.go\",\n    \"line\": 524,\n    \"summary\": \"getDeclarationDiagnosticsForFile ignores its ctx (`_ctx`), and GetDocumentDiagnostics keeps going to the suggestion and declaration passes even after a cancelled semantic pass returned nil. Cancelled LSP diagnostic requests therefore still run the full declaration transform.\",\n    \"failure_scenario\": \"The user types quickly and each keystroke cancels the previous diagnostic pull. GetSemanticDiagnostics sees ctx.Err() and returns nil, but the code still calls GetSuggestionDiagnostics and then GetDeclarationDiagnostics. The latter runs NewDeclarationTransformer/TransformSourceFile to completion with no cancellation check, which wastes CPU and delays the next request.\"\n  },\n  {\n    \"file\": \"internal/ls/diagnostics.go\",\n    \"line\": 36,\n    \"summary\": \"toLSPDiagnostics is a free function, so it can't reach l.converters. That is the root cause of the nil-converters bug; it should be a method on *LanguageService, or take converters as a parameter.\",\n    \"failure_scenario\": \"Because the helper has no access to the language service's converters, the author hard-coded nil. Making it `func (l *LanguageService) toLSPDiagnostics(...)` and passing l.converters removes the crash and the misleading comment.\"\n  },\n  {\n    \"file\": \"internal/compiler/program.go\",\n    \"line\": 419,\n    \"summary\": \"Declaration diagnostics are not cached per file (TypeScript caches them in cachedDeclarationDiagnosticsForFile), so every LSP diagnostic pull re-runs the whole declaration transform.\",\n    \"failure_scenario\": \"With `declaration: true`, every textDocument/diagnostic request for every open file rebuilds the declaration AST for that file, even if the program hasn't changed. Repeated pulls for an unchanged file (e.g. switching tabs, or the client re-pulling after a change in another file) repeat expensive work that upstream TypeScript memoizes.\"\n  },\n  {\n    \"file\": \"internal/ls/diagnostics.go\",\n    \"line\": 22,\n    \"summary\": \"program.Options().GetEmitDeclarations() is called with no nil check, while other Program code (getOptionsDiagnosticsOfConfigFile) explicitly guards `p.Options() == nil`.\",\n    \"failure_scenario\": \"If a program is built with nil compiler options (the case Program code elsewhere guards against), GetEmitDeclarations dereferences nil fields and the diagnostics request panics.\"\n  }\n]\n```\n\nI found 6 findings; the first two are the most serious. The nil converters in `toLSPDiagnostics` will crash the diagnostics request for any file that has a diagnostic. Declaration diagnostics are now computed in the LSP for the first time, and that exposes an emit-resolver checker lifetime problem that the comment in `internal/compiler/emitHost.go` already warns about.\n\nI also looked at removing the explicit `Kind: lsproto.StringLiteralFull{}`. It changes nothing: the type is a zero-size struct and still sends `\"full\"`. Collecting declaration diagnostics even when semantic errors exist matches upstream TypeScript's language service, so I didn't flag either one. No CLAUDE.md rules apply to the changed Go file.",
+  "stderr": "",
+  "claude_duration_ms": 84234,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.3318136,
+  "claude_session_id": "9d1d91f3-21af-47f5-9195-31641e1ff9e1",
+  "token_usage": {
+    "input_tokens": 20,
+    "output_tokens": 6371,
+    "cache_read_input_tokens": 200193,
+    "cache_creation_input_tokens": 32855,
+    "total_tokens": 239439,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 20,
+        "outputTokens": 6371,
+        "cacheReadInputTokens": 200193,
+        "cacheCreationInputTokens": 32855,
+        "webSearchRequests": 0,
+        "costUSD": 0.3318136,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 2302,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/phase1/transcripts/microsoft__typescript-go@45c0de9"
+  }
+}

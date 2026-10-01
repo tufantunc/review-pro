@@ -1,0 +1,83 @@
+{
+  "instance_id": "opencv__opencv@e3e45c8",
+  "repo": "opencv/opencv",
+  "base_commit": "459bb12466abdade062607ae54f3267adaef8063",
+  "head_commit": "e3e45c86baa3c51def49961f5d77201ee97e4385",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T02:35:43.024203+00:00",
+  "duration_seconds": 128.46,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "samples/cpp/tutorial_code/objectDetection/aruco_samples_utility.hpp",
+      "line": 35,
+      "summary": "[Low] The flags string written into `buf` is never read; the whole if-block is dead",
+      "failure_scenario": "Nothing reads `buf` after line 40 before the function returns. The block builds a readable flags string and throws it away, so a reader assumes it reaches the output file when it doesn't. The change made the dead call safer instead of removing it. This was already the case before the change. Remedy: delete the `if (flags != 0) { ... }` block, which changes no behaviour. Or, if a comment was meant to be written, add `fs.writeComment(buf);` inside it. The same block in samples/cpp/calibration.cpp:252 has that call commented out."
+    },
+    {
+      "file": "samples/cpp/tutorial_code/ImgTrans/HoughLines_Demo.cpp",
+      "line": 75,
+      "summary": "[Nitpick] Fixed-size buffer plus snprintf just to copy a string literal; the literal can go straight to createTrackbar",
+      "failure_scenario": "The format string has no conversion specifiers, so the 50-byte buffer and the snprintf call do nothing. This is tutorial code that readers copy, and it teaches them to format text that needs no formatting. The change kept the old pattern while editing the line. Remedy: delete `edge_thresh_label` and the snprintf line, and call `createTrackbar(\"Edge Thres: input\", weighted_name, &e_trackbar, max_trackbar, Weighted_Hough);`. createTrackbar takes a `const String&`."
+    },
+    {
+      "file": "samples/opengl/opengl_interop.cpp",
+      "line": 223,
+      "summary": "[Nitpick] Leftover `buf[0] = 0;` resets are redundant, and the Linux branch still uses a different size convention",
+      "failure_scenario": "snprintf always null-terminates, so the `buf[0] = 0;` lines at 223, 228 and 233 do nothing. The function now passes `sizeof(buf)` on Windows but `sizeof(buf)-1` on Linux (line 242), and both declare `char buf[256+1]`. Readers may wonder whether the difference is on purpose. Remedy: delete the three resets, use `sizeof(buf)` at line 242, and declare both buffers as `char buf[256]`."
+    }
+  ],
+  "result_text": "## Verdict: APPROVE\n\nThe change is safe to merge: replacing `sprintf`/`sprintf_s` with `snprintf` in the three samples introduces no defects. All three findings are minor cleanups (one Low, two Nitpicks), and all three have been sent to the report tool.\n\nSpec: skipped, no spec found. I couldn't read the PR body (`gh` needed approval), the commits cite no issues, and no spec file matched the branch.\n\nCoverage (self-reported): 3 of 3 changed files examined by at least one reviewer.\n\nVerification: 0 checked, 0 not checked. No finding was Medium or above, so none qualified for independent verification. Spec findings are not verified.\n\n> No finding in this review cites evidence outside the diff. For a change of this\n> size that usually means the review never left the diff — treat the verdict with\n> reduced confidence.\n\nWhat the four reviewers (correctness, security, ai-antipatterns, craft) checked:\n- **Buffer sizes:** every `sizeof(buf)` is taken on a local array, and every format string is a literal.\n- **Windows sample:** the old `sprintf_s(buf, sizeof(buf)-1, …)` aborted the process on overflow; `snprintf` cuts the text short and still null-terminates. Other Windows samples, such as `samples/directx/d3d9_interop.cpp:259-274`, already use `snprintf`.\n- **Completeness:** no `sprintf` calls are left anywhere under `samples/`.\n\n### Low\n- [Low] `samples/cpp/tutorial_code/objectDetection/aruco_samples_utility.hpp:35`: the flags string written into `buf` is never read, so the whole if-block does nothing.\n  - **Impact:** nothing reads `buf` after line 40 before the function returns. The block builds a readable flags string and throws it away, so a reader would assume it reaches the output file. This was already true before the change; the change made the unused call safer instead of removing it.\n  - **Remedy:** delete the `if (flags != 0) { ... }` block, which changes no behaviour. Or, if a comment was meant to be written, add `fs.writeComment(buf);`. The same block in `samples/cpp/calibration.cpp:252` has that call commented out.\n  - **Flagged by:** craft\n  - **Verification:** not selected (below Medium)\n\n### Nitpick\n- [Nitpick] `samples/cpp/tutorial_code/ImgTrans/HoughLines_Demo.cpp:75`: a fixed-size buffer and `snprintf` are used just to copy a string literal.\n  - **Impact:** the format string has no `%` specifiers, so the buffer and the formatting call do nothing. This is tutorial code that readers copy. Craft rated it Low; I lowered it to Nitpick because the change only kept a pattern that was already there.\n  - **Remedy:** pass `\"Edge Thres: input\"` directly to `createTrackbar`.\n  - **Flagged by:** craft\n- [Nitpick] `samples/opengl/opengl_interop.cpp:223`: the leftover `buf[0] = 0;` lines do nothing, and the Linux branch still uses a different size convention.\n  - **Impact:** `snprintf` always null-terminates, so the resets at lines 223, 228 and 233 are redundant. The Windows branch now passes `sizeof(buf)` while the Linux branch at line 242 passes `sizeof(buf)-1`.\n  - **Remedy:** delete the resets, use `sizeof(buf)` at line 242, and declare both buffers as `char buf[256]`.\n  - **Flagged by:** craft\n\n### Refuted in verification\nNone.\n\n## Spec\nSkipped, no spec found. The commit subject mentions only `aruco_samples_utility.hpp`, but the commit body (\"in sample programs\") matches the three files that changed.",
+  "stderr": "",
+  "claude_duration_ms": 127221,
+  "claude_num_turns": 27,
+  "claude_cost_usd": 1.412567,
+  "claude_session_id": "7fcce49f-9c7c-4bd5-bb2e-1fe61ae6e636",
+  "token_usage": {
+    "input_tokens": 70,
+    "output_tokens": 19373,
+    "cache_read_input_tokens": 1108090,
+    "cache_creation_input_tokens": 126743,
+    "total_tokens": 1254276,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 70,
+        "outputTokens": 19373,
+        "cacheReadInputTokens": 1108090,
+        "cacheCreationInputTokens": 126743,
+        "webSearchRequests": 0,
+        "costUSD": 1.412567,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 4125,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/opencv__opencv@e3e45c8"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: 459bb12466abdade062607ae54f3267adaef8063.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

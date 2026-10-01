@@ -1,0 +1,197 @@
+{
+  "instance_id": "wavetermdev__waveterm@90a57d5",
+  "repo": "wavetermdev/waveterm",
+  "base_commit": "286783fb8e71cec6d2294bd871e5ccf8c798c646",
+  "head_commit": "90a57d552d15f1b2a4d92cdfc3a4308efcf5c57b",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-09-30T21:26:58.598243+00:00",
+  "duration_seconds": 516.96,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 354,
+      "summary": "[High] Command blocks no longer receive cmd:env, the wsh-run env file, or WAVETERM_JWT",
+      "failure_scenario": "Impact: the env file, cmd:env and WAVETERM_JWT now go only into the swap token. cmdOpts.Env was removed, along with UpdateCmdEnv, session.Setenv and the WSL WAVETERM_JWT= prefix. Only the Wave rc files redeem the token, and they load only when cmdStr == \"\". Command blocks run `shell -c cmdStr`, so `wsh run` loses the caller's environment, cmd:env is ignored, and waveapp programs fail with \"no WAVETERM_JWT env var set\". (Partly refuted: the nowsh and no-wsh paths never received cmdOpts.Env at the base either.) Remedy: when cmdStr != \"\", apply the resolved env map and JWT directly to the process (UpdateCmdEnv locally, session.Setenv or an env prefix over SSH, a KEY=val prefix on WSL), or keep cmdOpts.Env for that path and fill it from resolveEnvMap."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 234,
+      "summary": "[Medium] The new init-script lookup order (getCustomInitScript) has no tests",
+      "failure_scenario": "Impact: the result becomes token.ScriptText, which every new shell runs. None of these rules is covered, so any can break unnoticed: bash/zsh fall back to .sh while pwsh/fish do not; a [conn] override beats every block-level key; a key present with a nil value ends the lookup and returns \"\"; an unknown shell type uses only cmd:initscript. Remedy: add a table test in package blockcontroller for getCustomInitScriptKeyCascade and getCustomInitScript covering these cases."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 252,
+      "summary": "[Medium] resolveEnvMap is untested, and its connName argument is unused despite the documented [conn] nesting",
+      "failure_scenario": "Impact: nothing tests the env-file / cmd:env merge order, the new rule that a nil value deletes a key, float64 formatting, or bools being dropped. {\"[myhost]\": {\"cmd:env\": {...}}} is silently ignored, so a test of it would fail today. Remedy: pull the merge out into a pure helper and table-test it; then either apply GetConnectionOverride(connName) or remove connName and the comment."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 356,
+      "summary": "[Medium] A failure reading the env file is now only logged, so blocks start without their env",
+      "failure_scenario": "Impact: createCmdStrAndOpts used to return \"error reading command env file\" and the command block did not start. Now makeSwapToken only calls log.Printf, so a filestore read failure or 2s timeout lets the block run without its env file and cmd:env values, and nothing tells the user. Remedy: return the error from makeSwapToken and fail setupAndStartShellProcess (at least for BlockController_Cmd), or write a warning into the block through blocklogger."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 365,
+      "summary": "[Medium] blockcontroller.go grows from 960 to 1068 lines by taking on connection, shell, env and init-script logic",
+      "failure_scenario": "Impact: the block lifecycle file, which already mixed block file I/O, the pty lifecycle, input routing and the controller registry, now also holds connection-type dispatch, shell detection, env resolution and the init-script cascade. It is over 1k lines, and every future connection or shell feature has to edit it. Remedy: move ConnUnion and its helpers into pkg/blockcontroller/connunion.go, and resolveEnvMap, getCustomInitScript* and makeSwapToken into pkg/blockcontroller/swaptoken.go."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 406,
+      "summary": "[Medium] A failed RemoteGetInfo call now stops the shell from starting instead of falling back to no-wsh",
+      "failure_scenario": "Impact: this failure used to happen inside StartRemoteShellProc/StartWslShellProc, and the caller then called SetWshError, set WshEnabled to false and retried with the NoWsh start. Now getConnUnion returns the error before that fallback. SetWshError is never called and WshEnabled stays true, so while the connserver is unresponsive every block restart on that connection fails. Remedy: on RPC error, call SetWshError, set WshEnabled false on the conn and the union, and continue down the no-wsh path instead of returning."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 412,
+      "summary": "[Medium] The init-script shell type comes from remoteInfo.Shell, but the shell actually started can be conn:shellpath",
+      "failure_scenario": "Impact: shellexec chooses the SSH/WSL shell in the order cmdOpts.ShellPath, then conn:shellpath, then remoteInfo.Shell. With conn:shellpath=/usr/bin/fish on a host whose login shell is bash, the token carries the cmd:initscript.bash text and fish sources it through `wsh token ... fish | source`, giving the wrong script or syntax errors. Remedy: resolve ShellPath in the same order as shellexec (conn:shellpath first) and pass it through cmdOpts.ShellPath so both sides agree."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 513,
+      "summary": "[Medium] ConnUnion is built, but three near-identical copies of the JWT/swap-token setup remain and have drifted",
+      "failure_scenario": "Impact: the wsl, ssh and local branches each repeat the sockName, rpcContext, MakeClientJWTToken and swapToken setup, differing only in the socket and conn name. They have already drifted: SSH checks conn.WshEnabled.Load() while the others check connUnion.WshEnabled, which drops cmd:nowsh for SSH. Remedy: give ConnUnion sockName()/rpcConnName() accessors, do the JWT/swap-token setup once when connUnion.WshEnabled, and have every branch check connUnion.WshEnabled."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 544,
+      "summary": "[Medium] The SSH branch ignores cmd:nowsh because it checks conn.WshEnabled instead of connUnion.WshEnabled",
+      "failure_scenario": "Impact: with cmd:nowsh=true on a wsh-enabled SSH connection, connUnion.WshEnabled is false and the shell type is never resolved, yet the branch still mints a JWT, puts it in the swap token and calls StartRemoteShellProc. The WSL and local branches honour nowsh; SSH does not. Remedy: use `if !connUnion.WshEnabled {` in the SSH branch."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 583,
+      "summary": "[Medium] Local shells with cmd:nowsh ignore term:localshellpath and the settings shell path",
+      "failure_scenario": "Impact: getRemoteInfoAndShellType returns early when WshEnabled is false, so for a local nowsh block ShellPath stays \"\" and StartLocalShellProc falls back to DetectLocalShellPath(). That ignores the block's term:localshellpath and settings.TermLocalShellPath, which the old code applied either way. ShellType is also empty, so only cmd:initscript applies. Remedy: resolve the local shell path and type whether or not wsh is enabled, and gate only the remote RPC on WshEnabled."
+    },
+    {
+      "file": "pkg/waveobj/wtypemeta.go",
+      "line": 54,
+      "summary": "[Low] The [conn] override is documented for cmd:env/cmd:cwd but only applied to initscript keys; connName parameters unused",
+      "failure_scenario": "Impact: a user setting \"[myhost]\": {\"cmd:env\": {...}, \"cmd:cwd\": \"...\"} gets no effect and no error. resolveEnvMap and createCmdStrAndOpts accept connName and never use it; only getCustomInitScript calls GetConnectionOverride. Remedy: apply GetConnectionOverride(connName) over the base values in resolveEnvMap and in the cmd:cwd lookups, or narrow the comment to the initscript keys and drop the unused parameters."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 354,
+      "summary": "[Low] The resolved env map overwrites the WAVETERM_* identity vars in the swap token",
+      "failure_scenario": "Impact: the env map is merged after WAVETERM_BLOCKID/TABID/CONN are set. The `wsh run` env file is the caller's whole os.Environ(), including the parent block's identity vars, so once the token is redeemed the new block reports the parent's block, tab and conn IDs. Remedy: merge envMap before setting the WAVETERM_* keys, or skip reserved keys."
+    },
+    {
+      "file": "pkg/waveobj/wtypemeta.go",
+      "line": 52,
+      "summary": "[Low] The new cmd:allowconnchange meta key is declared and exported to TypeScript but nothing reads it",
+      "failure_scenario": "Impact: MetaKey_CmdAllowConnChange and the TS \"cmd:allowconnchange\" field are part of the public meta schema, but no Go or frontend code reads the key, so setting it does nothing. Remedy: implement the behaviour, or remove the key from MetaTSType and regenerate until something consumes it."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 405,
+      "summary": "[Low] Every wsh-enabled SSH/WSL shell start now makes the RemoteGetInfo RPC twice",
+      "failure_scenario": "Impact: getConnUnion calls RemoteGetInfoCommand to get the shell type, then StartRemoteShellProc/StartWslShellProc (shellexec.go:178/330) call it again. That adds a network round trip to each start, and the worst-case wait before an error doubles from 2s to 4s. Remedy: fetch RemoteInfo once, store it on ConnUnion or pass the resolved ShellPath through cmdOpts, and have shellexec skip the second RPC."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 372,
+      "summary": "[Low] ConnUnion.ShellOpts is never set or read, and getConnUnion ignores its bc receiver and logCtx",
+      "failure_scenario": "Impact: readers cannot tell whether union.ShellOpts means anything; the local path reads getLocalShellOpts directly instead. The signature suggests dependencies it does not use. Remedy: populate ShellOpts in getRemoteInfoAndShellType and read it at the call site, or delete it; make getConnUnion a plain function without logCtx."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 865,
+      "summary": "[Low] CheckConnStatus repeats the wsl/ssh lookup and status check that getConnUnion now does",
+      "failure_scenario": "Impact: the same file now has two copies of \"parse the conn name, look it up, check it is Connected\", and they already differ in nil handling and error text. The nil checks in getConnUnion can never fire, because getConnInternal always creates the conn. Remedy: extract a shared resolveConn(connName) helper used by both, and drop the unreachable nil checks (or fix the stale \"can return nil\" comment)."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 218,
+      "summary": "[Low] The init-script lookup compares against shell-type string literals instead of shellutil.ShellType_* constants",
+      "failure_scenario": "Impact: shellType comes from shellutil.GetShellTypeFromShellPath, which returns ShellType_* constants. If a constant value changes (for example \"pwsh\" to \"powershell\"), the lookup silently falls back to the generic cmd:initscript. Remedy: switch on shellutil.ShellType_bash/zsh/pwsh/fish, as EncodeEnvVarsForShell does."
+    },
+    {
+      "file": "pkg/wslconn/wslconn.go",
+      "line": 120,
+      "summary": "[Low] The new WslConn.Debugf logs at Info level, unlike SSHConn.Debugf",
+      "failure_scenario": "Impact: WslConn.Debugf copies Infof (blocklogger.Infof), while SSHConn.Debugf uses blocklogger.Debugf. So the \"packed swaptoken\" line logs at Info on WSL and at Debug on SSH. Security found no leak: the packed token holds no JWT. Remedy: call blocklogger.Debugf(ctx, \"[conndebug] \"+format, args...)."
+    },
+    {
+      "file": "pkg/shellexec/shellexec.go",
+      "line": 258,
+      "summary": "[Low] The swap-token pack-and-prepend block in StartWslShellProc is copied from StartRemoteShellProc",
+      "failure_scenario": "Impact: the WSL and SSH start paths each hand-roll token packing, logging and command prefixing (a third variant is at :512), so any change to the token format or its logging needs edits in several places. Remedy: extract a helper such as prependSwapToken(logger, token, cmd) and call it from both paths."
+    },
+    {
+      "file": "pkg/shellexec/shellexec.go",
+      "line": 259,
+      "summary": "[Low] On WSL, a failure to pack the swap token is only logged and the shell still starts",
+      "failure_scenario": "Impact: the old WSL path failed hard (\"no jwt token provided\"), which triggered the SetWshError/no-wsh fallback. Now a PackForClient error is only logged and a wsh-mode shell starts with no token, so wsh silently does not work. Remedy: return the error from StartWslShellProc so the caller's fallback runs."
+    },
+    {
+      "file": "pkg/blockcontroller/blockcontroller.go",
+      "line": 388,
+      "summary": "[Low] getLocalShellOpts now lets an empty or null block value override settings, and no test covers it",
+      "failure_scenario": "Impact: the old code applied the block's term:localshellopts only when the list was non-empty. Now `\"term:localshellopts\": []` or null returns empty opts and suppresses settings.TermLocalShellOpts, and no test covers this change. Remedy: add tests for key missing (settings apply), `[]` (settings ignored, if intended) and `[\"-l\"]` (block wins)."
+    },
+    {
+      "file": "pkg/waveobj/metamap.go",
+      "line": 22,
+      "summary": "[Low] The new MetaMapType.HasKey and GetConnectionOverride have no tests",
+      "failure_scenario": "Impact: the init-script lookup depends on these helpers, but nothing tests a missing key, a non-map value, a MetaMapType-typed value (which the map[string]any type check would miss and return nil for), an empty connName, or HasKey on a nil map or a nil value. Remedy: add pkg/waveobj/metamap_test.go covering these cases."
+    }
+  ],
+  "result_text": "The review verdict is **BLOCK**: one High finding held up in independent verification. I sent all 22 findings in the report to the findings tool (1 High, 9 Medium, 12 Low); verification refuted none.\n\n**Blocking issue:** command blocks no longer get their environment (`pkg/blockcontroller/blockcontroller.go:354`). The change removed `cmdOpts.Env`, so the env file from `wsh run`, `cmd:env` values and `WAVETERM_JWT` now travel only inside the swap token. Only the shell startup files read that token, and they never run for command blocks. Anything inside a command block that needs those variables breaks; waveapp programs fail with \"no WAVETERM_JWT env var set\". The verifier dropped two smaller parts of this finding: the no-wsh paths never received this env before the change either.\n\n**Other issues worth fixing first:**\n- **Shell start aborts on a failed remote-info call** (`blockcontroller.go:406`): it used to fall back to starting without wsh.\n- **SSH ignores `cmd:nowsh`** (`blockcontroller.go:544`): the SSH branch checks the connection's own flag instead of the combined one the other branches use.\n- **Local shells with `cmd:nowsh` ignore the configured shell path** (`blockcontroller.go:583`): they fall back to auto-detection.\n- **Wrong init script when `conn:shellpath` is set** (`blockcontroller.go:412`): the script is chosen for the host's login shell, not the shell actually started.\n- **An env-file read error is only logged** (`blockcontroller.go:356`): the block starts without its env instead of failing.\n\n**How the review ran:**\n- **Base:** the merge base is `900f4a3f`. The repo has no `.review-pro/` packs or rules, so reviewers used their core checklists only.\n- **Spec:** none was found, so intent wasn't checked.\n- **Reviewers:** nine ran (correctness, backend, api-contract, security, craft, dry, ai-antipatterns, tests, performance). Security found nothing.\n- **Coverage:** by their own reports, all 13 changed files were read.\n- **Verification:** the 8-finding cap left the `cmd:nowsh` findings at lines 544 and 583 unverified. Four reviewers flagged line 544, and the verifier checking the duplicated-branches finding confirmed that same bug.\n- **Setup changes:** I gave reviewers and verifiers a command to produce the diff rather than pasting the full file contents into each prompt. I also lowered two severities: the file-size finding and the missing-tests finding for the init-script lookup, both from High to Medium.",
+  "stderr": "",
+  "claude_duration_ms": 515789,
+  "claude_num_turns": 57,
+  "claude_cost_usd": 8.2684508,
+  "claude_session_id": "d359422f-e9b9-49e1-ab41-6acaea93ad9d",
+  "token_usage": {
+    "input_tokens": 292,
+    "output_tokens": 135847,
+    "cache_read_input_tokens": 5886819,
+    "cache_creation_input_tokens": 788227,
+    "total_tokens": 6811185,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 292,
+        "outputTokens": 135847,
+        "cacheReadInputTokens": 5886819,
+        "cacheCreationInputTokens": 788227,
+        "webSearchRequests": 0,
+        "costUSD": 8.2684508,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 36737,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/wavetermdev__waveterm@90a57d5"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: 286783fb8e71cec6d2294bd871e5ccf8c798c646.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

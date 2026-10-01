@@ -1,0 +1,155 @@
+{
+  "instance_id": "alibaba__spring-ai-alibaba@4bc7305",
+  "repo": "alibaba/spring-ai-alibaba",
+  "base_commit": "71e7eeb27dfe42c5a805da413ef6e9faf84fe9d0",
+  "head_commit": "4bc73055c7b33f53433d9725eab5010b85a59632",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T02:24:39.641692+00:00",
+  "duration_seconds": 383.35,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/tool/browser/actions/MoveToAndClickAction.java",
+      "line": 49,
+      "summary": "[High] The new scroll moves the page before the click, so the click lands on the wrong element",
+      "failure_scenario": "Coordinates from get_element_position (boundingBox, viewport-relative) are clicked after window.scrollTo(x - vw/2, y - vh/2), so on a scrollable page any target outside the top-left viewport quarter is missed, and the action still reports \"Clicked\". Remedy: remove the scroll, or read window.scrollX/Y before/after scrolling and click at the adjusted coordinates."
+    },
+    {
+      "file": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/dynamic/agent/service/AgentServiceImpl.java",
+      "line": 200,
+      "summary": "[High] Saving an agent now overwrites any stored legacy systemPrompt with \" \", and the merged text is never kept",
+      "failure_scenario": "updateAgent -> mergePrompts builds the merged prompt only in a local variable and a log line; previously setSystemPrompt(null) violated the NOT NULL column so the save failed, now \" \" saves successfully, permanently destroying legacy system-prompt text on first update. Remedy: write the merged value back (entity.setNextStepPrompt(nextPrompt), ensuring updateEntityFromConfig line 169 doesn't overwrite it) or run a one-time backfill before clearing; fix the guard to `!= null && !trim().isEmpty()`."
+    },
+    {
+      "file": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/tool/browser/actions/InputTextAction.java",
+      "line": 62,
+      "summary": "[High] No test covers the new three-stage input fallback, and the only nearby check is computed but never asserted",
+      "failure_scenario": "The only test reaching input_text (BrowserUseToolSpringTest) is @Disabled and surefire skipTests=true; its contains(\"Hello World\") assertion passes on any non-throwing path and phoneVerified is never asserted, so regressions in the fill, JS evaluate, and 输入失败 paths go unnoticed. Remedy: add Mockito unit tests per fallback path (pressSequentially ok; throws -> fill; both fill throw -> evaluate; evaluate throws -> 输入失败) and assert phoneVerified."
+    },
+    {
+      "file": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/dynamic/agent/entity/DynamicAgentEntity.java",
+      "line": 47,
+      "summary": "[Medium] Whitespace sentinel \" \" for deprecated systemPrompt makes merge-and-warn fire on every load/save and leaks to API",
+      "failure_scenario": "With the \" \" default, the `!= null ||` guard at AgentServiceImpl.java:190 is always true, so every create/get/update logs a misleading deprecation WARN, and \" \" is copied into AgentConfig (line 157), making \"empty\" indistinguishable from \"has content\". Remedy: drop the sentinel, use StringUtils.hasText(...) in the guard, and stop copying the deprecated field into AgentConfig."
+    },
+    {
+      "file": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/dynamic/agent/service/AgentServiceImpl.java",
+      "line": 200,
+      "summary": "[Medium] No test for mergePrompts after the switch from a null to a \" \" sentinel",
+      "failure_scenario": "AgentServiceImpl has no tests, so the always-true guard, spurious warnings, and the discarded merged prompt are undetected (and a null systemPrompt would NPE). Remedy: add unit tests with a mocked repository covering systemPrompt \" \", \"S\", and null."
+    },
+    {
+      "file": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/tool/browser/actions/InputTextAction.java",
+      "line": 62,
+      "summary": "[Medium] Nested try/catch input fallbacks swallow errors, have wrong step comments, and can falsely report success",
+      "failure_scenario": "Comments 3/4/5 contradict the code (step 3 says fill but runs pressSequentially, step 4 the reverse); e and e2 are dropped unlogged; the second fill usually fails for the same reason as the first (each can wait the default timeout); the JS fallback bypasses actionability checks so \"成功输入\" can be returned for a hidden/disabled field. Remedy: one ordered strategy loop with logging, or a single path with explicit timeout; fix or delete the comments."
+    },
+    {
+      "file": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/tool/browser/actions/InputTextAction.java",
+      "line": 65,
+      "summary": "[Medium] Fixed 100ms-per-character typing scales with text length and long text can hit the 30s default timeout",
+      "failure_scenario": "LLM-supplied text is unbounded and no explicit/default timeout is set; a 200-char input blocks ~20s, and 300+ chars can time out at ~30s, discard what was typed, then fall back to fill, wasting ~30s per long input. Remedy: make fill(text) the primary path, or use a length-scaled explicit timeout and limit pressSequentially to short text."
+    },
+    {
+      "file": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/tool/browser/actions/MoveToAndClickAction.java",
+      "line": 49,
+      "summary": "[Medium] New scroll-before-click logic has no test, and the existing assertion passes wherever the click lands",
+      "failure_scenario": "BrowserUseToolSpringTest.java:433 only checks the output contains \"Clicked\", returned whenever no exception is thrown, so a click that misses after the scroll passes; debug-marker paths are untested. Remedy: add a mocked unit test asserting scroll args and post-scroll click coordinates, plus a local HTML fixture test asserting a click flag."
+    },
+    {
+      "file": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/tool/browser/actions/MoveToAndClickAction.java",
+      "line": 54,
+      "summary": "[Medium] Debug overlay pasted inline as concatenated JS, a second copy of GetElementPositionByNameAction's marker",
+      "failure_scenario": "Two if(isDebug) blocks around the click hide the business flow, the string-concatenated JS is fragile, and the two marker implementations already disagree (absolute vs fixed, sizes, cleanup), so any fix must be made twice. Remedy: extract one BrowserAction helper (e.g. withDebugMarker) using a text-block script with removal in finally, and use it from both actions."
+    },
+    {
+      "file": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/tool/browser/actions/NavigateAction.java",
+      "line": 42,
+      "summary": "[Medium] URL auto-prefixing branch is untested, including the edge cases it gets wrong",
+      "failure_scenario": "All existing navigate calls pass full https URLs, so nothing pins \"www.baidu.com\" -> \"https://www.baidu.com\" or catches HTTP://, about:blank, file:// being mangled. Remedy: add a parameterized test with a mocked Page capturing the navigate argument."
+    },
+    {
+      "file": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/tool/browser/actions/MoveToAndClickAction.java",
+      "line": 59,
+      "summary": "[Low] Debug marker uses absolute positioning with viewport coordinates and is removed right after the click",
+      "failure_scenario": "After the scroll, the absolutely-positioned dot renders away from where the mouse clicks (masking the scroll bug) and is removed synchronously so it is barely visible. Remedy: use position:fixed, centre on the point, and remove via setTimeout as GetElementPositionByNameAction does."
+    },
+    {
+      "file": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/tool/browser/actions/NavigateAction.java",
+      "line": 42,
+      "summary": "[Low] URL auto-prefix is scheme-blind and breaks non-http URLs",
+      "failure_scenario": "about:blank, file:///..., data:, and HTTP://x are rewritten to invalid https://... URLs that previously worked; NewTabAction doesn't prefix, so actions are inconsistent. Remedy: prefix only when no scheme is present (e.g. `(?i)^[a-z][a-z0-9+.-]*:`) in a shared normalizeUrl helper used by both actions."
+    },
+    {
+      "file": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/tool/browser/actions/InputTextAction.java",
+      "line": 24,
+      "summary": "[Low] Unused imports and fully-qualified name for an already-imported class",
+      "failure_scenario": "Random, ElementHandle and the newly added WaitForSelectorState are unused (hinting at an unwritten wait step), and Locator.PressSequentiallyOptions is spelled fully-qualified despite the import; noise and possible lint failures. Remedy: delete the unused imports, use Locator.PressSequentiallyOptions, and restore the blank line between import groups."
+    },
+    {
+      "file": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/dynamic/agent/entity/DynamicAgentEntity.java",
+      "line": 45,
+      "summary": "[Low] Removing nullable=false only affects new databases; existing ones keep NOT NULL",
+      "failure_scenario": "With ddl-auto: update, existing H2 databases keep the NOT NULL constraint while new installs get a nullable column; a NULL row on a new DB makes mergePrompts NPE via the `||` guard. Remedy: keep nullable=false (the \" \" sentinel satisfies it) or add an explicit migration, and make the guard null-safe."
+    },
+    {
+      "file": "spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/example/manus/tool/browser/actions/MoveToAndClickAction.java",
+      "line": 46,
+      "summary": "[Nitpick] Debug-flag lookup chain copied instead of a BrowserAction accessor",
+      "failure_scenario": "getBrowserUseTool().getManusProperties().getBrowserDebug() is duplicated from GetElementPositionByNameAction and unboxes a nullable Boolean, so a null value throws NPE and any default change must be made in every copy. Remedy: add a null-safe `protected boolean isBrowserDebug()` (Boolean.TRUE.equals(...)) to BrowserAction and use it in both actions."
+    }
+  ],
+  "result_text": "The verdict is **BLOCK**: the review found 15 issues in this change (3 High, 7 Medium, 4 Low, 1 Nitpick), and all 15 went through the report tool, one call each.\n\nThe two High problems in the code itself:\n- **Clicks hit the wrong element.** `MoveToAndClickAction.java:49` now scrolls the page before clicking but still clicks at the old screen coordinates. On a scrolled page the click lands on whatever moved under that point, and the action still says it succeeded.\n- **Old system prompts get wiped.** `AgentServiceImpl.java:200` now writes `\" \"` over any stored legacy `systemPrompt` the first time an agent is updated. The \"merged\" text is only ever logged, never saved, so that content is lost for good.\n\nThe third High is that none of the new input fallback paths in `InputTextAction` is tested.\n\n**Verification:** independent checkers re-examined the 8 Medium-and-above findings with the highest priority, and all 8 held up; none was refuted. Two Medium findings were not checked because of that cap of 8: the duplicated debug overlay code and the untested URL prefixing. Some findings depend on how Playwright behaves at runtime, which the checkers couldn't confirm from source: its viewport coordinates, its default timeouts, and whether the old null save really failed.\n\n**Coverage:** all 6 changed files were read by at least one reviewer.\n\n**Not checked:**\n- No spec was found, so nothing was compared against intended behaviour.\n- I didn't look up the PR description because the `gh` call needed approval.\n- The repo has no `.review-pro/` stack packs or rules file, so reviewers used only their default checklists.\n\nThe full report with each finding's impact and fix is above.",
+  "stderr": "",
+  "claude_duration_ms": 382188,
+  "claude_num_turns": 45,
+  "claude_cost_usd": 5.4767638,
+  "claude_session_id": "ac3f76c9-8269-477c-943e-be9562a9ef93",
+  "token_usage": {
+    "input_tokens": 230,
+    "output_tokens": 104962,
+    "cache_read_input_tokens": 3007684,
+    "cache_creation_input_tokens": 493103,
+    "total_tokens": 3605979,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 230,
+        "outputTokens": 104962,
+        "cacheReadInputTokens": 3007684,
+        "cacheCreationInputTokens": 493103,
+        "webSearchRequests": 0,
+        "costUSD": 5.4767638,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 24499,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/alibaba__spring-ai-alibaba@4bc7305"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: 71e7eeb27dfe42c5a805da413ef6e9faf84fe9d0.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

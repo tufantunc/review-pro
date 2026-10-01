@@ -1,0 +1,119 @@
+{
+  "instance_id": "CherryHQ__cherry-studio@5644b00",
+  "repo": "CherryHQ/cherry-studio",
+  "base_commit": "636c788e2ba413d21a5fd385c3ea4cc7e134e1be",
+  "head_commit": "5644b00b87e07fa1acd84d4ec93f9f2fb1205090",
+  "reviewer": "claude-code/code-review",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T01:13:47.078954+00:00",
+  "duration_seconds": 84.67,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "stdout_fallback",
+  "review_output": [
+    {
+      "file": "src/renderer/src/middleware/convertLinksMiddleware.ts",
+      "line": 20,
+      "summary": "`convertLinks` now runs on every text delta, even when web search is off, and its internal buffer is never flushed. Any text after a `[` that isn't a complete `[text](url)` link gets held back and lost when the stream ends.",
+      "failure_scenario": "Web search is off and the model writes code such as `arr[i] = 1` followed by more text, or a JSON array like `[\"a\",\"b\"]`. convertLinks sets its safePoint at that `[` and keeps everything after it in its module-global buffer. No later chunk releases it, so the end of the answer never reaches TEXT_DELTA or TEXT_COMPLETE."
+    },
+    {
+      "file": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+      "line": 581,
+      "summary": "`content` is built from link-converted, buffered text and then passed to `processToolUses`/`parseAndCallTools`. Prompt-based MCP tool calls whose JSON contains `[` get cut off or rewritten.",
+      "failure_scenario": "The model emits `<tool_use>{\"name\":\"x\",\"arguments\":{\"ids\":[1,2]}}</tool_use>`. convertLinks holds everything from `[1,2]` onward, so `content` is missing the closing tags. parseAndCallTools finds no valid tool call and the tool never runs. The mangled text is also pushed back into reqMessages as the assistant message."
+    },
+    {
+      "file": "src/renderer/src/middleware/convertLinksMiddleware.ts",
+      "line": 20,
+      "summary": "`convertLinks` is called without `resetCounter`, so its module-global counter, URL map and buffer are never reset between responses (the old code passed `isFirstChunk`).",
+      "failure_scenario": "Leftover text in the buffer from the previous message, or from the previous tool-call round, is prepended to the first text of the next response. Citation numbers keep counting up across messages (the second answer starts at [5] instead of [1])."
+    },
+    {
+      "file": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+      "line": 597,
+      "summary": "TEXT_COMPLETE, processToolUses and BLOCK_COMPLETE now run only inside the `finish` case. If the stream ends without a finish_reason chunk, or the user pauses, the block is never completed.",
+      "failure_scenario": "The user hits pause: `openAIChunkToTextDelta` breaks without yielding `finish`. Some OpenAI-compatible providers also close the stream without a finish_reason. In both cases no TEXT_COMPLETE or BLOCK_COMPLETE is emitted, the message stays in the streaming/processing state, usage and metrics are lost, and pending tool calls never run. The old code always ran these after the loop."
+    },
+    {
+      "file": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+      "line": 545,
+      "summary": "The provider-specific link conversions were removed (`convertLinksToOpenRouter`, `convertLinksToZhipu`, `convertLinksToHunyuan` with search_info results, and the annotations path). Only generic `convertLinks` remains.",
+      "failure_scenario": "With web search on and a Zhipu model, `[ref_1]` markers are no longer turned into superscript citations. Hunyuan search citations are no longer mapped to `search_info.search_results` URLs. OpenRouter citation formatting regresses. All of these now render raw or wrongly converted markers."
+    },
+    {
+      "file": "src/renderer/src/middleware/extractReasoningMiddleware.ts",
+      "line": 56,
+      "summary": "The TransformStream has no `flush` handler. Text held in `buffer` because it might be the start of a `<think>`/`</think>` tag is dropped when the stream ends.",
+      "failure_scenario": "The model's answer ends with `x <` or `<t`, or a reasoning block ends with an unterminated partial `</thi`. getPotentialStartIndex keeps that tail in `buffer`, the stream closes, and the last characters never get published."
+    },
+    {
+      "file": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+      "line": 584,
+      "summary": "THINKING_COMPLETE is emitted only when a text-delta arrives after reasoning. The old checks for `###Response` and `hasReasoningContent` were removed, so a reasoning-only turn, or a GLM-Zero-style `###Response` separator, never closes the thinking block.",
+      "failure_scenario": "A model streams reasoning_content and then finishes with a tool call or empty content, or glm-zero-preview uses `###Response`. No THINKING_COMPLETE is sent, the thinking block stays 'in progress', and time_thinking_millsec is reported as 0."
+    },
+    {
+      "file": "src/renderer/src/utils/stream.ts",
+      "line": 1,
+      "summary": "The `readableStreamAsyncIterable` iterator has no `return()`, and `asyncGeneratorToReadableStream` has no `cancel()`. Early exit or an error never releases the reader lock or closes the generator/underlying SDK stream.",
+      "failure_scenario": "If onChunk or processToolUses throws inside the `for await`, the reader stays locked and the upstream generator, along with the OpenAI HTTP stream, is never returned or aborted. The connection and generator leak."
+    },
+    {
+      "file": "src/renderer/src/providers/AiProvider/OpenAIProvider.ts",
+      "line": 502,
+      "summary": "`getAppropriateTag` is dead branching: every path returns `reasoningTags[0]`, so the `reasoning` tag entry is unused. The `!isEmpty(finishReason)` check inside `case 'finish'` is always true, and `currentTime` is redeclared, shadowing the outer one.",
+      "failure_scenario": "Readers will assume claude or other models get a different tag, or that `<reasoning>` tags are extracted, but they never are. It is redundant code that misleads maintainers. Replace it with a single `{ tagName: 'think', separator: '\\n' }` constant and drop the redundant check and the shadowed variable."
+    },
+    {
+      "file": "src/renderer/src/middleware/extractReasoningMiddleware.ts",
+      "line": 27,
+      "summary": "`wrapGenerate` builds a RegExp from an unescaped `tagName`, and nothing calls it. It also duplicates the existing `thinkTagProcessor`/`findThinkingProcessor` logic in BaseProvider/utils/formats, which is now orphaned.",
+      "failure_scenario": "A tagName containing regex metacharacters would produce a wrong match. As it stands this is unused code, and there are now two parallel think-tag parsers (ThoughtProcessor and the middleware) to maintain. Remove `wrapGenerate`, and either use the existing processors or delete them."
+    }
+  ],
+  "result_text": "```json\n[\n  {\n    \"file\": \"src/renderer/src/middleware/convertLinksMiddleware.ts\",\n    \"line\": 20,\n    \"summary\": \"`convertLinks` now runs on every text delta, even when web search is off, and its internal buffer is never flushed. Any text after a `[` that isn't a complete `[text](url)` link gets held back and lost when the stream ends.\",\n    \"failure_scenario\": \"Web search is off and the model writes code such as `arr[i] = 1` followed by more text, or a JSON array like `[\\\"a\\\",\\\"b\\\"]`. convertLinks sets its safePoint at that `[` and keeps everything after it in its module-global buffer. No later chunk releases it, so the end of the answer never reaches TEXT_DELTA or TEXT_COMPLETE.\"\n  },\n  {\n    \"file\": \"src/renderer/src/providers/AiProvider/OpenAIProvider.ts\",\n    \"line\": 581,\n    \"summary\": \"`content` is built from link-converted, buffered text and then passed to `processToolUses`/`parseAndCallTools`. Prompt-based MCP tool calls whose JSON contains `[` get cut off or rewritten.\",\n    \"failure_scenario\": \"The model emits `<tool_use>{\\\"name\\\":\\\"x\\\",\\\"arguments\\\":{\\\"ids\\\":[1,2]}}</tool_use>`. convertLinks holds everything from `[1,2]` onward, so `content` is missing the closing tags. parseAndCallTools finds no valid tool call and the tool never runs. The mangled text is also pushed back into reqMessages as the assistant message.\"\n  },\n  {\n    \"file\": \"src/renderer/src/middleware/convertLinksMiddleware.ts\",\n    \"line\": 20,\n    \"summary\": \"`convertLinks` is called without `resetCounter`, so its module-global counter, URL map and buffer are never reset between responses (the old code passed `isFirstChunk`).\",\n    \"failure_scenario\": \"Leftover text in the buffer from the previous message, or from the previous tool-call round, is prepended to the first text of the next response. Citation numbers keep counting up across messages (the second answer starts at [5] instead of [1]).\"\n  },\n  {\n    \"file\": \"src/renderer/src/providers/AiProvider/OpenAIProvider.ts\",\n    \"line\": 597,\n    \"summary\": \"TEXT_COMPLETE, processToolUses and BLOCK_COMPLETE now run only inside the `finish` case. If the stream ends without a finish_reason chunk, or the user pauses, the block is never completed.\",\n    \"failure_scenario\": \"The user hits pause: `openAIChunkToTextDelta` breaks without yielding `finish`. Some OpenAI-compatible providers also close the stream without a finish_reason. In both cases no TEXT_COMPLETE or BLOCK_COMPLETE is emitted, the message stays in the streaming/processing state, usage and metrics are lost, and pending tool calls never run. The old code always ran these after the loop.\"\n  },\n  {\n    \"file\": \"src/renderer/src/providers/AiProvider/OpenAIProvider.ts\",\n    \"line\": 545,\n    \"summary\": \"The provider-specific link conversions were removed (`convertLinksToOpenRouter`, `convertLinksToZhipu`, `convertLinksToHunyuan` with search_info results, and the annotations path). Only generic `convertLinks` remains.\",\n    \"failure_scenario\": \"With web search on and a Zhipu model, `[ref_1]` markers are no longer turned into superscript citations. Hunyuan search citations are no longer mapped to `search_info.search_results` URLs. OpenRouter citation formatting regresses. All of these now render raw or wrongly converted markers.\"\n  },\n  {\n    \"file\": \"src/renderer/src/middleware/extractReasoningMiddleware.ts\",\n    \"line\": 56,\n    \"summary\": \"The TransformStream has no `flush` handler. Text held in `buffer` because it might be the start of a `<think>`/`</think>` tag is dropped when the stream ends.\",\n    \"failure_scenario\": \"The model's answer ends with `x <` or `<t`, or a reasoning block ends with an unterminated partial `</thi`. getPotentialStartIndex keeps that tail in `buffer`, the stream closes, and the last characters never get published.\"\n  },\n  {\n    \"file\": \"src/renderer/src/providers/AiProvider/OpenAIProvider.ts\",\n    \"line\": 584,\n    \"summary\": \"THINKING_COMPLETE is emitted only when a text-delta arrives after reasoning. The old checks for `###Response` and `hasReasoningContent` were removed, so a reasoning-only turn, or a GLM-Zero-style `###Response` separator, never closes the thinking block.\",\n    \"failure_scenario\": \"A model streams reasoning_content and then finishes with a tool call or empty content, or glm-zero-preview uses `###Response`. No THINKING_COMPLETE is sent, the thinking block stays 'in progress', and time_thinking_millsec is reported as 0.\"\n  },\n  {\n    \"file\": \"src/renderer/src/utils/stream.ts\",\n    \"line\": 1,\n    \"summary\": \"The `readableStreamAsyncIterable` iterator has no `return()`, and `asyncGeneratorToReadableStream` has no `cancel()`. Early exit or an error never releases the reader lock or closes the generator/underlying SDK stream.\",\n    \"failure_scenario\": \"If onChunk or processToolUses throws inside the `for await`, the reader stays locked and the upstream generator, along with the OpenAI HTTP stream, is never returned or aborted. The connection and generator leak.\"\n  },\n  {\n    \"file\": \"src/renderer/src/providers/AiProvider/OpenAIProvider.ts\",\n    \"line\": 502,\n    \"summary\": \"`getAppropriateTag` is dead branching: every path returns `reasoningTags[0]`, so the `reasoning` tag entry is unused. The `!isEmpty(finishReason)` check inside `case 'finish'` is always true, and `currentTime` is redeclared, shadowing the outer one.\",\n    \"failure_scenario\": \"Readers will assume claude or other models get a different tag, or that `<reasoning>` tags are extracted, but they never are. It is redundant code that misleads maintainers. Replace it with a single `{ tagName: 'think', separator: '\\\\n' }` constant and drop the redundant check and the shadowed variable.\"\n  },\n  {\n    \"file\": \"src/renderer/src/middleware/extractReasoningMiddleware.ts\",\n    \"line\": 27,\n    \"summary\": \"`wrapGenerate` builds a RegExp from an unescaped `tagName`, and nothing calls it. It also duplicates the existing `thinkTagProcessor`/`findThinkingProcessor` logic in BaseProvider/utils/formats, which is now orphaned.\",\n    \"failure_scenario\": \"A tagName containing regex metacharacters would produce a wrong match. As it stands this is unused code, and there are now two parallel think-tag parsers (ThoughtProcessor and the middleware) to maintain. Remove `wrapGenerate`, and either use the existing processors or delete them.\"\n  }\n]\n```",
+  "stderr": "",
+  "claude_duration_ms": 83573,
+  "claude_num_turns": 0,
+  "claude_cost_usd": 0.31844,
+  "claude_session_id": "e4ea03eb-dee3-4313-b42d-fc1638018916",
+  "token_usage": {
+    "input_tokens": 14,
+    "output_tokens": 7234,
+    "cache_read_input_tokens": 157295,
+    "cache_creation_input_tokens": 28449,
+    "total_tokens": 192992,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 14,
+        "outputTokens": 7234,
+        "cacheReadInputTokens": 157295,
+        "cacheCreationInputTokens": 28449,
+        "webSearchRequests": 0,
+        "costUSD": 0.31844,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 3447,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/claude/phase1/transcripts/CherryHQ__cherry-studio@5644b00"
+  }
+}

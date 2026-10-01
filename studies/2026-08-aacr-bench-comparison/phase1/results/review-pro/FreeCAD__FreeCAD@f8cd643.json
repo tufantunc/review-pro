@@ -1,0 +1,137 @@
+{
+  "instance_id": "FreeCAD__FreeCAD@f8cd643",
+  "repo": "FreeCAD/FreeCAD",
+  "base_commit": "730e07db5d2acafe7723eb89c83641375c375bc3",
+  "head_commit": "f8cd64328c49510285490dfd9872253ce7a53040",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T02:01:07.409690+00:00",
+  "duration_seconds": 320.12,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "src/Mod/ReverseEngineering/Gui/Workbench.cpp",
+      "line": 53,
+      "summary": "[Medium] Renamed \"Surface Reconstruction\" submenu is never registered for translation, so it always shows in English",
+      "failure_scenario": "MenuManager translates submenu titles with QApplication::translate(\"Workbench\", name) (src/Gui/MenuManager.cpp:244, :295). The lupdate block at Workbench.cpp:32-34 registers only \"Reverse Engineering\", so \"Surface Reconstruction\", \"Segmentation\", \"Approximation\" and \"&Reverse Engineering\" have no entry in ReverseEngineering.ts:583-589. They show in English in every locale. The gap existed before this change; the commit recased the string without registering it. Remedy: add qApp->translate(\"Workbench\", ...) entries for these four names to the #if 0 block, as Mesh does (src/Mod/Mesh/Gui/Workbench.cpp:43-54), then regenerate the .ts."
+    },
+    {
+      "file": "src/Mod/ReverseEngineering/Gui/Command.cpp",
+      "line": 71,
+      "summary": "[Low] First Unicode \"…\" literals in FreeCAD C++ source, in a module that doesn't pass /utf-8 to MSVC",
+      "failure_scenario": "The files have no BOM, and only TechDraw/Gui/CMakeLists.txt sets MSVC /utf-8. On MSVC with a multibyte code page such as CP936, the bytes E2 80 A6 are mis-decoded and the stray lead byte can swallow the closing quote. That can cause error C2001 or a garbled sMenuText that no longer matches its translation key (Command.cpp:71, 104, 424, 456, 536, 601), and it mangles the two Console().log lines. Remedy: add `if(MSVC) add_compile_options(/utf-8)` to the ReverseEngineering App and Gui CMakeLists, as TechDraw/Gui does, or keep ASCII \"...\" until /utf-8 is set globally."
+    },
+    {
+      "file": "src/Mod/ReverseEngineering/Gui/Command.cpp",
+      "line": 71,
+      "summary": "[Low] Unicode ellipsis / title-case menu style is used only in this workbench, unlike the rest of src",
+      "failure_scenario": "The six sMenuText strings ending in \"…\" are the only ones in src; 67 or more others end in ASCII \"...\". The Segmentation submenu also holds Mesh_* commands (Workbench.cpp:60-62), so one menu now mixes the two styles, and the rewritten source strings orphan the existing translations. Remedy: keep ASCII \"...\" to match the repo, or switch every module at once and record the convention in the UI-string guidelines."
+    },
+    {
+      "file": "src/Mod/ReverseEngineering/Gui/Command.cpp",
+      "line": 71,
+      "summary": "[Low] \"B-Spline\" capitalized in menu text and window titles, unlike the repo's \"B-spline\" and the same command's tooltip",
+      "failure_scenario": "src has 78 \"B-spline\" against 3 \"B-Spline\", and Sketcher menus use \"B-spline\" (CommandSketcherBSpline.cpp:190). After this change one command spells it two ways: menu \"Approximate B-Spline Curve…\", tooltip \"Approximates a B-spline curve\". The same applies to FitBSplineCurve.ui:14 and FitBSplineSurface.ui:14. Remedy: keep the fixed technical term \"B-spline\" in title-case strings too."
+    },
+    {
+      "file": "src/Mod/ReverseEngineering/App/AppReverseEngineering.cpp",
+      "line": 1002,
+      "summary": "[Low] Module-load log lines changed to Unicode \"…\", unlike all 45 other modules; these are not UI strings",
+      "failure_scenario": "The UI ellipsis rule was applied to untranslated developer log output (also AppReverseEngineeringGui.cpp:85). Every other module logs \"module... done\" in ASCII (e.g. src/Mod/Mesh/App/AppMesh.cpp:57), so a log grep for \"... done\" now misses ReverseEngineering, and plain logs gain non-ASCII text. Remedy: revert both Console().log strings to ASCII \"...\"."
+    },
+    {
+      "file": "src/Mod/ReverseEngineering/App/RegionGrowing.cpp",
+      "line": 108,
+      "summary": "[Low] RuntimeError reworded in one place; its five identical siblings in the module keep the old wording",
+      "failure_scenario": "regionGrowingSegmentation now raises \"does not match with number of normals\". The other Python-exposed paths still raise \"doesn't match...\" (SurfaceTriangulation.cpp:137, 260, 374, 566, 676), so one error has two texts, and an out-of-tree script that matched the old message stops matching. It is also a non-UI string, outside the commit's stated scope. Remedy: revert this line, or reword all six throws together."
+    },
+    {
+      "file": "src/Mod/ReverseEngineering/Gui/SegmentationManual.ui",
+      "line": 14,
+      "summary": "[Low] Manual segmentation dialog title now differs from its menu text",
+      "failure_scenario": "The user clicks \"Manual Segmentation…\" (Command.cpp:456) and gets a panel titled \"Manual Mesh Segmentation\". Before the change they matched, and the sibling pair still does (\"Mesh Segmentation…\"/\"Mesh Segmentation\"). Translators also get two source strings for one concept. Remedy: use one wording in both places, either \"Manual Segmentation\" as the title or \"Manual Mesh Segmentation…\" in the menu."
+    },
+    {
+      "file": "src/Mod/ReverseEngineering/Gui/Command.cpp",
+      "line": 536,
+      "summary": "[Low] \"Wire From Mesh Boundary…\" keeps an ellipsis but runs immediately without a dialog",
+      "failure_scenario": "The commit applies the ellipsis-means-dialog rule to the other commands, but CmdMeshBoundary::activated (Command.cpp:542-587) creates the wire directly with no dialog. The menu therefore signals a follow-up prompt that never appears. \"From\" is also capitalized, while title-case menus elsewhere lowercase prepositions. Remedy: \"Wire from Mesh Boundary\" with no ellipsis."
+    },
+    {
+      "file": "src/Mod/ReverseEngineering/Gui/Command.cpp",
+      "line": 602,
+      "summary": "[Low] Two tooltips were not converted to the third-person verb form used everywhere else",
+      "failure_scenario": "\"Poisson surface reconstruction\" (:602) and \"Triangulation of structured point clouds\" (:636-637) are still noun phrases, while every sibling now reads \"Approximates…\" or \"Creates…\", so the tooltip set stays mixed. Line 637 also repeats the literal in sStatusTip, so the two can drift apart. Remedy: e.g. \"Reconstructs a surface using the Poisson method\" and \"Triangulates structured point clouds\", with sStatusTip = sToolTipText."
+    },
+    {
+      "file": "src/Mod/ReverseEngineering/Gui/Command.cpp",
+      "line": 84,
+      "summary": "[Low] Rewritten warning messages still use another command's translation context",
+      "failure_scenario": "CmdApproxCurve (:84) and CmdPoissonReconstruction (:615) file their messages under \"Reen_ApproxSurface\", so translators see them grouped under the wrong command. The source strings were rewritten anyway, which forces retranslation, so this was the cheapest moment to fix it. Remedy: use the contexts \"Reen_ApproxCurve\" and \"Reen_PoissonReconstruction\", as CmdViewTriangulation does with its own context."
+    },
+    {
+      "file": "src/Mod/ReverseEngineering/Gui/FitBSplineSurface.ui",
+      "line": 20,
+      "summary": "[Nitpick] u/v parameter symbols uppercased in group titles but lowercase elsewhere in the same dialog",
+      "failure_scenario": "\"U-Direction\"/\"V-Direction\" (lines 20, 87) now disagree with \"User-defined u/v directions\" (line 218). u and v are lowercase parametrisation symbols, so this is not just a case change. Remedy: keep \"u-Direction\"/\"v-Direction\", or make all three places consistent."
+    },
+    {
+      "file": "src/Mod/ReverseEngineering/Gui/Command.cpp",
+      "line": 496,
+      "summary": "[Nitpick] Undo transaction names \"Segmentation\" and \"Wire from mesh\" are not marked for translation",
+      "failure_scenario": "These names always appear in English in the Undo/Redo menu (:496, :546), while sibling commands use openCommand(QT_TRANSLATE_NOOP(\"Command\", ...)) (e.g. :227). The gap predates this change, which left it outside its consistency pass. Remedy: wrap them with QT_TRANSLATE_NOOP(\"Command\", ...) or use openCommand/commitCommand."
+    }
+  ],
+  "result_text": "## Verdict: REQUEST CHANGES (code)\n\nThe only finding at Medium or above is a translation gap in a menu title, and that gap existed before this change. Everything else is about string style and consistency. Nothing breaks at runtime.\n\n**Spec:** skipped. I couldn't find one: `gh` needs approval here, and the commit message cites no issue.\n\n**Coverage (self-reported):** all 10 changed files were examined by at least one reviewer.\n\n**Verification:** 1 finding checked, and it stands. Low and Nitpick findings aren't verified, and there are no spec findings.\n\n### Medium\n- **[Medium] `src/Mod/ReverseEngineering/Gui/Workbench.cpp:53`: the renamed \"Surface Reconstruction\" submenu can never be translated**\n  - **Impact:** submenu titles are translated in the `\"Workbench\"` context (`src/Gui/MenuManager.cpp:244`, `:295`). The `#if 0` block in `Workbench.cpp` that marks strings for Qt's translation extractor (lupdate) only lists \"Reverse Engineering\". So \"Surface Reconstruction\", \"Segmentation\", \"Approximation\" and \"&Reverse Engineering\" always show in English (`ReverseEngineering.ts:583-589`).\n  - **Remedy:** add `qApp->translate(\"Workbench\", …)` entries for those four names to that block, the way Mesh does (`src/Mod/Mesh/Gui/Workbench.cpp:43-54`), then regenerate the `.ts` file.\n  - **Verification:** verified. Not checked: whether any `.qm` file loaded at runtime has these strings. The verifier found that the gap existed before this change; the commit only recased an untranslated string.\n\n### Low\n- **[Low] `Gui/Command.cpp:71`: this change adds the first Unicode \"…\" in FreeCAD's C++ source, and the module isn't built with MSVC `/utf-8`**\n  - **Impact:** the files have no BOM, and only TechDraw/Gui sets `/utf-8`. On MSVC with a multibyte code page such as CP936, the \"…\" bytes can be misread, causing error C2001 or garbled menu text.\n  - **Remedy:** add `/utf-8` to the ReverseEngineering CMakeLists files, or keep ASCII \"...\".\n- **[Low] `Gui/Command.cpp:71`: the Unicode ellipsis and title-case menu style appear only in this workbench**\n  - **Impact:** the six \"…\" menu texts are the only ones in `src`; there are 67 or more ASCII \"...\" elsewhere. The Segmentation submenu also holds Mesh commands, so one menu mixes both styles.\n  - **Remedy:** keep \"...\", or convert the whole repo at once.\n  - Flagged by 2 reviewers.\n- **[Low] `Gui/Command.cpp:71`: \"B-Spline\" is capitalized in menus and window titles**\n  - **Impact:** the repo writes \"B-spline\" 78 times and \"B-Spline\" 3 times. The command's own tooltip says \"B-spline\", so one command now spells it two ways.\n  - **Remedy:** keep \"B-spline\".\n- **[Low] `App/AppReverseEngineering.cpp:1002` (and `Gui/AppReverseEngineeringGui.cpp:85`): the module-load log lines now use \"…\"**\n  - **Impact:** these are untranslated developer log lines, not UI strings. All 45 other modules log \"module... done\" in ASCII, so a log grep for \"... done\" now misses ReverseEngineering.\n  - **Remedy:** revert both lines to \"...\".\n  - Flagged by 3 reviewers.\n- **[Low] `App/RegionGrowing.cpp:108`: the exception message is reworded in one place only**\n  - **Impact:** five identical throws in `SurfaceTriangulation.cpp` (lines 137, 260, 374, 566, 676) still say \"doesn't match\", so the module now raises one error with two texts. It's also a non-UI string.\n  - **Remedy:** revert this line, or reword all six together.\n  - Flagged by 2 reviewers.\n- **[Low] `Gui/SegmentationManual.ui:14`: the dialog title no longer matches its menu entry**\n  - **Impact:** the menu says \"Manual Segmentation…\" but the dialog opens as \"Manual Mesh Segmentation\". They matched before this change.\n  - **Remedy:** use one wording in both places.\n  - Flagged by 3 reviewers.\n- **[Low] `Gui/Command.cpp:536`: \"Wire From Mesh Boundary…\" keeps its ellipsis**\n  - **Impact:** the command runs straight away with no dialog, so the ellipsis is misleading. \"From\" is also capitalized, while title-case menus elsewhere lowercase prepositions.\n  - **Remedy:** \"Wire from Mesh Boundary\".\n- **[Low] `Gui/Command.cpp:602`: two tooltips weren't converted to the \"Approximates…/Creates…\" form**\n  - **Impact:** the Poisson and structured-point-cloud tooltips are still noun phrases. Line 637 also repeats the tooltip text as a separate status-tip literal, so the two can drift apart.\n  - **Remedy:** rewrite both as verbs and set `sStatusTip = sToolTipText`.\n- **[Low] `Gui/Command.cpp:84` (and `:615`): the rewritten warnings still use the `\"Reen_ApproxSurface\"` translation context**\n  - **Impact:** the curve and Poisson commands' messages are filed under the surface command, so translators see them in the wrong place.\n  - **Remedy:** give each command its own context. This is the cheapest moment, since the strings must be retranslated anyway.\n\n### Nitpick\n- **[Nitpick] `Gui/FitBSplineSurface.ui:20`:** the group titles \"U-Direction\"/\"V-Direction\" now disagree with \"u/v directions\" at line 218 in the same dialog. Keep u and v lowercase. Flagged by 2 reviewers.\n- **[Nitpick] `Gui/Command.cpp:496`:** the undo names \"Segmentation\" and \"Wire from mesh\" aren't marked for translation, unlike sibling commands. This predates the change. Wrap them with `QT_TRANSLATE_NOOP(\"Command\", …)`.\n\n### Refuted in verification\nNone.\n\n## Spec\nSkipped, no spec found.\n\nI sent all 12 findings to the report tool, one call each.",
+  "stderr": "",
+  "claude_duration_ms": 318857,
+  "claude_num_turns": 36,
+  "claude_cost_usd": 3.527203399999999,
+  "claude_session_id": "3e0a9103-a355-401c-ba1d-ca2118ac697a",
+  "token_usage": {
+    "input_tokens": 150,
+    "output_tokens": 66655,
+    "cache_read_input_tokens": 2559942,
+    "cache_creation_input_tokens": 291747,
+    "total_tokens": 2918494,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 150,
+        "outputTokens": 66655,
+        "cacheReadInputTokens": 2559942,
+        "cacheCreationInputTokens": 291747,
+        "webSearchRequests": 0,
+        "costUSD": 3.527203399999999,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 19186,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/FreeCAD__FreeCAD@f8cd643"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: 730e07db5d2acafe7723eb89c83641375c375bc3.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

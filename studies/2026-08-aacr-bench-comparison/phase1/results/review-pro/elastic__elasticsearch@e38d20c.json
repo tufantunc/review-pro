@@ -1,0 +1,155 @@
+{
+  "instance_id": "elastic__elasticsearch@e38d20c",
+  "repo": "elastic/elasticsearch",
+  "base_commit": "078f7ff9f7134a9c3011106e7b742a9fd8f04d56",
+  "head_commit": "e38d20c726cffb1ef9563d3146951a5356596464",
+  "reviewer": "review-pro/skill",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-10-01T01:37:46.953419+00:00",
+  "duration_seconds": 410.58,
+  "claude_exit_code": 0,
+  "retry_exhausted": null,
+  "review_output_source": "mcp_stream",
+  "review_output": [
+    {
+      "file": "x-pack/plugin/async-search/src/internalClusterTest/java/org/elasticsearch/xpack/search/AsyncSearchErrorTraceIT.java",
+      "line": 181,
+      "summary": "[High] Async logging tests check the log too early, before shard execution has run, so they race",
+      "failure_scenario": "Impact: inside the MockLog capture, each test submits a fresh _async_search with wait_for_completion_timeout=0ms. That request returns once the task initialises (AsyncSearchTask.java:237), not when the shard queries finish. assertAllExpectationsMatched() then reads each latch once without waiting (MockLog.java:113-117). The seen tests (Default at :153, False at :219) can therefore fail intermittently. The unseen test (True at :185) can pass without the search ever having run. The first submit and its polling loop run outside the capture, so they contribute nothing to the assertion. Remedy: run the submit inside the capture and poll GET /_async_search/{id} until is_running is false before asserting, or use mockLog.awaitAllExpectationsMatched() for seen expectations. For the unseen test, always poll to completion first. Delete the uncaptured first submit."
+    },
+    {
+      "file": "test/framework/src/main/java/org/elasticsearch/test/MockLog.java",
+      "line": 319,
+      "summary": "[Medium] PatternAndExceptionSeenEventExpectation copies its parents' matching logic, holds a dead `message` field and uses nested ifs",
+      "failure_scenario": "Impact: the class overrides match() and copies three things that already exist. The level/logger guard comes from AbstractEventExpectation.match (:177) and PatternSeenEventExpectation.match (:300). The thrown-class/message check is a word-for-word copy of ExceptionSeenEventExpectation.innerMatch (:276-280). The regex passed to super as `message` is never read. MockLog now has three copies of the matching logic, so any future fix, such as null-safe message comparison, must be made in each one. The nested ifs also run the regex even when the exception check has already failed. Remedy: extend ExceptionSeenEventExpectation and reuse innerMatch, adding only the pattern check. Alternatively, add a protected messageMatches hook to AbstractEventExpectation. At minimum, collapse the logic into a single && condition and drop the duplicate fields."
+    },
+    {
+      "file": "server/src/test/java/org/elasticsearch/search/SearchServiceTests.java",
+      "line": 208,
+      "summary": "[Medium] Unit test asserts only inside the delegate's onFailure, so it passes if the delegate is never called",
+      "failure_scenario": "Impact: the only assertion in testMaybeWrapListenerForStackTraceLogs is mockLog.assertAllExpectationsMatched(), and it runs inside the delegate's onFailure. MockLog.close() does not check expectations. If a regression stops the wrapper from forwarding the failure, the test passes with no assertion run. The test also never checks that the delegate received the exception or that its stack trace was cleared. Remedy: capture the received exception in an AtomicReference inside onFailure. After listener.onFailure(e), call mockLog.assertAllExpectationsMatched() outside the listener, then assert that the delegate received e and that e.getStackTrace().length == 0."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/SearchService.java",
+      "line": 866,
+      "summary": "[Medium] The relocated wrap calls in the scroll, QuerySearchRequest (DFS) and rank-feature paths have no test",
+      "failure_scenario": "Impact: in executeQueryPhase(InternalScrollSearchRequest), executeQueryPhase(QuerySearchRequest) and executeRankFeaturePhase, maybeWrapListenerForStackTrace now runs after findReaderContext. It also takes its request, and with it the version gate, from the reader context. The new ITs only send default query_then_fetch _search, _msearch and _async_search requests, which fail in executeQueryPhase(ShardSearchRequest). Nothing tests logging or stack-trace stripping on the three relocated entry points, so a regression there would go unnoticed. Remedy: add tests that fail in each of these paths: a dfs_query_then_fetch search failing in the query-by-id phase, a scroll continuation failure, and a rank-feature failure. Assert the seen and unseen log expectations and the stack-trace stripping for each."
+    },
+    {
+      "file": "test/framework/src/main/java/org/elasticsearch/search/ErrorTraceHelper.java",
+      "line": 65,
+      "summary": "[Medium] New helpers reach the cluster through a static global and hardcode one test's exception, unlike the injected style of the existing method",
+      "failure_scenario": "Impact: the existing setupErrorTraceListener takes an InternalTestCluster parameter. The new methods instead call the static ESIntegTestCase.internalCluster(), so they silently depend on running inside an ESIntegTestCase; ESIntegTestCase.java:635 throws otherwise. addSeenLoggingExpectations has a generic name and an errorTriggeringIndex parameter, yet hardcodes QueryShardException and \"failed to create query: For input string: \\\"foo\\\"\". That message comes from a single fixture copied into two IT classes in different modules. If the fixture changes, or a caller uses another failing query, this framework helper breaks. Remedy: pass InternalTestCluster in, and take the expected exception class and message as parameters. Alternatively, put the fixture constants in a shared setupIndexWithDocs next to the helper."
+    },
+    {
+      "file": "qa/smoke-test-http/src/internalClusterTest/java/org/elasticsearch/http/SearchErrorTraceIT.java",
+      "line": 126,
+      "summary": "[Medium] Six copy-paste logging test bodies that differ only in error_trace value and seen/unseen, duplicating the request construction of the six existing tests",
+      "failure_scenario": "Impact: about 150 added lines repeat the request-building and capture/assert boilerplate already in the six existing tests. The _search JSON body now appears 6 times, and the _msearch body plus NByteArrayEntity setup another 6 times, so changing the failing query means editing 12 places. The only real difference between the tests is buried in the boilerplate. Remedy: extract searchRequest(@Nullable String errorTrace) and multiSearchRequest(@Nullable String errorTrace) builders, plus an assertDataNodeLogging(Request, boolean expectSeen) helper. Alternatively, fold the MockLog assertions into the existing tests, which already send the same requests."
+    },
+    {
+      "file": "x-pack/plugin/async-search/src/internalClusterTest/java/org/elasticsearch/xpack/search/AsyncSearchErrorTraceIT.java",
+      "line": 153,
+      "summary": "[Medium] The three new async logging tests copy the submit-and-poll block of the existing tests",
+      "failure_scenario": "Impact: about 20 lines of submit-and-poll logic (POST /_async_search, the same body, keep_on_completion, wait_for_completion_timeout=0ms, then GET with an is_running loop) are repeated in testLoggingInAsyncSearchFailingQueryErrorTrace{Default,True,False}. These are near-copies of testAsyncSearchFailingQueryErrorTrace{Default,True,False}, leaving at least six copies that differ only in the error_trace value and the final assertion. In the new tests, the copied poll loop runs outside the MockLog capture, so it does nothing for the logging assertion. Remedy: extract a submitAndAwaitAsyncSearch(@Nullable String errorTrace) helper and use it from both the existing and new tests, or fold the MockLog expectations into the existing tests."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/SearchService.java",
+      "line": 866,
+      "summary": "[Low] The scroll path now takes the error_trace version from the original request's coordinator, not the node sending the scroll",
+      "failure_scenario": "Impact: before this change, the QUERY_SCROLL handler passed channel.getVersion() of the incoming scroll request. The check now uses the channelVersion of the ShardSearchRequest stored in the LegacyReaderContext. LegacyReaderContext.getShardSearchRequest (LegacyReaderContext.java:74) returns the original query-phase request, whose version was fixed at deserialization (ShardSearchRequest.java:330). A scroll can be continued through any node. In a rolling upgrade across ERROR_TRACE_IN_TRANSPORT_HEADER, suppose an upgraded node starts the scroll and a pre-upgrade node continues it. The old node never sends the error_trace header, so the header defaults to \"false\" and stack traces are stripped, contrary to the method's documented default of true for old nodes. In the reverse case, a newer coordinator's error_trace=false is ignored. The effect is limited to diagnostics during mixed-version scrolls. Remedy: keep the incoming channel's TransportVersion for the version gate, for example by keeping a TransportVersion parameter for the scroll path, and use the stored ShardSearchRequest only for the shardId in the log message."
+    },
+    {
+      "file": "qa/smoke-test-http/src/internalClusterTest/java/org/elasticsearch/http/SearchErrorTraceIT.java",
+      "line": 49,
+      "summary": "[Low] Logger level set to DEBUG via raw Configurator.setLevel and never restored, instead of the repo's @TestLogging annotation",
+      "failure_scenario": "Impact: Configurator.setLevel(\"org.elasticsearch.search.SearchService\", Level.DEBUG) is called in @BeforeClass here, in AsyncSearchErrorTraceIT.java:50, and inline in SearchServiceTests.java:186. None of the three ever resets the level. SearchService stays at DEBUG for every later test class in the same JVM, which makes logs noisier and makes other tests' SearchService log expectations depend on test order. The repo convention is @TestLogging, whose LoggingListener restores the previous level and which about 87 test files use. Remedy: remove the @BeforeClass methods and the inline call. Annotate the classes, or the test method, with @TestLogging(value = \"org.elasticsearch.search.SearchService:DEBUG\", reason = \"...\"). Then drop the unused Configurator and Level imports."
+    },
+    {
+      "file": "test/framework/src/main/java/org/elasticsearch/test/MockLog.java",
+      "line": 345,
+      "summary": "[Low] PatternAndExceptionSeenEventExpectation throws NPE when an exception has a null message, and only matches the exact class",
+      "failure_scenario": "Impact: event.getThrown().getMessage().equals(exceptionMessage) throws a NullPointerException for any logged throwable of the expected class that has a null message. Because MockAppender does not ignore exceptions, that NPE propagates into the production logger.debug call under test. The == class check also means a subclass or wrapped cause never matches, so the test fails confusingly instead of matching. Remedy: compare with Objects.equals(exceptionMessage, event.getThrown().getMessage()), and collapse the nested ifs into a single condition."
+    },
+    {
+      "file": "server/src/main/java/org/elasticsearch/search/SearchService.java",
+      "line": 545,
+      "summary": "[Low] Static helper takes all of ClusterService just to read the local node id in one log line",
+      "failure_scenario": "Impact: all five callers pass the instance fields threadPool and clusterService to a static method on the same class. The method's dependency now spans a whole service, and its javadoc (\"the cluster service\") explains nothing. The unit tests have to build and start a real ClusterService just to supply a node id string. Remedy: make maybeWrapListenerForStackTrace an instance method, which drops both parameters, or pass only what it needs (a String localNodeId or DiscoveryNode). Then the unit test can pass a literal."
+    },
+    {
+      "file": "server/src/test/java/org/elasticsearch/search/SearchServiceTests.java",
+      "line": 212,
+      "summary": "[Low] Started ClusterService is created inline and never closed",
+      "failure_scenario": "Impact: createClusterService(threadPool) returns an already-started ClusterService (ClusterServiceUtils.java:153). It is created and dropped in both maybeWrap tests (:165 and :212), leaking a started service per test. Elsewhere in the repo the result is closed, for example with try-with-resources in TransportResyncReplicationActionTests.java:92. Remedy: use try (ClusterService clusterService = createClusterService(threadPool)) { ... }, or create the service once in setUp and close it in tearDown."
+    },
+    {
+      "file": "x-pack/plugin/async-search/src/internalClusterTest/java/org/elasticsearch/xpack/search/AsyncSearchErrorTraceIT.java",
+      "line": 58,
+      "summary": "[Low] setupIndexWithDocs is copied verbatim between the two ITs and edited the same way in both",
+      "failure_scenario": "Impact: this change made the identical edit (random shard count, returning numShards) to both copies of setupIndexWithDocs, here and in SearchErrorTraceIT.java:57. The fixture is tightly coupled to ErrorTraceHelper.addSeenLoggingExpectations, which hardcodes index \"test2\" and the QueryShardException message for \"foo\". If one copy drifts, the helper's expectations break silently. Remedy: move the fixture next to the expectations, for example as ErrorTraceHelper.setupIndexWithDocs returning numShards, or share the index names and docs as constants."
+    },
+    {
+      "file": "server/src/test/java/org/elasticsearch/search/SearchServiceTests.java",
+      "line": 173,
+      "summary": "[Low] The new test builds the same ShardSearchRequest as testMaybeWrapListenerForStackTrace, and doTestCanMatch builds a near-identical one",
+      "failure_scenario": "Impact: the file now has three 11-line ShardSearchRequest constructor calls (:132, :173, :224). Two are identical, and the third differs only in the SearchRequest and shard count. A change to the constructor signature means editing all three. Remedy: add a private static shardRequest(SearchRequest, int numShards) factory and use it from both maybeWrap tests and doTestCanMatch."
+    },
+    {
+      "file": "server/src/test/java/org/elasticsearch/search/SearchServiceTests.java",
+      "line": 193,
+      "summary": "[Low] The expectation for the stack-trace-clearing log is written out again instead of shared with ErrorTraceHelper",
+      "failure_scenario": "Impact: the production format \"[%s]%s Clearing stack trace before transport:\" (SearchService.java:558) is restated as three independent literals: escaped regexes at SearchServiceTests:193 and ErrorTraceHelper:82, and an unescaped literal at ErrorTraceHelper:110. If the message is reworded, all three must be updated by hand. The unseen variant would then silently stop guarding anything. Remedy: add one expectation factory in ErrorTraceHelper, derived from a shared constant for the message prefix, and call it from both addSeenLoggingExpectations and SearchServiceTests."
+    }
+  ],
+  "result_text": "## Verdict: BLOCK (code)\n\nThe production change itself looks sound: a lazy DEBUG log before the stack trace is cleared, and every caller of the changed signatures is updated. The block comes from a verified flaky test in the new async-search tests. The rest are test-quality and duplication issues, plus one mixed-version edge case on the scroll path.\n\nSpec: skipped, no spec found. The base was passed as the argument, the commits reference no issues, and I couldn't fetch the PR body because `gh pr view 125732` needed approval.\n\nCoverage (self-reported): 10 of 10 changed files examined by at least one reviewer. The api-contract, backend and security reviewers each said they did not read the new tests in `AsyncSearchErrorTraceIT.java`; the other six reviewers did.\n\nVerification: 7 checked (7 stand, 0 partly refuted, 0 refuted), 0 not checked. Spec findings are not verified.\n\nThis repo has no `.review-pro/` stack packs or rules file at the merge base `930b4ab9957`, so reviewers used only their core rubrics. Nine reviewers ran: correctness, tests, craft, dry, ai-antipatterns, api-contract, backend, security and performance. Security and performance found nothing. All 15 findings below were sent to the findings tool.\n\n### High\n- **[High] `x-pack/plugin/async-search/src/internalClusterTest/java/org/elasticsearch/xpack/search/AsyncSearchErrorTraceIT.java:181`: the async logging tests check the log before the shards have run, so they race.**\n  - impact: The request made inside the `MockLog` capture is a new `_async_search` submit with `wait_for_completion_timeout=0ms`. It returns as soon as the task starts (`AsyncSearchTask.java:237`). `assertAllExpectationsMatched()` then checks each expectation once without waiting (`MockLog.java:113`). So the \"seen\" tests (Default at :153, False at :219) can fail at random. The \"unseen\" test (True at :185) can pass even though the search never ran. The first submit and its polling loop run outside the capture, so they do nothing for the assertion.\n  - remedy: Submit inside the capture and poll until `is_running` is false, or use `awaitAllExpectationsMatched()` for the seen tests. Delete the submit that runs outside the capture.\n  - flagged by: tests, correctness\n  - verification: verified, unchecked: how often this race actually hits at runtime\n\n### Medium\n- **[Medium] `test/framework/src/main/java/org/elasticsearch/test/MockLog.java:319`: `PatternAndExceptionSeenEventExpectation` copies its parents' matching logic, keeps a dead `message` field and nests its ifs.**\n  - impact: It copies the level/logger check from :177 and :300, and copies `ExceptionSeenEventExpectation.innerMatch` (:276-280) word for word. That leaves three copies of the same matching logic to keep in sync.\n  - remedy: Extend `ExceptionSeenEventExpectation` and reuse `innerMatch`, or add a `messageMatches` hook to the base class. At minimum, use a single `&&` condition.\n  - flagged by: craft, dry, ai-antipatterns\n  - verification: verified\n- **[Medium] `server/src/test/java/org/elasticsearch/search/SearchServiceTests.java:208`: the unit test only asserts inside the delegate's `onFailure`, so it passes if the delegate is never called.**\n  - impact: If a regression stops the wrapper from forwarding the failure, no assertion runs and the test still passes. It also never checks that the stack trace was cleared.\n  - remedy: Capture the exception in an `AtomicReference`, then assert after the call: expectations matched, delegate received `e`, and the stack trace is empty.\n  - verification: verified\n- **[Medium] `server/src/main/java/org/elasticsearch/search/SearchService.java:866`: the moved wrap calls in the scroll, `QuerySearchRequest` and rank-feature paths have no test.**\n  - impact: The new tests only exercise `executeQueryPhase(ShardSearchRequest)`. Nothing tests logging or stack-trace stripping on the three moved entry points.\n  - remedy: Add failing tests for the dfs query-by-id, scroll-continuation and rank-feature paths.\n  - verification: verified, unchecked: whether a failing dfs query actually reaches this path rather than failing earlier in `executeDfsPhase`\n- **[Medium] `test/framework/src/main/java/org/elasticsearch/search/ErrorTraceHelper.java:65`: the new helpers get the cluster from a static global and hardcode one test's exception.**\n  - impact: The existing `setupErrorTraceListener` takes the cluster as a parameter; the new helpers call `ESIntegTestCase.internalCluster()` instead. They also hardcode `QueryShardException` and the \"foo\" error message, which come from a fixture copied into two test classes.\n  - remedy: Pass in `InternalTestCluster`, and take the expected exception class and message as parameters.\n  - verification: verified\n- **[Medium] `qa/smoke-test-http/src/internalClusterTest/java/org/elasticsearch/http/SearchErrorTraceIT.java:126`: six copy-pasted logging test bodies.**\n  - impact: The failing query is now written in 12 places in this file.\n  - remedy: Extract `searchRequest(errorTrace)` / `multiSearchRequest(errorTrace)` builders and an `assertDataNodeLogging` helper, or fold the log checks into the existing tests.\n  - flagged by: craft, dry\n  - verification: verified\n- **[Medium] `x-pack/plugin/async-search/src/internalClusterTest/java/org/elasticsearch/xpack/search/AsyncSearchErrorTraceIT.java:153`: the three new async logging tests copy the existing submit-and-poll block.**\n  - impact: There are now at least six near-identical copies of the same request-and-poll logic.\n  - remedy: Extract a `submitAndAwaitAsyncSearch(errorTrace)` helper.\n  - verification: verified\n\n### Low\n- **[Low] `SearchService.java:866`: in mixed-version clusters, the scroll path decides whether to strip stack traces based on the node that started the search, not the node sending the scroll.**\n  - impact: During a rolling upgrade, if a pre-upgrade node continues a scroll started through an upgraded node, stack traces get stripped even though old nodes should keep them. The reverse case also flips. This only affects diagnostic detail.\n  - remedy: Keep the incoming connection's version for the check, and use the stored request only for the shard id in the log message.\n  - flagged by: correctness, api-contract, backend\n- **[Low] `SearchErrorTraceIT.java:49`: `Configurator.setLevel(DEBUG)` is never reset.** The same call appears at `AsyncSearchErrorTraceIT.java:50` and `SearchServiceTests.java:186`. DEBUG stays on for later test classes in the same JVM. Remedy: use `@TestLogging`, which restores the level. Flagged by correctness, tests, craft, dry and ai-antipatterns.\n- **[Low] `MockLog.java:345`: the new expectation throws a NullPointerException on an exception with a null message, and only matches the exact class.** Remedy: compare with `Objects.equals` and use a single condition.\n- **[Low] `SearchService.java:545`: the static helper takes the whole `ClusterService` just to read the local node id.** Remedy: make it an instance method, or pass only the node id.\n- **[Low] `SearchServiceTests.java:212`: a started `ClusterService` is created and never closed** (also at :165). Remedy: use try-with-resources.\n- **[Low] `AsyncSearchErrorTraceIT.java:58`: `setupIndexWithDocs` is copied verbatim from `SearchErrorTraceIT` and edited the same way in both.** Remedy: share the fixture next to `ErrorTraceHelper`.\n- **[Low] `SearchServiceTests.java:173`: the same `ShardSearchRequest` construction appears three times in the file.** Remedy: add a factory method.\n- **[Low] `SearchServiceTests.java:193`: the log message format is restated as three separate literals.** If the message is reworded, the \"unseen\" check would silently stop guarding anything. Remedy: build every expectation from one shared constant.\n\n### Refuted in verification\nNone.\n\n## Spec\nSkipped, no spec found.",
+  "stderr": "",
+  "claude_duration_ms": 408824,
+  "claude_num_turns": 48,
+  "claude_cost_usd": 6.4008724,
+  "claude_session_id": "5a0b6918-1692-4b38-8371-279f78fb13c3",
+  "token_usage": {
+    "input_tokens": 218,
+    "output_tokens": 109567,
+    "cache_read_input_tokens": 3529397,
+    "cache_creation_input_tokens": 626833,
+    "total_tokens": 4266015,
+    "model_usage": {
+      "claude-opus-5-5": {
+        "inputTokens": 218,
+        "outputTokens": 109567,
+        "cacheReadInputTokens": 3529397,
+        "cacheCreationInputTokens": 626833,
+        "webSearchRequests": 0,
+        "costUSD": 6.4008724,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 29479,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "study": {
+    "cli_version": "2.1.283 (Claude Code)",
+    "arm_flags": [
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config"
+    ],
+    "allowed_tools": "mcp__findings__report,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(git show-ref:*),Bash(git ls-files:*),Bash(git grep:*),Bash(git blame:*),Bash(git status:*),Bash(git cat-file:*),Bash(git ls-tree:*)",
+    "isolated_repo": true,
+    "transcripts": "/Users/tufantunc/Desktop/Projects/Personal/aacr-bench/evaluation/results/aacr_bench/review-pro/phase1/transcripts/elastic__elasticsearch@e38d20c"
+  },
+  "review_pro": {
+    "version": "1.5.0",
+    "integrity": "sha512-9Ct43124Ix4TBGmN7K+e3PcO4b1r0UEKB4ri38rVJKustAqknPrT1u3ANEQl1kLXsMpZiAt/U9ssVANMLB9oxg==",
+    "tree_sha256": "acfcc6f14c054b09e87ad47af030b5795cb91fd0f957a3fafe104351144bd5ce",
+    "prompt": "Run the review-pro skill with exactly this argument, the base commit: 078f7ff9f7134a9c3011106e7b742a9fd8f04d56.\n\nA finding is confirmed only when it appears in the final report, so report nothing before the final report is written. Then call the report tool once for every finding in the final report: every code finding at every severity, Low and Nitpick included, and every spec-axis finding; nothing from \"Refuted in verification\". For each call, `file` and `line` are the finding's own (omit `line` when it is 0), `summary` is \"[<Severity>] <title>\", and `failure_scenario` is the finding's impact followed by its remedy. Do not filter, rank or summarise findings away."
+  }
+}

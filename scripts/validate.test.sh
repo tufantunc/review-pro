@@ -266,7 +266,7 @@ Dedup the spec pool on the quoted requirement, not on `(file, line)` alone.
 "not how the reviewer would have written it" is not a finding.
 ### External premises
 ## Repository rules
-Omit the whole section when triage emitted no `repository_rules`, and omit the table when `rows` is empty, keeping only the lines beneath it that apply.
+Omit the whole section when triage emitted no `repository_rules`, and omit the table when `rows` is empty or absent, keeping only the lines beneath it that apply.
 A missing report is never rendered as `held`.
 Print `<n> rules dropped by triage's cap; never judged.` when rules were dropped.
 Print `.review-pro/rules.md changed in this change; the review used the merge base's version.` when it changed.
@@ -1874,7 +1874,7 @@ stage_mutation "$SYN" w_synth "the out-of-diff caveat's placement no longer foll
 stage_mutation "$SYN" w_synth "the Output template no longer places the out-of-diff caveat" "synthesis caveat placeholder" grep -vF '> the out-of-diff caveat'
 stage_mutation "$SYN" w_synth "places the out-of-diff caveat out of order"    "synthesis caveat above verification" awk '/^Verification: <N> checked$/{held=$0; next} {print} /^> the out-of-diff caveat/{print held}'
 stage_mutation "$SYN" w_synth "places the out-of-diff caveat out of order"    "synthesis caveat below premises"    awk '/^> the out-of-diff caveat/{held=$0; next} {print} /^> the External premises table/{print held}'
-stage_mutation "$SYN" w_synth "the lines beneath an omitted rules table no longer print" "synthesis rules lines without table" sed 's/, and omit the table when `rows` is empty, keeping only the lines beneath it that apply\./, and omit the table when `rows` is empty./'
+stage_mutation "$SYN" w_synth "the lines beneath an omitted rules table no longer print" "synthesis rules lines without table" sed 's/, and omit the table when `rows` is empty or absent, keeping only the lines beneath it that apply\./, and omit the table when `rows` is empty./'
 stage_mutation "$SYN" w_synth "no longer places the External premises table" "synthesis premises placeholder"  grep -vF '> the External premises table'
 rm -rf "$T"
 T=$(mktemp -d)

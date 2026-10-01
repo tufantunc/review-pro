@@ -22,8 +22,11 @@ flat. Two runs cannot prove that, and the maintainer decides.
 not on the pre-registered wall-time criterion, which the change did not meet. In both modes the
 orchestrator waits for the last reviewer before it merges, so how the agents are started cannot
 move the slowest reviewer's run time, and the orchestrator's own time did not change. Settling it
-statistically would take roughly 18 to 28M tokens. Wall time is re-checked per stage across the
-many reviews of roadmap item 5; if it rises there, this decision reopens.
+statistically would take roughly 18 to 28M tokens. Wall time was to be re-checked per stage across
+the many reviews of roadmap item 5.
+
+Note, 2026-10-01: item 5 ran internally and its results are not published, so that re-check has
+no public record. The decision rests on the mechanism and the two runs above.
 
 ## Contents
 

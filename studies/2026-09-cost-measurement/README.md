@@ -187,6 +187,9 @@ line off, inside the dedup window.
 That is 1 of 18 locatable findings, and 2 of 88 with item 2's corpus. Item 5's AACR-Bench run
 remains the gate.
 
+Note, 2026-10-01: item 5 ran internally and its results are not published, so that gate has no
+public record. Item 2 stays "measured, not built" on the published evidence above.
+
 ## Budget
 
 All runs together used 8.51M tokens including cache reads:

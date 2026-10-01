@@ -28,7 +28,7 @@
   "pipeline.s3.tag3": "vonnis",
   "cap.eyebrow": "Mogelijkheden",
   "cap.title": "Een review-bank, niet één grote gok.",
-  "cap.lead": "Elke specialist is eigenaar van één concern en een strikte rubriek. Een first-class AI-anti-patterns-lens zoekt naar wat agents vaak verkeerd doen: code die negeert wat de repository al weet, overbodige afhankelijkheden, over-engineering, gehallucineerde API's.",
+  "cap.lead": "Elke specialist is eigenaar van één concern en een strikte rubriek. Een first-class AI-anti-patterns-lens zoekt naar agent-specifieke faalpatronen: code die negeert wat de repository al weet, overbodige afhankelijkheden, over-engineering, gehallucineerde API's.",
   "cap.c1.title": "13 specialistische reviewers",
   "cap.c1.body": "Elk eigenaar van één concern, met een strikte, gekalibreerde rubriek en gestructureerde output.",
   "cap.c2.title": "16 stack-pakketten",

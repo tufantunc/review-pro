@@ -28,7 +28,7 @@
   "pipeline.s3.tag3": "karar",
   "cap.eyebrow": "Yetenekler",
   "cap.title": "Bir inceleme masası, tek bir büyük tahmin değil.",
-  "cap.lead": "Her uzman tek bir konuya ve katı bir rubriğe sahiptir. Birinci sınıf yapay zeka-antipattern merceği, ajanların sıkça yanlış yaptığı şeyleri arar: deponun zaten bildiklerini göz ardı eden kod, gereksiz bağımlılıklar, aşırı mühendislik, hayal ürünü API'ler.",
+  "cap.lead": "Her uzman tek bir konuya ve katı bir rubriğe sahiptir. Birinci sınıf yapay zeka-antipattern merceği, ajanlara özgü hata kalıplarını arar: deponun zaten bildiklerini göz ardı eden kod, gereksiz bağımlılıklar, aşırı mühendislik, hayal ürünü API'ler.",
   "cap.c1.title": "13 uzman inceleyici",
   "cap.c1.body": "Her biri tek bir konuya sahiptir; katı, kalibre edilmiş bir rubrik ve yapılandırılmış çıktıyla.",
   "cap.c2.title": "16 yığın paketi",

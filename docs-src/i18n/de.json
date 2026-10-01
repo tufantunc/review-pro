@@ -28,7 +28,7 @@
   "pipeline.s3.tag3": "Urteil",
   "cap.eyebrow": "Funktionen",
   "cap.title": "Eine Prüfbank, nicht eine große Vermutung.",
-  "cap.lead": "Jeder Spezialist besitzt ein einziges Anliegen und eine strenge Rubrik. Eine erstklassige KI-Anti-Pattern-Linse sucht nach dem, was Agenten typischerweise falsch machen: Code, der ignoriert, was das Repository bereits weiß, überflüssige Abhängigkeiten, Über-Engineering, halluzinierte APIs.",
+  "cap.lead": "Jeder Spezialist besitzt ein einziges Anliegen und eine strenge Rubrik. Eine erstklassige KI-Anti-Pattern-Linse sucht nach agentenspezifischen Fehlermustern: Code, der ignoriert, was das Repository bereits weiß, überflüssige Abhängigkeiten, Über-Engineering, halluzinierte APIs.",
   "cap.c1.title": "13 Spezialisten-Prüfer",
   "cap.c1.body": "Jeder besitzt ein Anliegen, mit einer strengen, kalibrierten Rubrik und strukturierter Ausgabe.",
   "cap.c2.title": "16 Stack-Pakete",

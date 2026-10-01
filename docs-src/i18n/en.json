@@ -28,7 +28,7 @@
   "pipeline.s3.tag3": "verdict",
   "cap.eyebrow": "Capabilities",
   "cap.title": "A review bench, not one big guess.",
-  "cap.lead": "Every specialist owns a single concern and a strict rubric. A first-class AI-anti-patterns lens looks for what agents tend to get wrong: code that ignores what the repository already knows, needless dependencies, over-engineering, hallucinated APIs.",
+  "cap.lead": "Every specialist owns a single concern and a strict rubric. A first-class AI-anti-patterns lens looks for agent-specific failure modes: code that ignores what the repository already knows, needless dependencies, over-engineering, hallucinated APIs.",
   "cap.c1.title": "13 specialist reviewers",
   "cap.c1.body": "Each owns one concern, with a strict, calibrated rubric and structured output.",
   "cap.c2.title": "16 stack packs",

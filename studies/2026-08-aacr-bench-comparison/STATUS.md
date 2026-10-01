@@ -250,9 +250,10 @@ failures and skipped, so 13 reviews per arm):
   - H0-guard within budget, at +1.5 points.
   - A2 recall overall 0.425 against 0.375, at 9.2× the tokens.
 - **Outputs** (without transcripts) are in `phase1/`.
-- **Open:** the session transcripts, 64 MB for A2 and 5 MB for A1, are too large for this
-  repository. Per the registration's "Where the work lives", they go to a release asset on the
-  fork, which waits on the maintainer.
+- **Transcripts not published,** by the maintainer's decision on 2026-10-01: the study is
+  internal R&D. The session transcripts (17 MB compressed) stay local in the fork's `results/`. If
+  the results are ever published, the registration's "Where the work lives" asks for them to go
+  along.
 - To resume after an interruption, run the same command with the same `--run-id phase1`:
 
 ```

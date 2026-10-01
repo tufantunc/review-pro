@@ -225,7 +225,24 @@ failures and skipped, so 13 reviews per arm):
     2 Nitpick) equal the counts in the final answer.
 - **Sitting 1 is complete for both arms** (instances 1 to 15). A1 used 6.5M tokens, A2 47.3M:
   3.6M per A2 instance, above the smoke's 2.4M.
-- **Next:** sitting 2 (instances 16 to 30; #19 is skipped as logged), then the evaluation.
+- **Sitting 2 done for both arms** 2026-10-01 (instances 16 to 30, #19 skipped). A1 ran
+  04:09 to 04:33 and A2 04:33 to 05:55, as one detached process, uninterrupted.
+- **The review stage is complete:** 27 instances per arm, every one with exit 0, all on CLI
+  2.1.283.
+
+  | Arm | Generated findings | Tokens | Review-minutes |
+  |---|---|---|---|
+  | A1 | 217 | 9.6M | 45 |
+  | A2 | 259 | 88.4M | 153 |
+
+  - **A1's #6** stays unparsed: zero findings as registered, and the Amendment 4 sensitivity
+    applies.
+  - **A2's report-tool findings equal the transcript report on every instance that printed one.**
+    The fallback parser read only 3 of laravel's 11, because the report shortened repeated paths to
+    `:<line>`. A parser limitation, recorded; the fallback was used only on #7 (APPROVE, 0
+    findings), so no score depends on it.
+- **Next:** the scored evaluation (judge GLM-5.3, 3 rounds, both arms), on the maintainer's
+  go-ahead.
 - To resume after an interruption, run the same command with the same `--run-id phase1`:
 
 ```

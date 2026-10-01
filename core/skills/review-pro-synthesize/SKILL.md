@@ -118,7 +118,7 @@ The out-of-diff evidence check needs no exception here. Its definition already c
 
 ## Repository rules
 
-Triage's `repository_rules` lists every rule from `.review-pro/rules.md`, read at the merge base, that the change matched. Omit the whole section when triage emitted no `repository_rules`, and omit the table when `rows` is empty, keeping only the lines beneath it that apply. Otherwise print one table after the External premises table and before the findings: it is review-level context, like the premises.
+Triage's `repository_rules` lists every rule from `.review-pro/rules.md`, read at the merge base, that the change matched. Omit the whole section when triage emitted no `repository_rules`, and omit the table when `rows` is empty or absent, keeping only the lines beneath it that apply. Otherwise print one table after the External premises table and before the findings: it is review-level context, like the premises.
 
 ```
 ### Repository rules (from .review-pro/rules.md at <merge-base sha>)

@@ -121,7 +121,7 @@ repository_rules:                     # omit the key when neither the merge base
   source: .review-pro/rules.md@<merge-base sha> | none   # none: the merge base has no rules file
   file_changed: none | changed | added
   uncommitted: true                   # optional; only when step 8 found .review-pro/rules.md edited, deleted or untracked in the working tree; omit otherwise
-  rows:
+  rows:                               # omitted when the merge base has no rules file (synthesis treats it as empty)
     - id: <rule id>
       line: <line of the rule heading at the merge base>
       when_matched: [<paths>]

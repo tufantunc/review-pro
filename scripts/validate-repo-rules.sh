@@ -93,7 +93,7 @@ if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Repository rules' "$SYNTH_MD"; then
     # The working-tree-only plan has no rows, so its line survives the omitted table only by this
     # clause (round 2). A missing omit line is the omit pin's error alone.
     omitl="$(printf '%s\n' "$RR" | grep -F 'Omit the whole section when triage emitted no `repository_rules`')"
-    [[ -z "$omitl" ]] || printf '%s\n' "$omitl" | grep -qF 'omit the table when `rows` is empty, keeping only the lines beneath it that apply' \
+    [[ -z "$omitl" ]] || printf '%s\n' "$omitl" | grep -qF 'omit the table when `rows` is empty or absent, keeping only the lines beneath it that apply' \
       || add_error "review-pro-synthesize/SKILL.md: the lines beneath an omitted rules table no longer print - a rules file only in the working tree has no rows, and its uncommitted line would be dropped"
     # Line-scoped: the Stack signals pack line shares "has changes that are not committed".
     printf '%s\n' "$RR" | grep -F '`.review-pro/rules.md has changes that are not committed; a review applies rules only once they are committed to the base branch.`' | grep -F 'when `uncommitted` is true' | grep -qF 'whatever `file_changed` says' \

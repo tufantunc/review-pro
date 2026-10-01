@@ -242,7 +242,7 @@ npx review-pro list           <span class="cmt"># catalog + installed + drift</s
     <h3>Faut-il Node.js ?</h3>
     <p>Seule la CLI d'installation en a besoin (Node ≥ 18). Le plugin lui-même n'est que des skills et agents markdown, donc l'<a href="#manual-install">installation manuelle</a> fonctionne sans Node sur toute plateforme.</p>
     <h3>En quoi cela diffère-t-il d&#39;un simple prompt « examine ça » ?</h3>
-    <p>Un seul prompt remet tout le diff à un agent et demande tout. review-pro trie d&#39;abord, n&#39;exécute en parallèle que les spécialistes pertinents avec un contexte délimité, puis synthétise — ainsi les petits changements restent peu coûteux et les grands vont en profondeur, avec une sévérité calibrée contre le sur-signalement.</p>
+    <p>Un seul prompt demande à un agent de couvrir tous les sujets à la fois. review-pro donne à chaque sujet son propre relecteur et sa propre grille, exige que chaque constat indique où ses preuves ont été trouvées, et charge un agent distinct de tenter de réfuter les constats graves. La synthèse calibre ensuite la sévérité contre le sur-signalement.</p>
     <h3>D&#39;où viennent les packs de stack ?</h3>
     <p>Le catalogue est livré dans ce paquet, sous forme d'instantané à la publication. De nouveaux packs apparaissent après la publication d'une nouvelle version. Voir <code>stacks/CONTRIBUTING.md</code> dans le dépôt pour ajouter les tiens.</p>
     <h3>Est-ce vraiment multiplateforme ?</h3>

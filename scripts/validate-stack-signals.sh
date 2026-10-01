@@ -159,3 +159,20 @@ if [[ -f "$SSUB_MD" ]]; then
   grep -qF '`stack_signals` for **Stack signals**' "$SSUB_MD" \
     || add_error "review-pro-synthesize-subagent.md: the stack_signals input is gone - subagent synthesis would never report a pack the change touched"
 fi
+# The triage subagent body states the base itself (ADR-0001): the orchestrator runs triage inline
+# today, so this body governs only a triage invoked on its own, which has no Prep to lean on. It
+# takes a caller's full sha, else applies Prep's exact rule (v1.5.0 release review, Low). A missing
+# line is the first pin's error alone; the tag pin judges a present line.
+TSUB_MD="$ROOT/core/agents/review-pro-triage-subagent.md"
+if [[ -f "$TSUB_MD" ]]; then
+  anchor_line "$TSUB_MD" '1. Gather the diff and changed files against `<base>`'
+  { anchor_has 'git show-ref --verify --hash refs/heads/main' && anchor_has 'then `refs/heads/master`' && anchor_has "never git's name lookup"; } \
+    || add_error "review-pro-triage-subagent.md: the base is no longer resolved with exact ref lookups - triage run on its own could take a tag named main as the base, and the merge base would be the change itself"
+  [[ -z "$ANCHOR_LINE" ]] || anchor_has 'if `refs/tags/<name>` also exists, or it is a short sha, stop' \
+    || add_error "review-pro-triage-subagent.md: a named base no longer refuses a tag that shares its name - a fork tag could make the merge base the change itself"
+  anchor_line "$TSUB_MD" 'Resolve the merge base once with `git merge-base <base> HEAD`'
+  anchor_has 'If it prints nothing, stop' \
+    || add_error "review-pro-triage-subagent.md: triage run on its own no longer stops when no merge base resolves - git show with an empty revision reads the change's own rules and packs"
+  grep -qF 'configured base' "$TSUB_MD" \
+    && add_error "review-pro-triage-subagent.md: the body names a configured base again - git's name lookup resolves a bare name, and prefers a tag"
+fi

@@ -27,7 +27,7 @@
   "pipeline.s3.tag2": "résoudre",
   "pipeline.s3.tag3": "verdict",
   "cap.eyebrow": "Fonctionnalités",
-  "cap.title": "Un banc de revue, pas une seule grande supposition.",
+  "cap.title": "Un banc de revue : un réviseur par sujet.",
   "cap.lead": "Chaque spécialiste possède un seul sujet et une grille stricte. Une lentille anti-patterns IA de premier plan cherche les défaillances propres aux agents : code qui ignore ce que le dépôt sait déjà, dépendances superflues, sur-ingénierie, APIs hallucinées.",
   "cap.c1.title": "13 relecteurs spécialistes",
   "cap.c1.body": "Chacun possède un sujet, avec une grille stricte et calibrée et une sortie structurée.",

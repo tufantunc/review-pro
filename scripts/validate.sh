@@ -416,7 +416,7 @@ if [[ -f "$SYNTH_MD" ]]; then
       add_error "review-pro-synthesize/SKILL.md: the Output template no longer places the out-of-diff caveat - the report order for it lives nowhere"
     elif [[ -z "$ep" ]]; then
       add_error "review-pro-synthesize/SKILL.md: the Output template no longer places the External premises table - the caveat's order against it can no longer be checked"
-    elif [[ ( -n "$v" && "$ca" -lt "$v" ) || ( -n "$ep" && "$ca" -gt "$ep" ) ]]; then
+    elif [[ ( -n "$v" && "$ca" -lt "$v" ) || "$ca" -gt "$ep" ]]; then
       add_error "review-pro-synthesize/SKILL.md: the Output template places the out-of-diff caveat out of order - it goes after the Verification line and before the External premises table"
     fi
   fi

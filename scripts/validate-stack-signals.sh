@@ -73,6 +73,8 @@ if [[ -f "$ORCH_MD" ]]; then
     || add_error "review-pro/SKILL.md: the base is no longer resolved as a branch ref - a tag named main would make the merge base the change itself, and its packs and rules would apply"
   { anchor_has 'never git'"'"'s name lookup' && anchor_has 'any other name is looked up exactly as `refs/heads/<name>`, else `refs/remotes/<name>`; if `refs/tags/<name>` also exists, or the argument is a short sha, stop'; } \
     || add_error "review-pro/SKILL.md: a base named in the argument is no longer resolved as a branch - a fork tag named main or origin/main would make the merge base the change itself"
+  anchor_has 'a full ref (`refs/...`) is looked up exactly with `git show-ref --verify --hash`' \
+    || add_error "review-pro/SKILL.md: a full ref in the argument is no longer looked up exactly - git's name lookup falls through to a tag named refs/heads/main when that branch is missing"
   anchor_has 'a full 40-character sha is used as given' \
     || add_error "review-pro/SKILL.md: a sha in the argument is no longer required to be full - a short one is a name git resolves, and a tag can share it"
   anchor_line "$ORCH_MD" 'Be conservative, when in doubt dispatch'
@@ -177,6 +179,8 @@ if [[ -f "$TSUB_MD" ]]; then
     || add_error "review-pro-triage-subagent.md: the caller's base is no longer a full sha used as given - a bare name from the caller would go through git's name lookup, which prefers a tag"
   [[ -z "$ANCHOR_LINE" ]] || anchor_has 'looked up exactly as `refs/heads/<name>`, else `refs/remotes/<name>`' \
     || add_error "review-pro-triage-subagent.md: a named base is no longer looked up as an exact branch ref - git's name lookup would prefer a tag named like it"
+  [[ -z "$ANCHOR_LINE" ]] || anchor_has 'and a full ref (`refs/...`) with `git show-ref --verify --hash`' \
+    || add_error "review-pro-triage-subagent.md: a full ref is no longer looked up exactly - git's name lookup falls through to a tag named refs/heads/main when that branch is missing"
   anchor_line "$TSUB_MD" 'Resolve the merge base once with `git merge-base <base> HEAD`'
   anchor_has 'If it prints nothing, stop' \
     || add_error "review-pro-triage-subagent.md: triage run on its own no longer stops when no merge base resolves - git show with an empty revision reads the change's own rules and packs"

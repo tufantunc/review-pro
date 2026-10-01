@@ -12,7 +12,7 @@
 
 review-pro is an open-source, repository-aware code review system for coding agents — **Claude Code, opencode, Cursor, Codex**. Triage reads the diff and dispatches only the relevant specialists of thirteen; they run in parallel, each required to **locate evidence in the repository** before making a claim; synthesis dedups their findings into one verdict: **BLOCK / REQUEST CHANGES / APPROVE**.
 
-Built for AI-written code — not because agents invent APIs (in [our pre-registered study](studies/2026-08-copilot-pr-pilot) of merged Copilot PRs, they almost never did), but because they write locally plausible code that misses what the repository already knows: the guard added after an incident, the canonical helper, the convention every sibling file follows. That evidence lives in files the diff never touches — so review has to leave the diff.
+Built for AI-written code. Not because agents invent APIs (in [our pre-registered study](studies/2026-08-copilot-pr-pilot) of merged Copilot PRs, they almost never did), but because they write locally plausible code that misses what the repository already knows: the guard added after an incident, the canonical helper, the convention every sibling file follows. That evidence lives in files the diff never touches, so review has to leave the diff, and review-pro requires each reviewer to show where it went: a finding that rests on another file cites it, and when no finding on a substantive change cites anything outside the diff, the report says so.
 
 Sometimes it lives outside the repository. When a change's stated reason cites something specific and external, an upstream issue, a changelog entry, a CVE, the reviewer that owns the claim checks it against that artifact at the version the build actually resolved to, and says which channel settled it. If it cannot be settled, the report says that too, because a premise nobody checked must not read as one that held.
 
@@ -33,11 +33,12 @@ Skip it when:
 
 - you need formatting, linting, or type-checking — use a linter, formatter, or your typechecker;
 - the change is a one-liner an agent can sanity-check inline;
+- you need a cheap review: cost follows how many agents are dispatched, not the size of the change, and in our [cost study](studies/2026-09-cost-measurement) a 22-line code change cost 2.4M tokens;
 - you need a guarantee — review-pro is a reviewer, not a formal verifier: it raises located evidence, it does not prove the absence of bugs.
 
 ## Why
 
-Most "review this" prompts hand one agent the whole diff and ask for everything. review-pro is tiered, so small changes stay cheap and large changes go deep:
+A single "review this" prompt asks one agent to cover every concern at once. review-pro gives each concern its own reviewer and rubric, requires every finding to cite where its evidence was found, and has a separate agent try to refute the serious ones:
 
 - **Triage** classifies the diff, dispatches only the **relevant specialists**, and scopes each one's context — a reviewer gets exactly what it needs (callers, repo search, schema, consumers), not the whole repo.
 - **13 specialist reviewers** each own a single concern — `security`, `correctness`, `craft`, `ai-antipatterns`, `dry`, `performance`, `backend`, `frontend`, `a11y`, `db`, `api-contract`, `tests`, `spec` — and run in parallel, returning structured, evidence-backed findings.

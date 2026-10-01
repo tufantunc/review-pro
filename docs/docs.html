@@ -254,7 +254,7 @@ npx review-pro list           <span class="cmt"># catalog + installed + drift</s
     <h3>Does it need Node.js?</h3>
     <p>Only the installer CLI does (Node ≥ 18). The plugin itself is plain markdown skills and agents, so <a href="#manual-install">manual install</a> works without Node on any platform.</p>
     <h3>How is this different from a single “review this” prompt?</h3>
-    <p>One prompt hands the whole diff to one agent and asks for everything. review-pro triages first, runs only the relevant specialists in parallel with scoped context, then synthesizes — so small changes stay cheap and large changes go deep, with severity calibrated against over-reporting.</p>
+    <p>A single prompt asks one agent to cover every concern at once. review-pro gives each concern its own reviewer and rubric, requires every finding to cite where its evidence was found, and has a separate agent try to refute the serious ones. Synthesis then calibrates severity against over-reporting.</p>
     <h3>Where do stack packs come from?</h3>
     <p>The catalog ships inside this package, snapshotted at publish time. New packs appear after a new version is published. See <code>stacks/CONTRIBUTING.md</code> in the repo to add your own.</p>
     <h3>Is it really cross-platform?</h3>

@@ -242,7 +242,7 @@ npx review-pro list           <span class="cmt"># catalog + installed + drift</s
     <h3>Heeft het Node.js nodig?</h3>
     <p>Alleen de installer-CLI (Node ≥ 18). De plug-in zelf bestaat uit gewone markdown-skills en -agents, dus <a href="#manual-install">handmatige installatie</a> werkt zonder Node op elk platform.</p>
     <h3>Waar verschilt dit van één enkele &quot;beoordeel dit&quot;-prompt?</h3>
-    <p>Eén prompt overhandigt de hele diff aan één agent en vraagt alles. review-pro triageert eerst, draait alleen de relevante specialisten parallel met afgebakende context, en synthetiseert daarna — zodat kleine wijzigingen goedkoop blijven en grote diep gaan, met ern gekalibreerd tegen over-rapportage.</p>
+    <p>Eén prompt vraagt één agent om alle concerns tegelijk te behandelen. review-pro geeft elk concern een eigen reviewer en rubriek, eist dat elke bevinding aangeeft waar het bewijs gevonden is, en laat een aparte agent proberen de ernstige bevindingen te weerleggen. De synthese kalibreert daarna de ernst tegen over-rapportage.</p>
     <h3>Waar komen de stack-pakketten vandaan?</h3>
     <p>De catalogus wordt meegeleverd in dit pakket, als momentopname bij publicatie. Nieuwe pakketten verschijnen nadat een nieuwe versie is gepubliceerd. Zie <code>stacks/CONTRIBUTING.md</code> in de repo om je eigen toe te voegen.</p>
     <h3>Is het echt platformoverstijgend?</h3>

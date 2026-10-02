@@ -896,8 +896,8 @@ fi
 # Checks that live in their own files, sourced so they share add_error and the helpers. Each is
 # named here, not globbed, so a missing file fails the run instead of switching its checks off.
 # validate-repo-rules.sh: repository rules (roadmap item 3, ADR-0011), the triage, orchestrator,
-# synthesis and owner-rubric checks. validate-stack-signals.sh: stack packs read from the merge
-# base (ADR-0012), the triage, orchestrator and synthesis checks.
+# verifier, synthesis and owner-rubric checks. validate-stack-signals.sh: stack packs read from
+# the merge base (ADR-0012), the triage, orchestrator, verifier and synthesis checks.
 # validate-dispatch.sh: the orchestrator starts every agent in one step (roadmap item 4).
 HERE_SH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 for part in "validate-repo-rules.sh:repository-rules" "validate-stack-signals.sh:stack-signals" "validate-dispatch.sh:dispatch"; do

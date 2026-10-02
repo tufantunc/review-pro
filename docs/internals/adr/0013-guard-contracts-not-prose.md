@@ -33,7 +33,8 @@ cross-references, version fields, the published count, closed category lists); c
 declares it repeats); order and position (the report header, the prompt's last section, the rules
 cap before verification); the formats a consumer reads (none-lines, verdict tables and labels, plan
 keys and the lines printed for them); and the validator's own mechanics. A check whose only job is
-to show that a rule written in one place is still there is removed, with its mutation tests.
+to show that a rule is still there is removed, with its mutation tests, when the rule is written
+in one place or only paraphrased elsewhere with no file saying the two must agree.
 Removing or softening such a rule is left to review: rule R9 in `.review-pro/rules.md` asks a
 change that does it to say so and why.
 
@@ -55,10 +56,13 @@ An edit to a sentence that lives in one file of `core/` no longer needs a matchi
 assertions to 334.
 
 Deleting or softening such a sentence no longer fails CI. A dropped `must`, a `never` turned into
-`usually`, or a guarantee qualified away passes the validator. That includes steps that carry
-ADR-0011 and ADR-0012's defences where they are written once: triage and the orchestrator reading
-packs and rules at the merge base and never the working tree, the uncommitted and `behind` pack
-states, and the dispatch a pack or rules edit compels. A change that, say, has triage glob packs
+`usually`, or a guarantee qualified away passes the validator. That includes rules that carry
+earlier decisions where they are written once: the verifier's cite-or-stand, no-memory,
+one-finding, author's-claim and harm-not-title rules and synthesis's agreement rule (ADR-0009);
+triage and the orchestrator reading packs and rules at the merge base and never the working tree,
+the uncommitted rules and pack states, the `behind` pack state, the dispatch a pack or rules edit
+compels, and the rules cap's handling of a finding located in `rules.md` or merged by dedup
+(ADR-0011, ADR-0012). A change that, say, has triage glob packs
 in the working tree again now passes CI and is caught only if review catches it.
 
 That defence is weaker than a red build. A review can miss it. R9 is read from the merge base, so

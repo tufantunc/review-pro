@@ -71,3 +71,11 @@ a running reviewer. Source: ADR-0001.
 
 Why: #74 changed the verdict rule and severity.md kept the old table until the v1.4.0 release
 review caught it.
+
+## R9: a removed or softened instruction is stated
+- when: `core/skills/**`, `core/agents/**`, `core/shared/**`
+- owner: correctness
+- rule: A change that removes or softens an instruction (a must, never, always or stop, or a stated guarantee) must say so, and why, in its PR description or commit message.
+
+Why: the validator no longer pins the sentences of a rule, so deleting or qualifying one passes CI;
+this rule is what catches it. Source: ADR-0013.

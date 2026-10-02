@@ -35,8 +35,9 @@ cap before verification); the formats a consumer reads (none-lines, verdict tabl
 keys and the lines printed for them); and the validator's own mechanics. A check whose only job is
 to show that a rule is still there is removed, with its mutation tests, when the rule is written
 in one place or only paraphrased elsewhere with no file saying the two must agree.
-Removing or softening such a rule is left to review: rule R9 in `.review-pro/rules.md` asks a
-change that does it to say so and why.
+Removing or softening such a rule is left to review: rule R9 in `.review-pro/rules.md` has its
+owner report each removed or softened instruction from the diff, quoting the sentence before and
+after.
 
 Rejected: keep pinning every sentence. It does not converge, it cannot see a weakened rule, and it
 had already pushed the validator past the size the rubric allows.
@@ -65,12 +66,12 @@ compels, and the rules cap's handling of a finding located in `rules.md` or merg
 (ADR-0011, ADR-0012). A change that, say, has triage glob packs
 in the working tree again now passes CI and is caught only if review catches it.
 
-That defence is weaker than a red build. A review can miss it. R9 is read from the merge base, so
-it applies from the change after the one that adds it. And its owner, `correctness`, does not
-receive the PR body in its prompt: it has to read the commit messages or the PR itself, which its
-handling text (decide a rule in the matched files, cite a path or a diff line) does not invite,
-and a verifier treats the change description as the author's claim. Passing the change
-description to rule owners would close that gap; it is a change to `core/`, outside this one.
+That defence is weaker than a red build. R9's owner, `correctness`, judges it from the diff alone,
+which is what its handling text asks of a rule: it quotes each removed or softened sentence before
+and after. The finding is capped at Medium, so it requests changes and never blocks; a deliberate
+removal is accepted by the maintainer who reads it. The remaining limit is the reviewer itself: it
+can miss a softening, a qualifier added to a long sentence most easily, and nothing checks that it
+did not. R9 is read from the merge base, so it applies from the change after the one that adds it.
 
 Fifty-nine kept checks sit at the edge, listed in the PR that made this change: each looks at a
 sentence but is the only guard of a section heading, a plan key, a line another file reads, or a

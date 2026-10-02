@@ -71,7 +71,7 @@ CI runs all of the above plus CodeQL. A red check is a blocked merge.
 4. **Formats a consumer reads:** none-lines, verdict tables and labels, plan keys, the canonical `Coverage (self-reported):` line.
 5. **The validator's own mechanics:** an error is counted, an unreadable section is reported, a sourced file is present.
 
-Do not add a check whose only job is to show that a sentence is still there. It catches a deleted rule but not a weakened one, and every later edit to that sentence then needs a validator edit too. A change that removes or softens an instruction in `core/` says so, and why, in its PR description or commit message instead; rule R9 in `.review-pro/rules.md` asks the review to hold it to that. That is a weaker guard than a red build: a review can miss it, and R9's owner does not receive the PR description in its prompt, so it has to look the description up. Each check that does pass the question gets a mutation test in `scripts/validate.test.sh` that breaks it alone.
+Do not add a check whose only job is to show that a sentence is still there. It catches a deleted rule but not a weakened one, and every later edit to that sentence then needs a validator edit too. Removing or softening an instruction in `core/` is left to review instead: under rule R9 in `.review-pro/rules.md`, its owner reports each one from the diff, quoting the sentence before and after, as a finding capped at Medium that a maintainer accepts when the change is deliberate. That is a weaker guard than a red build, because a reviewer can miss a softening. Each check that does pass the question gets a mutation test in `scripts/validate.test.sh` that breaks it alone.
 
 ## Commit messages
 

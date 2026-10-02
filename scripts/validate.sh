@@ -109,12 +109,10 @@ if [[ -f "$SCHEMA_DOC" ]]; then
   done
 fi
 
-# Body invariants: the reviewer bodies are one document duplicated per reviewer,
-# and the schema-parity keys above cover two tokens of it. These are the structural
-# lines whose silent absence changes behaviour. Two of them demonstrably do: a body
-# with no nested-subagent bar can fan out inside a parallel review, and one with no
-# stack-signals clause ignores pack files the orchestrator injects regardless. That clause is pinned
-# by its own text: "Stack signals" alone also matches the pack-file-is-data line and the Work step.
+# Body invariants: the reviewer bodies are one document duplicated per reviewer, and these are
+# its title marker, its sections, and two clauses every copy carries: the nested-subagent bar and
+# the stack-signals supplement clause. That clause is pinned by its own text: "Stack signals" alone
+# also matches the pack-file-is-data line and the Work step.
 # The pack-file-is-data line (ADR-0012) is held here once and matched whole: packs are read from
 # the merge base, so the only way a pack the change added reaches a reviewer is as a changed file,
 # and this line is what says that file is data. The orchestrator repeats it for older bodies.
@@ -180,8 +178,7 @@ anchor_line(){
 anchor_has(){ [[ -n "$ANCHOR_LINE" && -n "$1" ]] && printf '%s\n' "$ANCHOR_LINE" | grep -qF -- "$1"; }
 # Coverage accounting (ADR-0010). Every code reviewer accounts for each file it received
 # in a `## Files examined` block. The spec reviewer is exempt: coverage measures reading
-# for defects, and synthesis never counts it as a receiver. The Final reminder check is
-# scoped to that section because it is the restatement a reviewer obeys last.
+# for defects, and synthesis never counts it as a receiver.
 for body in "$ROOT"/core/agents/*-reviewer.md; do
   [[ -f "$body" ]] || continue
   [[ "$(fm_get "$body" "loads_skill")" == "spec" ]] && continue
@@ -190,19 +187,11 @@ for body in "$ROOT"/core/agents/*-reviewer.md; do
   # whole-line grep would find that copy after the real section heading is gone.
   [[ -n "$(section "$body" '## Files examined')" ]] \
     || add_error "$b: no '## Files examined' block - an empty review and an unread file look the same in the report"
-  grep -qF 'exactly once' "$body" \
-    || add_error "$b: the exactly-once rule is gone - a reviewer can leave files out of its declaration and they read as covered"
-  grep -qF 'overstates what you read' "$body" \
-    || add_error "$b: the overstating rule is gone - nothing tells the reviewer a complete-looking list is the wrong answer"
-  section "$body" '## Final reminder' | grep -qF '## Files examined' \
-    || add_error "$b: the Final reminder does not name the '## Files examined' block - its terminal restatement tells the reviewer to return findings only"
   has_canonical_block "$body" "$b"
   # Repository rules: the section a running reviewer obeys when a rule is handed to it.
   [[ -n "$(section "$body" '## Repository rules')" ]] \
     || add_error "$b: no '## Repository rules' section - a rule handed to this reviewer arrives with no instruction to treat it as data"
   has_rules_block "$body" "$b"
-  section "$body" '## Final reminder' | grep -qF '## Repository rules' \
-    || add_error "$b: the Final reminder does not name the '## Repository rules' block - its terminal restatement leaves the answer out"
   rsum="$(section "$body" '## Repository rules' | cksum)"
   if [[ -z "${rules_first_sum:-}" ]]; then rules_first_sum="$rsum"; rules_first_body="$b"
   elif [[ "$rsum" != "$rules_first_sum" ]]; then
@@ -217,7 +206,7 @@ for body in "$ROOT"/core/agents/*-reviewer.md; do
   fi
 done
 if [[ -f "$SCHEMA_DOC" ]]; then
-  { [[ -n "$(section "$SCHEMA_DOC" '## Files examined')" ]] && grep -qF 'exactly once' "$SCHEMA_DOC"; } \
+  [[ -n "$(section "$SCHEMA_DOC" '## Files examined')" ]] \
     || add_error "core/shared/output-schema.md: the Files examined block is gone - rubric readers and the inline path lose the coverage contract"
   has_canonical_block "$SCHEMA_DOC" "core/shared/output-schema.md"
   has_rules_block "$SCHEMA_DOC" "core/shared/output-schema.md"
@@ -241,99 +230,66 @@ if [[ -f "$ROOT/cli/src/lib/plugin.ts" ]]; then
     || add_error "cli/src/lib/plugin.ts: no copyShared — core/shared/ would not reach an install, dangling every 'shared/<file>.md' pointer"
 fi
 
-# Load-bearing pipeline rules. Each is a single line in a markdown file whose
-# silent deletion disables a feature without failing any other check. The [[ -f ]]
-# guards matter: most validator fixtures contain no orchestrator at all, and an
-# unguarded check would fire on every one of them.
+# Contracts between the pipeline's files (ADR-0013): plan keys, prompt sections, tokens and
+# cross-references that another file or stage reads. The [[ -f ]] guards matter: most validator
+# fixtures contain no orchestrator at all, and an unguarded check would fire on every one of them.
 TRIAGE_MD="$SKILLS_DIR/review-pro-triage/SKILL.md"
 if [[ -f "$TRIAGE_MD" ]]; then
   grep -qF 'spec_source' "$TRIAGE_MD" \
     || add_error "review-pro-triage/SKILL.md: no 'spec_source' - the spec axis cannot be dispatched or reported without it"
   grep -qF 'external_premises' "$TRIAGE_MD" \
     || add_error "review-pro-triage/SKILL.md: no 'external_premises' - external premises are never extracted or routed, so no reviewer is ever asked to verify one"
-  grep -qF 'Assigning a premise' "$TRIAGE_MD" \
-    || add_error "review-pro-triage/SKILL.md: the assign-dispatches rule is gone - a premise can be routed to a reviewer the signal map never dispatches, and nothing reports that it was"
-  grep -qF 'does not verify the premise' "$TRIAGE_MD" \
-    || add_error "review-pro-triage/SKILL.md: the no-verification prohibition is gone - triage settling premises itself breaks the one-owner rule and produces verifications nobody can attribute"
-  grep -qF 'coverage check compares against it' "$TRIAGE_MD" \
-    || add_error "review-pro-triage/SKILL.md: the coverage comparison is gone - nothing says the per-reviewer lists are what Stage 3 measures"
 fi
 SYNTH_MD="$SKILLS_DIR/review-pro-synthesize/SKILL.md"
-if [[ -f "$SYNTH_MD" ]]; then
-  grep -qF 'code-axis findings only' "$SYNTH_MD" \
-    || add_error "review-pro-synthesize/SKILL.md: the out-of-diff tripwire is not restricted to the code axis - spec findings would satisfy it on every review and disable the check"
-fi
-# The scope-creep cap exists in the rubric and in the agent body, and the body is
-# the copy that reaches the running subagent. Guard both.
+# The spec reviewer's rubric and body carry the same rules (ADR-0001): the scope-creep cap, the
+# `line: 0` rule synthesis dedups unattempted requirements on, and the abstain token synthesis
+# branches on. Both copies, not just the body: review-pro/SKILL.md documents an inline path that
+# applies the rubric instead of the agent body.
 for f in "$SKILLS_DIR/spec/SKILL.md" "$ROOT/core/agents/spec-reviewer.md"; do
   [[ -f "$f" ]] || continue
   grep -qF 'never exceeds Medium' "$f" \
     || add_error "$(basename "$f"): the scope-creep Medium cap is missing - without it scope creep can block"
   grep -qF 'no such hunk' "$f" \
     || add_error "$(basename "$f"): the missing-finding line rule is gone - spec.missing findings would carry an invented line"
-  # Both copies, not just the body: review-pro/SKILL.md documents an inline path that
-  # applies the rubric instead of the agent body, so an abstain rule present in only
-  # one of them leaves that path reporting an unmeasured axis as clean.
   grep -qF 'abstained (no spec text)' "$f" \
     || add_error "$(basename "$f"): the abstain token is gone - an abstain would be indistinguishable from a clean review"
 done
-# The no-spec defence. Losing the abstain step is how a spec reviewer with an empty
-# prompt ends up adopting a document from the diff as the spec.
-if [[ -f "$TRIAGE_MD" ]]; then
-  grep -qF 'if and only if' "$TRIAGE_MD" \
-    || add_error "review-pro-triage/SKILL.md: the conditional-dispatch gate is gone - spec would be dispatched with no spec"
-fi
 if [[ -f "$ROOT/core/agents/spec-reviewer.md" ]]; then
   grep -qF 'no `### Spec text` section' "$ROOT/core/agents/spec-reviewer.md" \
     || add_error "spec-reviewer.md: the abstain step is gone - the reviewer would review something other than a spec"
-  # The preamble above is identical whether step 1 abstains or emits the ordinary
-  # none-sentinel, so it cannot detect a regression to the latter. Pin the token that
-  # only exists after the fix, in both the body and synthesis's branch for it.
 fi
 ORCH_MD="$SKILLS_DIR/review-pro/SKILL.md"
 if [[ -f "$ORCH_MD" ]]; then
-  grep -qF 'quoted requirement' "$ORCH_MD" \
-    || add_error "review-pro/SKILL.md: its dedup summary no longer names the spec key - the inline path would use the code key and collapse unattempted requirements"
   grep -qF '### External premises' "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: the '### External premises' prompt section is gone - triage routes premises the orchestrator then never passes to the owning reviewer"
-  # Scoped to its own line: the Stack signals item names the same list (ADR-0012).
+  grep -qF 'quoted requirement' "$ORCH_MD" \
+    || add_error "review-pro/SKILL.md: its dedup summary no longer names the spec key - the inline path would use the code key and collapse unattempted requirements"
+  grep -qF 'do **not** verify inline' "$ORCH_MD" \
+    || add_error "review-pro/SKILL.md: the inline-verification ban is gone - the orchestrator would check its own findings, which is not independent"
+  # Scoped to its own line: the Stack signals item names the same list (ADR-0012). It is also the
+  # line the prompt-order checks in validate-stack-signals.sh key on.
   anchor_line "$ORCH_MD" '`### Changed file contents`, always the **last** section'
   anchor_has "this reviewer's \`context.changed_files\`" \
     || add_error "review-pro/SKILL.md: step 3 hands reviewers something other than their plan list - a narrowed prompt is invisible to the coverage check"
-  # Pinned as the inline sentence itself: 'exactly once' alone also matches the prompt reminder.
-  grep -qF "accounting for each file in that reviewer's \`context.changed_files\` exactly once" "$ORCH_MD" \
-    || add_error "review-pro/SKILL.md: inline reviews no longer account for each file once - a skills-only install can leave files out and read as covered"
   has_canonical_block "$ORCH_MD" "review-pro/SKILL.md"
-  # Line-scoped: for an agent older than this release the reminder is the whole contract,
-  # so it must carry the honesty rule the spike measured, not only the format.
+  # For an agent older than this release the reminder is the whole contract, so it carries the
+  # block's keys, not only a request for the block.
   reminder="$(grep -F '`### Files examined`, for every code reviewer' "$ORCH_MD")"
   if [[ -z "$reminder" ]]; then
     add_error "review-pro/SKILL.md: the reviewer prompt no longer asks for the block - agents installed before this release never emit it"
   else
-    { printf '%s' "$reminder" | grep -qF 'examined only if it read' && printf '%s' "$reminder" | grep -qF 'overstates what it read'; } \
-      || add_error "review-pro/SKILL.md: the reviewer prompt reminder lost its honesty rule - an older agent learns the format but not that a complete-looking list is wrong"
-    { printf '%s' "$reminder" | grep -qF 'not_examined:' && printf '%s' "$reminder" | grep -qF 'exactly once'; } \
-      || add_error "review-pro/SKILL.md: the reviewer prompt reminder lost its format or its exactly-once rule - an older agent cannot produce a block synthesis can read"
+    printf '%s' "$reminder" | grep -qF 'not_examined:' \
+      || add_error "review-pro/SKILL.md: the reviewer prompt reminder lost its format - an older agent cannot produce a block synthesis can read"
   fi
-  # The inline path's own honesty rule, on its line: on a skills-only install it is the only
-  # place that tells the orchestrator an overstated list is wrong.
-  grep -F 'A file counts as examined only if you read its diff or contents' "$ORCH_MD" | grep -qF 'overstates what you read' \
-    || add_error "review-pro/SKILL.md: the inline path lost its honesty rule - an inline review can list every file as examined"
+  # The handoff line is also the one the re-merge check below reads.
   grep -F 'Continue the `review-pro-synthesize` skill from' "$ORCH_MD" | grep -qF 'compute coverage' \
     || add_error "review-pro/SKILL.md: the step-5 handoff no longer names coverage - an inline run can go from the out-of-diff check straight to the verdict"
   grep -qF "skill's \`## Output\` format" "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: the report no longer points at the synthesis Output format - a second copy of the template drifts from the first"
   grep -qF 'review-pro-verify-subagent' "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: the verifier dispatch is gone - Stage 3b never runs and every finding reads as unverified"
-  grep -qF 'do **not** verify inline' "$ORCH_MD" \
-    || add_error "review-pro/SKILL.md: the inline-verification ban is gone - the orchestrator would check its own findings, which is not independent"
-  grep -qF 'Never how many reviewers flagged it' "$ORCH_MD" \
-    || add_error "review-pro/SKILL.md: the agreement-count ban is gone - verifiers would be told how many reviewers agreed, which is pressure, not evidence"
   grep -qF 'base: <sha>' "$ORCH_MD" \
     || add_error "review-pro/SKILL.md: the base line is gone - a verifier cannot re-read a file the diff deletes"
-  # Line-scoped: Prep's Merge base line carries the same command since v1.5.0.
-  grep -F 'The sha is the merge base' "$ORCH_MD" | grep -qF 'git merge-base <base> HEAD' \
-    || add_error "review-pro/SKILL.md: the base is not the merge base - a verifier reading a deleted file would read the base tip, not what the diff deleted"
   grep -F 'Continue the `review-pro-synthesize` skill from' "$ORCH_MD" | grep -qi 'dedup' \
     && add_error "review-pro/SKILL.md: the synthesis step re-runs the merge after verification - a second dedup can move the keys verifier results bind to"
   grep -qE 'skill from step [0-9]|steps? [0-9]+( to [0-9]+)? of the `review-pro-synthesize`' "$ORCH_MD" \
@@ -348,38 +304,14 @@ if [[ -f "$SYNTH_MD" ]]; then
   # table ("before the External premises table"), which kept this pin passing with the ledger gone.
   grep -qxF '### External premises' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the external-premise ledger is gone - a reviewer's 'could not verify' statement dies before the report the reader actually reads"
-  grep -qF 'not how the reviewer would have written it' "$SYNTH_MD" \
-    || add_error "review-pro-synthesize/SKILL.md: the approval standard is gone - verdicts drift from measuring code health to enforcing taste, and imperfect improvements start getting blocked"
 fi
-# Coverage accounting (ADR-0010). Scoped to the section, because several of these
-# phrases would survive elsewhere in the file after the section that gives them meaning is gone.
+# Coverage accounting (ADR-0010): the section shows the canonical coverage line, whose exact form
+# is the check below.
 if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Coverage' "$SYNTH_MD"; then
-  # One error, not seven, when the body is gone: the heading still passes the required-section check.
   read_section "$SYNTH_MD" '## Coverage' "review-pro-synthesize/SKILL.md"; COV="$SECTION_BODY"
   if [[ -n "${COV//[[:space:]]/}" ]]; then
-    cov_pin(){ printf '%s\n' "$COV" | grep -qF "$1" || add_error "review-pro-synthesize/SKILL.md: $2"; }
-    cov_pin 'The spec reviewer is not a receiver' "the spec exclusion is gone from ## Coverage - a file only the spec reviewer read would show as examined"
-    cov_pin 'never rendered as examined'          "the not-reported rule is gone from ## Coverage - a reviewer that returned nothing would read as full coverage"
-    # Line-scoped: the trivial rule names this line too, and would satisfy a section-wide pin.
-    printf '%s\n' "$COV" | grep -F 'Whenever any receiver returned no block' | grep -qF 'no Files examined block from' \
-      || add_error "review-pro-synthesize/SKILL.md: the missing-block line is gone from ## Coverage - a reviewer contract violation becomes the quietest line in the report"
-    cov_pin 'declared it not examined'            "the contradiction line is gone from ## Coverage - a finding in a file its reviewer called unread goes unnoticed"
-    # The caveat is two lines, pinned one by one: every phrase they share also appears on the other
-    # line or in the state table, and a phrase pin let either line go (round 2).
-    printf '%s\n' "$COV" | sed 's/^ *//' | grep -qxF '> <s> changed files were sent to no reviewer, so nothing reviewed them: <files>.' \
-      || add_error "review-pro-synthesize/SKILL.md: the caveat line is gone from ## Coverage - a narrowed dispatch is never reported"
-    printf '%s\n' "$COV" | grep -F 'also get this caveat' | grep -qF 'on every `diff_class`' \
-      || add_error "review-pro-synthesize/SKILL.md: the caveat rule is gone from ## Coverage - nothing says the caveat prints on trivial diffs too"
-    cov_pin 'diff_class: trivial'                 "the trivial rule is gone from ## Coverage - every one-line chore gets a coverage line and readers learn to skip it"
-    # The two contract-violation lines report a failure, not a count, so trivial does not omit them.
-    trivial="$(printf '%s\n' "$COV" | grep -F 'diff_class: trivial')"
-    if [[ -n "$trivial" ]] && ! { printf '%s' "$trivial" | grep -qF 'no Files examined block from:' && printf '%s' "$trivial" | grep -qF 'contradiction:'; }; then
-      add_error "review-pro-synthesize/SKILL.md: the trivial rule drops the contract-violation lines - a reviewer that returned nothing on a one-file change goes unreported"
-    fi
-    # Presence only; its exact form is the canonical check below, so one edit raises one error.
     printf '%s\n' "$COV" | grep -qE '^[[:space:]]*Coverage \(self-reported\):' \
       || add_error "review-pro-synthesize/SKILL.md: ## Coverage no longer shows the coverage line - the rules above describe a line nobody printed"
-    cov_pin 'never changes a finding'             "the no-effect rule is gone from ## Coverage - coverage could start gating findings or the verdict"
   fi
 fi
 # The report header order is Spec, Coverage, Verification (ADR-0010). The synthesis skill
@@ -435,13 +367,12 @@ if [[ -f "$SSUB" ]]; then
   { grep -qF '`repository_rules`' "$SSUB" && grep -qF '`## Repository rules` block' "$SSUB"; } \
     || add_error "review-pro-synthesize-subagent.md: the rules inputs are gone - subagent synthesis would report every rule not reported"
 fi
-# Verification. The asymmetry is the whole safety argument of ADR-0009: one wrong
-# refutation must not ship a blocker, and an unchecked finding must not read as checked.
+# Verification (ADR-0009): the verdict rules core/shared/severity.md repeats, the table synthesis
+# resolves a verifier reply by, the labels the orchestrator and a reader share, the claim value the
+# verifier emits, and the step order.
 if [[ -f "$SYNTH_MD" ]]; then
   grep -qF 'keeps blocking' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the disputed-blocker rule is gone - one wrong refutation would remove a High or Critical from the verdict"
-  grep -qF 'Agreement does not override a refutation' "$SYNTH_MD" \
-    || add_error "review-pro-synthesize/SKILL.md: the agreement rule is gone - 'flagged by N reviewers' would outweigh a cited contradiction"
   grep -qF 'never rendered as verified or standing' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the not-verified rule is gone - a capped or failed check could read as a clean one"
   # Anchored to the load-bearing lines: the token alone survives in prose after the table
@@ -452,8 +383,6 @@ if [[ -f "$SYNTH_MD" ]]; then
     || add_error "review-pro-synthesize/SKILL.md: the stands/no row is gone - an inconsistent reply could be read as a clean check"
   grep -qxF '### Refuted in verification' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the refuted section is gone - a refuted Medium would leave the report instead of staying visible"
-  grep -qF 'A refutation without a citation' "$SYNTH_MD" \
-    || add_error "review-pro-synthesize/SKILL.md: the citation rule is gone - an uncited refutation could take a Medium out of the verdict"
   grep -qF 'verified, unchecked:' "$SYNTH_MD" \
     || add_error "review-pro-synthesize/SKILL.md: the unchecked marker is gone - a claim the verifier could not check would read as plainly verified"
   grep -qF 'needs at least one claim marked `false`' "$SYNTH_MD" \
@@ -479,48 +408,22 @@ if [[ -f "$SEVERITY_MD" ]]; then
   { grep -qF 'verification did not refute' "$SEVERITY_MD" && grep -qF '`disputed`' "$SEVERITY_MD"; } \
     || add_error "core/shared/severity.md: the shared verdict table predates verification - the README and every install point to a rule synthesis no longer applies"
 fi
-# The verifier's contract. Each line is what keeps a refutation from being doubt, memory,
-# or the author's say-so; losing any one fails toward removing true findings.
+# The verifier's reply field that synthesis's resolution table reads, and the rule that sets it.
 VERIFY_MD="$SKILLS_DIR/review-pro-verify/SKILL.md"
 if [[ -f "$VERIFY_MD" ]]; then
-  grep -qF 'positive contradiction you can cite' "$VERIFY_MD" \
-    || add_error "review-pro-verify/SKILL.md: the cite-or-stand rule is gone - a verifier could refute a true finding on doubt alone"
-  grep -qF 'Do not settle it from memory' "$VERIFY_MD" \
-    || add_error "review-pro-verify/SKILL.md: the no-memory rule is gone - tool and runtime behaviour would be settled from recall instead of left unchecked"
-  grep -qF 'Judge only this finding' "$VERIFY_MD" \
-    || add_error "review-pro-verify/SKILL.md: the one-finding rule is gone - the verifier becomes another reviewer that never runs out of things to say (ADR-0008)"
   grep -qxF 'defect_stands: yes | no' "$VERIFY_MD" \
     || add_error "review-pro-verify/SKILL.md: no 'defect_stands' field - synthesis cannot catch a partly_refuted that removed the defect"
   grep -qF 'Set `defect_stands` to `no`' "$VERIFY_MD" \
     || add_error "review-pro-verify/SKILL.md: the defect_stands rule is gone - the verifier is never told when the defect falls"
-  # Scoped to its own line: the pack sentence (ADR-0012) says the same of a pack's text.
-  anchor_line "$VERIFY_MD" 'The change description is the author'
-  anchor_has 'never settles a claim' \
-    || add_error "review-pro-verify/SKILL.md: the author's-claim rule is gone - a PR description could be cited as the contradiction"
-  grep -F 'A file the diff deletes' "$VERIFY_MD" | grep -qF 'git show <base>:' \
-    || add_error "review-pro-verify/SKILL.md: the deleted-file rule is gone - a finding in a file the diff removes could not be re-read"
-  grep -qF "not the finding's title" "$VERIFY_MD" \
-    || add_error "review-pro-verify/SKILL.md: the harm-not-title rule is gone - a finding whose title is literally true but whose harm is false would keep its severity (contract run 1)"
 fi
 
-# Security calibration. Each rule is one line whose deletion leaves every other check
-# passing while the reviewer drifts back to rating how alarming a pattern looks.
+# Security calibration (ADR-0008): the rubric's two calibration sections.
 SEC_MD="$SKILLS_DIR/security/SKILL.md"
 if [[ -f "$SEC_MD" ]]; then
   grep -qxF '## A missing layer is not a missing control' "$SEC_MD" \
     || add_error "security/SKILL.md: the missing-layer rule is gone - an absent second defense gets reported as a vulnerability without anyone looking for the control the path already passes"
   grep -qxF '## Not a vulnerability' "$SEC_MD" \
     || add_error "security/SKILL.md: the not-a-vulnerability list is gone - checklist deviations, self-impact, and publishable keys return as findings"
-  grep -qF 'fully defeat a control' "$SEC_MD" \
-    || add_error "security/SKILL.md: the High/Medium question is gone - severity follows how alarming a pattern looks instead of what the traced path achieves"
-fi
-
-CTX_POLICY="$SHARED_DIR/context-policy.md"
-if [[ -f "$CTX_POLICY" ]]; then
-  grep -qF 'which channel settled' "$CTX_POLICY" \
-    || add_error "shared/context-policy.md: the settling-channel record is gone - a network answer becomes indistinguishable from a local one and reviews stop being reproducible"
-  grep -qF '1. **The locally resolved dependency source' "$CTX_POLICY" \
-    || add_error "shared/context-policy.md: the local-first channel is gone - reviewers would reach for the network on a premise the installed dependency already settles, and the answer stops being reproducible"
 fi
 
 # Both copies, for the same reason as the spec axis: the agent body is what reaches
@@ -993,8 +896,8 @@ fi
 # Checks that live in their own files, sourced so they share add_error and the helpers. Each is
 # named here, not globbed, so a missing file fails the run instead of switching its checks off.
 # validate-repo-rules.sh: repository rules (roadmap item 3, ADR-0011), the triage, orchestrator,
-# verifier, synthesis, schema and owner-rubric checks. validate-stack-signals.sh: stack packs read
-# from the merge base (ADR-0012), the triage, orchestrator, verifier and synthesis checks.
+# verifier, synthesis and owner-rubric checks. validate-stack-signals.sh: stack packs read from
+# the merge base (ADR-0012), the triage, orchestrator, verifier and synthesis checks.
 # validate-dispatch.sh: the orchestrator starts every agent in one step (roadmap item 4).
 HERE_SH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 for part in "validate-repo-rules.sh:repository-rules" "validate-stack-signals.sh:stack-signals" "validate-dispatch.sh:dispatch"; do

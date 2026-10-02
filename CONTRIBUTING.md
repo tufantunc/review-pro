@@ -61,6 +61,18 @@ git add docs
 
 CI runs all of the above plus CodeQL. A red check is a blocked merge.
 
+## What the validator guards
+
+`scripts/validate.sh` holds the contracts between files, not the wording of each rule ([ADR-0013](docs/internals/adr/0013-guard-contracts-not-prose.md)). Before adding a check, ask one question: **if this text changes, does a consumer break?** A consumer is a parser, a copy of the same text in another file, a key or line that synthesis reads, or the release process. Five kinds of check pass that test:
+
+1. **Structure:** frontmatter, required sections, manifest and roster integrity, cross-references and file existence, version fields, the published reviewer count, the closed category lists (ADR-0006, ADR-0007).
+2. **Canonical copies:** text that must stay the same in several files (ADR-0001): a block held once in the validator, such as the `## Files examined` block or the pack-file-is-data line, a rule an agent body repeats from its rubric, or a rule another file says it repeats, such as `core/shared/severity.md`'s verdict table.
+3. **Order and position:** the report's header order, the changed files as the prompt's last section, the rules cap before verification.
+4. **Formats a consumer reads:** none-lines, verdict tables and labels, plan keys, the canonical `Coverage (self-reported):` line.
+5. **The validator's own mechanics:** an error is counted, an unreadable section is reported, a sourced file is present.
+
+Do not add a check whose only job is to show that a sentence is still there. It catches a deleted rule but not a weakened one, and every later edit to that sentence then needs a validator edit too. Removing or softening an instruction in `core/` is left to review instead: under rule R9 in `.review-pro/rules.md`, its owner reports each one from the diff, quoting the sentence before and after, as a finding capped at Medium that a maintainer accepts when the change is deliberate. That is a weaker guard than a red build, because a reviewer can miss a softening. Each check that does pass the question gets a mutation test in `scripts/validate.test.sh` that breaks it alone.
+
 ## Commit messages
 
 Conventional Commits, because release notes are generated from history:

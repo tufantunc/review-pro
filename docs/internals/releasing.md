@@ -123,7 +123,7 @@ The `sbom` job is deliberately separate from `publish` for the same reason: anyt
 Read these as a shape, not a target. They are here so an unexpected drop is visible:
 
 - validator: `OK: all artifacts valid`
-- meta-tests: 119 assertions at the time of writing, only ever growing
+- meta-tests: 334 assertions at the time of writing (2026-10-02). The count fell from 448 when the validator stopped pinning prose and its mutation tests went with it ([ADR-0013](adr/0013-guard-contracts-not-prose.md)); it grows with each new contract check, and a drop without a decision like that one is a lost test
 - CLI tests: 72 at the time of writing
 - site: 14 pages across 7 languages, no drift
 

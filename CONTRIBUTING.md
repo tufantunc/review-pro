@@ -66,12 +66,12 @@ CI runs all of the above plus CodeQL. A red check is a blocked merge.
 `scripts/validate.sh` holds the contracts between files, not the wording of each rule ([ADR-0013](docs/internals/adr/0013-guard-contracts-not-prose.md)). Before adding a check, ask one question: **if this text changes, does a consumer break?** A consumer is a parser, a copy of the same text in another file, a key or line that synthesis reads, or the release process. Five kinds of check pass that test:
 
 1. **Structure:** frontmatter, required sections, manifest and roster integrity, cross-references and file existence, version fields, the published reviewer count, the closed category lists (ADR-0006, ADR-0007).
-2. **Canonical copies:** text that must stay identical in several files, held once in the validator (ADR-0001), such as the `## Files examined` block or the pack-file-is-data line.
+2. **Canonical copies:** text that must stay the same in several files (ADR-0001): a block held once in the validator, such as the `## Files examined` block or the pack-file-is-data line, a rule an agent body repeats from its rubric, or a rule another file says it repeats, such as `core/shared/severity.md`'s verdict table.
 3. **Order and position:** the report's header order, the changed files as the prompt's last section, the rules cap before verification.
 4. **Formats a consumer reads:** none-lines, verdict tables and labels, plan keys, the canonical `Coverage (self-reported):` line.
 5. **The validator's own mechanics:** an error is counted, an unreadable section is reported, a sourced file is present.
 
-Do not add a check whose only job is to show that a sentence is still there. It catches a deleted rule but not a weakened one, and every later edit to that sentence then needs a validator edit too. A change that removes or softens an instruction in `core/` says so, and why, in its PR description or commit message instead; rule R9 in `.review-pro/rules.md` asks the review to hold it to that. Each check that does pass the question gets a mutation test in `scripts/validate.test.sh` that breaks it alone.
+Do not add a check whose only job is to show that a sentence is still there. It catches a deleted rule but not a weakened one, and every later edit to that sentence then needs a validator edit too. A change that removes or softens an instruction in `core/` says so, and why, in its PR description or commit message instead; rule R9 in `.review-pro/rules.md` asks the review to hold it to that. That is a weaker guard than a red build: a review can miss it, and R9's owner does not receive the PR description in its prompt, so it has to look the description up. Each check that does pass the question gets a mutation test in `scripts/validate.test.sh` that breaks it alone.
 
 ## Commit messages
 

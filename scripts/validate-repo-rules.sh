@@ -107,11 +107,6 @@ if [[ -f "$VERIFY_MD" ]] && grep -qF '`.review-pro/rules.md` is always read from
   grep -F '`.review-pro/rules.md` is always read from the base' "$VERIFY_MD" | grep -qF "any rule text it relies on at the merge base" \
     || add_error "review-pro-verify/SKILL.md: the verifier no longer splits a finding located in rules.md - it could read the rule from the change's own wording"
 fi
-SSUB_MD="$ROOT/core/agents/review-pro-synthesize-subagent.md"
-if [[ -f "$SSUB_MD" ]]; then
-  grep -F '1. Receive' "$SSUB_MD" | grep -F '`external_premises`' | grep -qF '## Premise verification' \
-    || add_error "review-pro-synthesize-subagent.md: no longer names the External premises inputs - subagent synthesis would drop the premises table, not-reported rows included"
-fi
 
 if [[ -f "$TRIAGE_MD" ]]; then
   # v1.0 is frozen: the field is an addition, optional, and absent from a repository without rules.

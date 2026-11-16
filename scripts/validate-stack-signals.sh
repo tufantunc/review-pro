@@ -3,9 +3,8 @@
 # ORCH_MD, VERIFY_MD, SYNTH_MD, PACK_DATA_LINE) and its helpers (add_error, read_section,
 # anchor_line, anchor_has). The reviewer-body check stays in validate.sh's body loop.
 # What is held here is the contract between the files (ADR-0013): the plan's keys and states, the
-# pack-file-is-data line the orchestrator repeats verbatim, the base rule review.sh and the triage
-# subagent restate, the verifier rules the orchestrator's prompt restates, the report lines the
-# state mapping points at, and the order of the prompt sections. Each pin is scoped to the one
+# pack-file-is-data line the orchestrator repeats verbatim, the base rule review.sh restates, the
+# verifier rules the orchestrator's prompt restates, the report lines the state mapping points at, and the order of the prompt sections. Each pin is scoped to the one
 # line that carries it, found by an anchor that must appear exactly once.
 
 # An empty canonical line would make every pin on it pass, because every line holds "".
@@ -18,20 +17,36 @@ if [[ -f "$TRIAGE_MD" ]]; then
   anchor_line "$TRIAGE_MD" '- The diff: `git diff <base>...HEAD`'
   { anchor_has 'refs/heads/main' && anchor_has 'refs/heads/master' && anchor_has 'with exact ref lookups' && anchor_has 'never a tag or other ref that shares the name'; } \
     || add_error "review-pro-triage/SKILL.md: the base is no longer the branch ref - a tag named main would make the merge base the change itself"
+  grep -qE '^base_source: argument \| config \| remote-default \| main-or-master$' "$TRIAGE_MD" \
+    || add_error "review-pro-triage/SKILL.md: the dispatch plan no longer carries base_source with every source - the report could not say which rule chose the base"
   grep -qE '^stack_signals:' "$TRIAGE_MD" \
     || add_error "review-pro-triage/SKILL.md: no 'stack_signals' key in the dispatch plan format - pack changes reach no report"
 fi
 
 if [[ -f "$ORCH_MD" ]]; then
+  # The base rule is four sources in order (v1.6.0). Each source is one line, pinned by its own
+  # anchor, because review.sh restates each of them and the plan's base_source names them.
   anchor_line "$ORCH_MD" '- **Base branch:**'
-  { anchor_has 'git show-ref --verify --hash refs/heads/main' && anchor_has 'then `refs/heads/master`' && anchor_has 'Use the resolved sha as `<base>` in every git command'; } \
+  { anchor_has "with exact ref lookups, never git's name lookup" && anchor_has 'Use the resolved sha as `<base>` in every git command'; } \
     || add_error "review-pro/SKILL.md: the base is no longer resolved as a branch ref - a tag named main would make the merge base the change itself, and its packs and rules would apply"
-  { anchor_has 'never git'"'"'s name lookup' && anchor_has 'any other name is looked up exactly as `refs/heads/<name>`, else `refs/remotes/<name>`; if `refs/tags/<name>` also exists, or the argument is a short sha, stop'; } \
+  anchor_line "$ORCH_MD" '1. **`argument`:**'
+  anchor_has 'any other name is looked up exactly as `refs/heads/<name>`, else `refs/remotes/<name>`; if `refs/tags/<name>` also exists, or the argument is a short sha, stop' \
     || add_error "review-pro/SKILL.md: a base named in the argument is no longer resolved as a branch - a fork tag named main or origin/main would make the merge base the change itself"
   anchor_has 'a full ref (`refs/...`) is looked up exactly with `git show-ref --verify --hash`' \
     || add_error "review-pro/SKILL.md: a full ref in the argument is no longer looked up exactly - git's name lookup falls through to a tag named refs/heads/main when that branch is missing"
   anchor_has 'a full 40-character sha is used as given' \
     || add_error "review-pro/SKILL.md: a sha in the argument is no longer required to be full - a short one is a name git resolves, and a tag can share it"
+  anchor_line "$ORCH_MD" '2. **`config`:**'
+  anchor_has 'read with `git show <default-sha>:.review-pro/config.json`, never from HEAD or the working tree' \
+    || add_error "review-pro/SKILL.md: the configured base is no longer read from the default branch - a change could choose the base its own review is measured against"
+  [[ -z "$ANCHOR_LINE" ]] || { anchor_has 'looked up exactly as `refs/heads/<name>`, else `refs/remotes/origin/<name>`' && anchor_has 'If `refs/tags/<name>` also exists, or neither ref does, stop'; } \
+    || add_error "review-pro/SKILL.md: the configured base is no longer resolved as an exact branch ref - a tag named like it, or a typo, would pick the base"
+  anchor_line "$ORCH_MD" '3. **`remote-default`:**'
+  { anchor_has 'git symbolic-ref --quiet refs/remotes/origin/HEAD' && anchor_has 'Skip it when `<name>` is the branch checked out at HEAD'; } \
+    || add_error "review-pro/SKILL.md: the remote's default branch is no longer read from origin/HEAD - a repository whose default is not main would be reviewed against main, or a clone whose origin/HEAD is the branch under review would be its own base"
+  anchor_line "$ORCH_MD" '4. **`main-or-master`:**'
+  { anchor_has 'git show-ref --verify --hash refs/heads/main' && anchor_has 'then `refs/heads/master`'; } \
+    || add_error "review-pro/SKILL.md: the last-resort base is no longer refs/heads/main then refs/heads/master by exact lookup - a tag named main would make the merge base the change itself"
   # The quote's boundaries are pinned with it: a sentence added inside the quote, or a qualifier
   # before it, still contains the canonical line (round 1 of this branch's review).
   anchor_line "$ORCH_MD" '- `### Stack signals`:'
@@ -84,33 +99,4 @@ if [[ -f "$SYNTH_MD" ]] && grep -qxF '## Stack signals' "$SYNTH_MD"; then
     ss_line '- `added` takes the first line, `removed` the second, `changed` the third, `uncommitted` the fourth and `behind` the fifth, the last three with the entry'"'"'s `files`. A stack can print more than one line: a committed one, an `uncommitted` one and a `behind` one.' \
       "the state-to-line mapping is gone - a state could print another state's line"
   fi
-fi
-SSUB_MD="$ROOT/core/agents/review-pro-synthesize-subagent.md"
-if [[ -f "$SSUB_MD" ]]; then
-  grep -qF '`stack_signals` for **Stack signals**' "$SSUB_MD" \
-    || add_error "review-pro-synthesize-subagent.md: the stack_signals input is gone - subagent synthesis would never report a pack the change touched"
-fi
-# The triage subagent body states the base itself (ADR-0001): the orchestrator runs triage inline
-# today, so this body governs only a triage invoked on its own, which has no Prep to lean on. It
-# takes a caller's full sha, else applies Prep's exact rule (v1.5.0 release review, Low). A missing
-# line is the first pin's error alone; the other pins on it judge a present line.
-TSUB_MD="$ROOT/core/agents/review-pro-triage-subagent.md"
-if [[ -f "$TSUB_MD" ]]; then
-  anchor_line "$TSUB_MD" '1. Gather the diff and changed files against `<base>`'
-  { anchor_has 'git show-ref --verify --hash refs/heads/main' && anchor_has 'then `refs/heads/master`' && anchor_has "never git's name lookup"; } \
-    || add_error "review-pro-triage-subagent.md: the base is no longer resolved with exact ref lookups - triage run on its own could take a tag named main as the base, and the merge base would be the change itself"
-  [[ -z "$ANCHOR_LINE" ]] || anchor_has 'if `refs/tags/<name>` also exists, or it is a short sha, stop' \
-    || add_error "review-pro-triage-subagent.md: a named base no longer refuses a tag that shares its name - a fork tag could make the merge base the change itself"
-  # The caller's sha and a named base are the other two ways in; each was unpinned (round 1).
-  [[ -z "$ANCHOR_LINE" ]] || { anchor_has 'the full 40-character base sha your caller passes' && anchor_has 'used as given'; } \
-    || add_error "review-pro-triage-subagent.md: the caller's base is no longer a full sha used as given - a bare name from the caller would go through git's name lookup, which prefers a tag"
-  [[ -z "$ANCHOR_LINE" ]] || anchor_has 'looked up exactly as `refs/heads/<name>`, else `refs/remotes/<name>`' \
-    || add_error "review-pro-triage-subagent.md: a named base is no longer looked up as an exact branch ref - git's name lookup would prefer a tag named like it"
-  [[ -z "$ANCHOR_LINE" ]] || anchor_has 'and a full ref (`refs/...`) with `git show-ref --verify --hash`' \
-    || add_error "review-pro-triage-subagent.md: a full ref is no longer looked up exactly - git's name lookup falls through to a tag named refs/heads/main when that branch is missing"
-  anchor_line "$TSUB_MD" 'Resolve the merge base once with `git merge-base <base> HEAD`'
-  anchor_has 'If it prints nothing, stop' \
-    || add_error "review-pro-triage-subagent.md: triage run on its own no longer stops when no merge base resolves - git show with an empty revision reads the change's own rules and packs"
-  grep -qF 'configured base' "$TSUB_MD" \
-    && add_error "review-pro-triage-subagent.md: the body names a configured base again - git's name lookup resolves a bare name, and prefers a tag"
 fi

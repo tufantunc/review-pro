@@ -6,7 +6,9 @@ version: 0.1.0
 
 # Review-Pro Synthesis (Stage 3)
 
-You are the orchestrator's final stage. You receive the structured findings from all dispatched reviewers, plus `diff_class`, `changed_files`, `spec_source`, `external_premises`, `premises_dropped`, `repository_rules`, `rules_dropped`, `stack_signals`, and each dispatched reviewer's `context.changed_files` from triage's dispatch plan, and produce ONE unified review.
+You are the orchestrator's final stage. You receive the structured findings from all dispatched reviewers, plus `base`, `base_source`, `diff_class`, `changed_files`, `spec_source`, `external_premises`, `premises_dropped`, `repository_rules`, `rules_dropped`, `stack_signals`, and each dispatched reviewer's `context.changed_files` from triage's dispatch plan, and produce ONE unified review.
+
+**Paths.** This package names its own files relative to where it was installed, never by an absolute path, because each platform installs it somewhere else. `shared/<file>.md` is `<this skill's directory>/../../shared/<file>.md`, the `shared/` directory beside the skills directory; another skill's rubric is `<this skill's directory>/../<skill>/SKILL.md`. The installer and every plugin layout keep that arrangement.
 
 ## Steps
 1. **Collect** all finding blocks from the dispatched reviewers. Set aside each code reviewer's `## Files examined` block for **Coverage**: it is not a finding, so it is never deduped or ranked.
@@ -178,11 +180,11 @@ The orchestrator's Verification step selects the findings to verify and owns the
 | treated as | Medium | High / Critical |
 |---|---|---|
 | stands | unchanged, marked `verified` | unchanged, marked `verified` |
-
-A `stands` whose `unchecked` is not `none` is marked `verified, unchecked: <what>`, never plainly `verified`: the verifier could not check that claim, often because its source was out of reach, and the reader must see which part was left unchecked.
 | partly refuted | severity unchanged; show what falls and its citation under the finding | same |
 | refuted | leaves the verdict; moves to `### Refuted in verification` | keeps blocking; marked `disputed`, with the citation |
 | not verified | unchanged, marked `not verified (<reason>)` | same |
+
+A `stands` whose `unchecked` is not `none` is marked `verified, unchecked: <what>`, never plainly `verified`: the verifier could not check that claim, often because its source was out of reach, and the reader must see which part was left unchecked.
 
 - A refuted High or Critical keeps blocking. One refutation is not enough to ship a blocker; a human clears a `disputed` finding.
 - A verified finding keeps the severity it had when it was selected. Calibrate severity never downgrades a finding because a verifier refuted part or all of it, and never downgrades a `disputed` finding at all.
@@ -215,7 +217,7 @@ guessing which neighbour it meant.
 | test correctness | tests-reviewer |
 | accessibility | a11y-reviewer |
 
-## Verdict (see core/shared/severity.md)
+## Verdict (see shared/severity.md)
 - **BLOCK:** any unaddressed Critical or High, `disputed` ones included.
 - **REQUEST CHANGES:** any Medium or above that verification did not refute.
 - **APPROVE:** only Low/Nitpick, refuted Mediums, or no findings.
@@ -225,8 +227,12 @@ The verdict measures code health, not conformance to taste. A change that clearl
 ## Output
 A markdown report. Lead with the verdict and Critical/High. Do not restate raw specialist dumps — present the unified, deduped view.
 
+The `Base:` line names the branch the change was measured against and the source that chose it, from the plan's `base` and `base_source`, on every report: a review measured against the wrong base reads exactly like a clean one. Without `base_source`, print `Base: <base>` alone.
+
 ```
 ## Verdict: <BLOCK | REQUEST CHANGES> (<code | spec | code + spec>)[, <N> disputed] | APPROVE
+
+Base: <base> (<base_source>)
 
 Spec: measured against <spec_source.ref>
 (or: skipped, no spec found / not measured, <ref> resolved but carried no text)

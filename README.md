@@ -203,6 +203,23 @@ See [`stacks/CONTRIBUTING.md`](stacks/CONTRIBUTING.md) to add your own. Every pa
 
 † `capacitor` is framework-agnostic and composes on whichever web framework pack is active (React via `typescript-react`, Angular, Vue, …).
 
+## Base branch
+
+A review measures the branch against a base, and reads stack packs and rules from the merge base with it. The base is the first of these that applies, and the report's `Base:` line names the one that did:
+
+1. a base passed with the invocation (`review this branch against release/2.4 with review-pro`);
+2. `base` in `.review-pro/config.json` on the default branch;
+3. the default branch, as `origin/HEAD` names it, unless that is the branch under review;
+4. `main`, else `master`.
+
+A repository whose work merges into an integration branch names it once, on the default branch:
+
+```json
+{ "base": "development" }
+```
+
+The file is read from the default branch, never from the branch under review, so a change cannot pick the base its own review is measured against; a change that edits it is sent to the `security` reviewer. A configured name that does not exist, or that a tag shares, stops the review rather than falling back to another branch. The decision is [ADR-0014](docs/internals/adr/0014-read-the-base-from-the-default-branch.md).
+
 ## Repository rules
 
 Some of what your repository knows cannot be read from the code: "when the verdict rule changes, update `severity.md`", "a version bump touches five manifests". Write it down in `.review-pro/rules.md` and every review checks it. The most useful kind is a **co-change rule**: when a file matching `when` changes, the files in `then` should change too. The defect it catches sits in the file the diff did not touch.

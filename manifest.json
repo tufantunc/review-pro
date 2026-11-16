@@ -23,8 +23,6 @@
     { "name": "tests", "role": "reviewer" }
   ],
   "agents": [
-    { "name": "review-pro-triage-subagent", "loads_skill": "review-pro-triage" },
-    { "name": "review-pro-synthesize-subagent", "loads_skill": "review-pro-synthesize" },
     { "name": "review-pro-verify-subagent", "loads_skill": "review-pro-verify" },
     { "name": "security-reviewer", "loads_skill": "security" },
     { "name": "correctness-reviewer", "loads_skill": "correctness" },

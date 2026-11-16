@@ -192,6 +192,70 @@ out=$(cd "$R" && bash "$REVIEW" signals correctness)
 if [[ -z "$out" ]]; then ok "a reviewer file the branch adds does not apply"; else bad "a reviewer file the branch adds printed '$out'"; fi
 rm -rf "$R"
 
+# v1.6.0: the base comes from .review-pro/config.json on the default branch, never from the
+# change; a configured name that does not resolve, or is also a tag, is refused.
+R=$(mktemp -d)
+g init -q -b main
+echo x > "$R/a.txt"; g add .; g commit -qm root
+g checkout -q -b development
+mkdir -p "$R/.review-pro/node"
+echo '{"name":"node","version":"1.0.0","reviewers":["security"]}' > "$R/.review-pro/node/manifest.json"
+echo 'DEV SIGNAL' > "$R/.review-pro/node/security.md"
+g add .; g commit -qm dev
+g checkout -q main
+printf '{\n  "base": "development"\n}\n' > "$R/.review-pro-config.tmp"
+mkdir -p "$R/.review-pro"; mv "$R/.review-pro-config.tmp" "$R/.review-pro/config.json"
+g add .; g commit -qm config
+g checkout -q development
+g checkout -q -b feat
+echo 'EVIL SIGNAL' > "$R/.review-pro/node/security.md"
+g commit -qam change
+out=$(cd "$R" && bash "$REVIEW" prep)
+if echo "$out" | grep -qxF "BASE: $(git -C "$R" rev-parse refs/heads/development)" && echo "$out" | grep -qxF 'BASE_SOURCE: config'; then ok "config: the configured base and its source"; else bad "config: wrong base or source"; fi
+out=$(cd "$R" && bash "$REVIEW" signals security)
+if echo "$out" | grep -qxF 'DEV SIGNAL' && ! echo "$out" | grep -qF 'EVIL SIGNAL'; then ok "config: packs from the configured base's merge base"; else bad "config: wrong pack text"; fi
+out=$(cd "$R" && bash "$REVIEW" prep main)
+if echo "$out" | grep -qxF 'BASE_SOURCE: argument'; then ok "config: an argument still wins"; else bad "config: the argument lost to the config"; fi
+# The change's own config is never read: a branch pointing the base at itself changes nothing.
+printf '{"base": "feat"}\n' > "$R/.review-pro/config.json"; g add .; g commit -qm self
+out=$(cd "$R" && bash "$REVIEW" prep)
+if echo "$out" | grep -qxF 'BASE_SOURCE: config' && echo "$out" | grep -qxF "BASE: $(git -C "$R" rev-parse refs/heads/development)"; then ok "config: the change's own config is ignored"; else bad "config: the change chose its own base"; fi
+# A configured base that does not resolve, or that a tag shadows, stops rather than falls back.
+g checkout -q main
+printf '{"base": "integration"}\n' > "$R/.review-pro/config.json"; g commit -qam typo
+g checkout -q feat
+out=$(cd "$R" && bash "$REVIEW" prep 2>&1); rc=$?
+if [[ "$rc" -eq 2 ]] && echo "$out" | grep -qF 'unknown configured base: integration'; then ok "config: an unknown base is refused"; else bad "config: an unknown base gave rc=$rc"; fi
+g checkout -q main
+printf '{"base": "development"}\n' > "$R/.review-pro/config.json"; g commit -qam fix
+g checkout -q feat
+g tag development HEAD
+out=$(cd "$R" && bash "$REVIEW" signals security 2>&1); rc=$?
+if [[ "$rc" -eq 2 ]] && ! echo "$out" | grep -qF 'EVIL SIGNAL'; then ok "config: a base a tag shadows is refused"; else bad "config: a tag-shadowed base gave rc=$rc"; fi
+rm -rf "$R"
+
+# The remote's default branch (origin/HEAD) when it is not main, skipped when it names the branch
+# under review.
+R=$(mktemp -d)
+g init -q -b trunk
+mkdir -p "$R/.review-pro/node"
+echo '{"name":"node","version":"1.0.0","reviewers":["security"]}' > "$R/.review-pro/node/manifest.json"
+echo 'TRUNK SIGNAL' > "$R/.review-pro/node/security.md"
+g add .; g commit -qm base
+C=$(mktemp -d)
+git clone -q "$R" "$C/c" 2>/dev/null
+git -C "$C/c" -c user.name=t -c user.email=t@example.invalid checkout -q -b feat
+echo 'EVIL SIGNAL' > "$C/c/.review-pro/node/security.md"
+git -C "$C/c" -c user.name=t -c user.email=t@example.invalid -c commit.gpgsign=false commit -qam change
+git -C "$C/c" branch -q -D trunk
+out=$(cd "$C/c" && bash "$REVIEW" prep)
+if echo "$out" | grep -qxF 'BASE_SOURCE: remote-default' && echo "$out" | grep -qxF "BASE: $(git -C "$C/c" rev-parse refs/remotes/origin/trunk)"; then ok "origin/HEAD: the remote's default branch"; else bad "origin/HEAD: wrong base or source"; fi
+git -C "$C/c" symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/feat
+git -C "$C/c" update-ref refs/remotes/origin/feat HEAD
+out=$(cd "$C/c" && bash "$REVIEW" signals security)
+if ! echo "$out" | grep -qF 'EVIL SIGNAL'; then ok "origin/HEAD naming the reviewed branch: skipped"; else bad "origin/HEAD naming the reviewed branch: the change was its own base"; fi
+rm -rf "$R" "$C"
+
 echo "---"
 echo "pass=$pass fail=$fail"
 finished=1

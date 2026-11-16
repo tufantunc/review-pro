@@ -52,6 +52,8 @@ A change's stated reason often points outside the repository: "fixed upstream in
 
 The agent runs the whole pipeline natively (`git diff`, reads changed files, reads active stacks from `.review-pro/` at the merge base, dispatches the relevant reviewer subagents with their stack signals, has an independent verifier try to refute up to 8 Medium or higher code findings, reports which changed files the reviewers say they examined, and synthesizes one verdict: **BLOCK / REQUEST CHANGES / APPROVE**). No env vars, no scripts to run at review time.
 
+The base is the branch passed with the invocation, else `base` in `.review-pro/config.json` on the default branch (for example `{ "base": "development" }`), else the default branch from `origin/HEAD`, else `main` or `master`. The report's `Base:` line says which one was used. The config is read from the default branch, so a change cannot choose its own base. Details: [Base branch](https://github.com/tufantunc/review-pro#base-branch).
+
 Some of what a repository knows cannot be read from its code: "when the verdict rule changes, update `severity.md`". Write such rules down in `.review-pro/rules.md` and every review checks them. Rules are read from the merge base, so a change cannot weaken its own review by editing them, and the report shows every matched rule with its outcome. Commit `.review-pro/rules.md` to your base branch: a rule that is not committed there is reported, not applied. Format and details: [Repository rules](https://github.com/tufantunc/review-pro#repository-rules).
 
 ## Commands

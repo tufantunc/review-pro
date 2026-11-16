@@ -10,6 +10,17 @@ export type Target = "opencode" | "claude-code" | "cursor" | "codex";
 export const TARGETS: Target[] = ["opencode", "claude-code", "cursor", "codex"];
 const ORCHESTRATOR_SKILLS = new Set(["review-pro-triage", "review-pro-synthesize", "review-pro"]);
 
+/** Agent files an earlier release installed and this one no longer ships. Install and uninstall
+ *  both remove them, because the copy loops only touch what the current source holds, so a
+ *  retired file would otherwise stay on disk forever, still loadable and drifting from the
+ *  skills it names. Triage and synthesis have run inline in the orchestrator since before 1.0,
+ *  and nothing dispatched these two subagents (removed in 1.6.0). */
+export const RETIRED_AGENTS = ["review-pro-triage-subagent", "review-pro-synthesize-subagent"];
+
+function removeRetiredAgentsMd(dst: string): void {
+  for (const a of RETIRED_AGENTS) fs.rmSync(path.join(dst, `${a}.md`), { force: true });
+}
+
 /** Bundled plugin dir (dist/../plugin), else repo core/ in dev. */
 export function resolvePluginDir(explicit?: string): string {
   if (explicit) return explicit;
@@ -171,6 +182,7 @@ export function installCore(
       copySkills(skillsSrc, path.join(home, "skills"));
       copyShared(sharedSrc, path.join(home, "shared"));
       copyAgentsMd(agentsSrc, path.join(home, "agents"));
+      removeRetiredAgentsMd(path.join(home, "agents"));
       return;
     }
     case "cursor": {
@@ -231,6 +243,7 @@ export function uninstallCore(
       removeSkills(skillsSrc, path.join(home, "skills"));
       removeShared(sharedSrc, path.join(home, "shared"));
       removeAgentsMd(agentsSrc, path.join(home, "agents"));
+      removeRetiredAgentsMd(path.join(home, "agents"));
       return;
     }
     case "cursor": {

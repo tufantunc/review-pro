@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { installCore, detectInstalled, type Target } from "../src/lib/plugin.js";
+import { installCore, uninstallCore, detectInstalled, RETIRED_AGENTS, type Target } from "../src/lib/plugin.js";
 
 let pluginSrc = "", homes = "";
 beforeEach(() => {
@@ -42,6 +42,25 @@ describe("installCore per target", () => {
     const content = fs.readFileSync(toml, "utf8");
     expect(content).toContain('name = "security-reviewer"');
     expect(content).not.toContain('[[skills.config]]');
+  });
+
+  it.each(["claude-code", "opencode"] as const)("%s install removes agents a past release shipped and this one retired", (t) => {
+    const agents = path.join(H(t), "agents");
+    fs.mkdirSync(agents, { recursive: true });
+    for (const a of RETIRED_AGENTS) fs.writeFileSync(path.join(agents, `${a}.md`), "# stale");
+    fs.writeFileSync(path.join(agents, "my-own-agent.md"), "# mine");
+    installCore(t, pluginSrc, H(t));
+    for (const a of RETIRED_AGENTS) expect(fs.existsSync(path.join(agents, `${a}.md`))).toBe(false);
+    expect(fs.existsSync(path.join(agents, "my-own-agent.md"))).toBe(true);
+    expect(fs.existsSync(path.join(agents, "security-reviewer.md"))).toBe(true);
+  });
+
+  it.each(["claude-code", "opencode"] as const)("%s uninstall removes retired agents too", (t) => {
+    const agents = path.join(H(t), "agents");
+    installCore(t, pluginSrc, H(t));
+    for (const a of RETIRED_AGENTS) fs.writeFileSync(path.join(agents, `${a}.md`), "# stale");
+    uninstallCore(t, pluginSrc, H(t));
+    for (const a of RETIRED_AGENTS) expect(fs.existsSync(path.join(agents, `${a}.md`))).toBe(false);
   });
 
   it("codex skips orchestrator subagents (triage/synthesize)", () => {

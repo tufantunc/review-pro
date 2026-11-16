@@ -68,11 +68,24 @@ describe("uninstall", () => {
     }
   });
 
+  it("says a config file is left in place when the repo has one", async () => {
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), "rp-repo-"));
+    try {
+      fs.mkdirSync(path.join(repo, ".review-pro"), { recursive: true });
+      fs.writeFileSync(path.join(repo, ".review-pro", "config.json"), '{"base": "development"}\n');
+      await uninstall({ target: "opencode", yes: true, where: repo });
+      expect(logs).toContain(".review-pro/config.json is your repository's own review configuration; it is left in place.");
+    } finally {
+      fs.rmSync(repo, { recursive: true, force: true });
+    }
+  });
+
   it("does not mention a rules file the repo does not have", async () => {
     const repo = fs.mkdtempSync(path.join(os.tmpdir(), "rp-repo-"));
     try {
       await uninstall({ target: "opencode", yes: true, where: repo });
       expect(logs.join("\n")).not.toContain("rules.md");
+      expect(logs.join("\n")).not.toContain("config.json");
     } finally {
       fs.rmSync(repo, { recursive: true, force: true });
     }

@@ -61,12 +61,12 @@ these load-bearing sections, in order:
 1. **Identity & mandate** — names the ONE concern; states the sole job (review
    `### Changed file contents`, return findings or an explicit "no findings"
    line); rejects the "general assistant" framing.
-2. **Skill discipline (critical)** — declares the ONE core skill and explicitly
+2. **Skill discipline** — declares the one core skill and explicitly
    forbids activating/invoking/loading any other skill, **naming the likely
    trap** for that reviewer (e.g. `api-contract-reviewer` names `security`;
    `frontend-reviewer` names `a11y`/`performance`; `backend-reviewer` names
    `security`/`db`).
-3. **Anti-derailment (critical)** — labels trailing skills/MCP/tool text as
+3. **Anti-derailment** — labels trailing skills/MCP/tool text as
    runtime boilerplate and forbids echoing/continuing/summarizing/
    acknowledging it; forbids capabilities/help messages; imposes a **behavioral
    floor** (no zero-tool-call AND zero-finding output).
@@ -94,6 +94,18 @@ zero-output derailment visibly non-compliant. The structural frontmatter guard
 (`loads_skill`/`skills` validated by `scripts/validate.sh`) ensures the
 *declared* resolution can never pull in a name-adjacent skill; the body guard
 addresses the *runtime model-choice* drift.
+
+## Tone (v1.6.0)
+
+Until v1.5.1 these sections were headed `(critical)` and written in capitals (`Do **NOT**`,
+`MUST`, `ONLY`). v1.6.0 keeps every rule and its place in the body, and replaces the capitals
+with plain imperatives that each carry their reason: the failure mode above that the rule
+prevents, or what the orchestrator does with the answer. The reasoning is that a model
+following a rule it can explain applies it to cases the wording did not foresee, while
+emphasis alone tends to over-apply the rule it marks and say nothing about the others. This
+was a judgement, not a measurement: no derailment run compared the two wordings. The
+behavioural floor (no zero-tool-call, zero-finding answer) is unchanged, so a derailment still
+shows up as a non-compliant answer rather than as a silent clean review.
 
 If derailment is ever observed again after this change, the next lever is
 runtime/harness-owned (e.g. a platform option to suppress the trailing

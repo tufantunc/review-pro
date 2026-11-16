@@ -40,12 +40,14 @@ export async function uninstall(opts: {
     }
   }
 
-  // Never advise deleting the folder: .review-pro/ can hold the maintainer's own rules file
-  // beside the stack packs, and a blanket delete would take it too.
+  // Never advise deleting the folder: .review-pro/ can hold the maintainer's own rules file and
+  // configuration beside the stack packs, and a blanket delete would take it too.
   info("");
   info("Stack packs live in your repo's .review-pro/ and are not removed by this command.");
   info("Remove one with:  npx review-pro remove <stack>");
   const repoRoot = path.resolve(opts.where || process.cwd());
   if (fs.existsSync(path.join(reviewProDir(repoRoot), "rules.md")))
     info(".review-pro/rules.md is your repository's own rules file; it is left in place.");
+  if (fs.existsSync(path.join(reviewProDir(repoRoot), "config.json")))
+    info(".review-pro/config.json is your repository's own review configuration; it is left in place.");
 }

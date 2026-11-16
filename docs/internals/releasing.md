@@ -54,6 +54,7 @@ These surfaces describe behaviour or ship content, and no automated check notice
 - **`docs/llms.txt`** is hand-written, so the site drift check never reads it.
 - **`cli/README.md`** is what npm renders on the package page, and it lives outside `core/`, which is where attention goes.
 - **Stack pack versions.** A changed pack file reaches existing installs only if its pack's `manifest.json` `version` was bumped; the rule and the reason are in [`stacks/CONTRIBUTING.md`](../../stacks/CONTRIBUTING.md#how-packs-reach-users). Nothing checks it.
+- **`CHANGELOG.md`** gets a section for the new version, written for the people who run review-pro: what they will notice, grouped as Added, Changed, Removed and Fixed. Generated release notes list commits; this says what they mean. It starts at 1.6.0; earlier versions are described only in their GitHub release notes.
 
 For the marketing site (`docs-src/i18n/*.json`), the rule is narrower: a change in the **reviewer count** is mandatory, because the published-count guard checks it in seven locales including the ones that spell the number as a word. A change in **behaviour** is not, because the site has never described an axis in prose. That precedent is recorded in [ADR-0006](adr/0006-one-closed-subcategory-list-per-reviewer.md)'s consequences.
 
@@ -93,7 +94,7 @@ git tag -a v<new-version> -m "<what changed and why>"
 git push origin v<new-version>
 ```
 
-Release notes come from commit history via `--generate-notes`, which is why Conventional Commits matter here specifically.
+Release notes come from commit history via `--generate-notes`, which is why Conventional Commits matter here specifically. `CHANGELOG.md` (step 3) is the reader-facing summary beside them.
 
 ### 7. Verify what actually shipped
 

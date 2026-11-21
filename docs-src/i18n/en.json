@@ -98,7 +98,7 @@
   "docs.reviewers.p": "<code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code> · <code>spec</code>. The <code>ai-antipatterns</code> reviewer is first-class: ignored existing helpers, needless dependencies, invented config/env keys, and hallucinated APIs/symbols/imports. The <code>spec</code> reviewer measures the diff against the issue it came from: requirements missing or half done, requirements implemented wrongly, and work nobody asked for. Reported as its own axis, never merged with the code findings.",
   "docs.faq.h2": "FAQ",
   "docs.faq.q1": "Does it need Node.js?",
-  "docs.faq.a1": "Only the installer CLI does (Node ≥ 18). The plugin itself is plain markdown skills and agents, so <a href=\"#manual-install\">manual install</a> works without Node on any platform.",
+  "docs.faq.a1": "Only the installer CLI does (Node 22.22.2+, 24.15+, 26+). The plugin itself is plain markdown skills and agents, so <a href=\"#manual-install\">manual install</a> works without Node on any platform.",
   "docs.faq.q2": "How is this different from a single “review this” prompt?",
   "docs.faq.a2": "A single prompt asks one agent to cover every concern at once. review-pro gives each concern its own reviewer and rubric, requires every finding to cite where its evidence was found, and has a separate agent try to refute the serious ones. Synthesis then calibrates severity against over-reporting.",
   "docs.faq.q3": "Where do stack packs come from?",

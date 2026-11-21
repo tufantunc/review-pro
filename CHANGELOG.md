@@ -5,6 +5,15 @@ What changed in each release, for the people who run review-pro. The format foll
 [docs/internals/releasing.md](docs/internals/releasing.md). Releases before 1.6.0 are described
 in their [GitHub release notes](https://github.com/tufantunc/review-pro/releases).
 
+## [1.6.1] - 2026-11-21
+
+### Changed
+- **The installer CLI now declares the Node versions it runs on.** `engines.node` said `>=18`,
+  but the installer's prompt library (`@inquirer/prompts` 8.8) needs Node 22.22.2 or later, 24.15
+  or later, or 26 or later, and the previous release of it already excluded Node 18. The package,
+  its README and the site FAQ now say so. The plugin itself is unchanged and still needs no Node.
+- Dependency updates: `@inquirer/prompts` 8.8.0 and `commander` 15.1.0.
+
 ## [1.6.0] - 2026-11-16
 
 ### Added

@@ -98,7 +98,7 @@
   "docs.reviewers.p": "<code>security</code> · <code>correctness</code> · <code>craft</code> · <code>ai-antipatterns</code> · <code>dry</code> · <code>performance</code> · <code>backend</code> · <code>frontend</code> · <code>a11y</code> · <code>db</code> · <code>api-contract</code> · <code>tests</code> · <code>spec</code>。<code>ai-antipatterns</code> 审查者是一等公民：被忽视的既有辅助函数、多余的依赖、凭空发明的配置/环境变量键，以及虚构的 API/符号/导入。 <code>spec</code> 审查者以变更所源自的 issue 为基准衡量 diff：缺失或只做了一半的需求、实现有误的需求，以及无人要求的改动。它作为独立的一条轴单独报告，绝不与代码结论合并。",
   "docs.faq.h2": "常见问题",
   "docs.faq.q1": "需要 Node.js 吗？",
-  "docs.faq.a1": "只有安装器 CLI 需要（Node ≥ 18）。插件本身只是纯 markdown 技能与智能体，因此<a href=\"#manual-install\">手动安装</a>在任何平台上都无需 Node 即可工作。",
+  "docs.faq.a1": "只有安装器 CLI 需要（Node 22.22.2+, 24.15+, 26+）。插件本身只是纯 markdown 技能与智能体，因此<a href=\"#manual-install\">手动安装</a>在任何平台上都无需 Node 即可工作。",
   "docs.faq.q2": "它和一个“审查一下”的单一提示有何不同？",
   "docs.faq.a2": "单一提示要求一个智能体一次性兼顾所有关注点。review-pro 为每项关注点配备各自的审查者和评审准则，要求每条发现注明其证据的出处，并让另一个独立的智能体尝试反驳严重的发现。随后，综合阶段会针对过度上报校准严重性。",
   "docs.faq.q3": "技术栈包从哪里来？",

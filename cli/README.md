@@ -83,7 +83,7 @@ Stack packs (`.review-pro/`) live in your repo and are **not** touched — remov
 
 ## Requirements & license
 
-- Node ≥ 18 (for this CLI only; manual install needs no Node).
+- Node 22.22.2+, 24.15+, 26+ (for this CLI only; manual install needs no Node).
 - MIT — see [LICENSE](https://github.com/tufantunc/review-pro/blob/main/LICENSE).
 
 ## 13 specialist reviewers
